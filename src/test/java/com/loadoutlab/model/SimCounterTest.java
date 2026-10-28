@@ -1,7 +1,7 @@
 package com.loadoutlab.model;
 
 import com.google.gson.Gson;
-import com.loadoutlab.collection.DreamStore;
+import com.loadoutlab.collection.IdSetStore;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.testsupport.InMemoryConfigManager;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>The green "+N" pill reads counts.simmedItems off the PUBLISHED page, not
  * off the store, so a toggle that persists correctly can still leave the pill
  * stale if the page is not rebuilt from the live counts. This wires the real
- * DreamStore behind the engine and asserts the number the pill would draw.
+ * IdSetStore behind the engine and asserts the number the pill would draw.
  */
 class SimCounterTest {
 	private static LoadoutData data;
@@ -55,7 +55,7 @@ class SimCounterTest {
 	@Test
 	@DisplayName("the sim pill counts up as items are simmed")
 	void simPillTracksTheStore() {
-		DreamStore dreams = new DreamStore(InMemoryConfigManager.create(), new Gson());
+		IdSetStore dreams = new IdSetStore(InMemoryConfigManager.create(), new Gson(), "dreamItems");
 		dreams.loadScope("std.1111");
 
 		PageState state = new PageState();
@@ -65,7 +65,7 @@ class SimCounterTest {
 			},
 			link);
 		engine.setCounts(() -> {
-			List<Map<String, Object>> simmed = new ArrayList<>();
+			List<Map> simmed = new ArrayList<>();
 			for (int id : dreams.snapshot()) {
 				simmed.add(Map.of("id", id, "name", "item " + id));
 			}
@@ -83,7 +83,7 @@ class SimCounterTest {
 		});
 
 		engine.execute("toggle-sim", Map.of("itemId", 22325, "label", "item"));
-		assertTrue(dreams.isDreamed(22325), "the store did not take the sim");
+		assertTrue(dreams.contains(22325), "the store did not take the sim");
 		assertEquals(1, pillCount(link, "simmedItems"),
 			"the sim pill did not count up after the first sim");
 

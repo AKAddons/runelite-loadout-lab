@@ -35,7 +35,7 @@ class OptimizeModeParamTest {
 		PageState state = new PageState();
 		CommandEngine engine = engine(state);
 		engine.execute("set-param", Map.of("param", "optimizeMode", "value", "BALANCED"));
-		assertEquals(OptimizeMode.BALANCED, engine.optimizeMode());
+		assertEquals(OptimizeMode.BALANCED, OptimizeMode.valueOf(String.valueOf(engine.state.paramsNode().get("optimizeMode"))));
 		assertEquals("BALANCED", state.computeParams().optimizeMode, "the compute carries it too");
 		state.setParam("optimizeMode", "TANKY");
 		assertEquals("TANKY", state.computeParams().optimizeMode);

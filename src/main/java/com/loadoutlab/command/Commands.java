@@ -16,9 +16,7 @@ import java.util.function.BooleanSupplier;
  * stack. They live on verbatim in the test tree's TestCommands, so main
  * source stays under the Plugin Hub bot's token budget.
  */
-public final class Commands {
-    private Commands() {
-    }
+public class Commands {
 
     /** A Command from two lambdas plus a label - the shape every factory returns. */
     public static Command of(String description, BooleanSupplier apply, BooleanSupplier revert) {

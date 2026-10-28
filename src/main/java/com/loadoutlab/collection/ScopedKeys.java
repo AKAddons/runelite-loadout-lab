@@ -15,9 +15,7 @@ import net.runelite.client.config.ConfigManager;
  * then stop, which means MOVING the entry into the first character that loads
  * it rather than copying it.
  */
-final class ScopedKeys {
-    private ScopedKeys() {
-    }
+class ScopedKeys {
 
     /** A scope with no account hash behaves as the pre-0.4.1 bucket, so edits
      * made before login are adopted by the first character instead of landing

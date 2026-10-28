@@ -30,7 +30,7 @@ class DemonicOfferingBookTest {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			published = page;
 		}
 	}
@@ -41,7 +41,7 @@ class DemonicOfferingBookTest {
 		CommandEngine engine = new CommandEngine(data, state, (m, p, onDone) -> {
 		}, link);
 		engine.setStoreOps(new TestStoreOps());
-		engine.setOfferingReady(() -> castable);
+		engine.setArceuusReady(magic -> castable && magic == 84);
 		MonsterStats mob = data.searchMonsters(query, 1).get(0);
 		engine.execute("select", Map.of("id", mob.getId()));
 		engine.onResults(mob, Map.of());

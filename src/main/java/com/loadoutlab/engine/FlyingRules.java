@@ -11,9 +11,7 @@ import com.loadoutlab.data.*;
  *
  * <p>Ranged and magic are unaffected.
  */
-public final class FlyingRules {
-    private FlyingRules() {
-    }
+public class FlyingRules {
 
     /** False when a melee weapon cannot reach this monster. */
     public static boolean canReach(MonsterStats monster, CombatStyle style, GearItem weapon) {
@@ -21,7 +19,7 @@ public final class FlyingRules {
         if (weapon == null) {
             return false; // fists reach even less far than swords
         }
-        String category = weapon.getCategory() == null ? "" : weapon.getCategory();
+        String category = weapon.category == null ? "" : weapon.category;
         return "Polearm".equals(category) || "Salamander".equals(category);
     }
 }

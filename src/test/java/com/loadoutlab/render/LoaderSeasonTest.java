@@ -50,7 +50,7 @@ class LoaderSeasonTest {
 		try {
 			loader.setKey("toa");
 			loader.setRunning(true);
-			assertEquals("toa", loader.playingKey());
+			assertEquals("toa", loader.playingKey);
 		} finally {
 			loader.setRunning(false);
 		}

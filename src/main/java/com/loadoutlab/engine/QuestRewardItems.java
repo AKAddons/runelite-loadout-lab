@@ -13,29 +13,27 @@ import java.util.*;
  * with their source quest instead of a price.
  *
  * Entries in quest_rewards.json are keyed by lowercase item name
- * (GearItem.getName(), no version suffix). Every entry is wiki-verified
+ * (GearItem.name, no version suffix). Every entry is wiki-verified
  * as a quest reward or quest-unlocked acquisition; tradeable boss drops
  * merely wield-locked behind a quest (dragon scimitar, anguish) and
  * minigame/slayer unlocks (void, defenders, slayer helm) do NOT belong
  * here - the curation test enforces that every key resolves to a real
  * corpus item.
  */
-public final class QuestRewardItems {
-    private static final String RESOURCE = "quest_rewards.json";
+public class QuestRewardItems {
+    static final String RESOURCE = "quest_rewards.json";
 
     static final Map<String, String> QUEST_BY_NAME = new HashMap<>();
 
     static {
         // Fail-loud on purpose: a silently empty table would quietly drop
         // every quest reward out of the obtainable-gear pool.
-        JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
+        JsonObject root = JsonResources.objectOrThrow(RESOURCE);
         for (var entry : root.entrySet()) {
             QUEST_BY_NAME.put(Names.lower(entry.getKey()), entry.getValue().getAsJsonObject().get("quest").getAsString());
         }
     }
 
-    private QuestRewardItems() {
-    }
 
     /** True when this item is earned through a quest rather than bought. */
     public static boolean isQuestReward(GearItem item) { return questFor(item) != null; }
@@ -43,6 +41,6 @@ public final class QuestRewardItems {
     /** The source quest's name, or null when the item is not a quest reward. */
     public static String questFor(GearItem item) {
         if (item == null) return null;
-        return QUEST_BY_NAME.get(item.getNameLower());
+        return QUEST_BY_NAME.get(item.nameLower);
     }
 }

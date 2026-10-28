@@ -10,17 +10,17 @@ public class ExclusionStoreTest {
 	@Test
 	public void togglePersistsAcrossInstancesAndClears() {
 		ConfigManager configManager = InMemoryConfigManager.create();
-		ExclusionStore store = new ExclusionStore(configManager, new Gson());
+		IdSetStore store = new IdSetStore(configManager, new Gson(), "excludedItems");
 		Assert.assertTrue(store.toggle(11230));
-		Assert.assertTrue(store.isExcluded(11230));
+		Assert.assertTrue(store.contains(11230));
 
-		ExclusionStore next = new ExclusionStore(configManager, new Gson());
-		Assert.assertTrue(next.isExcluded(11230));
+		IdSetStore next = new IdSetStore(configManager, new Gson(), "excludedItems");
+		Assert.assertTrue(next.contains(11230));
 		Assert.assertFalse(next.toggle(11230));
-		Assert.assertFalse(next.isExcluded(11230));
+		Assert.assertFalse(next.contains(11230));
 
 		next.toggle(4151);
 		next.clear();
-		Assert.assertTrue(new ExclusionStore(configManager, new Gson()).snapshot().isEmpty());
+		Assert.assertTrue(new IdSetStore(configManager, new Gson(), "excludedItems").snapshot().isEmpty());
 	}
 }

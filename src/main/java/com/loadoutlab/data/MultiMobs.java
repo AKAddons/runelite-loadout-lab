@@ -9,8 +9,8 @@ import java.util.*;
  * pages (docs/data/multi-mobs.md), keyed name + version as the loader
  * sees them. A listed mob gets the Multi switch on its card.
  */
-public final class MultiMobs {
-    private static final Map<String, List<String>> LOCATIONS = new HashMap<>();
+public class MultiMobs {
+    static final Map<String, List<String>> LOCATIONS = new HashMap<>();
 
     static {
         JsonObject root = JsonResources.objectOrThrow("/com/loadoutlab/data/multi_mobs.json");
@@ -24,19 +24,17 @@ public final class MultiMobs {
         }
     }
 
-    private MultiMobs() {
-    }
 
-    private static String key(String name, String version) {
+    static String key(String name, String version) {
         return Names.lower(name) + "#" + Names.lower(version == null ? "" : version);
     }
 
     public static boolean isMultiAble(MonsterStats mob) {
-        return mob != null && LOCATIONS.containsKey(key(mob.getName(), mob.getVersion()));
+        return mob != null && LOCATIONS.containsKey(key(mob.name, mob.version));
     }
 
     /** The multi locations the mob is fought in, for the switch's tooltip. */
     public static List<String> locations(MonsterStats mob) {
-        return mob == null ? List.of() : LOCATIONS.getOrDefault(key(mob.getName(), mob.getVersion()), List.of());
+        return mob == null ? List.of() : LOCATIONS.getOrDefault(key(mob.name, mob.version), List.of());
     }
 }

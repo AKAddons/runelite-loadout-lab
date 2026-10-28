@@ -43,8 +43,8 @@ class GroupSpellbookPageTest {
 
 		Map<String, Object> page = link.lastPage();
 		assertNotNull(page, "a page was published");
-		Map<String, Object> entry = ((List<Map<String, Object>>) page.get("entries")).get(0);
-		List<Map<String, Object>> mobs = (List<Map<String, Object>>) entry.get("mobs");
+		Map<String, Object> entry = ((List<Map>) page.get("entries")).get(0);
+		List<Map> mobs = (List<Map>) entry.get("mobs");
 		assertEquals(2, mobs.size());
 		for (Map<String, Object> mob : mobs) {
 			assertEquals("standard", mob.get("fightBook"), mob.get("name") + " plate names the group's book");
@@ -77,9 +77,9 @@ class GroupSpellbookPageTest {
 		javax.swing.SwingUtilities.invokeAndWait(() -> {
 		});
 
-		Map<String, Object> entry = ((List<Map<String, Object>>) link.lastPage().get("entries")).get(0);
+		Map<String, Object> entry = ((List<Map>) link.lastPage().get("entries")).get(0);
 		assertTrue(entry.containsKey("thralls"), "the thrall fold stays on an Arceuus raid");
-		for (Map<String, Object> mob : (List<Map<String, Object>>) entry.get("mobs")) {
+		for (Map<String, Object> mob : (List<Map>) entry.get("mobs")) {
 			assertEquals("arceuus", mob.get("fightBook"));
 		}
 	}

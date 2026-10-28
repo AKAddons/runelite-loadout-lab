@@ -15,11 +15,11 @@ import static com.loadoutlab.data.JsonResources.*;
  * <p>The corpus carries no naval attribute, so eligibility is this list -
  * every name resolves against a corpus row (NavalCombatTest proves it).
  */
-public final class NavalCombat {
+public class NavalCombat {
     /** One cannon tier. Cannons are FACILITIES, not items; itemId is the
      * skill-guide item that carries the illustration (32199..32205). */
     @lombok.AllArgsConstructor
-    public static final class Cannon {
+    public static class Cannon {
         public final String tier;
         public final int itemId;
         public final int sailing;
@@ -31,24 +31,24 @@ public final class NavalCombat {
 
     /** One cannonball tier. Steel is the classic Cannonball (item 2). */
     @lombok.AllArgsConstructor
-    public static final class Ball {
+    public static class Ball {
         public final String tier;
         public final int itemId;
         public final int accuracy;
         public final int strength;
     }
 
-    private static final Map<String, Cannon> CANNONS = new LinkedHashMap<>();
-    private static final Map<String, Ball> BALLS = new LinkedHashMap<>();
-    private static final List<String> BALL_ORDER = new ArrayList<>();
-    private static final Set<String> NAVAL = new HashSet<>();
-    private static final List<String> KEELS = new ArrayList<>();
+    static final Map<String, Cannon> CANNONS = new LinkedHashMap<>();
+    static final Map<String, Ball> BALLS = new LinkedHashMap<>();
+    static final List<String> BALL_ORDER = new ArrayList<>();
+    public static final Set<String> NAVAL = new HashSet<>();
+    static final List<String> KEELS = new ArrayList<>();
     /** Pre-0.5.0 builds named the keel columns after the hull woods; a
      * character's persisted ship.shipKeel may still say so. Same column,
      * right name - nobody's saved keel resets. */
-    private static final List<String> LEGACY_WOOD_KEELS = new ArrayList<>();
-    private static final Map<String, int[]> KEEL_MAX_HITS = new LinkedHashMap<>();
-    private static final boolean CREW_FORMULA_STALE;
+    static final List<String> LEGACY_WOOD_KEELS = new ArrayList<>();
+    static final Map<String, int[]> KEEL_MAX_HITS = new LinkedHashMap<>();
+    static final boolean CREW_FORMULA_STALE;
     public static final int ATTACK_TICKS;
 
     static {
@@ -75,8 +75,6 @@ public final class NavalCombat {
         }
     }
 
-    private NavalCombat() {
-    }
 
     public static Cannon cannon(String tier) { return CANNONS.get(tier); }
 
@@ -113,8 +111,6 @@ public final class NavalCombat {
     public static boolean isNaval(String monsterName) {
         return monsterName != null && NAVAL.contains(Names.lower(monsterName));
     }
-
-    public static Set<String> navalNames() { return Collections.unmodifiableSet(NAVAL); }
 
     public static List<String> keels() { return Collections.unmodifiableList(KEELS); }
 

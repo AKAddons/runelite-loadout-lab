@@ -12,16 +12,14 @@ import javax.swing.Icon;
  * history for the painters): the hitsplat for max hit, the crosshair for
  * accuracy, and the fixed-width wrapper that gives every stat line one
  * hard left edge. */
-final class StatIcons {
-    private StatIcons() {
-    }
+class StatIcons {
 
     /** Baked images by resource name. A missing or unreadable resource
      * caches a fully transparent placeholder so paint degrades to blank -
      * it never throws inside a Swing paint pass. */
-    private static final Map<String, BufferedImage> BAKED = new ConcurrentHashMap<>();
+    static final Map<String, BufferedImage> BAKED = new ConcurrentHashMap<>();
 
-    private static BufferedImage baked(String name, int size) {
+    static BufferedImage baked(String name, int size) {
         return BAKED.computeIfAbsent(name, n -> {
             try (InputStream in = StatIcons.class.getResourceAsStream(n)) {
                 if (in != null) {
@@ -43,8 +41,8 @@ final class StatIcons {
      */
     static class SizedIcon implements Icon {
         /** Icon edge length in pixels. */
-        private final int size;
-        private final BufferedImage image;
+        final int size;
+        final BufferedImage image;
 
         SizedIcon(String bakedName, int size) {
             this.size = size;
@@ -63,7 +61,7 @@ final class StatIcons {
      * line's icon occupies the SAME column width, so the values start on
      * one hard left edge (field spec: a strong visual column). */
     @lombok.AllArgsConstructor
-    static final class FixedWidthIcon implements Icon {
+    static class FixedWidthIcon implements Icon {
         static final int WIDTH = 20;
         static final int HEIGHT = 16;
         final Icon delegate;

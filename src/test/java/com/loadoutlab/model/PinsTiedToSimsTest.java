@@ -79,8 +79,8 @@ class PinsTiedToSimsTest {
 			}
 
 			@Override
-			public List<Map<String, Object>> mobSims(int monsterId) {
-				List<Map<String, Object>> out = new ArrayList<>();
+			public List<Map> mobSims(int monsterId) {
+				List<Map> out = new ArrayList<>();
 				store.allSims(monsterId).forEach((simId, name) -> {
 					Map<String, Object> row = new LinkedHashMap<>();
 					row.put("id", simId);

@@ -5,25 +5,25 @@ import com.loadoutlab.data.*;
 import java.util.*;
 import net.runelite.api.*;
 
-public final class RequirementProfile {
+public class RequirementProfile {
     public static final RequirementProfile MAXED = new RequirementProfile(maxedLevels(), allQuests());
 
-    private final Map<Skill, Integer> levels;
-    private final Set<String> completedQuests;
+    final Map<Skill, Integer> levels;
+    final Set<String> completedQuests;
 
     /** Items worn whatever their requirements: the simmed max capes, whose
      * 99-in-every-skill rule the seven-level stat sim cannot meet
      * (ISS-01M5RYC2TB43AEGQ96TTNEKEJN). */
-    private final Set<Integer> waived;
+    final Set<Integer> waived;
 
     public RequirementProfile(Map<Skill, Integer> levels, Set<String> completedQuests) { this(levels, completedQuests, Set.of()); }
 
-    private RequirementProfile(Map<Skill, Integer> levels, Set<String> completedQuests, Set<Integer> waived) {
+    RequirementProfile(Map<Skill, Integer> levels, Set<String> completedQuests, Set<Integer> waived) {
         this.waived = Set.copyOf(waived);
         var copy = new EnumMap<Skill, Integer>(Skill.class);
         if (levels != null) copy.putAll(levels);
-        this.levels = Collections.unmodifiableMap(copy);
-        this.completedQuests = Collections.unmodifiableSet(new HashSet<>(completedQuests == null ? Set.of() : completedQuests));
+        this.levels = copy;
+        this.completedQuests = new HashSet<>(completedQuests == null ? Set.of() : completedQuests);
     }
 
     /** The same levels with every quest done - the game-best ceiling never
@@ -32,7 +32,7 @@ public final class RequirementProfile {
 
     public RequirementProfile waiving(Set<Integer> ids) { return new RequirementProfile(levels, completedQuests, ids); }
 
-    public boolean canWear(GearItem item) { return waived.contains(item.getId()) || canEquip(item.getRequirements()); }
+    public boolean canWear(GearItem item) { return waived.contains(item.id) || canEquip(item.requirements); }
 
     /** The same quests with the seven combat levels replaced: the stat
      * sim's gear gate (ISS-01M5QY13K6YHTYDW1CCYD30CSY) - 99 Attack admits the
@@ -40,13 +40,13 @@ public final class RequirementProfile {
     public RequirementProfile withLevels(PlayerLevels simmed) {
         Map<Skill, Integer> next = new EnumMap<>(Skill.class);
         next.putAll(levels);
-        next.put(Skill.ATTACK, simmed.getAttack());
-        next.put(Skill.STRENGTH, simmed.getStrength());
-        next.put(Skill.DEFENCE, simmed.getDefence());
-        next.put(Skill.RANGED, simmed.getRanged());
-        next.put(Skill.MAGIC, simmed.getMagic());
-        next.put(Skill.PRAYER, simmed.getPrayer());
-        next.put(Skill.HITPOINTS, simmed.getHitpoints());
+        next.put(Skill.ATTACK, simmed.attack);
+        next.put(Skill.STRENGTH, simmed.strength);
+        next.put(Skill.DEFENCE, simmed.defence);
+        next.put(Skill.RANGED, simmed.ranged);
+        next.put(Skill.MAGIC, simmed.magic);
+        next.put(Skill.PRAYER, simmed.prayer);
+        next.put(Skill.HITPOINTS, simmed.hitpoints);
         return new RequirementProfile(next, completedQuests, waived);
     }
 
@@ -69,7 +69,7 @@ public final class RequirementProfile {
 
     int level(Skill skill) { return levels.getOrDefault(skill, 1); }
 
-    private static Skill skill(String name) {
+    static Skill skill(String name) {
         if (name == null) return null;
         String normalized = name.toUpperCase(Locale.ROOT);
         if ("RUNECRAFTING".equals(normalized)) normalized = "RUNECRAFT";
@@ -78,7 +78,7 @@ public final class RequirementProfile {
         } catch (IllegalArgumentException ex) { return null; }
     }
 
-    private static Map<Skill, Integer> maxedLevels() {
+    static Map<Skill, Integer> maxedLevels() {
         var result = new EnumMap<Skill, Integer>(Skill.class);
         for (Skill skill : Skill.values()) {
             if (skill != Skill.OVERALL) result.put(skill, 99);
@@ -86,7 +86,7 @@ public final class RequirementProfile {
         return result;
     }
 
-    private static Set<String> allQuests() {
+    static Set<String> allQuests() {
         Set<String> result = new HashSet<>();
         for (Quest quest : Quest.values()) result.add(quest.name());
         return result;

@@ -4,40 +4,29 @@ package com.loadoutlab.engine;
 import lombok.Getter;
 import java.util.*;
 
-public final class OwnedItems {
+@Getter
+public class OwnedItems {
     public static final OwnedItems EMPTY = new OwnedItems(Map.of(), false);
 
-    @Getter
-    private final Map<Integer, Integer> quantities;
-    @Getter
-    private final boolean bankScanned;
+    public final Map<Integer, Integer> quantities;
+    public final boolean bankScanned;
+    /** The owned ids at hand - equipped, inventory or bank - or null when
+     * unknown (every owned item counts as at hand). Storage (the costume
+     * room, STASH, a cargo hold) is owned but a trip away. */
+    public final Set<Integer> atHand;
 
-    public OwnedItems(Map<Integer, Integer> quantities, boolean bankScanned) {
-        this.quantities = Collections.unmodifiableMap(new HashMap<>(quantities));
+    public OwnedItems(Map<Integer, Integer> quantities, boolean bankScanned) { this(quantities, bankScanned, null); }
+
+    public OwnedItems(Map<Integer, Integer> quantities, boolean bankScanned, Set<Integer> atHand) {
+        this.quantities = new HashMap<>(quantities);
         this.bankScanned = bankScanned;
+        this.atHand = atHand == null ? null : Set.copyOf(atHand);
     }
 
     public boolean owns(int itemId) { return quantities.getOrDefault(itemId, 0) > 0; }
 
-    public int size() { return quantities.size(); }
+    /** Owned and not only in storage. */
+    public boolean atHand(int itemId) { return owns(itemId) && (atHand == null || atHand.contains(itemId)); }
 
-    /**
-     * Fingerprint of what owns() answers - the ids with quantity > 0,
-     * order-independent, quantity-BLIND. The optimizer's results depend
-     * only on presence, so its cache keys on this: a quantity-sensitive
-     * hash invalidated every cached answer each time the player shot an
-     * arrow or picked up loot (field-observed: a 22s Balanced compute
-     * re-paid on every revisit while grinding).
-     */
-    public int presenceFingerprint() {
-        int[] ids = new int[quantities.size()];
-        int count = 0;
-        for (var entry : quantities.entrySet()) {
-            if (entry.getValue() != null && entry.getValue() > 0) ids[count++] = entry.getKey();
-        }
-        Arrays.sort(ids, 0, count);
-        int hash = count;
-        for (int i = 0; i < count; i++) hash = 31 * hash + ids[i];
-        return hash;
-    }
+    public int size() { return quantities.size(); }
 }

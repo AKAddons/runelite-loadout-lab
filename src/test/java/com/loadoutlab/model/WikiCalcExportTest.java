@@ -28,7 +28,7 @@ class WikiCalcExportTest {
 
 	private static final class CaptureLink extends CompanionLink {
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 		}
 	}
 

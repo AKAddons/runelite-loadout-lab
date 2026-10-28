@@ -46,6 +46,8 @@ class ModeTabsTest {
 			assertTrue(tip.contains("card") && tip.contains("swaps"), "card + swaps explained: " + tip);
 		}
 		assertTrue(max.contains("most damage"), max);
+		// Andrew 2026-10-28: "under "max dps" can we say this is the original formula".
+		assertTrue(max.contains("original formula"), max);
 		assertTrue(balanced.contains("beta") && balanced.contains("damage taken"), balanced);
 		assertTrue(tanky.contains("beta") && tanky.contains("least damage taken"), tanky);
 	}
@@ -53,7 +55,7 @@ class ModeTabsTest {
 	@Test
 	@DisplayName("one rounded outline, three words, only the active one in the accent; a click sends its mode")
 	void tabs() throws Exception {
-		List<Map<String, Object>> sent = new ArrayList<>();
+		List<Map> sent = new ArrayList<>();
 		JPanel tabs = RenderSurface.modeTabs("BALANCED", (name, args) -> sent.add(args));
 		assertTrue(tabs.getBorder() instanceof RoundedBorder, "the chips' rounded outline");
 		JLabel max = word(tabs, "MAX_DPS");

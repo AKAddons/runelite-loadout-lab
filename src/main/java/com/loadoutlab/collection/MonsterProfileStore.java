@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import net.runelite.client.config.ConfigManager;
+import com.loadoutlab.model.CommandEngine;
 
 /**
  * Per-monster user profiles: the preferences the optimizer cannot infer,
@@ -22,18 +23,18 @@ import net.runelite.client.config.ConfigManager;
  * <p>Scope-free config in v1 like dreams/exclusions: trip preferences
  * follow the player. Empty profiles are pruned on save.
  */
-public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.MobProfiles, ScopedStore {
+public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedStore {
     static final String CONFIG_GROUP = "loadoutlab";
     static final String KEY = "monsterProfiles";
 
     /** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). Global
      * before 0.4.1, which is why a main and a test account shared this list. */
-    private String worldScope;
+    String worldScope;
 
-    private String key() { return ScopedKeys.key(worldScope, KEY); }
+    String key() { return ScopedKeys.key(worldScope, KEY); }
 
     public synchronized void loadScope(String scope) {
-        this.worldScope = scope;
+        worldScope = scope;
         load();
     }
     /** The every-style scope key. Style scopes use CombatStyle names. */
@@ -42,13 +43,13 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
     /** Serialized form: scope -> slot-name -> id for pins; scope -> id ->
      * display name for filter items (names captured at add time - id
      * resolution later needs the client thread). */
-    private Stored stored(int monsterId) {
+    Stored stored(int monsterId) {
         return profiles.computeIfAbsent(MonsterStats.profileIdOf(monsterId), id -> new Stored());
     }
 
-    private Stored get(int monsterId) { return profiles.get(MonsterStats.profileIdOf(monsterId)); }
+    Stored get(int monsterId) { return profiles.get(MonsterStats.profileIdOf(monsterId)); }
 
-    private static final class Stored {
+    static class Stored {
         Map<String, Map<String, Integer>> pins;
         String note;
         Map<String, Map<Integer, String>> filterItems;
@@ -70,7 +71,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
         Boolean skipDegradable;
     }
 
-    private Set<Integer> degradableIds = Set.of();
+    Set<Integer> degradableIds = Set.of();
 
     public synchronized void setDegradableIds(Set<Integer> ids) { degradableIds = ids; }
 
@@ -83,9 +84,9 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
         save();
     }
 
-    private final ConfigManager configManager;
-    private final Gson gson;
-    private final Map<Integer, Stored> profiles = new HashMap<>();
+    final ConfigManager configManager;
+    final Gson gson;
+    final Map<Integer, Stored> profiles = new HashMap<>();
 
     public MonsterProfileStore(ConfigManager configManager, Gson gson) {
         this.configManager = configManager;
@@ -102,7 +103,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
     public synchronized void reload() { load(); }
 
-    private void load() {
+    void load() {
         profiles.clear();
         Map<Integer, Stored> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, KEY),
             new TypeToken<Map<Integer, Stored>>(){}.getType());
@@ -118,33 +119,33 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
     }
 
     /** A read-only copy, Map.of() for nothing. */
-    private static <K, V> Map<K, V> copyOf(Map<K, V> m) {
-        return m == null || m.isEmpty() ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(m));
+    static <K, V> Map<K, V> copyOf(Map<K, V> m) {
+        return m == null || m.isEmpty() ? Map.of() : new LinkedHashMap<>(m);
     }
 
     /** A profile field, or the fallback when the mob has no profile or the field is unset. */
-    private <T> T read(int monsterId, Function<Stored, T> field, T fallback) {
+    <T> T read(int monsterId, Function<Stored, T> field, T fallback) {
         Stored profile = get(monsterId);
         T value = profile == null ? null : field.apply(profile);
         return value == null ? fallback : value;
     }
 
     /** One scope's inner collection of a scoped field, or null. */
-    private <V> V inner(int monsterId, Function<Stored, Map<String, V>> field, String scope) {
+    <V> V inner(int monsterId, Function<Stored, Map<String, V>> field, String scope) {
         Map<String, V> scoped = read(monsterId, field, null);
         return scoped == null ? null : scoped.get(scope);
     }
 
     /** A scoped field for the manage menus: scope -> the copied inner
      * collection, the empties dropped (the copy says null); Map.of() for none. */
-    private static <V, W> Map<String, W> byScope(Map<String, V> scoped, Function<V, W> copy) {
+    static <V, W> Map<String, W> byScope(Map<String, V> scoped, Function<V, W> copy) {
         if (scoped == null || scoped.isEmpty()) return Map.of();
         Map<String, W> out = new LinkedHashMap<>();
         scoped.forEach((scope, value) -> {
             W copied = value == null ? null : copy.apply(value);
             if (copied != null) out.put(scope, copied);
         });
-        return Collections.unmodifiableMap(out);
+        return out;
     }
 
     /** Effective pins for one style card: ALL overlaid by the style scope. */
@@ -153,10 +154,10 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
         var pins = new EnumMap<GearSlot, Integer>(GearSlot.class);
         copyPins(scoped.get(ALL), pins);
         copyPins(scoped.get(style), pins);
-        return pins.isEmpty() ? Map.of() : Collections.unmodifiableMap(pins);
+        return pins.isEmpty() ? Map.of() : pins;
     }
 
-    private static void copyPins(Map<String, Integer> from, EnumMap<GearSlot, Integer> into) {
+    static void copyPins(Map<String, Integer> from, EnumMap<GearSlot, Integer> into) {
         if (from == null) return;
         for (var entry : from.entrySet()) {
             try {
@@ -172,7 +173,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
         return byScope(read(monsterId, p -> p.pins, null), slots -> {
             var pins = new EnumMap<GearSlot, Integer>(GearSlot.class);
             copyPins(slots, pins);
-            return pins.isEmpty() ? null : Collections.unmodifiableMap(pins);
+            return pins.isEmpty() ? null : pins;
         });
     }
 
@@ -235,13 +236,13 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
             Set<Integer> ids = profile.exclusions == null ? null : profile.exclusions.get(scope);
             if (ids != null) merged.addAll(ids);
         }
-        return merged.isEmpty() ? Set.of() : Collections.unmodifiableSet(merged);
+        return merged.isEmpty() ? Set.of() : merged;
     }
 
     /** Raw per-mob exclusions by scope, for the manage menu. */
     public synchronized Map<String, Set<Integer>> allExclusions(int monsterId) {
         return byScope(read(monsterId, p -> p.exclusions, null),
-            ids -> ids.isEmpty() ? null : Collections.unmodifiableSet(new LinkedHashSet<>(ids)));
+            ids -> ids.isEmpty() ? null : new LinkedHashSet<>(ids));
     }
 
     /** Per-mob sims: counted as owned for THIS mob only. */
@@ -320,7 +321,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
         }
     }
 
-    private void save() {
+    void save() {
         Map<Integer, Stored> out = new LinkedHashMap<>();
         for (var entry : profiles.entrySet()) {
             Stored profile = entry.getValue();
@@ -340,7 +341,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
         configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(out));
     }
 
-    private static void prune(Map<String, ? extends Map<?, ?>> scoped) {
+    static void prune(Map<String, ? extends Map<?, ?>> scoped) {
         if (scoped != null) scoped.values().removeIf(m -> m == null || m.isEmpty());
     }
 }

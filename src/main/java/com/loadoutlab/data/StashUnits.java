@@ -17,14 +17,14 @@ import java.util.*;
  * as a text cell (type 4) followed by up to two sprite cells (type 5) -
  * first sprite means built, second means filled.
  */
-public final class StashUnits {
+public class StashUnits {
     /** Widget child types on the chart, per the in-game interface. */
     public static final int TEXT_CELL = 4;
     public static final int SPRITE_CELL = 5;
 
-    private final Map<String, int[]> byChartText;
+    final Map<String, int[]> byChartText;
 
-    private StashUnits(Map<String, int[]> byChartText) { this.byChartText = byChartText; }
+    StashUnits(Map<String, int[]> byChartText) { this.byChartText = byChartText; }
 
     /** Load the vendored table from resources; throws on a broken bundle. */
     public static StashUnits load() {
@@ -51,7 +51,7 @@ public final class StashUnits {
 
     /** One chart cell (widget child) as extracted from a tier panel. */
     @lombok.AllArgsConstructor
-    public static final class Cell {
+    public static class Cell {
         final int type;
         final String text;
     }
@@ -76,11 +76,11 @@ public final class StashUnits {
         return filled;
     }
 
-    private static void flush(List<String> filled, String name, int sprites) {
+    static void flush(List<String> filled, String name, int sprites) {
         if (name != null && sprites >= 2) filled.add(name);
     }
 
-    private static String rename(String text, boolean masterTier) {
+    static String rename(String text, boolean masterTier) {
         return masterTier && "Warriors' Guild bank".equals(text) ? "Warriors' Guild bank (master)" : text;
     }
 }

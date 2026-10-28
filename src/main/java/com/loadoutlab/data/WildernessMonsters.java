@@ -1,6 +1,7 @@
 package com.loadoutlab.data;
 
 import java.util.*;
+import com.google.gson.JsonObject;
 
 /**
  * Monsters fought in the Wilderness, where dying to a PKer risks your
@@ -17,9 +18,9 @@ import java.util.*;
  * moneymaker mobs) - many also exist elsewhere, but the low-risk
  * toggles default off, so offering them costs nothing outside.
  */
-public final class WildernessMonsters {
+public class WildernessMonsters {
     /** Curated lists live in wilderness_monsters.json (hub token cap). */
-    private static final Set<String> NAMES = new HashSet<>();
+    static final Set<String> NAMES = new HashSet<>();
     /**
      * The subset that exists ONLY in the Wilderness - fighting one of these
      * IS being in the Wilderness, so the wilderness-weapon buff and the risk
@@ -30,16 +31,14 @@ public final class WildernessMonsters {
      * exclusive so the risk UI covers the walk, matching the pre-toggle
      * behaviour.
      */
-    private static final Set<String> EXCLUSIVE = new HashSet<>();
+    static final Set<String> EXCLUSIVE = new HashSet<>();
 
     static {
-        com.google.gson.JsonObject root = JsonResources.object( "wilderness_monsters.json");
+        JsonObject root = JsonResources.object( "wilderness_monsters.json");
         JsonResources.strings(root, "names", NAMES);
         JsonResources.strings(root, "exclusive", EXCLUSIVE);
     }
 
-    private WildernessMonsters() {
-    }
 
     public static boolean isWilderness(MonsterStats monster) {
         return monster != null && monster.isWildernessMonster();
@@ -47,7 +46,7 @@ public final class WildernessMonsters {
 
     /** True when the monster exists nowhere but the Wilderness. */
     public static boolean isExclusive(MonsterStats monster) {
-        return monster != null && EXCLUSIVE.contains(monster.getNameLower());
+        return monster != null && EXCLUSIVE.contains(monster.nameLower);
     }
 
     /** The raw name-list membership - MonsterStats caches this at build. */

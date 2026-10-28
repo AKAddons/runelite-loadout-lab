@@ -24,26 +24,26 @@ import lombok.*;
  * entries and the 9-entry fallback row - regenerate with that script, never
  * by hand.
  */
-public final class WeaponStyles {
+public class WeaponStyles {
     /** One selectable style: the attack type plus its stance bonuses. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    public static final class MeleeStyle {
+    @RequiredArgsConstructor
+    public static class MeleeStyle {
         public final String attackType;
         public final int attackStance;
         public final int strengthStance;
     }
 
-    private static final String RESOURCE = "weapon_styles.json";
+    static final String RESOURCE = "weapon_styles.json";
     /** Resource key of the unknown-category fallback row - not a real weapon
      * category, so it can never collide with one. */
-    private static final String FALLBACK = "*";
+    static final String FALLBACK = "*";
 
-    private static final Map<String, List<MeleeStyle>> BY_CATEGORY = load();
+    static final Map<String, List<MeleeStyle>> BY_CATEGORY = load();
 
     /** Every attack type x stance a full search would try - the fallback. */
-    private static final List<MeleeStyle> ALL = BY_CATEGORY.getOrDefault(FALLBACK, List.of());
+    static final List<MeleeStyle> ALL = BY_CATEGORY.getOrDefault(FALLBACK, List.of());
 
-    private static Map<String, List<MeleeStyle>> load() {
+    static Map<String, List<MeleeStyle>> load() {
         Map<String, List<MeleeStyle>> table = new HashMap<>();
         JsonObject root = JsonResources.object(RESOURCE);
         if (root == null) return table;
@@ -54,13 +54,11 @@ public final class WeaponStyles {
                 styles.add(new MeleeStyle(style.get("attackType").getAsString(), style.get("attackStance").getAsInt(),
                     style.get("strengthStance").getAsInt()));
             }
-            table.put(entry.getKey(), Collections.unmodifiableList(styles));
+            table.put(entry.getKey(), styles);
         }
         return table;
     }
 
-    private WeaponStyles() {
-    }
 
     /** The melee styles this weapon actually offers (unknown category: all). */
     public static List<MeleeStyle> melee(GearItem weapon) {
@@ -69,7 +67,7 @@ public final class WeaponStyles {
         // keeps a missing resource from returning null here and NPE-ing
         // DpsCalculator: an absent row falls back to ALL, and ALL itself
         // defaults to an empty list.
-        List<MeleeStyle> styles = BY_CATEGORY.get( weapon == null ? "Unarmed" : weapon.getCategory());
+        List<MeleeStyle> styles = BY_CATEGORY.get( weapon == null ? "Unarmed" : weapon.category);
         return styles != null ? styles : ALL;
     }
 }

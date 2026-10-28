@@ -10,14 +10,14 @@ public class ProtectOnlyStoreTest {
 	@Test
 	public void togglePersistsAcrossInstances() {
 		ConfigManager configManager = InMemoryConfigManager.create();
-		ProtectOnlyStore store = new ProtectOnlyStore(configManager, new Gson());
+		IdSetStore store = new IdSetStore(configManager, new Gson(), "protectOnlyItems");
 		Assert.assertTrue("toggle on returns true", store.toggle(11802)); // dragon warhammer
 		Assert.assertTrue(store.contains(11802));
 
-		ProtectOnlyStore reloaded = new ProtectOnlyStore(configManager, new Gson());
+		IdSetStore reloaded = new IdSetStore(configManager, new Gson(), "protectOnlyItems");
 		Assert.assertTrue("survives a reload", reloaded.contains(11802));
 		Assert.assertFalse("toggle off returns false", reloaded.toggle(11802));
 		Assert.assertFalse(reloaded.contains(11802));
-		Assert.assertTrue(new ProtectOnlyStore(configManager, new Gson()).snapshot().isEmpty());
+		Assert.assertTrue(new IdSetStore(configManager, new Gson(), "protectOnlyItems").snapshot().isEmpty());
 	}
 }

@@ -29,20 +29,20 @@ import okhttp3.*;
  */
 @lombok.RequiredArgsConstructor
 @lombok.extern.slf4j.Slf4j
-public final class MonsterIcons {
-    private static final File DIR = new File(RuneLite.RUNELITE_DIR, "loadout-lab/npc-icons");
-    private static final String WIKI = "https://oldschool.runescape.wiki/w/Special:FilePath/";
-    private static final int MAX_WIDTH = 28;
+public class MonsterIcons {
+    static final File DIR = new File(RuneLite.RUNELITE_DIR, "loadout-lab/npc-icons");
+    static final String WIKI = "https://oldschool.runescape.wiki/w/Special:FilePath/";
+    static final int MAX_WIDTH = 28;
 
-    private final OkHttpClient http;
-    private final Map<String, ImageIcon> cache = new ConcurrentHashMap<>();
-    private final Set<String> failed = ConcurrentHashMap.newKeySet();
+    final OkHttpClient http;
+    final Map<String, ImageIcon> cache = new ConcurrentHashMap<>();
+    final Set<String> failed = ConcurrentHashMap.newKeySet();
     /** Keys being loaded -> callbacks waiting on them (guarded by itself). */
-    private final Map<String, List<Runnable>> waiting = new HashMap<>();
+    final Map<String, List<Runnable>> waiting = new HashMap<>();
     /** "name|version" and bare "name|" -> the wiki file, built once on the
      * worker thread the first time an icon is asked for. */
-    private volatile Map<String, String> files;
-    private final ExecutorService worker = Executors.newSingleThreadExecutor(r -> {
+    volatile Map<String, String> files;
+    final ExecutorService worker = Executors.newSingleThreadExecutor(r -> {
         var t = new Thread(r, "loadout-lab-monster-icons");
         t.setDaemon(true);
         // A background fetch must never compete with the client thread.
@@ -89,7 +89,7 @@ public final class MonsterIcons {
         return null;
     }
 
-    private BufferedImage load(String name, String version, String lower) throws IOException {
+    BufferedImage load(String name, String version, String lower) throws IOException {
         var file = new File(DIR, lower.replaceAll("[^a-z0-9-]", "_") + ".png");
         if (file.isFile()) {
             BufferedImage disk = ImageIO.read(file);
@@ -123,7 +123,7 @@ public final class MonsterIcons {
     }
 
     /** Built once, on the worker thread, from the bundled corpus. */
-    private Map<String, String> index() {
+    Map<String, String> index() {
         Map<String, String> local = files;
         if (local != null) return local;
         local = new HashMap<>();
@@ -157,11 +157,11 @@ public final class MonsterIcons {
         return local;
     }
 
-    private static String key(String name, String version) {
+    static String key(String name, String version) {
         return ((name == null ? "" : name) + "|" + (version == null ? "" : version)) .toLowerCase(Locale.ROOT);
     }
 
-    private BufferedImage fetch(String fileName) throws IOException {
+    BufferedImage fetch(String fileName) throws IOException {
         String encoded = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
         Request request = new Request.Builder() .url(WIKI + encoded + "?width=96") .build();
         try (Response response = http.newCall(request).execute()) {

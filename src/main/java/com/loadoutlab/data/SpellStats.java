@@ -4,14 +4,14 @@ package com.loadoutlab.data;
 import lombok.Getter;
 
 @Getter
-public final class SpellStats {
-    private final String name;
-    private final int maxHit;
-    private final int magicLevel;
-    private final String spellbook;
-    private final String element;
-    private final String nameFirstWord;
-    private final String nameSecondWord;
+public class SpellStats {
+    public final String name;
+    public final int maxHit;
+    public final int magicLevel;
+    public final String spellbook;
+    public final String element;
+    public final String nameFirstWord;
+    public final String nameSecondWord;
 
     public SpellStats(String name, int maxHit, int magicLevel, String spellbook, String element) {
         this.name = name == null ? "" : name;
@@ -24,8 +24,8 @@ public final class SpellStats {
         // Null unless the name is exactly two words ("Fire Surge").
         int space = this.name.indexOf(' ');
         boolean twoWords = space > 0 && this.name.indexOf(' ', space + 1) < 0 && space < this.name.length() - 1;
-        this.nameFirstWord = twoWords ? this.name.substring(0, space) : null;
-        this.nameSecondWord = twoWords ? this.name.substring(space + 1) : null;
+        nameFirstWord = twoWords ? this.name.substring(0, space) : null;
+        nameSecondWord = twoWords ? this.name.substring(space + 1) : null;
     }
 
     /** First word of a two-word spell name, else null (cached). */

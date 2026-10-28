@@ -36,7 +36,7 @@ class OfferingChoiceTest {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			published = page;
 		}
 	}
@@ -51,8 +51,7 @@ class OfferingChoiceTest {
 		engine.setStoreOps(new TestStoreOps());
 		engine.setOwnedCheck(id -> id == ASH_SANCTIFIER || id == BONECRUSHER || id == SOUL || id == WRATH || id == BLOOD);
 		engine.setSupplyDefaults(() -> new HashMap<>(choices));
-		engine.setOfferingReady(() -> castable);
-		engine.setSinisterReady(() -> castable);
+		engine.setArceuusReady(magic -> castable && magic >= 84);
 		MonsterStats mob = data.searchMonsters(query, 1).get(0);
 		engine.execute("select", Map.of("id", mob.getId()));
 		engine.onResults(mob, Map.of());
@@ -68,7 +67,7 @@ class OfferingChoiceTest {
 
 	@SuppressWarnings("unchecked")
 	private static Set<Object> ids(Map<String, Object> mob) {
-		return ((List<Map<String, Object>>) mob.get("utilityRunes")).stream().map(r -> ((Number) r.get("id")).intValue())
+		return ((List<Map>) mob.get("utilityRunes")).stream().map(r -> ((Number) r.get("id")).intValue())
 			.collect(Collectors.toSet());
 	}
 

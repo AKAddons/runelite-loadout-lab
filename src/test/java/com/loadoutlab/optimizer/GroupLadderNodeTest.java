@@ -47,11 +47,11 @@ class GroupLadderNodeTest {
 		Map<String, Object> node = RenderModel.ladderNode(ladder, 1);
 		assertEquals("4.00 DPS", node.get("base"), "mob 1's own base, not the group's 5.00");
 		assertEquals("group 5.00 DPS", node.get("groupBase"));
-		Map<String, Object> rung = ((List<Map<String, Object>>) node.get("up")).get(0);
+		Map<String, Object> rung = ((List<Map>) node.get("up")).get(0);
 		assertEquals("+1.00 DPS", rung.get("delta"), "mob 1 gains 5.0 - 4.0");
 		assertEquals("group +0.50 DPS", rung.get("groupDelta"));
 		assertFalse((Boolean) rung.get("same"));
-		List<Map<String, Object>> all = (List<Map<String, Object>>) node.get("all");
+		List<Map> all = (List<Map>) node.get("all");
 		assertEquals(2, all.size());
 		assertEquals(step.getName(), all.get(0).get("name"));
 		assertEquals(5.0, (Double) all.get(0).get("dps"), 1e-9);
@@ -78,7 +78,7 @@ class GroupLadderNodeTest {
 		ladder.upMore = List.of(far, farther);
 
 		Map<String, Object> node = RenderModel.ladderNode(ladder, null);
-		List<Map<String, Object>> more = (List<Map<String, Object>>) node.get("upMore");
+		List<Map> more = (List<Map>) node.get("upMore");
 		assertEquals(2, more.size(), "the further steps up, closest first");
 		assertEquals("+1.00 DPS", more.get(0).get("delta"), "still read against the worn item");
 		assertEquals(weapons.get(3).getName(), more.get(1).get("name"));

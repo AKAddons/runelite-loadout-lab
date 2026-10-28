@@ -80,7 +80,7 @@ class LadderStripTest {
 	/** A ladder with steps past the strip's two up (ISS-01M5QD7PNMCMNRZD92RPRMHWRP). */
 	private static Map<String, Object> deepLadder() {
 		Map<String, Object> ladder = ladder();
-		List<Map<String, Object>> more = new ArrayList<>();
+		List<Map> more = new ArrayList<>();
 		for (int i = 0; i < 7; i++) {
 			more.add(rung(30000 + i, "Step " + (i + 3), i == 4, 1.0 + i, String.format("+%.2f DPS", 1.0 + i)));
 		}

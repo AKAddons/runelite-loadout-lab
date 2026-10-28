@@ -13,10 +13,10 @@ import net.runelite.client.ui.overlay.WidgetItemOverlay;
  * set says whip); null/empty means off.
  */
 public class BankHighlightOverlay extends WidgetItemOverlay {
-    private static final Color GLOW = new Color(0x8CC88C);
-    private static final Color FILL = new Color(0x288CC88C, true);
+    static final Color GLOW = new Color(0x8CC88C);
+    static final Color FILL = new Color(0x288CC88C, true);
 
-    private final Supplier<Set<Integer>> highlighted;
+    final Supplier<Set<Integer>> highlighted;
 
     public BankHighlightOverlay(Supplier<Set<Integer>> highlighted) {
         this.highlighted = highlighted;

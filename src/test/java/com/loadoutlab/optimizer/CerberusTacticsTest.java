@@ -47,14 +47,14 @@ class CerberusTacticsTest {
 	}
 
 	@Test
-	@DisplayName("Cerberus' data: the spectral spirit shield is its swap, and Ward of Arceuus rides; Vorkath has neither")
+	@DisplayName("Cerberus' data: the spectral spirit shield is its swap, and Ward of Arceuus rides; Zulrah has neither")
 	void rules() {
 		assertEquals(List.of(SPECTRAL), RequiredGear.swapIds(cerberus));
 		assertTrue(RequiredGear.swapNote(SPECTRAL).contains("summoned souls"));
 		assertTrue(RequiredGear.ward(cerberus));
-		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
-		assertTrue(RequiredGear.swapIds(vorkath).isEmpty());
-		assertFalse(RequiredGear.ward(vorkath));
+		MonsterStats zulrah = data.searchMonsters("zulrah", 1).get(0);
+		assertTrue(RequiredGear.swapIds(zulrah).isEmpty());
+		assertFalse(RequiredGear.ward(zulrah));
 	}
 
 	@Test
@@ -113,7 +113,7 @@ class CerberusTacticsTest {
 	}
 
 	@Test
-	@DisplayName("a Cerberus search opens with two inventory swaps; Vorkath keeps one")
+	@DisplayName("a Cerberus search opens with two inventory swaps, Vorkath two (its slayer's staff); Zulrah keeps one")
 	void swapDefault() {
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state, (m, ps, onDone) -> {
@@ -121,6 +121,8 @@ class CerberusTacticsTest {
 		engine.execute("select", Map.of("id", cerberus.getId()));
 		assertEquals(2, ((Number) state.paramsNode().get("maxSwaps")).intValue());
 		engine.execute("select", Map.of("id", data.searchMonsters("vorkath", 1).get(0).getId()));
+		assertEquals(2, ((Number) state.paramsNode().get("maxSwaps")).intValue());
+		engine.execute("select", Map.of("id", data.searchMonsters("zulrah", 1).get(0).getId()));
 		assertEquals(1, ((Number) state.paramsNode().get("maxSwaps")).intValue());
 	}
 }

@@ -16,31 +16,29 @@ import java.util.stream.Collectors;
  * levels). A member that fails to resolve fails loudly in tests, not
  * silently at runtime: the group simply omits it and carries on.
  */
-public final class MonsterGroups {
-    private static final String RESOURCE = "monster_groups.json";
+public class MonsterGroups {
+    static final String RESOURCE = "monster_groups.json";
 
     /** One curated group, resolved to loaded rows (the loader hands in
      * unmodifiable mob and alias lists). */
     @lombok.Getter
     @lombok.AllArgsConstructor
-    public static final class MonsterGroup {
-        private final String name;
-        private final String note;
-        private final List<MonsterStats> mobs;
-        private final List<String> aliases;
-        private final int inventory;
+    public static class MonsterGroup {
+        final String name;
+        final String note;
+        final List<MonsterStats> mobs;
+        final List<String> aliases;
+        final int inventory;
         final boolean comingSoon;
         /** A raid selection: shared supplied boosts, big inventories, and
          * never a slayer-task context (Andrew, 2026-08-31). */
-        private final boolean raid;
+        final boolean raid;
 
         /** "Fight Caves - 7 mobs" for list rows (the coming-soon note
          * renders in the RESULT card, not here - field spec 2026-07-18). */
         public String label() { return name + " - " + mobs.size() + " mobs"; }
     }
 
-    private MonsterGroups() {
-    }
 
     /** Load and resolve every curated group against the dataset. */
     public static List<MonsterGroup> load(LoadoutData data) {
@@ -87,14 +85,14 @@ public final class MonsterGroups {
                         }
                         String label = member.has("label") ? member.get("label").getAsString() : joined + " immune";
                         resolved = resolved.immuneVariant(
-                            MonsterStats.SYNTHETIC_ID_BASE + resolved.getId() * 10 + mask, label, attributes);
+                            MonsterStats.SYNTHETIC_ID_BASE + resolved.id * 10 + mask, label, attributes);
                     } else if (member.has("without")) {
                         // A phase that loses an attribute; id bit 8.
                         List<String> removed = new ArrayList<>();
                         for (JsonElement e : member.getAsJsonArray("without")) {
                             removed.add(Names.lower(e.getAsString()));
                         }
-                        resolved = resolved.withoutAttributes( MonsterStats.SYNTHETIC_ID_BASE + resolved.getId() * 10 + 8,
+                        resolved = resolved.withoutAttributes( MonsterStats.SYNTHETIC_ID_BASE + resolved.id * 10 + 8,
                             member.get("label").getAsString(), removed);
                     } else if (member.has("label")) {
                         resolved = resolved.withVersion(member.get("label").getAsString());
@@ -116,8 +114,8 @@ public final class MonsterGroups {
                     for (JsonElement a : row.getAsJsonArray("aliases")) aliases.add(Names.lower(a.getAsString()));
                 }
                 if (!mobs.isEmpty()) {
-                    groups.add(new MonsterGroup(name, note, Collections.unmodifiableList(mobs),
-                        Collections.unmodifiableList(aliases), JsonResources.integer(row, "inventory", 0),
+                    groups.add(new MonsterGroup(name, note, mobs,
+                        aliases, JsonResources.integer(row, "inventory", 0),
                         JsonResources.bool(row, "comingSoon", false), JsonResources.bool(row, "raid", false)));
                 }
             }
@@ -128,7 +126,7 @@ public final class MonsterGroups {
         return groups;
     }
 
-    private static int styleBit(String style) {
+    static int styleBit(String style) {
         switch (style) {
             case "melee": return 1;
             case "ranged": return 2;
@@ -140,8 +138,8 @@ public final class MonsterGroups {
      * name must be unique (ambiguity = curation bug, caught by tests). */
     static MonsterStats resolve(LoadoutData data, String name, String version) {
         // Two hits = ambiguous: the curation must name a version.
-        List<MonsterStats> matches = data.getMonsters().stream().filter(m -> m.getName().equalsIgnoreCase(name)
-            && (version == null || version.equalsIgnoreCase(m.getVersion()))).limit(2).collect(Collectors.toList());
+        List<MonsterStats> matches = data.monsters.stream().filter(m -> m.name.equalsIgnoreCase(name)
+            && (version == null || version.equalsIgnoreCase(m.version))).limit(2).collect(Collectors.toList());
         return matches.size() == 1 ? matches.get(0) : null;
     }
 
@@ -150,7 +148,7 @@ public final class MonsterGroups {
         String text = query == null ? "" : Names.lower(query.trim());
         if (text.length() < 2) return new ArrayList<>();
         // Player vocabulary ("jad", "zuk", "dks") reaches the group through its aliases.
-        return groups.stream().filter(group -> Names.lower(group.getName()).contains(text)
+        return groups.stream().filter(group -> Names.lower(group.name).contains(text)
             || group.aliases.stream().anyMatch(alias -> alias.contains(text) || text.contains(alias)))
             .limit(limit).collect(Collectors.toList());
     }

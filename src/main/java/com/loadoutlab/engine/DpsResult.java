@@ -3,42 +3,33 @@ package com.loadoutlab.engine;
 import lombok.*;
 import java.util.List;
 
-public final class DpsResult {
-    @Getter
-    private final Loadout loadout;
-    @Getter
-    private final double dps;
-    @Getter
-    private final double accuracy;
-    @Getter
-    private final double expectedHit;
-    @Getter
-    private final int maxHit;
-    @Getter
-    private final int attackSpeed;
-    @Getter
-    private final String attackType;
-    @Getter
-    private final long attackRoll;
-    @Getter
-    private final long defenceRoll;
-    @Getter @With
-    private final int purchaseCost;
-    private final String spellName;
+@Getter
+public class DpsResult {
+    public final Loadout loadout;
+    public final double dps;
+    public final double accuracy;
+    public final double expectedHit;
+    public final int maxHit;
+    public final int attackSpeed;
+    public final String attackType;
+    final long attackRoll;
+    final long defenceRoll;
+    @With
+    public final int purchaseCost;
+    final String spellName;
     /** Conditional bonuses the calculator actually counted for this set
      * (salve, wilderness weapon, crystal set...) - user assurance that
      * the situational math is happening. */
-    @Getter
-    private final List<String> countedBonuses;
+    public final List<String> countedBonuses;
     /** True when the optimizer could not satisfy a dragonfire shield
      * constraint (no protective shield in the pool) and fell back to the
      * unconstrained set - the panel must say "assumes a super antifire". */
-    @Getter @With
-    private final boolean antifireAssumed;
+    @With
+    public final boolean antifireAssumed;
 
     public DpsResult( Loadout loadout, double dps, double accuracy, double expectedHit, int maxHit, int attackSpeed,
         String attackType, long attackRoll, long defenceRoll) {
-        this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType, attackRoll, defenceRoll, loadout == null ? 0 : loadout.getCost(), "");
+        this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType, attackRoll, defenceRoll, loadout == null ? 0 : loadout.cost, "");
     }
 
     public DpsResult( Loadout loadout, double dps, double accuracy, double expectedHit, int maxHit, int attackSpeed,
@@ -47,7 +38,7 @@ public final class DpsResult {
             attackRoll, defenceRoll, purchaseCost, spellName, List.of(), false);
     }
 
-    private DpsResult( Loadout loadout, double dps, double accuracy, double expectedHit, int maxHit, int attackSpeed,
+    DpsResult( Loadout loadout, double dps, double accuracy, double expectedHit, int maxHit, int attackSpeed,
         String attackType, long attackRoll, long defenceRoll, int purchaseCost, String spellName,
         List<String> countedBonuses, boolean antifireAssumed) {
         this.loadout = loadout;
@@ -77,7 +68,7 @@ public final class DpsResult {
      */
     public static DpsResult better(DpsResult first, DpsResult second) {
         if (second == null) return first;
-        if (first == null || second.getDps() > first.getDps()) return second;
+        if (first == null || second.dps > first.dps) return second;
         return first;
     }
 

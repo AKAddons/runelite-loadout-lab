@@ -5,23 +5,20 @@ import lombok.Getter;
 import com.loadoutlab.data.*;
 import java.util.*;
 
-public final class Loadout {
-    private final EnumMap<GearSlot, GearItem> gear;
-    @Getter
-    private final StatBlock offensive;
-    @Getter
-    private final StatBlock defensive;
-    @Getter
-    private final StatBlock bonuses;
-    @Getter
-    private final int cost;
+@Getter
+public class Loadout {
+    final EnumMap<GearSlot, GearItem> gear;
+    public final StatBlock offensive;
+    public final StatBlock defensive;
+    public final StatBlock bonuses;
+    public final int cost;
     /** All worn item names, lowercased and newline-joined - so the engine's
      * name-fragment checks ("salve amulet", "void knight top"...) are one
      * substring scan instead of an 11-slot map iteration per marker. Item
      * names never contain a newline, so a needle cannot straddle two names. */
-    private final String namesLower;
+    final String namesLower;
     /** namesLower minus "Inactive"-version items (uncharged crystal). */
-    private final String activeNamesLower;
+    final String activeNamesLower;
 
     public Loadout(Map<GearSlot, GearItem> gear) { this(copyOf(gear), true); }
 
@@ -33,7 +30,7 @@ public final class Loadout {
      */
     public static Loadout adopting(EnumMap<GearSlot, GearItem> gear) { return new Loadout(gear, true); }
 
-    private static EnumMap<GearSlot, GearItem> copyOf(Map<GearSlot, GearItem> gear) {
+    static EnumMap<GearSlot, GearItem> copyOf(Map<GearSlot, GearItem> gear) {
         var copy = new EnumMap<GearSlot, GearItem>(GearSlot.class);
         copy.putAll(gear);
         return copy;
@@ -41,7 +38,7 @@ public final class Loadout {
 
     /** The marker keeps this overload from ever being chosen by a plain
      * {@code new Loadout(enumMap)} - adoption must be an explicit opt-in. */
-    private Loadout(EnumMap<GearSlot, GearItem> gear, boolean adoptMarker) {
+    Loadout(EnumMap<GearSlot, GearItem> gear, boolean adoptMarker) {
         this.gear = gear;
 
         // Summed into an int array, not StatBlock.plus chains - the chain
@@ -54,36 +51,36 @@ public final class Loadout {
         var activeNames = new StringBuilder(160);
         for (GearItem item : this.gear.values()) {
             if (item == null) continue;
-            add(off, item.getOffensive());
-            add(def, item.getDefensive());
-            add(bon, item.getBonuses());
+            add(off, item.offensive);
+            add(def, item.defensive);
+            add(bon, item.bonuses);
             totalCost += item.getPriceOrZero();
-            names.append(item.getNameLower()).append('\n');
-            if (!"inactive".equals(item.getVersionLower())) {
-                activeNames.append(item.getNameLower()).append('\n');
+            names.append(item.nameLower).append('\n');
+            if (!"inactive".equals(item.versionLower)) {
+                activeNames.append(item.nameLower).append('\n');
             }
         }
-        this.offensive = block(off);
-        this.defensive = block(def);
-        this.bonuses = block(bon);
-        this.cost = totalCost;
+        offensive = block(off);
+        defensive = block(def);
+        bonuses = block(bon);
+        cost = totalCost;
         this.namesLower = names.toString();
         this.activeNamesLower = activeNames.toString();
     }
 
-    private static void add(int[] acc, StatBlock block) {
-        acc[0] += block.getStab();
-        acc[1] += block.getSlash();
-        acc[2] += block.getCrush();
-        acc[3] += block.getMagic();
-        acc[4] += block.getRanged();
-        acc[5] += block.getStrength();
-        acc[6] += block.getRangedStrength();
-        acc[7] += block.getMagicDamage();
-        acc[8] += block.getPrayer();
+    static void add(int[] acc, StatBlock block) {
+        acc[0] += block.stab;
+        acc[1] += block.slash;
+        acc[2] += block.crush;
+        acc[3] += block.magic;
+        acc[4] += block.ranged;
+        acc[5] += block.strength;
+        acc[6] += block.rangedStrength;
+        acc[7] += block.magicDamage;
+        acc[8] += block.prayer;
     }
 
-    private static StatBlock block(int[] acc) {
+    static StatBlock block(int[] acc) {
         return new StatBlock(acc[0], acc[1], acc[2], acc[3], acc[4], acc[5], acc[6], acc[7], acc[8]);
     }
 
@@ -92,8 +89,7 @@ public final class Loadout {
      * results - never inside the beam - so the field stays off the hot
      * path. Deliberately OUTSIDE the stat sums: QuiverAmmo.strength adds
      * it in the max-hit chain, mirroring the blowpipe's loaded dart. */
-    @Getter
-    private GearItem quiverAmmo;
+    public GearItem quiverAmmo;
 
     /** A copy with ammunition moved into the quiver (see QuiverAmmo). */
     public Loadout withQuiverAmmo(GearItem carried) {
@@ -128,7 +124,7 @@ public final class Loadout {
     /** The worn item ids. */
     public Set<Integer> ids() {
         Set<Integer> ids = new HashSet<>();
-        for (GearItem item : items()) ids.add(item.getId());
+        for (GearItem item : items()) ids.add(item.id);
         return ids;
     }
 

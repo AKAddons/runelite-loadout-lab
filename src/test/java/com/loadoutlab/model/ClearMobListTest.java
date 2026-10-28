@@ -24,10 +24,10 @@ class ClearMobListTest {
 
 	/** Store ops with a real per-mob exclusion list. */
 	private static final class ListOps extends TestStoreOps {
-		final List<Map<String, Object>> exclusions = new ArrayList<>();
+		final List<Map> exclusions = new ArrayList<>();
 
 		@Override
-		public List<Map<String, Object>> mobExclusions(int monsterId) {
+		public List<Map> mobExclusions(int monsterId) {
 			return new ArrayList<>(exclusions);
 		}
 

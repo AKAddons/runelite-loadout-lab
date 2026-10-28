@@ -32,10 +32,10 @@ import static com.loadoutlab.data.MaxHits.Family.*;
  * rolled from the stat sheet's offensive stats vs the loadout; an override
  * maxHit only replaces the damage term (typeless attacks always hit).
  */
-public final class IncomingDpsCalculator {
+public class IncomingDpsCalculator {
     /** One attack style's threat: its dps if it attacked every cycle. */
-    @AllArgsConstructor(access = AccessLevel.PACKAGE)
-    public static final class StyleThreat {
+    @AllArgsConstructor
+    public static class StyleThreat {
         public final String style;
         public final double dps;
         public final int maxHit;
@@ -48,7 +48,7 @@ public final class IncomingDpsCalculator {
         public final double prayerFactor;
     }
 
-    public static final class Result {
+    public static class Result {
         /** Expected incoming dps with the protection prayer up. */
         public final double totalDps;
         /** Expected incoming dps with NO protection prayer running. */
@@ -71,11 +71,11 @@ public final class IncomingDpsCalculator {
             this.totalDps = totalDps;
             this.unprayedDps = unprayedDps;
             this.protectPrayer = protectPrayer;
-            this.threats = Collections.unmodifiableList(threats);
-            this.fullyModeled = unmodeled.isEmpty() && !NONE.equals(coverage);
+            this.threats = threats;
+            fullyModeled = unmodeled.isEmpty() && !NONE.equals(coverage);
             this.overrideNote = overrideNote;
             this.coverage = coverage;
-            this.unmodeled = Collections.unmodifiableList(unmodeled);
+            this.unmodeled = unmodeled;
         }
     }
 
@@ -84,20 +84,18 @@ public final class IncomingDpsCalculator {
     public static final String PARTIAL = "partial";
     public static final String NONE = "none";
 
-    private IncomingDpsCalculator() {
-    }
 
     // Style kinds for the precomputed accuracy path (Prepared).
-    private static final int KIND_STAB = 0;
-    private static final int KIND_SLASH = 1;
-    private static final int KIND_CRUSH = 2;
-    private static final int KIND_MELEE_GENERIC = 3;
-    private static final int KIND_RANGED = 4;
-    private static final int KIND_MAGIC = 5;
-    private static final int KIND_TYPELESS = 6;
-    private static final int KIND_UNMODELED = -1;
+    static final int KIND_STAB = 0;
+    static final int KIND_SLASH = 1;
+    static final int KIND_CRUSH = 2;
+    static final int KIND_MELEE_GENERIC = 3;
+    static final int KIND_RANGED = 4;
+    static final int KIND_MAGIC = 5;
+    static final int KIND_TYPELESS = 6;
+    static final int KIND_UNMODELED = -1;
     /** "None" / "N/A": the monster does not attack this way at all. */
-    private static final int KIND_NONE = -2;
+    static final int KIND_NONE = -2;
 
     /**
      * Everything about the incoming model that does NOT depend on the worn
@@ -108,52 +106,52 @@ public final class IncomingDpsCalculator {
      * IncomingDpsCalculatorTest), without the per-call threat/Result
      * allocations; calculate() itself is result() on the same machinery.
      */
-    public static final class Prepared {
-        private final int defenceLevel;
+    public static class Prepared {
+        final int defenceLevel;
         /** Player magic defence level term: floor(70% Magic) + floor(30% Defence) + 8. */
-        private final int magicEffective;
+        final int magicEffective;
         /** Per style/attack: KIND_*, npc attack roll, (v1) max hit, and
          * the speed its rate uses (the sheet's for every sheet style). */
-        private final int[] kinds;
-        private final int[] attackRolls;
-        private final int[] maxHits;
-        private final int[] speeds;
+        final int[] kinds;
+        final int[] attackRolls;
+        final int[] maxHits;
+        final int[] speeds;
         /** Priced: it has a rate the card can show. Live: counted in the
          * totals. A sheet style is both when modeled at a known speed; an
          * override attack is priced at a known speed and live when the
          * standard play does not dodge it. */
-        private final boolean[] priced;
-        private final boolean[] live;
-        private final boolean[] prayable;
+        final boolean[] priced;
+        final boolean[] live;
+        final boolean[] prayable;
         /** The card's name per style/attack, and the prayer answering it. */
-        private final String[] labels;
-        private final String[] prayerOf;
+        final String[] labels;
+        final String[] prayerOf;
         // v1 sheet model (override == null): modeled styles share the cadence.
-        private final double share;
+        final double share;
         // Curated override model: per-attack constants.
-        private final boolean overridden;
-        private final String note;
-        private final double[] shares;
-        private final double[] prayerFactors;
-        private final boolean[] avoidable;
+        final boolean overridden;
+        final String note;
+        final double[] shares;
+        final double[] prayerFactors;
+        final boolean[] avoidable;
         /** Hits per attack; prayed on cue by the standard play; and how
          * much of such an attack still lands (ISS-01M5PBSZBBBAS9Y46X04MVMHZB). */
-        private final int[] hits;
-        private final boolean[] flicked;
-        private final double[] leaks;
+        final int[] hits;
+        final boolean[] flicked;
+        final double[] leaks;
         /** Per attack: index into the distinct prayer list (first-occurrence
          * order), and that list. */
-        private final int[] prayerIndex;
-        private final String[] prayerNames;
+        final int[] prayerIndex;
+        final String[] prayerNames;
         /** Revenants deal NO damage through a charged ethereum bracelet -
          * the beam's defense scoring must see that, or Tanky/Balanced can
          * never choose the bracelet (field report: not recommended). */
-        private final boolean revenant;
+        final boolean revenant;
         /** The curated dragonfire attack's index (-1 when none), its layers,
          * and the antifire assumed (0 none, 1 antifire, 2 super). */
-        private final int dragonfire;
-        private final Map<String, int[]> layers;
-        private final int antifireTier;
+        final int dragonfire;
+        final Map<String, int[]> layers;
+        final int antifireTier;
 
         Prepared(MonsterStats monster, BossOverride override, int defenceLevel, int ml) {
             this(monster, override, defenceLevel, ml, 0);
@@ -166,11 +164,11 @@ public final class IncomingDpsCalculator {
             Map<String, int[]> fl = null;
             this.defenceLevel = defenceLevel;
             this.magicEffective = magicEffectiveLevel(defenceLevel, ml);
-            MonsterOffence off = monster.getOffence();
+            MonsterOffence off = monster.offence;
             this.overridden = override != null;
-            int st = off.getSpeedTicks();
-            List<String> styles = off.getStyles();
-            List<Attack> attacks = overridden ? override.getAttacks() : null;
+            int st = off.speedTicks;
+            List<String> styles = off.styles;
+            List<Attack> attacks = overridden ? override.attacks : null;
             int n = overridden ? attacks.size() : styles.size();
             this.kinds = new int[n];
             this.attackRolls = new int[n];
@@ -219,35 +217,35 @@ public final class IncomingDpsCalculator {
                 this.leaks = new double[n];
                 this.prayable = null;
                 this.share = 0;
-                this.note = override.getNote();
+                this.note = override.note;
                 // Distinct prayers in first-occurrence order.
                 List<String> prayers = new ArrayList<>();
                 for (int i = 0; i < n; i++) {
                     Attack attack = attacks.get(i);
-                    String style = attack.getStyle();
+                    String style = attack.style;
                     // Curated dragonfire always lands (as the typeless rows); Protect
                     // from Magic is its prayer, priced per set by the layers.
-                    boolean layered = attack.getLayers() != null;
+                    boolean layered = attack.layers != null;
                     if (layered) {
                         fire = i;
-                        fl = attack.getLayers();
+                        fl = attack.layers;
                     }
                     int kind = "typeless".equals(style) || layered ? KIND_TYPELESS : kindOf(style);
                     kinds[i] = kind;
                     attackRolls[i] = kind == KIND_TYPELESS ? 0 : attackRollFor(kind, off);
-                    maxHits[i] = attack.getMaxHit();
-                    shares[i] = attack.getShare();
-                    prayerFactors[i] = attack.getPrayerFactor();
-                    speeds[i] = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : st;
+                    maxHits[i] = attack.maxHit;
+                    shares[i] = attack.share;
+                    prayerFactors[i] = attack.prayerFactor;
+                    speeds[i] = attack.speedTicks > 0 ? attack.speedTicks : st;
                     // Avoidable attacks are dodged by the standard play, and an
                     // unknown speed is no rate at all - the totals count neither.
-                    avoidable[i] = attack.isAvoidable();
+                    avoidable[i] = attack.avoidable;
                     priced[i] = speeds[i] > 0;
                     live[i] = !avoidable[i] && priced[i];
-                    hits[i] = attack.getHits();
-                    flicked[i] = attack.isFlicked();
-                    leaks[i] = attack.getLeak();
-                    labels[i] = attack.getName().isEmpty() ? displayStyle(style) : attack.getName();
+                    hits[i] = attack.hits;
+                    flicked[i] = attack.flicked;
+                    leaks[i] = attack.leak;
+                    labels[i] = attack.name.isEmpty() ? displayStyle(style) : attack.name;
                     String prayer = layered ? "Protect from Magic" : protectPrayerFor(style);
                     prayerOf[i] = prayer;
                     int index = prayers.indexOf(prayer);
@@ -265,18 +263,18 @@ public final class IncomingDpsCalculator {
 
         /** The dragonfire's {max without, max with Protect from Magic} for this
          * set (a protective shield worn) and the antifire assumed, or null. */
-        private int[] dragonfireRow(Loadout loadout) {
+        int[] dragonfireRow(Loadout loadout) {
             if (dragonfire < 0) return null;
             boolean shield = DragonfireRules.isProtectiveShield(loadout.get(GearSlot.SHIELD));
             String potion = antifireTier == 2 ? "super" : antifireTier == 1 ? "antifire" : "";
             return layers.get(shield ? (potion.isEmpty() ? "shield" : "shield+" + potion) : potion.isEmpty() ? "none" : potion);
         }
 
-        private int maxHit(int i, int[] row) { return i == dragonfire && row != null ? row[0] : maxHits[i]; }
+        int maxHit(int i, int[] row) { return i == dragonfire && row != null ? row[0] : maxHits[i]; }
 
         /** Attack i's prayer factor; the dragonfire's is Protect from Magic's
          * share of its damage for this set. */
-        private double factor(int i, int[] row) {
+        double factor(int i, int[] row) {
             if (i != dragonfire || row == null) return prayerFactors[i];
             return row[0] == 0 ? 1 : (double) row[1] / row[0];
         }
@@ -284,8 +282,8 @@ public final class IncomingDpsCalculator {
         /** Each `which` attack's dps if it attacked every cycle - the ONE
          * rate path, for the beam's totals and the card's rows alike.
          * Typeless attacks have no defence roll: they always hit. */
-        private void fillDps(Loadout loadout, double[] dps, boolean[] which, int[] row) {
-            StatBlock def = loadout.getDefensive();
+        void fillDps(Loadout loadout, double[] dps, boolean[] which, int[] row) {
+            StatBlock def = loadout.defensive;
             for (int i = 0; i < kinds.length; i++) {
                 if (!which[i]) continue;
                 double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
@@ -296,7 +294,7 @@ public final class IncomingDpsCalculator {
 
         /** v1 uniform model: the nastiest prayable modeled style, or -1 -
          * the one the protection prayer blocks. */
-        private int bestBlockable(double[] dps) {
+        int bestBlockable(double[] dps) {
             int best = -1;
             double bd = -1;
             for (int i = 0; i < kinds.length; i++) {
@@ -317,7 +315,7 @@ public final class IncomingDpsCalculator {
          * curated maxHit. Ties go to the prayer whose first positive saving
          * came first in the curated attack order (deterministic).
          */
-        private int bestPrayer(double[] dps, int[] row) {
+        int bestPrayer(double[] dps, int[] row) {
             double[] saved = new double[prayerNames.length];
             int[] order = new int[saved.length];
             int count = 0;
@@ -345,7 +343,7 @@ public final class IncomingDpsCalculator {
         /** The fraction of attack i that gets through the picked prayer. A
          * flicked attack is prayed on cue whatever is camped: its leak lands
          * in full, the rest at the pierce factor. */
-        private double through(int i, int prayer, int[] row) {
+        double through(int i, int prayer, int[] row) {
             double f = factor(i, row);
             if (flicked[i]) return leaks[i] + (1 - leaks[i]) * f;
             return prayer >= 0 && prayerIndex[i] == prayer && f < 1 ? f : 1;
@@ -353,7 +351,7 @@ public final class IncomingDpsCalculator {
 
         /** "Protect from Missiles / Protect from Magic on cue": the prayers
          * the flicked attacks call for, or null when nothing is flicked. */
-        private String onCue() {
+        String onCue() {
             List<String> prayers = new ArrayList<>();
             for (int i = 0; i < kinds.length; i++) {
                 if (live[i] && flicked[i] && !prayers.contains(prayerOf[i])) prayers.add(prayerOf[i]);
@@ -388,7 +386,7 @@ public final class IncomingDpsCalculator {
         /** The display answer for this loadout: every threat as the card
          * lists it, the prayer, both totals, the coverage and the names the
          * number leaves out. The same rates totalDps() scores. */
-        private Result result(Loadout loadout) {
+        Result result(Loadout loadout) {
             if (!overridden && kinds.length == 0) return new Result(0, 0, null, List.of(), null, NONE, List.of());
             double[] dps = new double[kinds.length];
             int[] row = dragonfireRow(loadout);
@@ -451,16 +449,16 @@ public final class IncomingDpsCalculator {
     }
 
     /** Corpus style text, cleaned: lower case, no DEL noise, single spaces. */
-    private static String clean(String raw) {
+    static String clean(String raw) {
         return Names.lower(raw.replace('\u007f', ' ')).trim().replaceAll("\\s+", " ");
     }
 
     /** The style as the card shows it - the corpus spelling, minus noise. */
-    private static String shown(String raw) { return raw.replace('\u007f', ' ').trim(); }
+    static String shown(String raw) { return raw.replace('\u007f', ' ').trim(); }
 
     /** "Typeless X" and "X (100% prayer penetration)" roll X's accuracy,
      * but no protection prayer stops them (wiki: Typeless damage). */
-    private static boolean prayable(String raw) {
+    static boolean prayable(String raw) {
         String style = clean(raw);
         return !style.startsWith("typeless") && !style.contains("prayer penetration");
     }
@@ -471,7 +469,7 @@ public final class IncomingDpsCalculator {
      * "Typeless slash" rolls slash, "Melee (Slash)" names its type,
      * "Magic (special)" is magic, "None"/"N/A" do not attack.
      */
-    private static int kindOf(String rs) {
+    static int kindOf(String rs) {
         String style = clean(rs).replace("(100% prayer penetration)", "").trim();
         if (style.isEmpty() || style.equals("none") || style.equals("n/a")) return KIND_NONE;
         if (style.startsWith("typeless ")) style = style.substring("typeless ".length());
@@ -500,23 +498,23 @@ public final class IncomingDpsCalculator {
         }
     }
 
-    private static int attackRollFor(int kind, MonsterOffence off) {
+    static int attackRollFor(int kind, MonsterOffence off) {
         Family family = familyOf(kind);
-        return family == MELEE ? npcRoll(off.getAttackLevel(), off.getAttackBonus())
-            : family == RANGED ? npcRoll(off.getRangedLevel(), off.getRangedBonus())
-            : family == MAGIC ? npcRoll(off.getMagicLevel(), off.getMagicBonus()) : 0;
+        return family == MELEE ? npcRoll(off.attackLevel, off.attackBonus)
+            : family == RANGED ? npcRoll(off.rangedLevel, off.rangedBonus)
+            : family == MAGIC ? npcRoll(off.magicLevel, off.magicBonus) : 0;
     }
 
     /** The listed-max family of each modeled KIND_* (indexed by kind). */
-    private static final Family[] FAMILY = {MELEE, MELEE, MELEE, MELEE, RANGED, MAGIC};
+    static final Family[] FAMILY = {MELEE, MELEE, MELEE, MELEE, RANGED, MAGIC};
 
     /** The listed-max family of a modeled KIND_*, or null. */
-    private static Family familyOf(int kind) { return kind >= 0 && kind < FAMILY.length ? FAMILY[kind] : null; }
+    static Family familyOf(int kind) { return kind >= 0 && kind < FAMILY.length ? FAMILY[kind] : null; }
 
     /** True when every attacking style is one family - only then can an
      * unlabelled listed max ("50") be trusted for it; a dragon's plain 50
      * might be its dragonfire. */
-    private static boolean singleFamily(List<String> styles) {
+    static boolean singleFamily(List<String> styles) {
         Family only = null;
         boolean seen = false;
         for (String style : styles) {
@@ -531,10 +529,10 @@ public final class IncomingDpsCalculator {
     }
 
     /** Sheet styles the model can price: a known kind at a known speed. */
-    private static int modeledCount(List<String> styles, MonsterOffence off) {
+    static int modeledCount(List<String> styles, MonsterOffence off) {
         int modeled = 0;
         for (String style : styles) {
-            if (kindOf(style) >= 0 && off.getSpeedTicks() > 0) modeled++;
+            if (kindOf(style) >= 0 && off.speedTicks > 0) modeled++;
         }
         return modeled;
     }
@@ -542,37 +540,37 @@ public final class IncomingDpsCalculator {
     /** The wiki's listed max for this kind's family (or the unlabelled one
      * when the monster attacks in one family only), else the formula -
      * the formula misses magic and str-0 sheets badly (Vardorvis 1 vs 37). */
-    private static int maxHitFor(int kind, MonsterOffence off, boolean singleFamily) {
+    static int maxHitFor(int kind, MonsterOffence off, boolean singleFamily) {
         Family family = familyOf(kind);
         if (family != null) {
-            MaxHits listed = off.getListedMaxHits();
+            MaxHits listed = off.listedMaxHits;
             int max = listed.of(family);
             if (max < 0 && singleFamily) max = listed.of(GENERAL);
             if (max > 0) return max;
         }
-        return family == MELEE ? npcMaxHit(off.getStrengthLevel(), off.getStrengthBonus())
-            : family == RANGED ? npcMaxHit(off.getRangedLevel(), off.getRangedStrengthBonus())
-            : family == MAGIC ? npcMaxHit(off.getMagicLevel(), off.getMagicStrengthBonus()) : 0;
+        return family == MELEE ? npcMaxHit(off.strengthLevel, off.strengthBonus)
+            : family == RANGED ? npcMaxHit(off.rangedLevel, off.rangedStrengthBonus)
+            : family == MAGIC ? npcMaxHit(off.magicLevel, off.magicStrengthBonus) : 0;
     }
 
     /** Player magic defence level: floor(70% Magic) + floor(30% Defence) + 8
      * (osrs-dps-calc NPCVsPlayerCalc; the +8 sits OUTSIDE the 30%, where the
      * old (Defence+9) term read magic damage taken 4-7% high). Stance 0. */
-    private static int magicEffectiveLevel(int defenceLevel, int ml) {
+    static int magicEffectiveLevel(int defenceLevel, int ml) {
         return (int) (ml * 0.7) + (int) (defenceLevel * 0.3) + 8;
     }
 
     /** The defensive bonus a KIND_* attack rolls against. */
-    private static int defenceBonusOf(int kind, StatBlock def) {
+    static int defenceBonusOf(int kind, StatBlock def) {
         switch (kind) {
-            case KIND_STAB: return def.getStab();
-            case KIND_SLASH: return def.getSlash();
-            case KIND_CRUSH: return def.getCrush();
+            case KIND_STAB: return def.stab;
+            case KIND_SLASH: return def.slash;
+            case KIND_CRUSH: return def.crush;
             case KIND_MELEE_GENERIC:
                 // Generic "Melee": assume the boss hits your weakest side.
-                return Math.min(def.getStab(), Math.min(def.getSlash(), def.getCrush()));
-            case KIND_RANGED: return def.getRanged();
-            default: return def.getMagic();
+                return Math.min(def.stab, Math.min(def.slash, def.crush));
+            case KIND_RANGED: return def.ranged;
+            default: return def.magic;
         }
     }
 
@@ -584,7 +582,7 @@ public final class IncomingDpsCalculator {
      * it the melee (Defence+8) term instead of the magic term the old
      * string-keyed else-branch gave it.
      */
-    private static double accuracyOfKind(int kind, int ar, StatBlock def, int defenceLevel, int magicEffective) {
+    static double accuracyOfKind(int kind, int ar, StatBlock def, int defenceLevel, int magicEffective) {
         // Defence + 8 + stance (wiki DPS/Melee); the optimizer assumes an
         // offensive stance, which adds no defence.
         long level = kind >= KIND_STAB && kind <= KIND_RANGED ? defenceLevel + 8 : magicEffective;
@@ -609,12 +607,12 @@ public final class IncomingDpsCalculator {
         return new Prepared(monster, BossIncomingOverrides.overridesFor(monster), defenceLevel, ml, antifireTier) .result(loadout);
     }
 
-    private static boolean wearsChargedEthereum(Loadout loadout) {
+    static boolean wearsChargedEthereum(Loadout loadout) {
         GearItem hands = loadout.get(GearSlot.HANDS);
-        return hands != null && "bracelet of ethereum".equals(hands.getNameLower()) && "charged".equals(hands.getVersionLower());
+        return hands != null && "bracelet of ethereum".equals(hands.nameLower) && "charged".equals(hands.versionLower);
     }
 
-    private static String displayStyle(String style) {
+    static String displayStyle(String style) {
         return style.isEmpty() ? style : Character.toUpperCase(style.charAt(0)) + style.substring(1);
     }
 
@@ -627,7 +625,7 @@ public final class IncomingDpsCalculator {
      *   ranged magic        -> Magic (rolls vs ranged def, a cast -
      *                          Kree'arra, Spinolyps, Torchers)
      *   ranged melee        -> Melee (rolls vs ranged def, swings melee) */
-    private static String protectPrayerFor(String rs) {
+    static String protectPrayerFor(String rs) {
         String style = clean(rs);
         if (style.contains("melee")) return "Protect from Melee";
         if (style.startsWith("magical ranged")) return "Protect from Missiles";
@@ -636,13 +634,13 @@ public final class IncomingDpsCalculator {
         return "Protect from Melee";
     }
 
-    private static int npcRoll(int level, int bonus) { return (level + 9) * (bonus + 64); }
+    static int npcRoll(int level, int bonus) { return (level + 9) * (bonus + 64); }
 
-    private static int npcMaxHit(int level, int bonus) {
+    static int npcMaxHit(int level, int bonus) {
         return (int) (((long) (level + 9) * (bonus + 64) + 320) / 640);
     }
 
-    private static double accuracy(long ar, long dr) {
+    static double accuracy(long ar, long dr) {
         if (ar > dr) return 1.0 - (dr + 2.0) / (2.0 * (ar + 1.0));
         return ar / (2.0 * (dr + 1.0));
     }

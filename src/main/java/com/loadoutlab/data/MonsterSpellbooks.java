@@ -10,9 +10,9 @@ import java.util.*;
  * case (field report 2026-08-15). Matched by lowercase name-contains
  * so phase and form suffixes ride along.
  */
-public final class MonsterSpellbooks {
+public class MonsterSpellbooks {
     /** name-fragment -> [book, reason] */
-    private static final Map<String, String[]> BY_NAME = new LinkedHashMap<>();
+    static final Map<String, String[]> BY_NAME = new LinkedHashMap<>();
 
     static {
         JsonObject root = JsonResources.object( "monster_spellbooks.json");
@@ -26,8 +26,6 @@ public final class MonsterSpellbooks {
         }
     }
 
-    private MonsterSpellbooks() {
-    }
 
     /** The fight's required book ("ancient"...) or null. */
     public static String bookFor(MonsterStats monster) {
@@ -47,9 +45,9 @@ public final class MonsterSpellbooks {
         return entry == null ? null : entry[2];
     }
 
-    private static String[] lookup(MonsterStats monster) {
+    static String[] lookup(MonsterStats monster) {
         if (monster == null) return null;
-        String name = monster.getNameLower();
+        String name = monster.nameLower;
         return BY_NAME.entrySet().stream().filter(e -> name.contains(e.getKey())) .map(Map.Entry::getValue).findFirst().orElse(null);
     }
 }

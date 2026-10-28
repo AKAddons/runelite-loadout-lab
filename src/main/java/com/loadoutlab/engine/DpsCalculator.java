@@ -11,56 +11,57 @@ import static com.loadoutlab.engine.CombatStyle.*;
 import static com.loadoutlab.engine.MonsterMechanics.*;
 import static com.loadoutlab.engine.RollMath.*;
 import static java.lang.Math.*;
+import com.google.gson.JsonElement;
 
-public final class DpsCalculator {
+public class DpsCalculator {
     /** Conditional bonuses counted during the CURRENT calculate() call -
      * source -> exact parts ("+16.7% accuracy"), both insertion-ordered,
      * attached to the result for user assurance (single-threaded use,
      * matching how the optimizer drives this class). Melee tries several
      * stance variants per calculate; the part set dedupes the re-adds. */
-    private final LinkedHashMap<String, LinkedHashSet<String>> counted = new LinkedHashMap<>();
+    final LinkedHashMap<String, LinkedHashSet<String>> counted = new LinkedHashMap<>();
     /** The beam turns collection off: only results that can reach the panel
      * (rescore, fill, spec) need the bonus list, and the map churn +
      * per-result copy is pure waste across beam trials. */
-    private boolean collectCounted = true;
+    boolean collectCounted = true;
     /** The sunfire floor of the CURRENT magic calculation: a tenth of the
      * pre-tome max hit of a standard fire spell cast with sunfire runes
      * (official calc MIN_HIT_SUNFIRE, before the tome step), else 0. */
-    private int sunfireMinHit;
+    int sunfireMinHit;
 
     /** Toggle counted-bonus collection (optimizer beam: off). */
     void setCollectCounted(boolean collect) { collectCounted = collect; }
 
     /** Record one exact bonus ("+16.7% accuracy") under its source. */
-    private void counted(String source, String part) {
+    void counted(String source, String part) {
         if (collectCounted) counted.computeIfAbsent(source, s -> new LinkedHashSet<>()).add(part);
     }
 
     /** The assurance lines: "source: +X% accuracy, +Y% damage" per source. */
-    private List<String> countedLines() {
+    List<String> countedLines() {
         List<String> lines = new ArrayList<>(counted.size());
         for (var entry : counted.entrySet()) lines.add(entry.getKey() + ": " + String.join(", ", entry.getValue()));
         return lines;
     }
 
     /** Powered staves (powered_staves.json): an offset on magic/3 or a flat base. */
-    private static final Map<String, Integer> STAFF_OFFSET = new LinkedHashMap<>();
-    private static final Map<String, Integer> STAFF_FIXED = new LinkedHashMap<>();
+    static final Map<String, Integer> STAFF_OFFSET = new LinkedHashMap<>();
+    static final Map<String, Integer> STAFF_FIXED = new LinkedHashMap<>();
 
     static {
-        com.google.gson.JsonObject root = object("powered_staves.json");
+        JsonObject root = object("powered_staves.json");
         stringIntMap(root, "offset", STAFF_OFFSET);
         stringIntMap(root, "fixed", STAFF_FIXED);
     }
 
     public DpsResult calculate(OptimizationRequest request, Loadout loadout) {
         counted.clear();
-        if (!weaponUsable(request.getMonster(), request.getStyle(), loadout.getWeapon())
-            || isImmune(request.getMonster(), request.getStyle(), loadout, request.getSpell())) {
+        if (!weaponUsable(request.monster, request.style, loadout.getWeapon())
+            || isImmune(request.monster, request.style, loadout, request.spell)) {
             return null;
         }
         DpsResult result;
-        switch (request.getStyle()) {
+        switch (request.style) {
             case RANGED:
                 result = calculateRanged(request, loadout);
                 break;
@@ -72,39 +73,39 @@ public final class DpsCalculator {
                 result = calculateMelee(request, loadout);
         }
         if (result == null) return null;
-        result = VampyreRules.apply(request.getMonster(), request.getStyle(), loadout, result); // ISS-01M5RM2A7FFR9XWKATPX877TDD
+        result = VampyreRules.apply(request.monster, request.style, loadout, result); // ISS-01M5RM2A7FFR9XWKATPX877TDD
         double factor = TormentedDemonRules.damageFactor(
-                request.getMonster(), request.getStyle(), loadout.getWeapon(), result.getSpellName())
-            * MonsterMechanics.damageFactor(request.getMonster(), request.getStyle(),
-                loadout, result.getAttackType(), request.getSpell());
+                request.monster, request.style, loadout.getWeapon(), result.getSpellName())
+            * MonsterMechanics.damageFactor(request.monster, request.style,
+                loadout, result.attackType, request.spell);
         // Zulrah rerolls any hit above 50 down to 45-50 (Jagex-confirmed);
         // scale the expectation accordingly and cap the displayed max.
-        if (result.getMaxHit() > 50 && "zulrah".equals(request.getMonster().getNameLower())) {
-            int max = result.getMaxHit();
+        if (result.maxHit > 50 && "zulrah".equals(request.monster.nameLower)) {
+            int max = result.maxHit;
             double cm = 0;
             for (int d = 0; d <= max; d++) cm += d <= 50 ? d : 47.5;
             cm /= (max + 1);
             double cf = cm / (max / 2.0);
-            result = result.withHitModel(result.getDps() * cf, result.getAccuracy(), result.getExpectedHit() * cf, 50);
+            result = result.withHitModel(result.dps * cf, result.accuracy, result.expectedHit * cf, 50);
         }
         // The Fragment of Seren: a hit lands as min(hit, 22..24) (reference
         // linearMinTransformer(2, 22); ISS-01M5RVDTMR5XG16HM6G2JTF7FF).
-        if (result.getMaxHit() > 22 && "fragment of seren".equals(request.getMonster().getNameLower())) {
-            int max = result.getMaxHit();
+        if (result.maxHit > 22 && "fragment of seren".equals(request.monster.nameLower)) {
+            int max = result.maxHit;
             double capped = 0;
             for (int d = 0; d <= max; d++) capped += (min(d, 22) + min(d, 23) + min(d, 24)) / 3.0;
             double f = capped / (max + 1) / (max / 2.0);
-            result = result.withHitModel(result.getDps() * f, result.getAccuracy(), result.getExpectedHit() * f, min(max, 24));
+            result = result.withHitModel(result.dps * f, result.accuracy, result.expectedHit * f, min(max, 24));
         }
         // Tormented demons: guaranteed hits in the official default phase -
         // scale the expectation up to accuracy 1 (all hit models here are
         // linear in accuracy).
-        double ao = TormentedDemonRules.applies(request.getMonster())
-            && result.getAccuracy() > 0 ? 1.0 / result.getAccuracy() : 1.0;
+        double ao = TormentedDemonRules.applies(request.monster)
+            && result.accuracy > 0 ? 1.0 / result.accuracy : 1.0;
         if (factor < 1.0 || ao != 1.0) {
-            result = result.withHitModel(result.getDps() * factor * ao,
-                min(1.0, result.getAccuracy() * ao), result.getExpectedHit() * factor * ao,
-                (int) (result.getMaxHit() * factor));
+            result = result.withHitModel(result.dps * factor * ao,
+                min(1.0, result.accuracy * ao), result.expectedHit * factor * ao,
+                (int) (result.maxHit * factor));
         }
         // The Sire's vents, after every other factor so the ranking sees
         // it: a demonbane hit destroys the vent outright (expected damage
@@ -113,26 +114,26 @@ public final class DpsCalculator {
         // every weapon that can reach the vents rolls plainly, so the
         // scale is exact). Ordinary dps math ranked a blowpipe above the
         // Scorching bow (field report 2026-08-05).
-        if (isRespiratorySystem(request.getMonster())) {
+        if (isRespiratorySystem(request.monster)) {
             // Melee pays the walk between the four spread vents; ranged and
             // magic hit every vent from one spot. With one-shots a kill IS
             // one attack, so the walk lands directly on the interval - the
             // per-hit numbers (max, expected) stay honest, only time does
             // the separating. This is what puts the Scorching bow ahead of
             // a melee demonbane of near-identical per-attack dps.
-            int reach = request.getStyle() == MELEE ? meleeReachPenaltyTicks(request.getMonster()) : 0;
-            if (reach > 0 && result.getDps() > 0) {
+            int reach = request.style == MELEE ? meleeReachPenaltyTicks(request.monster) : 0;
+            if (reach > 0 && result.dps > 0) {
                 counted("vent spacing", "melee walks between the four vents" + " (+" + reach + " ticks per kill)");
             }
-            double interval = (result.getAttackSpeed() + reach) * SECONDS_PER_TICK;
+            double interval = (result.attackSpeed + reach) * SECONDS_PER_TICK;
             if (isDemonbane(loadout.getWeapon())) {
-                int hp = max(1, request.getMonster().getHitpoints());
+                int hp = max(1, request.monster.hitpoints);
                 counted("demonbane one-shot", "any landed hit destroys the vent");
-                result = result.withHitModel(result.getAccuracy() * hp / interval, result.getAccuracy(), result.getAccuracy() * hp, hp);
-            } else if (result.getDps() > 0) {
+                result = result.withHitModel(result.accuracy * hp / interval, result.accuracy, result.accuracy * hp, hp);
+            } else if (result.dps > 0) {
                 counted("vent min-hit", "every landed hit deals at least half its max");
-                result = result.withHitModel(result.getExpectedHit() * 1.5 / interval,
-                    result.getAccuracy(), result.getExpectedHit() * 1.5, result.getMaxHit());
+                result = result.withHitModel(result.expectedHit * 1.5 / interval,
+                    result.accuracy, result.expectedHit * 1.5, result.maxHit);
             }
         }
         // The nibbler trio: three spawn per wave and one barrage cast hits
@@ -143,18 +144,18 @@ public final class DpsCalculator {
         // this mechanic. This is what makes the barrage WIN the nibbler row
         // on real math instead of a blowpipe headlining the mob nobody
         // blowpipes (field decision 2026-08-06).
-        if (request.getStyle() == MAGIC && isNibbler(request.getMonster())
+        if (request.style == MAGIC && isNibbler(request.monster)
             && result.getSpellName() != null && result.getSpellName().endsWith("Barrage")) {
             counted("nibbler trio", "one barrage cast hits all three");
-            result = result.withHitModel(result.getDps() * 3, result.getAccuracy(), result.getExpectedHit() * 3, result.getMaxHit());
+            result = result.withHitModel(result.dps * 3, result.accuracy, result.expectedHit * 3, result.maxHit);
         }
         // Salarin the twisted: a landed Strike always deals a FLAT 9-12,
         // set by the highest strike tier unlocked - never by gear ("not
         // affected by items that would normally increase spell damage").
         // The isImmune gate has already filtered everything but Strike
         // casts, so what remains is rebuilt as guaranteed flat damage.
-        if (isSalarin(request.getMonster())) {
-            int magic = request.getLevels().getMagic();
+        if (isSalarin(request.monster)) {
+            int magic = request.getLevels().magic;
             int flat = magic >= 13 ? 12 : magic >= 9 ? 11 : magic >= 5 ? 10 : 9;
             // The one item Salarin honours (wiki): the elemental amulet's +2.
             if (wearing(loadout, "elemental amulet")) {
@@ -162,40 +163,42 @@ public final class DpsCalculator {
                 counted("elemental amulet", "+2 max hit - the one item Salarin honours");
             }
             counted("salarin", "strikes deal a flat " + flat + " - other gear does not matter");
-            result = result.withHitModel( flat / (result.getAttackSpeed() * SECONDS_PER_TICK), 1.0, flat, flat);
+            result = result.withHitModel( flat / (result.attackSpeed * SECONDS_PER_TICK), 1.0, flat, flat);
         }
         // The Wardens' ejected core (ToA P2, wiki): melee "will always
         // deal their max hit" - no accuracy roll, no damage roll. That
         // certainty is why the core is THE spec-dump phase; SpecialAttack
         // mirrors the same rule so multi-hit specs price honestly.
-        if (request.getStyle() == MELEE && isWardenCore(request.getMonster()) && result.getMaxHit() > 0) {
+        if (request.style == MELEE && isWardenCore(request.monster) && result.maxHit > 0) {
             counted("warden core", "melee always deals its max hit");
-            result = result.withHitModel( result.getMaxHit() / (result.getAttackSpeed() * SECONDS_PER_TICK),
-                1.0, result.getMaxHit(), result.getMaxHit());
+            result = result.withHitModel( result.maxHit / (result.attackSpeed * SECONDS_PER_TICK),
+                1.0, result.maxHit, result.maxHit);
         }
         // A prayer-based melee immunity (KQ airborne): everything is
         // blocked EXCEPT Verac's proc - a quarter of attacks land,
         // guaranteed, +1 damage. Without the full set nothing lands, but
         // the result stays a zero rather than a null so the beam can keep
         // partial Verac states alive long enough to complete the set.
-        if (request.getStyle() == MELEE && request.getMonster().hasAttribute("immune_melee")
-            && request.getMonster().hasAttribute("prayer_immunity")) {
+        if (request.style == MELEE && request.monster.hasAttribute("immune_melee")
+            && request.monster.hasAttribute("prayer_immunity")) {
             if (fullVeracSet(loadout)) {
                 counted("verac's set", "only the 25% proc lands through the prayer");
-                double exp = 0.25 * normalExpectedHit(1.0, result.getMaxHit() + 1);
-                result = result.withHitModel( exp / (result.getAttackSpeed() * SECONDS_PER_TICK), 0.25, exp, result.getMaxHit() + 1);
+                double exp = 0.25 * normalExpectedHit(1.0, result.maxHit + 1);
+                result = result.withHitModel( exp / (result.attackSpeed * SECONDS_PER_TICK), 0.25, exp, result.maxHit + 1);
             } else {
-                result = result.withHitModel(0, 0, 0, result.getMaxHit());
+                result = result.withHitModel(0, 0, 0, result.maxHit);
             }
         }
         return counted.isEmpty() ? result : result.withCountedBonuses(countedLines());
     }
 
-    private DpsResult calculateMelee(OptimizationRequest request, Loadout loadout) {
+    DpsResult calculateMelee(OptimizationRequest request, Loadout loadout) {
         DpsResult best = null;
         // Only the styles this weapon actually has: a whip cannot go
         // aggressive, a mace cannot slash (see WeaponStyles).
+        String only = request.setRules == null ? null : request.setRules.attackType;
         for (MeleeStyle style : WeaponStyles.melee(loadout.getWeapon())) {
+            if (only != null && !only.equals(style.attackType)) continue; // a task's one attack type
             best = DpsResult.better(best, meleeVariant(request, loadout, style.attackType, style.attackStance, style.strengthStance));
         }
         return best;
@@ -208,15 +211,15 @@ public final class DpsCalculator {
      * blood moon set check's precedent: its weapon leads the list). */
     static boolean fullVeracSet(Loadout loadout) {
         GearItem weapon = loadout.getWeapon();
-        return weapon != null && weapon.getNameLower().startsWith("verac's flail") && wearing(loadout, "verac's helm")
+        return weapon != null && weapon.nameLower.startsWith("verac's flail") && wearing(loadout, "verac's helm")
             && wearing(loadout, "verac's brassard") && wearing(loadout, "verac's plateskirt");
     }
 
-    private DpsResult meleeVariant(OptimizationRequest request, Loadout loadout, String attackType, int attackStance, int strengthStance) {
+    DpsResult meleeVariant(OptimizationRequest request, Loadout loadout, String attackType, int attackStance, int strengthStance) {
         PlayerLevels levels = request.getLevels();
-        PrayerBonuses prayers = request.getPrayers();
-        int effectiveAttack = effectiveLevel(levels.getAttack(), prayers.getMeleeAccuracy(), attackStance);
-        int effectiveStrength = effectiveLevel(levels.getStrength(), prayers.getMeleeStrength(), strengthStance);
+        PrayerBonuses prayers = request.prayers;
+        int effectiveAttack = effectiveLevel(levels.attack, prayers.meleeAccuracy, attackStance);
+        int effectiveStrength = effectiveLevel(levels.strength, prayers.meleeStrength, strengthStance);
         if (wearing(loadout, "soulreaper axe")) {
             // Soul stacks (wiki): +6% of the boosted strength level per
             // stack, added flat AFTER the prayer factor ("does not stack
@@ -224,7 +227,7 @@ public final class DpsCalculator {
             // per swing (even misses) and persist between kills with a 30s
             // idle decay, so sustained grinding sits at the 5-stack cap.
             counted("soul stacks", "+30% strength level at 5 stacks (sustained)");
-            effectiveStrength += levels.getStrength() * 30 / 100;
+            effectiveStrength += levels.strength * 30 / 100;
         }
 
         // The keris partisan of Amascut is +108 stab / +67 strength only
@@ -233,15 +236,15 @@ public final class DpsCalculator {
         // "black keris" won cards it had no business on).
         boolean dulled = wearing(loadout, "keris partisan of amascut") && !inToa(request);
         long attackRoll = attackRoll(effectiveAttack,
-            loadout.getOffensive().getAttackBonus(attackType) - (dulled && attackType.equals("stab") ? 50 : 0));
+            loadout.offensive.getAttackBonus(attackType) - (dulled && attackType.equals("stab") ? 50 : 0));
         long baseAttackRoll = attackRoll;
-        int mh = maxHitFromEffective(effectiveStrength, loadout.getBonuses().getStrength() - (dulled ? 22 : 0));
+        int mh = maxHitFromEffective(effectiveStrength, loadout.bonuses.strength - (dulled ? 22 : 0));
         int bmh = mh;
         attackRoll = applyMelee(request, loadout, attackRoll, baseAttackRoll, attackType, false);
         mh = (int) applyMelee(request, loadout, mh, bmh, attackType, true);
-        mh += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
+        mh += RatBoneRules.flatMaxHitBonus(request.monster, loadout.getWeapon());
 
-        long defenceRoll = npcDefenceRoll(request.getMonster(), attackType, loadout.getWeapon());
+        long defenceRoll = npcDefenceRoll(request.monster, attackType, loadout.getWeapon());
         // The fang rerolls a miss against a reduced defence roll - except
         // inside the Tombs, where it simply rolls twice (wiki; official calc
         // PLAYER_ACCURACY_FANG_TOA; TRIPLEKILLTRENT 2026-10-18: the outside
@@ -266,7 +269,7 @@ public final class DpsCalculator {
         // the Verac branch below) still reads it. minHit is only ever
         // raw - nothing downstream reads an armoured floor.
         int rm = mh;
-        int fa = request.getMonster().getDefensive().getFlatArmour();
+        int fa = request.monster.defensive.getFlatArmour();
         mh = applyFlatArmour(request, mh);
         double expected = expectedHitWithFlatArmour(accuracy, minHit, rm, fa);
         boolean chained = wearing(loadout, "dual macuahuitl");
@@ -283,10 +286,10 @@ public final class DpsCalculator {
                     * RollMath.expectedHitWithFlatArmour(accuracy, 0, secondRaw, fa);
         }
         if (wearing(loadout, "scythe of vitur")) {
-            if (request.getMonster().getSize() >= 2) {
+            if (request.monster.size >= 2) {
                 expected += expectedHitWithFlatArmour(accuracy, 0, rm / 2, fa);
             }
-            if (request.getMonster().getSize() >= 3) {
+            if (request.monster.size >= 3) {
                 expected += expectedHitWithFlatArmour(accuracy, 0, rm / 4, fa);
             }
         }
@@ -299,7 +302,7 @@ public final class DpsCalculator {
             expected = 1 / (0.75 / expected + 0.25 / boosted);
         }
         // Every keris (official calc): one hit in 51 deals triple damage to a kalphite.
-        if (wearing(loadout, "keris") && request.getMonster().hasAttribute("kalphite")) {
+        if (wearing(loadout, "keris") && request.monster.hasAttribute("kalphite")) {
             counted("keris vs kalphites", "1/51 triple hit");
             expected = expected * 53 / 51;
         }
@@ -316,9 +319,9 @@ public final class DpsCalculator {
         if (melee.contains("obligator")) {
             // Lunge (5t): best of 2-4 damage rolls by crush's rank among the
             // melee defences, +20/40% by size. Smash (3t): one plain roll.
-            MonsterDefences d = request.getMonster().getDefensive();
+            MonsterDefences d = request.monster.defensive;
             int crush = d.get("crush");
-            int size = request.getMonster().getSize();
+            int size = request.monster.size;
             int lm = rm * (size >= 3 ? 7 : size == 2 ? 6 : 5) / 5;
             double lunge = bestOfExpected(accuracy, lm,
                 2 + (d.get("stab") > crush ? 1 : 0) + (d.get("slash") > crush ? 1 : 0), fa);
@@ -347,15 +350,15 @@ public final class DpsCalculator {
         return new DpsResult(loadout, expected / (es * SECONDS_PER_TICK), accuracy, expected, mh, speed, attackType + " (" + stance + option + ")", attackRoll, defenceRoll);
     }
 
-    private DpsResult calculateRanged(OptimizationRequest request, Loadout loadout) {
+    DpsResult calculateRanged(OptimizationRequest request, Loadout loadout) {
         return DpsResult.better(rangedVariant(request, loadout, 0, true), rangedVariant(request, loadout, 3, false));
     }
 
-    private DpsResult rangedVariant(OptimizationRequest request, Loadout loadout, int sb, boolean rapid) {
+    DpsResult rangedVariant(OptimizationRequest request, Loadout loadout, int sb, boolean rapid) {
         PlayerLevels levels = request.getLevels();
-        PrayerBonuses prayers = request.getPrayers();
-        int ea = effectiveLevel(levels.getRanged(), prayers.getRangedAccuracy(), sb);
-        int ed = effectiveLevel(levels.getRanged(), prayers.getRangedStrength(), sb);
+        PrayerBonuses prayers = request.prayers;
+        int ea = effectiveLevel(levels.ranged, prayers.rangedAccuracy, sb);
+        int ed = effectiveLevel(levels.ranged, prayers.rangedStrength, sb);
 
         if (isWearingRangedVoid(loadout)) {
             boolean elite = wearsAll(loadout, ELITE_VOID);
@@ -365,24 +368,24 @@ public final class DpsCalculator {
             ed = (int) floor(ed * (elite ? 1.125 : 1.10));
         }
 
-        long attackRoll = attackRoll(ea, loadout.getOffensive().getRanged() + QuiverAmmo.accuracy(loadout));
+        long attackRoll = attackRoll(ea, loadout.offensive.ranged + QuiverAmmo.accuracy(loadout));
         boolean a2 = wearing(loadout, "eclipse atlatl");
         if (a2) {
             // Official calc: the atlatl swaps the DAMAGE side to melee -
             // Strength level (ranged prayer factors and void still apply)
             // and the worn MELEE strength bonuses - while accuracy stays
             // pure ranged.
-            ed = effectiveLevel(levels.getStrength(), prayers.getRangedStrength(), sb);
+            ed = effectiveLevel(levels.strength, prayers.rangedStrength, sb);
             if (isWearingRangedVoid(loadout)) {
                 ed = (int) floor(ed
                     * (wearsAll(loadout, ELITE_VOID) ? 1.125 : 1.10));
             }
         }
-        int mh = maxHitFromEffective(ed, a2 ? loadout.getBonuses().getStrength()
+        int mh = maxHitFromEffective(ed, a2 ? loadout.bonuses.strength
                 : effectiveRangedStrength(loadout) + BlowpipeDarts.strength(request, loadout.getWeapon()) + QuiverAmmo.strength(loadout));
         attackRoll = applyRanged(request, loadout, attackRoll, false);
         mh = (int) applyRanged(request, loadout, mh, true);
-        mh += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
+        mh += RatBoneRules.flatMaxHitBonus(request.monster, loadout.getWeapon());
         // Tonalztics roll 75% of the max (every version); the charged pair
         // throws twice and the dark bow fires two arrows, each its own full
         // roll (wiki Multi-hit weapons; official calc: two standard dists).
@@ -392,12 +395,12 @@ public final class DpsCalculator {
         int rrm = mh;
         mh = applyFlatArmour(request, mh);
 
-        long defenceRoll = npcDefenceRoll(request.getMonster(), "ranged", loadout.getWeapon());
+        long defenceRoll = npcDefenceRoll(request.monster, "ranged", loadout.getWeapon());
         double accuracy = normalAccuracy(attackRoll, defenceRoll);
-        double expected = expectedHitWithFlatArmour(accuracy, 0, rrm, request.getMonster().getDefensive().getFlatArmour());
-        GearItem arrows = loadout.get(AMMO) != null ? loadout.get(AMMO) : loadout.getQuiverAmmo();
+        double expected = expectedHitWithFlatArmour(accuracy, 0, rrm, request.monster.defensive.getFlatArmour());
+        GearItem arrows = loadout.get(AMMO) != null ? loadout.get(AMMO) : loadout.quiverAmmo;
         if (arrows != null && name(arrows).startsWith("seeking") && rrm >= 3
-            && RangedAmmo.strengthApplies(arrows, loadout.getWeapon()) && request.getMonster().getDefensive().getFlatArmour() == 0) {
+            && RangedAmmo.strengthApplies(arrows, loadout.getWeapon()) && request.monster.defensive.getFlatArmour() == 0) {
             // Seeking arrows (The Blood Moon Rises; wiki): a landed arrow
             // deals at least 3. The expectation already counts a landed 0
             // as 1, so the 0, 1 and 2 rolls lift by 2, 2 and 1 (official
@@ -405,12 +408,12 @@ public final class DpsCalculator {
             counted("seeking arrows", "minimum hit 3");
             expected += accuracy * 5.0 / (rrm + 1);
         }
-        if (bow.startsWith("dark bow") || g && !"uncharged".equals(loadout.getWeapon().getVersionLower())) {
+        if (bow.startsWith("dark bow") || g && !"uncharged".equals(loadout.getWeapon().versionLower)) {
             expected *= 2;
         }
         // Eclipse: all three eclipse moon pieces + the atlatl (broken counts,
         // same as the other moon sets).
-        if (wearsAll(loadout, ECLIPSE_MOON) && !request.getMonster().hasAttribute("burn_immune")) {
+        if (wearsAll(loadout, ECLIPSE_MOON) && !request.monster.hasAttribute("burn_immune")) {
             // Eclipse (wiki): each successful hit has a 20% chance to apply
             // a 10-damage burn - "roughly 2 burn damage per successful hit"
             // sustained (their own average; the 5-stack cap and target
@@ -429,15 +432,15 @@ public final class DpsCalculator {
     /** Twinflame's double hit applies to elemental Bolt/Blast/Wave tiers
      * only (wiki excludes Strike and Surge explicitly). */
     static boolean twinflameDoubles(SpellStats spell) {
-        if (spell.getElement() == null || spell.getElement().isEmpty()) return false;
-        String name = Names.lower(spell.getName());
+        if (spell.element == null || spell.element.isEmpty()) return false;
+        String name = Names.lower(spell.name);
         return name.endsWith("bolt") || name.endsWith("blast") || name.endsWith("wave");
     }
 
-    private DpsResult calculateMagic(OptimizationRequest request, Loadout loadout) {
-        OptimizationRequest er = isPoweredStaff(loadout) && request.getSpell() != null ? request.withSpell(null) : request;
+    DpsResult calculateMagic(OptimizationRequest request, Loadout loadout) {
+        OptimizationRequest er = isPoweredStaff(loadout) && request.spell != null ? request.withSpell(null) : request;
         PlayerLevels levels = er.getLevels();
-        PrayerBonuses prayers = er.getPrayers();
+        PrayerBonuses prayers = er.prayers;
         // Prayer floor, +2 accurate stance, +9 - matches the official
         // calc's effective level.
         // Stance: powered staves fight on Accurate (+2); AUTOCAST casts
@@ -445,14 +448,14 @@ public final class DpsCalculator {
         // dhwslayer-adamantdragon: the flat +2 ran every roll one
         // effective level hot - invisible at 99% acc saturation, +0.5%
         // acc against real defence).
-        int ea = (int) floor(levels.getMagic() * prayers.getMagicAccuracy()) + (isPoweredStaff(loadout) ? 2 : 0) + 9;
+        int ea = (int) floor(levels.magic * prayers.magicAccuracy) + (isPoweredStaff(loadout) ? 2 : 0) + 9;
         boolean mv = wearing(loadout, "void mage helm") && isWearingVoidRobes(loadout);
         if (mv) {
             counted("void set", "+45% accuracy");
             ea = (int) floor(ea * 1.45);
         }
 
-        int mab = loadout.getOffensive().getMagic();
+        int mab = loadout.offensive.magic;
         if (wearing(loadout, "tumeken")) {
             // The shadow triples the magic attack bonus of ALL equipment,
             // quadruples it inside the Tombs of Amascut (wiki) - and the
@@ -473,14 +476,14 @@ public final class DpsCalculator {
         // damage on standard-spellbook spells, and Bolt/Blast/Wave
         // elementals fire a SECOND hit at 40% of the first (no extra
         // runes) - Strike and Surge spells do not double.
-        SpellStats ts2 = er.getSpell();
+        SpellStats ts2 = er.spell;
         // Their isWearingSmokeStaff family: the smoke battlestaff and its
         // mystic sibling grant the SAME +10 accuracy / +100 magic damage
         // on standard casts as the twinflame (they had nothing until
         // 2026-08-22); only the twinflame also splits its hit.
         boolean smokeStaff = wearing(loadout, "twinflame") || wearing(loadout, "smoke battlestaff")
             || wearing(loadout, "mystic smoke staff");
-        boolean t4 = smokeStaff && ts2 != null && "standard".equalsIgnoreCase(ts2.getSpellbook());
+        boolean t4 = smokeStaff && ts2 != null && "standard".equalsIgnoreCase(ts2.spellbook);
         if (t4) {
             // The damage half rides the magic-damage POOL (additive,
             // applyMagicDamageBonuses) exactly like theirs - a separate
@@ -493,10 +496,10 @@ public final class DpsCalculator {
         // (flatAddTransformer is gated styleType !== 'magic', verified
         // 2026-08-21) - magic hits the raw bounds.
 
-        long defenceRoll = npcDefenceRoll(er.getMonster(), "magic", loadout.getWeapon());
+        long defenceRoll = npcDefenceRoll(er.monster, "magic", loadout.getWeapon());
         double accuracy = normalAccuracy(attackRoll, defenceRoll);
         GearItem mw = loadout.getWeapon();
-        if (wearing(loadout, "confliction gauntlets") && (mw == null || !mw.isTwoHanded())) {
+        if (wearing(loadout, "confliction gauntlets") && (mw == null || !mw.twoHanded)) {
             // A second accuracy roll when casting one-handed (field
             // report 2026-08-22: a Zulrah magic BiS wearing them read
             // -0.56% with every other component identical).
@@ -528,25 +531,25 @@ public final class DpsCalculator {
             expected += accuracy * 0.2 * 8;
         }
         int speed = attackSpeed(loadout, MAGIC);
-        String sn = er.getSpell() == null ? "" : er.getSpell().getName();
+        String sn = er.spell == null ? "" : er.spell.name;
         double f2 = frostweaverBonus(er, loadout);
         if (f2 > 0) {
             counted("frostweaver set", "chance of a free spear hit per cast");
             expected += f2;
         }
-        String pn = sn.isEmpty() && isPoweredStaff(loadout) && loadout.getWeapon() != null ? loadout.getWeapon().getName() : "";
+        String pn = sn.isEmpty() && isPoweredStaff(loadout) && loadout.getWeapon() != null ? loadout.getWeapon().name : "";
         String attackType = sn.isEmpty() ? pn.isEmpty() ? "magic" : "magic: " + pn : "magic: " + sn;
-        return new DpsResult(loadout, expected / (speed * SECONDS_PER_TICK), accuracy, expected, mh, speed, attackType, attackRoll, defenceRoll, loadout.getCost(), sn);
+        return new DpsResult(loadout, expected / (speed * SECONDS_PER_TICK), accuracy, expected, mh, speed, attackType, attackRoll, defenceRoll, loadout.cost, sn);
     }
 
-    private int magicMaxHit(OptimizationRequest request, Loadout loadout) {
+    int magicMaxHit(OptimizationRequest request, Loadout loadout) {
         GearItem weapon = loadout.getWeapon();
         String wn = name(weapon);
-        int ml = request.getLevels().getMagic();
-        SpellStats spell = request.getSpell();
+        int ml = request.getLevels().magic;
+        SpellStats spell = request.spell;
         boolean ps = isPoweredStaff(loadout);
         if (spell != null && !ps) {
-            if ("Magic Dart".equals(spell.getName())) {
+            if ("Magic Dart".equals(spell.name)) {
                 int base = ml / 10 + 10;
                 return wearing(loadout, "slayer's staff (e)") ? ml / 6 + 13 : base;
             }
@@ -574,13 +577,13 @@ public final class DpsCalculator {
     /** Package-private: the optimizer prunes dominated elementals with the
      * same effective-max computation the DPS chain uses. */
     static int elementalSpellMax(SpellStats spell, int ml) {
-        if (spell.getElement().isEmpty()) return spell.getMaxHit();
+        if (spell.element.isEmpty()) return spell.maxHit;
         // The two-word parse is precomputed on SpellStats - split() here
         // allocated a String[] per spell per trial.
-        String tw = spell.getNameSecondWord();
-        if (tw == null || !isElementWord(spell.getNameFirstWord())) return spell.getMaxHit();
+        String tw = spell.nameSecondWord;
+        if (tw == null || !isElementWord(spell.nameFirstWord)) return spell.maxHit;
         int row = TIER_WORDS.indexOf(tw);
-        if (row < 0) return spell.getMaxHit();
+        if (row < 0) return spell.maxHit;
         // Class max hits: wind/water/earth/fire per tier - the class's base,
         // plus its step at each Magic level the tier table lists.
         int[] tier = TIERS[row];
@@ -593,18 +596,18 @@ public final class DpsCalculator {
 
     /** The elemental classes and, per class: {max hit at the first tier,
      * the step per tier, the Magic levels of the three higher tiers}. */
-    private static final List<String> TIER_WORDS = List.of("Strike", "Bolt", "Blast", "Wave", "Surge");
-    private static final int[][] TIERS = {
+    static final List<String> TIER_WORDS = List.of("Strike", "Bolt", "Blast", "Wave", "Surge");
+    static final int[][] TIERS = {
         {2, 2, 5, 9, 13}, {9, 1, 23, 29, 35}, {13, 1, 47, 53, 59}, {17, 1, 65, 70, 75}, {21, 1, 85, 90, 95}};
 
     /** Flat adds before the magic damage %: chaos gauntlets +3 on bolts,
      * elemental amulet +2 on every element, amulet of X +2 on its own
      * (official-verified 2026-09-08). */
-    private int flatSpellBonus(Loadout loadout, SpellStats spell) {
-        String element = spell.getElement();
+    int flatSpellBonus(Loadout loadout, SpellStats spell) {
+        String element = spell.element;
         if (element.isEmpty()) return 0;
         int bonus = 0;
-        if ("Bolt".equals(spell.getNameSecondWord()) && wearing(loadout, "chaos gauntlets")) {
+        if ("Bolt".equals(spell.nameSecondWord) && wearing(loadout, "chaos gauntlets")) {
             counted("chaos gauntlets", "+3 max hit on bolt spells");
             bonus += 3;
         }
@@ -616,7 +619,7 @@ public final class DpsCalculator {
         return bonus;
     }
 
-    private static boolean isElementWord(String word) {
+    static boolean isElementWord(String word) {
         return "Wind".equals(word) || "Water".equals(word) || "Earth".equals(word) || "Fire".equals(word);
     }
 
@@ -628,18 +631,18 @@ public final class DpsCalculator {
      * spells interchangeable, and dominated ones prunable per optimize.
      */
     static boolean isPlainElemental(SpellStats spell) {
-        return !spell.getElement().isEmpty() && spell.getNameSecondWord() != null && isElementWord(spell.getNameFirstWord());
+        return !spell.element.isEmpty() && spell.nameSecondWord != null && isElementWord(spell.nameFirstWord);
     }
 
-    private long npcDefenceRoll(MonsterStats monster, String attackType, GearItem weapon) {
+    long npcDefenceRoll(MonsterStats monster, String attackType, GearItem weapon) {
         // Most NPCs defend magic with their Magic level; a curated list
         // (vendored from the official calc) uses Defence level instead.
-        int level = "magic".equals(attackType) && !magicDefenceUsesDefenceLevel(monster) ? monster.getMagic() : monster.getDefence();
+        int level = "magic".equals(attackType) && !magicDefenceUsesDefenceLevel(monster) ? monster.magic : monster.defence;
         int bonus;
         if ("ranged".equals(attackType)) {
-            bonus = monster.getDefensive().get(rangedDefenceType(weapon));
+            bonus = monster.defensive.get(rangedDefenceType(weapon));
         } else {
-            bonus = monster.getDefensive().get(attackType);
+            bonus = monster.defensive.get(attackType);
         }
         long roll = defenceRoll(level + 9, bonus);
         int invocation = monster.getToaInvocationLevel();
@@ -654,25 +657,25 @@ public final class DpsCalculator {
         return roll;
     }
 
-    private static String rangedDefenceType(GearItem weapon) {
-        String category = weapon == null ? "" : weapon.getCategoryLower();
+    static String rangedDefenceType(GearItem weapon) {
+        String category = weapon == null ? "" : weapon.categoryLower;
         if (category.contains("thrown")) return "light";
         if (category.contains("crossbow") || category.contains("chinchompa")) return "heavy";
         return "standard";
     }
 
-    private static int effectiveRangedStrength(Loadout loadout) {
-        int rs = loadout.getBonuses().getRangedStrength();
+    static int effectiveRangedStrength(Loadout loadout) {
+        int rs = loadout.bonuses.rangedStrength;
         GearItem ammo = loadout.get(AMMO);
-        if (ammo != null && ammo.getBonuses().getRangedStrength() > 0 && !RangedAmmo.strengthApplies(ammo, loadout.getWeapon())) {
-            rs -= ammo.getBonuses().getRangedStrength();
+        if (ammo != null && ammo.bonuses.rangedStrength > 0 && !RangedAmmo.strengthApplies(ammo, loadout.getWeapon())) {
+            rs -= ammo.bonuses.rangedStrength;
         }
         return rs;
     }
 
-    private static int attackSpeed(Loadout loadout, CombatStyle style) {
+    static int attackSpeed(Loadout loadout, CombatStyle style) {
         GearItem weapon = loadout.getWeapon();
-        if (weapon == null || weapon.getSpeed() <= 0) return style == MAGIC ? 5 : 4;
+        if (weapon == null || weapon.speed <= 0) return style == MAGIC ? 5 : 4;
         if (style == MAGIC && !isPoweredStaff(loadout)) {
             // Casting a spell is 5 ticks regardless of the staff's melee
             // speed (upstream billed autocasts at the wand's 4 ticks - a
@@ -682,25 +685,25 @@ public final class DpsCalculator {
             // 6") - its damage bonuses more than pay the tick back.
             return name(weapon).contains("harmonised") ? 4 : name(weapon).contains("twinflame") ? 6 : 5;
         }
-        return max(1, weapon.getSpeed());
+        return max(1, weapon.speed);
     }
 
     /** The melee chain for one side (damage = the max hit, else the roll):
      * void, the pre rules, avarice/salve/slayer, the post rules, and the
      * inquisitor set on crush. */
-    private long applyMelee(OptimizationRequest request, Loadout loadout, long value, long base, String attackType, boolean damage) {
+    long applyMelee(OptimizationRequest request, Loadout loadout, long value, long base, String attackType, boolean damage) {
         String what = damage ? "damage" : "accuracy";
         if (isWearingMeleeVoid(loadout)) value = step(value, "void set", what, Factor.PLUS_10);
         value = applyRules(request, loadout, value, base, damage ? MELEE_DAMAGE_PRE : MELEE_ACCURACY_PRE);
         value = salveOrSlayer(request, loadout, value, what, MELEE, false);
         value = applyRules(request, loadout, value, base, damage ? MELEE_DAMAGE_POST : MELEE_ACCURACY_POST);
-        if (!damage) value = VampyreRules.accuracy(request.getMonster(), loadout, value);
+        if (!damage) value = VampyreRules.accuracy(request.monster, loadout, value);
         return "crush".equals(attackType) ? applyInquisitorBonus(loadout, value) : value;
     }
 
     /** The ranged chain for one side: the far Titans' accuracy, the crystal
      * set, avarice/salve/slayer, the post rules and the twisted bow. */
-    private long applyRanged(OptimizationRequest request, Loadout loadout, long value, boolean damage) {
+    long applyRanged(OptimizationRequest request, Loadout loadout, long value, boolean damage) {
         String what = damage ? "damage" : "accuracy";
         // Royal Titans out of melee distance (wiki, ref'd to Mod Husky):
         // hidden +500% ranged accuracy - a 6x multiplier against their
@@ -733,7 +736,7 @@ public final class DpsCalculator {
         return value;
     }
 
-    private long applyMagicAccuracyBonuses(OptimizationRequest request, Loadout loadout, long roll) {
+    long applyMagicAccuracyBonuses(OptimizationRequest request, Loadout loadout, long roll) {
         // The elemental-weakness bonus adds severity% OF THIS BASE ROLL
         // after every conditional multiplier (official-verified 2026-07-23:
         // multiplying the boosted roll instead over-credited an Iron dragon
@@ -745,8 +748,8 @@ public final class DpsCalculator {
         roll = weakness(request, roll, br, "% of base accuracy");
         // Only the water tome adds accuracy; fire and earth boost damage alone
         // (the three wiki pages, 2026-10-19; Kendyy's follow-up).
-        if (tomeMatches(request, loadout) && "water".equals(request.getSpell().getElement())) {
-            roll = step(roll, loadout.get(SHIELD).getNameLower(), "accuracy", Factor.PLUS_10);
+        if (tomeMatches(request, loadout) && "water".equals(request.spell.element)) {
+            roll = step(roll, loadout.get(SHIELD).nameLower, "accuracy", Factor.PLUS_10);
         }
         return demonbaneSpell(request, loadout, roll, 40, 80, "accuracy");
     }
@@ -756,10 +759,10 @@ public final class DpsCalculator {
      * multiplying the boosted roll instead over-credited an Iron dragon
      * Earth Surge by ~1.4% dps - field cross-check via the Wiki calc
      * button, its first catch). */
-    private long weakness(OptimizationRequest request, long value, long base, String label) {
-        SpellStats spell = request.getSpell();
-        if (spell == null || !spell.getElement().equals(request.getMonster().getWeaknessElement())) return value;
-        int severity = request.getMonster().getWeaknessSeverity();
+    long weakness(OptimizationRequest request, long value, long base, String label) {
+        SpellStats spell = request.spell;
+        if (spell == null || !spell.element.equals(request.monster.weaknessElement)) return value;
+        int severity = request.monster.weaknessSeverity;
         counted("elemental weakness", "+" + severity + label);
         return value + multiply(base, severity, 100);
     }
@@ -770,22 +773,22 @@ public final class DpsCalculator {
      * by the monster's demonbane vulnerability like every other demonbane
      * (field 2026-08-21: the spells bypassed the table, +31% vs the
      * 70%-resistant Duke). */
-    private long demonbaneSpell(OptimizationRequest request, Loadout loadout, long value, int plain, int purging, String what) {
-        if (!request.getMonster().hasAttribute("demon") || request.getSpell() == null
-            || !request.getSpell().getName().contains("Demonbane")) {
+    long demonbaneSpell(OptimizationRequest request, Loadout loadout, long value, int plain, int purging, String what) {
+        if (!request.monster.hasAttribute("demon") || request.spell == null
+            || !request.spell.name.contains("Demonbane")) {
             return value;
         }
         return demonbane(request, value, wearing(loadout, "purging staff") ? purging : plain, what, "demonbane spell (Mark of Darkness)");
     }
 
-    private int applyMagicDamageBonuses(OptimizationRequest request, Loadout loadout, int mh) {
+    int applyMagicDamageBonuses(OptimizationRequest request, Loadout loadout, int mh) {
         int bmh = mh;
         sunfireMinHit = 0;
-        int md = loadout.getBonuses().getMagicDamage();
+        int md = loadout.bonuses.magicDamage;
         if (wearing(loadout, "tumeken")) md = min(1000, md * (inToa(request) ? 4 : 3));
         if ((wearing(loadout, "twinflame") || wearing(loadout, "smoke battlestaff")
-            || wearing(loadout, "mystic smoke staff")) && request.getSpell() != null
-            && "standard".equalsIgnoreCase(request.getSpell().getSpellbook())) {
+            || wearing(loadout, "mystic smoke staff")) && request.spell != null
+            && "standard".equalsIgnoreCase(request.spell.spellbook)) {
             md += 100;
         }
         // Salve and avarice join the POOL additively (+200/+150 units,
@@ -793,7 +796,7 @@ public final class DpsCalculator {
         // separate 6/5 multiplier COMPOUNDED with gear magic damage,
         // +6% on a Vorkath fire surge). The slayer head stays a separate
         // 23/20 factor AFTER the pool - exactly their blackMaskBonus.
-        boolean undead = request.getMonster().hasAttribute("undead");
+        boolean undead = request.monster.hasAttribute("undead");
         GearItem head = isSlayerTaskEligible(request) ? slayerHead(loadout, true) : null;
         boolean shb = false;
         if (isRevenant(request) && wearing(loadout, "amulet of avarice")) {
@@ -806,36 +809,36 @@ public final class DpsCalculator {
             counted("salve amulet(i)", "+15% damage");
             md += 150;
         } else if (head != null) {
-            counted(head.getNameLower(), "+15% damage");
+            counted(head.nameLower, "+15% damage");
             shb = true;
         }
-        mh = (int) floor(mh * (1.0 + (md + request.getPrayers().getMagicDamagePercent() * 10.0) / 1000.0));
+        mh = (int) floor(mh * (1.0 + (md + request.prayers.magicDamagePercent * 10.0) / 1000.0));
         if (shb) mh = (int) multiply(mh, 23, 20);
         mh = (int) applyRules(request, loadout, mh, bmh, MAGIC_DAMAGE_POST);
         mh = (int) weakness(request, mh, bmh, "% base damage");
         // Sunfire runes (wiki; Kendyy 2026-10-19): a landed fire spell deals
         // at least a tenth of the max hit - the official calc takes the
         // tenth here, after the weakness and BEFORE the tome step.
-        if (request.isSunfireRunes() && request.getSpell() != null && "fire".equals(request.getSpell().getElement())) {
+        if (request.sunfireRunes && request.spell != null && "fire".equals(request.spell.element)) {
             counted("sunfire runes", "minimum hit a tenth of the max");
             sunfireMinHit = (int) multiply(mh, 1, 10);
         }
         // The tome multiplies the whole max hit and roll, weakness included
         // (official calc, vector watersurge-tome-drake 2026-10-18).
         if (tomeMatches(request, loadout)) {
-            mh = (int) step(mh, loadout.get(SHIELD).getNameLower(), "damage", Factor.PLUS_10);
+            mh = (int) step(mh, loadout.get(SHIELD).nameLower, "damage", Factor.PLUS_10);
         }
         return (int) demonbaneSpell(request, loadout, mh, 25, 50, "damage");
     }
 
-    private static boolean wearing(Loadout loadout, String marker) {
+    static boolean wearing(Loadout loadout, String marker) {
         return loadout.namesLower().contains(Names.key(marker));
     }
 
     /** Revenants: the avarice and wilderness-weapon conditionals key off
      * them (wiki calc: monster name starts with "Revenant").
      * Package-private: RevenantConditionalsTest exercises the gate. */
-    static boolean isRevenant(OptimizationRequest request) { return request.getMonster().isRevenantMonster(); }
+    static boolean isRevenant(OptimizationRequest request) { return request.monster.isRevenantMonster(); }
 
     /**
      * Wilderness weapon passive: +50% accuracy AND damage against monsters
@@ -846,40 +849,40 @@ public final class DpsCalculator {
      * (audit A3.1); wilderness-exclusive monsters default the flag on.
      */
     static boolean revWeaponBuff(OptimizationRequest request, Loadout loadout, String... weapons) {
-        if (!request.isInWilderness()) return false;
+        if (!request.inWilderness) return false;
         GearItem weapon = loadout.get(WEAPON);
-        if (weapon == null || !"charged".equals(weapon.getVersionLower())) return false;
+        if (weapon == null || !"charged".equals(weapon.versionLower)) return false;
         for (String name : weapons) {
-            if (weapon.getNameLower().equals(name)) return true;
+            if (weapon.nameLower.equals(name)) return true;
         }
         return false;
     }
 
-    private static String name(GearItem item) { return item == null ? "" : item.getNameLower(); }
+    static String name(GearItem item) { return item == null ? "" : item.nameLower; }
 
     /** Set membership by name fragment (gear_sets.json): the pieces a set
      * effect needs, the alternatives one role accepts, and the piece
      * weights of the scaling sets. */
-    private static final JsonObject SETS = objectOrThrow("gear_sets.json");
-    private static final List<String> BLOOD_MOON = set("all", "bloodMoon"), ECLIPSE_MOON = set("all", "eclipseMoon"),
+    static final JsonObject SETS = objectOrThrow("gear_sets.json");
+    static final List<String> BLOOD_MOON = set("all", "bloodMoon"), ECLIPSE_MOON = set("all", "eclipseMoon"),
         BLUE_MOON = set("all", "blueMoon"), ELITE_VOID = set("all", "eliteVoid"),
         CRYSTAL_BOW = set("any", "crystalBow"), VOID_TOP = set("any", "voidTop"), VOID_ROBE = set("any", "voidRobe");
-    private static final Map<String, Integer> CRYSTAL = new LinkedHashMap<>();
-    private static final Map<String, Integer> INQUISITOR = new LinkedHashMap<>();
+    static final Map<String, Integer> CRYSTAL = new LinkedHashMap<>();
+    static final Map<String, Integer> INQUISITOR = new LinkedHashMap<>();
 
     static {
         stringIntMap(SETS.getAsJsonObject("weights"), "crystal", CRYSTAL);
         stringIntMap(SETS.getAsJsonObject("weights"), "inquisitor", INQUISITOR);
     }
 
-    private static List<String> set(String group, String key) {
+    static List<String> set(String group, String key) {
         List<String> names = new ArrayList<>();
         strings(SETS.getAsJsonObject(group), key, names);
         return names;
     }
 
     /** Every piece worn (the list order is the check's short-circuit order). */
-    private static boolean wearsAll(Loadout loadout, List<String> pieces) {
+    static boolean wearsAll(Loadout loadout, List<String> pieces) {
         for (String piece : pieces) {
             if (!wearing(loadout, piece)) return false;
         }
@@ -887,7 +890,7 @@ public final class DpsCalculator {
     }
 
     /** Any of the alternatives worn; active = "Inactive" versions never count. */
-    private static boolean wearsAny(Loadout loadout, List<String> names, boolean active) {
+    static boolean wearsAny(Loadout loadout, List<String> names, boolean active) {
         for (String name : names) {
             if (active ? wearingActive(loadout, name) : wearing(loadout, name)) return true;
         }
@@ -895,7 +898,7 @@ public final class DpsCalculator {
     }
 
     /** The summed weight of the set's worn pieces. */
-    private static int setWeight(Loadout loadout, Map<String, Integer> weights, boolean active) {
+    static int setWeight(Loadout loadout, Map<String, Integer> weights, boolean active) {
         int total = 0;
         for (var piece : weights.entrySet()) {
             if (active ? wearingActive(loadout, piece.getKey()) : wearing(loadout, piece.getKey())) {
@@ -906,7 +909,7 @@ public final class DpsCalculator {
     }
 
     /** One gated multiplier rule of conditional_bonuses.json (see applyRules). */
-    private static final class Rule {
+    static class Rule {
         /** "accuracy" or "damage": the word the demonbane label carries. */
         final String what;
         final String attr;
@@ -940,10 +943,10 @@ public final class DpsCalculator {
         }
     }
 
-    private static String str(JsonObject row, String key) { return row.has(key) ? row.get(key).getAsString() : null; }
+    static String str(JsonObject row, String key) { return row.has(key) ? row.get(key).getAsString() : null; }
 
     /** The string list at row[key], or null when the row has none. */
-    private static List<String> names(JsonObject row, String key) {
+    static List<String> names(JsonObject row, String key) {
         if (!row.has(key)) return null;
         List<String> list = new ArrayList<>();
         strings(row, key, list);
@@ -951,10 +954,10 @@ public final class DpsCalculator {
     }
 
     /** One phase's rules ("melee.damage.post"), in file order. */
-    private static List<Rule> rules(String key) {
+    static List<Rule> rules(String key) {
         List<Rule> list = new ArrayList<>();
         String what = key.split("\\.")[1];
-        for (com.google.gson.JsonElement row : BONUSES.getAsJsonArray(key)) {
+        for (JsonElement row : BONUSES.getAsJsonArray(key)) {
             list.add(new Rule(row.getAsJsonObject(), what));
         }
         return list;
@@ -962,8 +965,8 @@ public final class DpsCalculator {
 
     /** The gated multiplier rules, resolved once (they sit on the beam's
      * path): pre runs before the avarice/salve/slayer chain, post after. */
-    private static final JsonObject BONUSES = objectOrThrow("conditional_bonuses.json");
-    private static final List<Rule> MELEE_ACCURACY_PRE = rules("melee.accuracy.pre"),
+    static final JsonObject BONUSES = objectOrThrow("conditional_bonuses.json");
+    static final List<Rule> MELEE_ACCURACY_PRE = rules("melee.accuracy.pre"),
         MELEE_ACCURACY_POST = rules("melee.accuracy.post"), MELEE_DAMAGE_PRE = rules("melee.damage.pre"),
         MELEE_DAMAGE_POST = rules("melee.damage.post"), RANGED_ACCURACY_POST = rules("ranged.accuracy.post"),
         RANGED_DAMAGE_POST = rules("ranged.damage.post"), MAGIC_ACCURACY_POST = rules("magic.accuracy.post"),
@@ -980,10 +983,10 @@ public final class DpsCalculator {
      * instead (the obsidian set), or applies a vulnerability-scaled
      * demonbane percent that labels itself.
      */
-    private long applyRules(OptimizationRequest request, Loadout loadout, long value, long base, List<Rule> rules) {
+    long applyRules(OptimizationRequest request, Loadout loadout, long value, long base, List<Rule> rules) {
         String applied = null;
         for (Rule rule : rules) {
-            if (rule.group != null && rule.group.equals(applied) || rule.attr != null && !request.getMonster().hasAttribute(rule.attr)
+            if (rule.group != null && rule.group.equals(applied) || rule.attr != null && !request.monster.hasAttribute(rule.attr)
                 || rule.rev != null && !revWeaponBuff(request, loadout, rule.rev) || rule.any != null && !wearsAny(loadout, rule.any, false)
                 || rule.anySet != null && !wearsAny(loadout, rule.anySet, false)
                 || rule.allSet != null && !wearsAll(loadout, rule.allSet)) {
@@ -1000,15 +1003,15 @@ public final class DpsCalculator {
         return value;
     }
 
-    private static boolean isWearingMeleeVoid(Loadout loadout) {
+    static boolean isWearingMeleeVoid(Loadout loadout) {
         return wearing(loadout, "void melee helm") && isWearingVoidRobes(loadout);
     }
 
-    private static boolean isWearingRangedVoid(Loadout loadout) {
+    static boolean isWearingRangedVoid(Loadout loadout) {
         return wearing(loadout, "void ranger helm") && isWearingVoidRobes(loadout);
     }
 
-    private static boolean isWearingVoidRobes(Loadout loadout) {
+    static boolean isWearingVoidRobes(Loadout loadout) {
         return wearsAny(loadout, VOID_TOP, false) && wearsAny(loadout, VOID_ROBE, false) && wearing(loadout, "void knight gloves");
     }
 
@@ -1019,22 +1022,22 @@ public final class DpsCalculator {
      * get nothing. */
     static boolean tomeMatches(OptimizationRequest request, Loadout loadout) {
         GearItem shield = loadout.get(SHIELD);
-        SpellStats spell = request.getSpell();
-        return shield != null && spell != null && spell.getElement() != null && "standard".equalsIgnoreCase(spell.getSpellbook())
-            && shield.getNameLower().equals("tome of " + spell.getElement()) && "charged".equals(shield.getVersionLower());
+        SpellStats spell = request.spell;
+        return shield != null && spell != null && spell.element != null && "standard".equalsIgnoreCase(spell.spellbook)
+            && shield.nameLower.equals("tome of " + spell.element) && "charged".equals(shield.versionLower);
     }
 
     /** The twisted bow's magic-level scaling, counted on the card. */
-    private int tbowScaling(OptimizationRequest request, boolean accuracy, String what) {
-        int cap = request.getMonster().hasAttribute("xerician") ? 350 : 250;
-        int magic = min(cap, max(request.getMonster().getMagic(), request.getMonster().getOffensiveMagic()));
+    int tbowScaling(OptimizationRequest request, boolean accuracy, String what) {
+        int cap = request.monster.hasAttribute("xerician") ? 350 : 250;
+        int magic = min(cap, max(request.monster.magic, request.monster.offensiveMagic));
         int bonus = tbowBonus(magic, accuracy);
         counted("twisted bow scaling", (bonus >= 100 ? "+" : "") + (bonus - 100) + "% " + what);
         return bonus;
     }
 
     /** A chain step's factor and the label it counts ("+16.7% accuracy"). */
-    private enum Factor {
+    enum Factor {
         PLUS_20("+20% ", 6, 5), PLUS_16_7("+16.7% ", 7, 6), PLUS_15("+15% ", 23, 20), PLUS_10("+10% ", 11, 10);
 
         final String label;
@@ -1048,7 +1051,7 @@ public final class DpsCalculator {
         }
     }
 
-    private long step(long value, String source, String what, Factor factor) {
+    long step(long value, String source, String what, Factor factor) {
         counted(source, factor.label + what);
         return multiply(value, factor.num, factor.den);
     }
@@ -1067,12 +1070,12 @@ public final class DpsCalculator {
      * melee salve variants (official calc scalesWithStr branches) and a
      * bare black mask at the melee 7/6 - an imbued head keeps 23/20.
      */
-    private long salveOrSlayer(OptimizationRequest request, Loadout loadout, long value, String what, CombatStyle style, boolean a2) {
+    long salveOrSlayer(OptimizationRequest request, Loadout loadout, long value, String what, CombatStyle style, boolean a2) {
         boolean melee = style == MELEE;
         if (isRevenant(request) && wearing(loadout, "amulet of avarice")) {
             return step(value, "amulet of avarice", what, Factor.PLUS_20);
         }
-        if (request.getMonster().hasAttribute("undead")) {
+        if (request.monster.hasAttribute("undead")) {
             if (wearing(loadout, "salve amulet(ei)")) {
                 // Named WITHOUT a space, unlike "salve amulet (e)" - a contains
                 // match on the (e) string misses it and demotes it a tier.
@@ -1092,7 +1095,7 @@ public final class DpsCalculator {
         if (isSlayerTaskEligible(request)) {
             GearItem head = slayerHead(loadout, !melee);
             if (head != null) {
-                return step(value, head.getNameLower(), what, melee ? Factor.PLUS_16_7 : Factor.PLUS_15);
+                return step(value, head.nameLower, what, melee ? Factor.PLUS_16_7 : Factor.PLUS_15);
             }
             if (a2 && wearing(loadout, "black mask")) return step(value, "black mask", what, Factor.PLUS_16_7);
         }
@@ -1103,38 +1106,38 @@ public final class DpsCalculator {
      * the imbue ranged and magic need), or null - the counted-bonus line
      * names the ACTUAL item (a bare black mask must not be reported as
      * "slayer helmet"). */
-    private static GearItem slayerHead(Loadout loadout, boolean imbued) {
+    static GearItem slayerHead(Loadout loadout, boolean imbued) {
         for (GearItem item : loadout.getGear().values()) {
             if (item != null && (imbued ? item.isImbuedSlayerHead() : item.isSlayerHead())) return item;
         }
         return null;
     }
 
-    private static boolean inToa(OptimizationRequest request) {
-        return "toa".equals(RaidBoosts.raidKey(request.getMonster()));
+    static boolean inToa(OptimizationRequest request) {
+        return "toa".equals(RaidBoosts.raidKey(request.monster));
     }
 
-    private static boolean isSlayerTaskEligible(OptimizationRequest request) {
-        return request.isOnSlayerTask() && request.getMonster().isSlayerMonster();
+    static boolean isSlayerTaskEligible(OptimizationRequest request) {
+        return request.onSlayerTask && request.monster.slayerMonster;
     }
 
-    private static boolean isPoweredStaff(Loadout loadout) { return isPoweredStaff(loadout.getWeapon()); }
+    static boolean isPoweredStaff(Loadout loadout) { return isPoweredStaff(loadout.getWeapon()); }
 
     /** THE powered-staff check - the optimizer must agree with the
      * calculator or a staff gets evaluated down the wrong path (the
      * optimizer once had its own copy missing eye of ayak). The rule
      * itself is precomputed per item (GearItem ctor) - this ran the
      * name-fragment chain per trial and topped the profile. */
-    static boolean isPoweredStaff(GearItem weapon) { return weapon != null && weapon.isPoweredStaff(); }
+    static boolean isPoweredStaff(GearItem weapon) { return weapon != null && weapon.poweredStaff; }
 
     /** Apply a demonbane bonus scaled by the monster's effectiveness
      * (Duke resists: +70% lands as +49%; Yama amplifies). The source
      * NAMES itself (2026-08-22): routing every demonbane through one
      * label made the scorching bow and the demonbane spells both report
      * "demonbane weapon" - naming gear the player is not even wearing. */
-    private long demonbane(OptimizationRequest request, long value, int bonusPercent, String what, String source) {
-        int scaled = DemonbaneVulnerability.scaledBonus(request.getMonster(), bonusPercent);
-        int effectiveness = DemonbaneVulnerability.percentFor(request.getMonster());
+    long demonbane(OptimizationRequest request, long value, int bonusPercent, String what, String source) {
+        int scaled = DemonbaneVulnerability.scaledBonus(request.monster, bonusPercent);
+        int effectiveness = DemonbaneVulnerability.percentFor(request.monster);
         counted(source, "+" + scaled + "% " + what + (effectiveness == 100 ? "" : " (" + effectiveness + "% effectiveness)"));
         return multiply(value, 100 + scaled, 100);
     }
@@ -1142,10 +1145,10 @@ public final class DpsCalculator {
     /** A Royal Titan in its out-of-reach phase (the synthetic melee-immune
      * group variant carries the attribute; the base near-phase rows never
      * do). */
-    private static boolean isFarTitan(OptimizationRequest request) {
-        MonsterStats monster = request.getMonster();
+    static boolean isFarTitan(OptimizationRequest request) {
+        MonsterStats monster = request.monster;
         if (monster == null || !monster.hasAttribute("immune_melee")) return false;
-        String name = monster.getName().toLowerCase();
+        String name = monster.name.toLowerCase();
         return name.contains("branda") || name.contains("eldric");
     }
 
@@ -1157,16 +1160,16 @@ public final class DpsCalculator {
      * per cast = chance x the spear's plain melee expected hit (stab, no
      * melee prayer - you are on a magic prayer while casting).
      */
-    private double frostweaverBonus(OptimizationRequest request, Loadout loadout) {
-        SpellStats spell = request.getSpell();
+    double frostweaverBonus(OptimizationRequest request, Loadout loadout) {
+        SpellStats spell = request.spell;
         // Frostweaver: all three blue moon pieces + the spear.
         if (spell == null || !wearsAll(loadout, BLUE_MOON)) return 0;
-        String sn = spell.getName();
-        String book = spell.getSpellbook() == null ? "" : Names.lower(spell.getSpellbook());
+        String sn = spell.name;
+        String book = spell.spellbook == null ? "" : Names.lower(spell.spellbook);
         double chance;
-        if ("arceuus".equals(book) && "Grasp".equalsIgnoreCase(spell.getNameSecondWord())) {
+        if ("arceuus".equals(book) && "Grasp".equalsIgnoreCase(spell.nameSecondWord)) {
             chance = 0.5;
-        } else if ("ancient".equals(book) && "Ice".equalsIgnoreCase(spell.getNameFirstWord())) {
+        } else if ("ancient".equals(book) && "Ice".equalsIgnoreCase(spell.nameFirstWord)) {
             chance = 0.2;
         } else if ("standard".equals(book) && ("Bind".equalsIgnoreCase(sn)
             || "Snare".equalsIgnoreCase(sn) || "Entangle".equalsIgnoreCase(sn))) {
@@ -1175,11 +1178,11 @@ public final class DpsCalculator {
             return 0;
         }
         PlayerLevels levels = request.getLevels();
-        int effAttack = effectiveLevel(levels.getAttack(), 1.0, 0);
-        long meleeRoll = attackRoll(effAttack, loadout.getOffensive().getAttackBonus("stab"));
-        int effStrength = effectiveLevel(levels.getStrength(), 1.0, 0);
-        int meleeMax = maxHitFromEffective(effStrength, loadout.getBonuses().getStrength());
-        long defenceRoll = npcDefenceRoll(request.getMonster(), "stab", loadout.getWeapon());
+        int effAttack = effectiveLevel(levels.attack, 1.0, 0);
+        long meleeRoll = attackRoll(effAttack, loadout.offensive.getAttackBonus("stab"));
+        int effStrength = effectiveLevel(levels.strength, 1.0, 0);
+        int meleeMax = maxHitFromEffective(effStrength, loadout.bonuses.strength);
+        long defenceRoll = npcDefenceRoll(request.monster, "stab", loadout.getWeapon());
         double meleeAccuracy = normalAccuracy(meleeRoll, defenceRoll);
         return chance * normalExpectedHit(meleeAccuracy, meleeMax);
     }
@@ -1188,19 +1191,19 @@ public final class DpsCalculator {
      * the crystal bow and armour (accuracy x(20+n)/20, damage x(40+n)/40;
      * helm 1, legs 2, body 3: full set +30% accuracy, +15% damage) share
      * their item names with the inactive pieces and differ only by version. */
-    private static boolean wearingActive(Loadout loadout, String marker) {
+    static boolean wearingActive(Loadout loadout, String marker) {
         return loadout.activeNamesLower().contains(Names.lower(marker));
     }
 
-    private static int applyFlatArmour(OptimizationRequest request, int hit) {
-        return max(0, hit - request.getMonster().getDefensive().getFlatArmour());
+    static int applyFlatArmour(OptimizationRequest request, int hit) {
+        return max(0, hit - request.monster.defensive.getFlatArmour());
     }
 
     /** Inquisitor's set, official-calc semantics (verified 2026-08-21,
      * vector inqfull-cow: the old model TRIPLED the factor with the
      * mace - the cow BiS ran +4.3% hot): crush accuracy AND damage,
      * helm +1 / hauberk +2 / plateskirt +2 over 200, mace-agnostic. */
-    private static long applyInquisitorBonus(Loadout loadout, long value) {
+    static long applyInquisitorBonus(Loadout loadout, long value) {
         int bonus = setWeight(loadout, INQUISITOR, false);
         return bonus == 0 ? value : multiply(value, 200 + bonus, 200);
     }
@@ -1208,7 +1211,7 @@ public final class DpsCalculator {
     /** The twisted bow's percent multiplier (roll or hit becomes bonus% of
      * itself) at this monster magic level - exposed as the number so the
      * counted-bonus assurance can print exactly what applied. */
-    private static int tbowBonus(int magic, boolean am) {
+    static int tbowBonus(int magic, boolean am) {
         int factor = am ? 10 : 14;
         int base = am ? 140 : 250;
         // Truncate TOWARD ZERO like theirs (floorDiv would round a
@@ -1223,7 +1226,7 @@ public final class DpsCalculator {
         return max(0, min(base, base + t2 - t3));
     }
 
-    private static long multiply(long value, int numerator, int denominator) {
+    static long multiply(long value, int numerator, int denominator) {
         return (long) floor((double) value * numerator / denominator);
     }
 }

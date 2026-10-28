@@ -5,16 +5,16 @@ import java.util.*;
 
 import lombok.Getter;
 
-public final class GearRequirements {
+public class GearRequirements {
     public static final GearRequirements NONE = new GearRequirements(Map.of(), Set.of());
 
-    private final Map<String, Integer> skills;
+    final Map<String, Integer> skills;
     @Getter
-    private final Set<String> quests;
+    final Set<String> quests;
 
     public GearRequirements(Map<String, Integer> skills, Set<String> quests) {
-        this.skills = Collections.unmodifiableMap(new LinkedHashMap<>(skills == null ? Map.of() : skills));
-        this.quests = Collections.unmodifiableSet(new LinkedHashSet<>(quests == null ? Set.of() : quests));
+        this.skills = new LinkedHashMap<>(skills == null ? Map.of() : skills);
+        this.quests = new LinkedHashSet<>(quests == null ? Set.of() : quests);
     }
 
     public Map<String, Integer> getSkills() { return skills; }

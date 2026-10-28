@@ -25,7 +25,7 @@ class RequiredGearTest {
 	@Test
 	@DisplayName("every curated monster key binds to a loaded corpus row")
 	void keysBindToCorpus() {
-		for (String key : RequiredGear.monsterKeys()) {
+		for (String key : RequiredGear.BY_NAME.keySet()) {
 			List<MonsterStats> hits = data.searchMonsters(key, 10);
 			assertTrue(hits.stream().anyMatch(
 				m -> m.getName().equalsIgnoreCase(key)),
@@ -36,7 +36,7 @@ class RequiredGearTest {
 	@Test
 	@DisplayName("every rule's items resolve to standard gear in its slot")
 	void itemsResolve() {
-		for (String key : RequiredGear.monsterKeys()) {
+		for (String key : RequiredGear.BY_NAME.keySet()) {
 			MonsterStats mob = data.searchMonsters(key, 10).stream()
 				.filter(m -> m.getName().equalsIgnoreCase(key))
 				.findFirst().orElseThrow();

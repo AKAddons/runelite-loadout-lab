@@ -38,7 +38,7 @@ class StatSimParamsTest {
 		private Map<String, Object> last;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			last = page;
 		}
 

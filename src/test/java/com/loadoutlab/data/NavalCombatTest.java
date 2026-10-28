@@ -24,9 +24,9 @@ class NavalCombatTest {
 	@Test
 	@DisplayName("every curated naval name resolves to a corpus row with heavy defence")
 	void rosterResolvesAgainstTheCorpus() {
-		assertFalse(NavalCombat.navalNames().isEmpty());
+		assertFalse(NavalCombat.NAVAL.isEmpty());
 		StringBuilder missing = new StringBuilder();
-		for (String name : NavalCombat.navalNames()) {
+		for (String name : NavalCombat.NAVAL) {
 			List<MonsterStats> hits = data.searchMonsters(name, 1);
 			if (hits.isEmpty() || !hits.get(0).getName().equalsIgnoreCase(name)) {
 				missing.append("\n  ").append(name)
@@ -65,7 +65,7 @@ class NavalCombatTest {
 		assertEquals("none", NavalCombat.normalizeKeel("regular"));
 		assertEquals("dragon", NavalCombat.normalizeKeel("dragon"));
 		assertEquals("steel", NavalCombat.normalizeKeel("steel"));
-		for (String name : NavalCombat.navalNames()) {
+		for (String name : NavalCombat.NAVAL) {
 			for (String keel : NavalCombat.keels()) {
 				assertTrue(NavalCombat.keelMaxHit(name, keel) >= 0,
 					name + " has no keel row for " + keel);

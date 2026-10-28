@@ -14,7 +14,7 @@ import net.runelite.api.Skill;
  * running client. The plugin exports the real account to
  * .runelite/loadout-lab/profile.json on every query.
  */
-public final class PlayerProfile {
+public class PlayerProfile {
     public final PlayerLevels realLevels;
     public final PlayerLevels boostedLevels;
     public final PrayerUnlocks prayerUnlocks;
@@ -45,7 +45,7 @@ public final class PlayerProfile {
         if (ownedBySource != null) {
             for (var e : ownedBySource.entrySet()) copy.put(e.getKey(), Map.copyOf(e.getValue()));
         }
-        this.ownedBySource = Collections.unmodifiableMap(copy);
+        this.ownedBySource = copy;
     }
 
     public OwnedItems ownedItems() { return new OwnedItems(owned, bankScanned); }
@@ -68,7 +68,7 @@ public final class PlayerProfile {
         }
         var reqs = new JsonObject();
         reqs.add("skills", reqSkills);
-        com.google.gson.JsonArray quests = new com.google.gson.JsonArray();
+        JsonArray quests = new JsonArray();
         for (String quest : requirements.getCompletedQuests()) quests.add(quest);
         reqs.add("quests", quests);
         root.add("requirements", reqs);
@@ -83,13 +83,13 @@ public final class PlayerProfile {
     }
 
     /** {"itemId": quantity} for an owned map. */
-    private static JsonObject items(Map<Integer, Integer> items) {
+    static JsonObject items(Map<Integer, Integer> items) {
         var out = new JsonObject();
         items.forEach((id, n) -> out.addProperty(String.valueOf(id), n));
         return out;
     }
 
-    private static Map<Integer, Integer> parseItems(JsonObject object) {
+    static Map<Integer, Integer> parseItems(JsonObject object) {
         Map<Integer, Integer> out = new HashMap<>();
         for (var entry : object.entrySet()) out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
         return out;
@@ -122,15 +122,15 @@ public final class PlayerProfile {
             parseItems(root.getAsJsonObject("owned")), root.get("bankScanned").getAsBoolean(), bySource);
     }
 
-    private static JsonObject levels(PlayerLevels levels) {
+    static JsonObject levels(PlayerLevels levels) {
         var object = new JsonObject();
-        object.addProperty("attack", levels.getAttack());
-        object.addProperty("strength", levels.getStrength());
-        object.addProperty("defence", levels.getDefence());
-        object.addProperty("ranged", levels.getRanged());
-        object.addProperty("magic", levels.getMagic());
-        object.addProperty("prayer", levels.getPrayer());
-        object.addProperty("hitpoints", levels.getHitpoints());
+        object.addProperty("attack", levels.attack);
+        object.addProperty("strength", levels.strength);
+        object.addProperty("defence", levels.defence);
+        object.addProperty("ranged", levels.ranged);
+        object.addProperty("magic", levels.magic);
+        object.addProperty("prayer", levels.prayer);
+        object.addProperty("hitpoints", levels.hitpoints);
         return object;
     }
 
@@ -145,7 +145,7 @@ public final class PlayerProfile {
         return currentAccount == -1 || currentAccount == snapshotAccount;
     }
 
-    private static PlayerLevels parseLevels(JsonObject object) {
+    static PlayerLevels parseLevels(JsonObject object) {
         return new PlayerLevels( object.get("attack").getAsInt(), object.get("strength").getAsInt(),
             object.get("defence").getAsInt(), object.get("ranged").getAsInt(), object.get("magic").getAsInt(),
             object.get("prayer").getAsInt(), object.get("hitpoints").getAsInt());

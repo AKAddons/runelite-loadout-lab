@@ -4,8 +4,15 @@ import java.awt.*;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.plaf.basic.ComboPopup;
 import net.runelite.client.ui.*;
 import java.awt.image.BufferedImage;
+import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.io.IOException;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.ActionListener;
 
 /**
  * The shared UI kit (merge-back dedupe): the handful of Swing recipes
@@ -13,32 +20,52 @@ import java.awt.image.BufferedImage;
  * equivalents of the inline forms they replace - same properties in
  * the same order - so the look cannot drift.
  */
-final class Ui {
-    private Ui() {
-    }
+class Ui {
 
     /** The surface's longer prose - tooltips, captions, html bodies - lives
      * in text.tsv beside this class and is read by key: the Plugin Hub's
      * review bot counts source tokens, and words are data, not code. A
      * missing key renders "null", which the key-resolution test catches. */
-    private static final Map<String, String> TEXT = tsv("text.tsv");
+    static final Map<String, String> TEXT = tsv("text.tsv");
 
     static String text(String key) { return TEXT.get(key); }
+
+    /** The list opens as wide as its longest entry; the closed box keeps its width (the popup sizes from getSize). */
+    static <T> JComboBox<T> wideCombo(T[] items) {
+        return new JComboBox<>(items) {
+            boolean busy;
+
+            @Override
+            public void doLayout() {
+                busy = true;
+                super.doLayout();
+                busy = false;
+            }
+
+            @Override
+            public Dimension getSize() {
+                Dimension d = super.getSize();
+                Object p = getUI().getAccessibleChild(this, 0);
+                if (!busy && p instanceof ComboPopup) d.width = Math.max(d.width, ((ComboPopup) p).getList().getPreferredSize().width + 20);
+                return d;
+            }
+        };
+    }
 
     /** key<TAB>value rows of a resource beside this class ('#' lines are
      * comments, values trimmed) - text.tsv and the mood routes share it. */
     static Map<String, String> tsv(String name) {
         Map<String, String> out = new LinkedHashMap<>();
-        try (java.io.InputStream in = Ui.class.getResourceAsStream(name)) {
+        try (InputStream in = Ui.class.getResourceAsStream(name)) {
             if (in != null) {
-                for (String line : new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).split("\n")) {
+                for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\n")) {
                     int tab = line.indexOf('\t');
                     if (tab > 0 && !line.startsWith("#")) {
                         out.put(line.substring(0, tab), line.substring(tab + 1).trim());
                     }
                 }
             }
-        } catch (java.io.IOException ignored) {
+        } catch (IOException ignored) {
         }
         return out;
     }
@@ -90,8 +117,8 @@ final class Ui {
     /** Hand cursor + a click action (the classic clickable label). */
     static void onClick(Component component, Runnable action) {
         component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        component.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent e) { action.run(); }
+        component.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) { action.run(); }
         });
     }
 
@@ -99,8 +126,8 @@ final class Ui {
      * a popup menu: the right button must open the menu and nothing else. */
     static void onLeftClick(Component component, Runnable action) {
         component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        component.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent e) {
+        component.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) action.run();
             }
         });
@@ -113,14 +140,14 @@ final class Ui {
         JLabel x = label("x", new Color(0x969696));
         x.setToolTipText(tip);
         x.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        x.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent e) {
+        x.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
                 if (!e.isPopupTrigger() && SwingUtilities.isLeftMouseButton(e)) action.run();
             }
 
-            public void mouseEntered(java.awt.event.MouseEvent e) { x.setForeground(new Color(0xDC7878)); }
+            public void mouseEntered(MouseEvent e) { x.setForeground(new Color(0xDC7878)); }
 
-            public void mouseExited(java.awt.event.MouseEvent e) { x.setForeground(new Color(0x969696)); }
+            public void mouseExited(MouseEvent e) { x.setForeground(new Color(0x969696)); }
         });
         return x;
     }
@@ -138,7 +165,7 @@ final class Ui {
     }
 
     /** A one-shot Swing timer (the debounce shape). */
-    static Timer once(int delay, java.awt.event.ActionListener action) {
+    static Timer once(int delay, ActionListener action) {
         var timer = new Timer(delay, action);
         timer.setRepeats(false);
         return timer;
@@ -189,6 +216,8 @@ final class Ui {
 
     /** A tooltip body wrapped for Swing's html renderer. Six builders
      * each wrote their own wrapper; this is the one. */
+    static void tipText(JComponent c, String text) { c.setToolTipText(text); }
+
     static String tip(String... parts) {
         var out = new StringBuilder("<html>");
         for (String part : parts) out.append(part);

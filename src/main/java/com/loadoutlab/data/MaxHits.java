@@ -11,26 +11,26 @@ import java.util.regex.*;
  * the larger, multi-hits count their total (same expected damage), specials and
  * dragonfire are left to curated data, and an unlabelled value is GENERAL.
  */
-public final class MaxHits {
+public class MaxHits {
     public enum Family { MELEE, RANGED, MAGIC, GENERAL }
 
     public static final MaxHits NONE = new MaxHits(new int[]{-1, -1, -1, -1});
 
-    private static final Pattern ENTRY = Pattern.compile(
+    static final Pattern ENTRY = Pattern.compile(
         "(\\d+)(?:\\s*([-/+])\\s*(\\d+))?(?:\\s*x\\s*(\\d+))?(?!\\s*%)\\+?\\??\\s*((?:\\([^)]*\\)\\s*)*)"
             + "(melee|ranged|magic)?", Pattern.CASE_INSENSITIVE);
-    private static final Pattern LABEL = Pattern.compile("\\(([^)]*)\\)");
-    private static final Pattern TIMES = Pattern.compile("x\\s*(\\d+)");
-    private static final Pattern MELEE = Pattern.compile("\\b(melee|slash|crush|stab|bite)\\b");
-    private static final Pattern RANGED = Pattern.compile("\\b(ranged|range|flies|missiles?)\\b");
-    private static final Pattern MAGIC = Pattern.compile("\\b(magic|magical|fire blast|fire wave|wind strike)\\b");
-    private static final Pattern SPECIAL = Pattern.compile(
+    static final Pattern LABEL = Pattern.compile("\\(([^)]*)\\)");
+    static final Pattern TIMES = Pattern.compile("x\\s*(\\d+)");
+    static final Pattern MELEE = Pattern.compile("\\b(melee|slash|crush|stab|bite)\\b");
+    static final Pattern RANGED = Pattern.compile("\\b(ranged|range|flies|missiles?)\\b");
+    static final Pattern MAGIC = Pattern.compile("\\b(magic|magical|fire blast|fire wave|wind strike)\\b");
+    static final Pattern SPECIAL = Pattern.compile(
         "special|charge|dragonfire|recoil|stomp|phase|aoe|knockback|whirlwind|cloud|crash|draining|typeless|not defeated|attack\\b(?<!magic attack)");
-    private static final Pattern GENERAL = Pattern.compile( "normal|standard|default|regular|auto|approx|unconfirmed");
+    static final Pattern GENERAL = Pattern.compile( "normal|standard|default|regular|auto|approx|unconfirmed");
 
-    private final int[] max;
+    final int[] max;
 
-    private MaxHits(int[] max) { this.max = max; }
+    MaxHits(int[] max) { this.max = max; }
 
     /** The listed max for this family, or -1 when the wiki lists none. */
     public int of(Family family) { return max[family.ordinal()]; }
@@ -51,7 +51,7 @@ public final class MaxHits {
         return new MaxHits(max);
     }
 
-    private static void record(int[] max, Matcher m) {
+    static void record(int[] max, Matcher m) {
         int value = Integer.parseInt(m.group(1));
         if (m.group(3) != null) {
             int other = Integer.parseInt(m.group(3));

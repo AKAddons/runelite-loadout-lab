@@ -33,7 +33,7 @@ class RaidMoodRoutingTest {
 		Map<String, Object> atComputing;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			last = page;
 		}
 

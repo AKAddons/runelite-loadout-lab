@@ -10,7 +10,7 @@ import lombok.AllArgsConstructor;
  * the unlock varbits at snapshot time.
  */
 @AllArgsConstructor
-public final class PrayerUnlocks {
+public class PrayerUnlocks {
     /** Everything unlocked - tests, harness, and the game-best ceiling. */
     public static final PrayerUnlocks ALL = new PrayerUnlocks(true, true, true, true, true, true);
 
@@ -20,12 +20,12 @@ public final class PrayerUnlocks {
      * them all IS the F2P ceiling (wiki-verified 2026-07-15). */
     public static final PrayerUnlocks F2P = new PrayerUnlocks(false, false, false, false, false, false);
 
-    private final boolean kingsRansom;
-    private final boolean rigour;
-    private final boolean augury;
-    private final boolean deadeye;
-    private final boolean mysticVigour;
-    private final boolean zeal;
+    final boolean kingsRansom;
+    final boolean rigour;
+    final boolean augury;
+    final boolean deadeye;
+    final boolean mysticVigour;
+    final boolean zeal;
 
     /** The pre-Zeal form (older profiles, the harness). */
     public PrayerUnlocks(boolean kingsRansom, boolean rigour, boolean augury, boolean deadeye, boolean mysticVigour) {

@@ -5,6 +5,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.*;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Loaders for the bundled JSON data tables (the hub token cap keeps data
@@ -12,12 +13,10 @@ import java.util.function.*;
  * take the client down; the table's tests fail loudly on emptiness instead.
  * The one exception is {@link #gz}: the gzipped corpus is not optional.
  */
-public final class JsonResources {
-    private JsonResources() {
-    }
+public class JsonResources {
 
     /** The parsed resource, or null when missing/malformed. */
-    private static JsonElement parse(String resource) {
+    static JsonElement parse(String resource) {
         try (InputStream in = JsonResources.class.getResourceAsStream(resource)) {
             return new JsonParser().parse(new InputStreamReader(in, StandardCharsets.UTF_8));
         } catch (Exception e) { return null; }
@@ -52,8 +51,8 @@ public final class JsonResources {
     public static JsonElement gz(String resource) {
         try (InputStream in = JsonResources.class.getResourceAsStream(resource)) {
             if (in == null) throw new IllegalStateException("Missing resource " + resource);
-            return new JsonParser().parse(new InputStreamReader( new java.util.zip.GZIPInputStream(in), StandardCharsets.UTF_8));
-        } catch (java.io.IOException ex) { throw new IllegalStateException("Could not load " + resource, ex); }
+            return new JsonParser().parse(new InputStreamReader( new GZIPInputStream(in), StandardCharsets.UTF_8));
+        } catch (IOException ex) { throw new IllegalStateException("Could not load " + resource, ex); }
     }
 
     /** Copy the string array at root[key] into the collection. */
@@ -66,7 +65,7 @@ public final class JsonResources {
         each(root, key, JsonElement::getAsInt, into);
     }
 
-    private static <T> void each(JsonObject root, String key, Function<JsonElement, T> read, Collection<T> into) {
+    static <T> void each(JsonObject root, String key, Function<JsonElement, T> read, Collection<T> into) {
         if (root != null && root.has(key)) root.getAsJsonArray(key).forEach(e -> into.add(read.apply(e)));
     }
 
@@ -104,7 +103,7 @@ public final class JsonResources {
     }
 
     /** Each member of the object at root[key]; nothing when absent. */
-    private static void entries(JsonObject root, String key, BiConsumer<String, JsonElement> fn) {
+    static void entries(JsonObject root, String key, BiConsumer<String, JsonElement> fn) {
         JsonObject obj = root == null ? null : root.getAsJsonObject(key);
         if (obj != null) obj.entrySet().forEach(e -> fn.accept(e.getKey(), e.getValue()));
     }
@@ -112,8 +111,8 @@ public final class JsonResources {
     /** A JSON-safe node from key/value pairs, in argument order (the rows
      * the trip kit and the pages carry; a LinkedHashMap, so gson's reflective
      * adapter and the canonical page JSON both see a plain ordered map). */
-    public static Map<String, Object> map(Object... kv) {
-        Map<String, Object> node = new LinkedHashMap<>();
+    public static Map map(Object... kv) {
+        Map node = new LinkedHashMap<>();
         for (int i = 0; i < kv.length; i += 2) node.put((String) kv[i], kv[i + 1]);
         return node;
     }

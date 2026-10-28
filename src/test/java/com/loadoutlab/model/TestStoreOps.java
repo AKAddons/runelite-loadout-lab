@@ -87,15 +87,15 @@ class TestStoreOps implements CommandEngine.StoreOps, CommandEngine.MobProfiles 
 	public void simForMob(int monsterId, int itemId) {
 	}
 
-	public List<Map<String, Object>> mobExclusions(int monsterId) {
+	public List<Map> mobExclusions(int monsterId) {
 		return Collections.emptyList();
 	}
 
-	public List<Map<String, Object>> mobSims(int monsterId) {
+	public List<Map> mobSims(int monsterId) {
 		return Collections.emptyList();
 	}
 
-	public List<Map<String, Object>> mobFilters(int monsterId) {
+	public List<Map> mobFilters(int monsterId) {
 		return Collections.emptyList();
 	}
 

@@ -17,12 +17,10 @@ package com.loadoutlab.engine;
  * by NavalCombat.crewFormulaStale() - when the corrected formula lands,
  * this one method changes and every caller stays put.
  */
-public final class ShipCannon {
+public class ShipCannon {
     /** All cannons fire on the same cycle regardless of tier. */
     public static final double ATTACK_SECONDS = 4.2;
 
-    private ShipCannon() {
-    }
 
     /**
      * Max hit for a player-fired cannon:

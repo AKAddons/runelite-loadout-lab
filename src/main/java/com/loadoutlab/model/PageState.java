@@ -22,9 +22,9 @@ import com.loadoutlab.data.NavalCombat.Cannon;
  * their own.
  */
 public class PageState {
-    private MonsterStats mob;
-    private List<MonsterStats> rosterMobs;
-    private String rosterName;
+    MonsterStats mob;
+    List<MonsterStats> rosterMobs;
+    String rosterName;
 
     /** Every page param with its default, in the params node's order, from
      * page_params.json (hub token cap) - the int clamps, the view params and
@@ -49,6 +49,8 @@ public class PageState {
      * <li>ladderSlot - the slot whose ladder strip is open on the Yours
      * card ("" = none); ladderPage - the strip's page (0 = the strip, n =
      * the nth five further steps up), reset when another slot opens.
+     * <li>reqOpen - the "+ Requirement" editor is open; a new search
+     * closes it (Andrew 2026-10-27).
      * <li>cannonCount, cannon1/2Material, cannonAmmo, shipKeel,
      * cannon1/2Operator - ship combat (REQ-SC-2/3/3b). Post-compute
      * additive like thralls - none of these enter the optimizer request,
@@ -83,23 +85,23 @@ public class PageState {
      * core-owned like everything else (ADR-0008), but a change here
      * republishes without recomputing (see CommandEngine).
      * </ul> */
-    private static final Map<String, Object> DEFAULTS = new LinkedHashMap<>();
+    static final Map DEFAULTS = new LinkedHashMap<>();
     /** Set by the engine (the selects, the risk cap), never by a command. */
-    private static final Set<String> DERIVED = Set.of("raidSelection", "riskCapped", "myLevels");
+    static final Set<String> DERIVED = Set.of("raidSelection", "riskCapped", "myLevels");
     static final String[] SIM_KEYS = {"simAttack", "simStrength", "simDefence", "simRanged", "simMagic", "simPrayer", "simHitpoints"};
 
     /** Your live levels for the page ("a/s/d/r/m/p/h"): what the stat sim's
      * boxes and the report show where nothing is simmed. */
     public synchronized void setMyLevels(String levels) { params.put("myLevels", levels == null ? "" : levels); }
     /** Int params with a range: {min, max}. */
-    private static final Map<String, int[]> CLAMPS = new HashMap<>();
+    static final Map<String, int[]> CLAMPS = new HashMap<>();
     /** The params a select seeds (antifire, tab, view side, on-task,
      * wilderness, bench, and the config seeds) - what undoing it restores:
      * undoing a Callisto used to leave its wilderness and risk chips
      * sitting on the restored mob (pre-release adversarial pass
      * 2026-08-22). */
-    private static final List<String> SNAPSHOT_KEYS = new ArrayList<>();
-    private static final Set<String> VIEW_PARAMS = new HashSet<>();
+    static final List<String> SNAPSHOT_KEYS = new ArrayList<>();
+    static final Set<String> VIEW_PARAMS = new HashSet<>();
 
     static {
         JsonObject root = JsonResources.objectOrThrow("page_params.json");
@@ -116,9 +118,9 @@ public class PageState {
         JsonResources.strings(root, "viewParams", VIEW_PARAMS);
     }
 
-    private final Map<String, Object> params = new LinkedHashMap<>(DEFAULTS);
-    private final Map<CombatStyle, String> boostPicks = new LinkedHashMap<>();
-    private final Map<CombatStyle, String> prayerPicks = new LinkedHashMap<>();
+    final Map params = new LinkedHashMap<>(DEFAULTS);
+    final Map<CombatStyle, String> boostPicks = new LinkedHashMap<>();
+    final Map<CombatStyle, String> prayerPicks = new LinkedHashMap<>();
 
     /** Parameters that change what is SHOWN, not what is computed. */
     public static boolean isViewParam(String param) { return VIEW_PARAMS.contains(param); }
@@ -126,15 +128,15 @@ public class PageState {
     public synchronized void select(MonsterStats mob) {
         params.put("raidSelection", false);
         this.mob = mob;
-        this.rosterMobs = null;
-        this.rosterName = null;
+        rosterMobs = null;
+        rosterName = null;
     }
 
     public synchronized void selectRoster(List<MonsterStats> mobs, String name, boolean raid) {
         params.put("raidSelection", raid);
-        this.mob = null;
-        this.rosterMobs = mobs;
-        this.rosterName = name;
+        mob = null;
+        rosterMobs = mobs;
+        rosterName = name;
     }
 
     public synchronized MonsterStats mob() { return mob; }
@@ -144,17 +146,16 @@ public class PageState {
     /** Selection snapshot for undo: restore() reinstates it exactly -
      * the mob or roster, and the params a select seeds (SNAPSHOT_KEYS). */
     public synchronized Object[] selectionSnapshot() {
-        Map<String, Object> seeded = new LinkedHashMap<>();
+        Map seeded = new LinkedHashMap<>();
         for (String key : SNAPSHOT_KEYS) seeded.put(key, params.get(key));
         return new Object[]{mob, rosterMobs, rosterName, seeded};
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized void restoreSelection(Object[] snapshot) {
-        this.mob = (MonsterStats) snapshot[0];
-        this.rosterMobs = (List<MonsterStats>) snapshot[1];
-        this.rosterName = (String) snapshot[2];
-        params.putAll((Map<String, Object>) snapshot[3]);
+        mob = (MonsterStats) snapshot[0];
+        rosterMobs = (List<MonsterStats>) snapshot[1];
+        rosterName = (String) snapshot[2];
+        params.putAll((Map) snapshot[3]);
     }
 
     public synchronized boolean hasSelection() { return mob != null || rosterMobs != null; }
@@ -230,18 +231,18 @@ public class PageState {
     }
 
     /** An int param's default - what a non-numeric value falls back to. */
-    private static int defaultInt(String param) { return (Integer) DEFAULTS.get(param); }
+    static int defaultInt(String param) { return (Integer) DEFAULTS.get(param); }
 
     /** Normalize an operator pick; a crew pick is clamped 1-4 and then
      * raised to the material's gate. */
-    private static String operator(Object value, String material) {
+    static String operator(Object value, String material) {
         String v = String.valueOf(value);
         return "you".equals(v) ? "you" : raiseCrewToGate("crew" + Math.max(1, Math.min(4, crewLevel(v))), material);
     }
 
     /** Crew operators rise to the minimum Privateering the material demands;
      * "you" and already-sufficient crew pass through untouched. */
-    private static String raiseCrewToGate(String operator, String material) {
+    static String raiseCrewToGate(String operator, String material) {
         if ("you".equals(operator)) return operator;
         Cannon cannon = NavalCombat.cannon(material);
         int gate = cannon == null ? 1 : cannon.privateering;
@@ -260,28 +261,28 @@ public class PageState {
         return 1;
     }
 
-    private static int asInt(Object value, int fallback) {
+    static int asInt(Object value, int fallback) {
         return value instanceof Number ? ((Number) value).intValue() : fallback;
     }
 
-    private boolean flag(String key) { return Boolean.TRUE.equals(params.get(key)); }
+    boolean flag(String key) { return Boolean.TRUE.equals(params.get(key)); }
 
-    private int num(String key) { return (Integer) params.get(key); }
+    int num(String key) { return (Integer) params.get(key); }
 
-    private String str(String key) { return (String) params.get(key); }
+    String str(String key) { return (String) params.get(key); }
 
     /** The params node of the model page - what a renderer needs to
      * draw every chip in its current position. */
-    public synchronized Map<String, Object> paramsNode() {
-        Map<String, Object> node = new LinkedHashMap<>(params);
+    public synchronized Map paramsNode() {
+        Map node = new LinkedHashMap<>(params);
         node.put("prayerPicks", lowered(prayerPicks));
         node.put("boostPicks", lowered(boostPicks));
         return node;
     }
 
     /** A pick map keyed by the style's lower-case name, for the page. */
-    private static Map<String, Object> lowered(Map<CombatStyle, String> picks) {
-        Map<String, Object> out = new LinkedHashMap<>();
+    static Map lowered(Map<CombatStyle, String> picks) {
+        Map out = new LinkedHashMap<>();
         for (var pick : picks.entrySet()) out.put(pick.getKey().name().toLowerCase(), pick.getValue());
         return out;
     }
@@ -299,6 +300,30 @@ public class PageState {
         }
     }
 
+    /** The picked combat achievement tasks ("161,72"), in pick order. */
+    public synchronized List<CombatAchievements.Task> caPicks() {
+        List<CombatAchievements.Task> out = new ArrayList<>();
+        for (String id : str("caPicks").split(",")) {
+            CombatAchievements.Task t = id.isBlank() ? null : CombatAchievements.byId(Integer.parseInt(id.trim()));
+            if (t != null) out.add(t);
+        }
+        return out;
+    }
+
+    /** Every picked task's rules on the page's mobs, ANDed; null when none is picked. */
+    public synchronized SetRules taskRules() {
+        SetRules all = null;
+        List<MonsterStats> on = rosterMobs != null ? rosterMobs : mob != null ? List.of(mob) : List.of();
+        for (CombatAchievements.Task t : caPicks()) all = all == null ? t.rulesFor(on) : all.and(t.rulesFor(on));
+        return all;
+    }
+
+    /** The F2P lock: the param, or a picked free-to-play task (ISS-01M60HTYZT9DTZKDSFAGRNNK53). */
+    public synchronized boolean f2pLocked() {
+        SetRules tasks = taskRules();
+        return flag("f2pOnly") || tasks != null && tasks.f2p;
+    }
+
     /** The compute settings, one object per compute (see CommandEngine). */
     public synchronized ComputeParams computeParams() {
         // Kept-slots mirror the classic riskCap() gate: a risk cap only
@@ -312,7 +337,7 @@ public class PageState {
         // unticking F2P brings the old setup straight back) - they just
         // stop steering the math while the lock is on (field ask
         // 2026-08-27: D charge / thralls / task have no meaning on F2P).
-        boolean f2p = flag("f2pOnly");
+        boolean f2p = f2pLocked();
         var p = new ComputeParams();
         p.f2pOnly = f2p;
         p.onSlayerTask = !f2p && flag("onTask");
@@ -323,6 +348,11 @@ public class PageState {
         p.riskBudgetGp = num("riskBudgetGp");
         p.antifirePotion = num("antifireMode") == 2;
         p.antifireTier = num("antifireMode");
+        // A combat achievement task's rules plus the player's own requirements
+        // (ISS-01M5XC7XYMMEN3Q4QC6CGZFVPK).
+        SetRules taskRules = taskRules();
+        List<SetRules.Rule> extra = SetRules.parse(str("requirements"));
+        p.setRules = taskRules != null ? taskRules.plus(extra) : extra.isEmpty() ? null : SetRules.of(extra, Set.of(), null);
         p.sunfireRunes = flag("sunfireRunes");
         p.multiView = flag("multiView");
         p.multiStack = num("multiStack");
@@ -330,6 +360,9 @@ public class PageState {
         p.specWeapon = flag("specWeapon");
         p.boostPicks = new LinkedHashMap<>(boostPicks);
         p.prayerPicks = new LinkedHashMap<>(prayerPicks);
+        // A task's prayer and spellbook terms ride the existing picks: no
+        // prayer on any style, the one book as the lock.
+        if (taskRules != null && taskRules.spellbook != null) p.spellbookLock = taskRules.spellbook;
         p.upgradeBudgetGp = num("upgradeBudgetGp");
         p.maxSwaps = num("maxSwaps");
         // Every player's chosen mode since 2026-10-22 (Andrew: "Release to

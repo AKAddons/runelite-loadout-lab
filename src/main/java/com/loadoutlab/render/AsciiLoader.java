@@ -5,6 +5,13 @@ import java.time.*;
 import java.util.*;
 import java.io.BufferedReader;
 import javax.swing.Timer;
+import javax.swing.JEditorPane;
+import java.util.regex.Pattern;
+import java.util.concurrent.ThreadLocalRandom;
+import java.nio.charset.StandardCharsets;
+import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.awt.GraphicsEnvironment;
 
 /**
  * The compute animation, ASCII edition (the pixel mascots retired in
@@ -15,18 +22,18 @@ import javax.swing.Timer;
  * runs ONLY while computing and dies on unmount (the mascot-era
  * lesson: a hidden component's timer still burns the EDT).
  */
-final class AsciiLoader extends javax.swing.JEditorPane {
-    private static final String RESOURCE = "/com/loadoutlab/render/loader_frames.txt";
-    private static final List<List<String>> MOODS = new ArrayList<>();
+class AsciiLoader extends JEditorPane {
+    static final String RESOURCE = "/com/loadoutlab/render/loader_frames.txt";
+    static final List<List<String>> MOODS = new ArrayList<>();
     /** Keyed pools ("==sea ...", "==toa ...", "==tob", "==cox", "==zulrah"
      * sections): played only for the matching selection, so a kraken never
      * greets Graardor and the Obelisk charges only for a ToA trip. Land
      * computes use MOODS. */
-    private static final Map<String, List<List<String>>> POOLS = new HashMap<>();
+    static final Map<String, List<List<String>>> POOLS = new HashMap<>();
     static {
         load(MOODS, POOLS);
     }
-    private String key;
+    String key;
 
     /** The mood faces, bundled: Java's logical Monospaced draws ASCII in one
      * font and borrows Braille, blocks and shades from another at other
@@ -36,21 +43,19 @@ final class AsciiLoader extends javax.swing.JEditorPane {
      * against DejaVu's 48%: "the color tone is off in the potion"); it has no
      * Braille, so Braille runs draw in Cascadia Mono, same advance and line
      * height at 12 pt. A missing resource = the logical font as before. */
-    private static final Font MOOD_FONT = loadFont("DejaVuSansMono.ttf");
-    private static final Font BRAILLE_FONT = loadFont("CascadiaMono.ttf");
-    private static final java.util.regex.Pattern BRAILLE = java.util.regex.Pattern.compile("[\u2800-\u28ff]+");
+    static final Font MOOD_FONT = loadFont("DejaVuSansMono.ttf");
+    static final Font BRAILLE_FONT = loadFont("CascadiaMono.ttf");
+    static final Pattern BRAILLE = Pattern.compile("[\u2800-\u28ff]+");
 
     static Font moodFont() { return MOOD_FONT; }
 
-    static Font brailleFont() { return BRAILLE_FONT; }
-
-    private static Font loadFont(String resource) {
-        try (java.io.InputStream in = AsciiLoader.class.getResourceAsStream(resource)) {
+    static Font loadFont(String resource) {
+        try (InputStream in = AsciiLoader.class.getResourceAsStream(resource)) {
             Font font = Font.createFont(Font.TRUETYPE_FONT, in).deriveFont(12f);
             // Registered so the HTML stylesheet can name it: Swing's own rule for
             // pre (font-family: Monospaced) overrides the component font, which
             // is why setFont alone changed nothing (Andrew 2026-10-15, still bad).
-            java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
             return font;
         } catch (Exception e) { return new Font(Font.MONOSPACED, Font.PLAIN, 12); }
     }
@@ -58,9 +63,9 @@ final class AsciiLoader extends javax.swing.JEditorPane {
     /** The pool key for the pending selection, or null for land. */
     void setKey(String key) { this.key = key; }
 
-    private final Timer timer = new Timer(140, e -> advance());
-    private List<String> frames = MOODS.get(0);
-    private int tick;
+    final Timer timer = new Timer(140, e -> advance());
+    List<String> frames = MOODS.get(0);
+    int tick;
 
     AsciiLoader() {
         // Frames are HTML: a cell may carry its own <font color> run, so a
@@ -85,9 +90,7 @@ final class AsciiLoader extends javax.swing.JEditorPane {
     }
 
     /** The key the current frames were picked for (a sentinel while idle). */
-    private String playingKey = "-";
-
-    String playingKey() { return playingKey; }
+    String playingKey = "-";
 
     void setRunning(boolean running) {
         // A search started while the last one still animates re-picks from
@@ -97,7 +100,7 @@ final class AsciiLoader extends javax.swing.JEditorPane {
         if (running && (!timer.isRunning() || repick)) {
             List<List<String>> keyed = key == null ? null : POOLS.get(key);
             List<List<String>> pool = keyed != null && !keyed.isEmpty() ? keyed : seasonal(LocalDate.now());
-            frames = pool.get(java.util.concurrent.ThreadLocalRandom.current() .nextInt(pool.size()));
+            frames = pool.get(ThreadLocalRandom.current() .nextInt(pool.size()));
             playingKey = key;
             tick = 0;
             advance();
@@ -124,12 +127,12 @@ final class AsciiLoader extends javax.swing.JEditorPane {
         return season && halloween != null && !halloween.isEmpty() ? halloween : MOODS;
     }
 
-    private void advance() { show(frames.get(tick++ % frames.size())); }
+    void advance() { show(frames.get(tick++ % frames.size())); }
 
     /** Package for the parse test. Fail-soft: a missing or empty
      * resource degrades to the plain text line, never a crash. A mood
      * separator of "==<key> ..." routes that mood to the keyed pool. */
-    private static List<List<String>> poolFor(List<List<String>> land, Map<String, List<List<String>>> pools, String key) {
+    static List<List<String>> poolFor(List<List<String>> land, Map<String, List<List<String>>> pools, String key) {
         return key == null ? land : pools.computeIfAbsent(key, k -> new ArrayList<>());
     }
 
@@ -137,8 +140,8 @@ final class AsciiLoader extends javax.swing.JEditorPane {
         List<String> frames = new ArrayList<>();
         var frame = new StringBuilder();
         String moodKey = null;
-        try (BufferedReader reader = new BufferedReader( new java.io.InputStreamReader(
-                AsciiLoader.class.getResourceAsStream(RESOURCE), java.nio.charset.StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader( new InputStreamReader(
+                AsciiLoader.class.getResourceAsStream(RESOURCE), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("#")) continue;

@@ -1,10 +1,8 @@
 package com.loadoutlab.command;
 
 import com.google.gson.Gson;
-import com.loadoutlab.collection.DreamStore;
-import com.loadoutlab.collection.ExclusionStore;
 import com.loadoutlab.collection.MonsterProfileStore;
-import com.loadoutlab.collection.ProtectOnlyStore;
+import com.loadoutlab.collection.IdSetStore;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.testsupport.InMemoryConfigManager;
 import net.runelite.client.config.ConfigManager;
@@ -37,35 +35,35 @@ class CommandsTest {
 	@Test
 	@DisplayName("exclusion toggle: execute excludes, undo restores, redo re-excludes")
 	void exclusionRoundTrip() {
-		ExclusionStore store = new ExclusionStore(cfg, new Gson());
+		IdSetStore store = new IdSetStore(cfg, new Gson(), "excludedItems");
 		Command cmd = TestCommands.toggleExclusion(store, WHIP, "Abyssal whip");
 		assertEquals("Exclude Abyssal whip", cmd.getDescription());
 
 		assertTrue(history.execute(cmd));
-		assertTrue(store.isExcluded(WHIP));
+		assertTrue(store.contains(WHIP));
 		assertTrue(history.undo());
-		assertFalse(store.isExcluded(WHIP));
+		assertFalse(store.contains(WHIP));
 		assertTrue(history.redo());
-		assertTrue(store.isExcluded(WHIP));
+		assertTrue(store.contains(WHIP));
 	}
 
 	@Test
 	@DisplayName("exclusion toggle on an excluded item reads as Include and un-excludes")
 	void exclusionToggleOff() {
-		ExclusionStore store = new ExclusionStore(cfg, new Gson());
+		IdSetStore store = new IdSetStore(cfg, new Gson(), "excludedItems");
 		store.toggle(WHIP);
 		Command cmd = TestCommands.toggleExclusion(store, WHIP, "Abyssal whip");
 		assertEquals("Include Abyssal whip", cmd.getDescription());
 		history.execute(cmd);
-		assertFalse(store.isExcluded(WHIP));
+		assertFalse(store.contains(WHIP));
 		history.undo();
-		assertTrue(store.isExcluded(WHIP));
+		assertTrue(store.contains(WHIP));
 	}
 
 	@Test
 	@DisplayName("clear exclusions is ONE undo entry and undo restores every item")
 	void clearExclusionsRestoresAll() {
-		ExclusionStore store = new ExclusionStore(cfg, new Gson());
+		IdSetStore store = new IdSetStore(cfg, new Gson(), "excludedItems");
 		store.toggle(WHIP);
 		store.toggle(FANG);
 		store.toggle(11230);
@@ -75,9 +73,9 @@ class CommandsTest {
 
 		assertTrue(history.undo());
 		assertFalse(history.canUndo(), "one entry for the whole clear");
-		assertTrue(store.isExcluded(WHIP));
-		assertTrue(store.isExcluded(FANG));
-		assertTrue(store.isExcluded(11230));
+		assertTrue(store.contains(WHIP));
+		assertTrue(store.contains(FANG));
+		assertTrue(store.contains(11230));
 
 		assertTrue(history.redo());
 		assertTrue(store.snapshot().isEmpty());
@@ -86,7 +84,7 @@ class CommandsTest {
 	@Test
 	@DisplayName("clear exclusions on an empty store is a no-op and never lands on the stack")
 	void clearEmptyNoop() {
-		ExclusionStore store = new ExclusionStore(cfg, new Gson());
+		IdSetStore store = new IdSetStore(cfg, new Gson(), "excludedItems");
 		assertFalse(history.execute(TestCommands.clearExclusions(store)));
 		assertFalse(history.canUndo());
 	}

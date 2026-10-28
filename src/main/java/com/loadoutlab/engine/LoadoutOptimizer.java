@@ -14,18 +14,21 @@ import static com.loadoutlab.engine.MonsterMechanics.*;
 import static com.loadoutlab.engine.PvpRisk.*;
 import static com.loadoutlab.engine.RangedAmmo.*;
 import static com.loadoutlab.engine.UntradeableDeathCosts.*;
+import java.util.function.Predicate;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 
-public final class LoadoutOptimizer {
-    private static final int SLOT_LIMIT = 10;
-    private static final int WEAPON_LIMIT = 24;
-    private static final int BEAM_WIDTH = 96;
+public class LoadoutOptimizer {
+    static final int SLOT_LIMIT = 10;
+    static final int WEAPON_LIMIT = 24;
+    static final int BEAM_WIDTH = 96;
     // Risk-capped hunts reserve beam slots for the LOWEST-RISK partials:
     // score-only pruning kept only expensive high-dps lines, all of which
     // bust the cap once the late slots land, and the beam died returning
     // no set at all while a cheap compliant one existed (field bug
     // 2026-07-18: KBD magic went empty after excluding the anti-dragon
     // shield - the mystic/battlestaff line was pruned at slot two).
-    private static final int RISK_RESERVE = 8;
+    static final int RISK_RESERVE = 8;
     /**
      * Beam evaluation order: high-impact slots first so pruning is informed,
      * and BODY immediately before LEGS so paired set bonuses (crystal armour
@@ -33,10 +36,10 @@ public final class LoadoutOptimizer {
      * crystal body ranked below raw-stat bodies and was pruned before the
      * legs could complete the set (the slayer-helm-on regression).
      */
-    private static final GearSlot[] NON_WEAPON_SLOTS = {
+    static final GearSlot[] NON_WEAPON_SLOTS = {
         AMMO, BODY, LEGS, HEAD, NECK, HANDS, SHIELD, CAPE, FEET, RING };
 
-    private final DpsCalculator calculator = new DpsCalculator();
+    final DpsCalculator calculator = new DpsCalculator();
 
     /**
      * DPS-neutral set polish: fill empty slots AND upgrade filled ones to
@@ -62,14 +65,14 @@ public final class LoadoutOptimizer {
         DpsResult current = relocateQuiverAmmo(data, request, result);
         // Near-ties (Andrew 2026-10-20: the Mythical cape's 0.1% over the
         // fire cape): prayer and defence may cost up to 0.5% of the SET.
-        double floor = result.getDps() * 0.995;
+        double floor = result.dps * 0.995;
         for (GearSlot slot : GearSlot.values()) current = fillSlot(data, request, current, slot, pass, floor);
         return current;
     }
 
     /** The per-request constants a display pass reads: the spell scratch,
      * the risk guard, the dragonfire lock and the required-gear slots. */
-    private static final class Pass {
+    static class Pass {
         final SpellContext spells;
         final RiskGuard risk;
         final boolean dragonShield;
@@ -79,7 +82,7 @@ public final class LoadoutOptimizer {
             spells = new SpellContext(request, spellsFor(data, request));
             risk = RiskGuard.of(data, request);
             dragonShield = shieldRequired(request);
-            required = RequiredGear.requiredIds(request.getMonster(), data, request.getWaivers());
+            required = RequiredGear.requiredIds(request.monster, data, request.waivers);
         }
     }
 
@@ -96,35 +99,35 @@ public final class LoadoutOptimizer {
         var pass = new Pass(data, request);
         DpsResult current = result;
         for (String god : gods) {
-            Set<String> before = coveredGods(current.getLoadout());
+            Set<String> before = coveredGods(current.loadout);
             if (before.contains(god)) continue;
             before.retainAll(gods);
-            List<GearItem> options = keep(data.getGearItems(), item ->
-                godsOf(item).contains(god) && item.getSlot() != WEAPON && legalProtection(data, request, item));
+            List<GearItem> options = keep(data.gearItems, item ->
+                godsOf(item).contains(god) && item.slot != WEAPON && legalProtection(data, request, item));
             options.sort(Comparator.comparingLong(GearItem::getPriceOrZero));
             for (GearItem item : options) {
-                GearSlot slot = item.getSlot();
-                GearItem weapon = current.getLoadout().getWeapon();
-                GearItem worn = current.getLoadout().get(slot);
-                if (request.pinnedFor(slot) != null || (slot == SHIELD && weapon != null && weapon.isTwoHanded())
+                GearSlot slot = item.slot;
+                GearItem weapon = current.loadout.getWeapon();
+                GearItem worn = current.loadout.get(slot);
+                if (request.pinnedFor(slot) != null || (slot == SHIELD && weapon != null && weapon.twoHanded)
                     || (slot == AMMO && !compatible(item, weapon)) || (pass.dragonShield && slot == SHIELD && !isProtectiveShield(item))
-                    || (pass.required.containsKey(slot) && worn != null && pass.required.get(slot).contains(worn.getId())
-                        && !pass.required.get(slot).contains(item.getId())) || (request.getCandidateMode() != ALL_STANDARD
+                    || (pass.required.containsKey(slot) && worn != null && pass.required.get(slot).contains(worn.id)
+                        && !pass.required.get(slot).contains(item.id)) || (request.candidateMode != ALL_STANDARD
                         && budgetCost(request, item) > budgetCost(request, worn))) {
                     continue;
                 }
-                Loadout trial = current.getLoadout().with(slot, item);
+                Loadout trial = current.loadout.with(slot, item);
                 Set<String> after = coveredGods(trial);
                 if (!after.containsAll(before) || !after.contains(god)) {
                     continue; // would uncover another route god
                 }
                 if (pass.risk != null && pass.risk.exceedsCap(trial, null)) continue;
-                if (request.getSetRules() != null && !request.getSetRules().holds(trial)) continue;
+                if (request.setRules != null && !request.setRules.holds(trial)) continue;
                 DpsResult candidate = bestSpellResult(request, trial, pass.spells);
-                if (candidate == null || candidate.getDps() < current.getDps() - 1e-9) {
+                if (candidate == null || candidate.dps < current.dps - 1e-9) {
                     continue; // protection is worn only when it costs nothing
                 }
-                current = candidate.withPurchaseCost(current.getPurchaseCost());
+                current = candidate.withPurchaseCost(current.purchaseCost);
                 break;
             }
         }
@@ -146,7 +149,7 @@ public final class LoadoutOptimizer {
             GearItem pick = null;
             boolean pa = false;
             int pc = 0;
-            for (GearItem item : data.getGearItems()) {
+            for (GearItem item : data.gearItems) {
                 Set<String> covers = new HashSet<>(godsOf(item));
                 covers.retainAll(missing);
                 if (covers.isEmpty() || !eligible(data, request, item)) continue;
@@ -178,19 +181,19 @@ public final class LoadoutOptimizer {
         List<DpsResult> swaps = new ArrayList<>();
         if (shown == null) return swaps;
         var pass = new Pass(data, request);
-        Loadout base = shown.getLoadout();
+        Loadout base = shown.loadout;
         GearItem worn = base.get(slot);
         GearItem weapon = base.getWeapon();
         for (GearItem item : data.getGearItems(slot)) {
-            if ((worn != null && item.getId() == worn.getId()) || !eligible(data, request, item)
-                || (slot == WEAPON && (!item.isWeaponFor(request.getStyle()) || (pass.dragonShield && item.isTwoHanded())))
-                || (slot == SHIELD && weapon != null && weapon.isTwoHanded()) || (slot == AMMO && !compatible(item, weapon))
+            if ((worn != null && item.id == worn.id) || !eligible(data, request, item)
+                || (slot == WEAPON && (!item.isWeaponFor(request.style) || (pass.dragonShield && item.twoHanded)))
+                || (slot == SHIELD && weapon != null && weapon.twoHanded) || (slot == AMMO && !compatible(item, weapon))
                 || (pass.dragonShield && slot == SHIELD && !isProtectiveShield(item))
-                || (pass.required.containsKey(slot) && !pass.required.get(slot).contains(item.getId()))) {
+                || (pass.required.containsKey(slot) && !pass.required.get(slot).contains(item.id))) {
                 continue;
             }
             Loadout swapped = base.with(slot, item);
-            if (slot == WEAPON && item.isTwoHanded()) swapped = swapped.with(SHIELD, null);
+            if (slot == WEAPON && item.twoHanded) swapped = swapped.with(SHIELD, null);
             // A weapon whose ammo the set does not carry (bowfa -> twisted
             // bow, twisted bow -> bowfa) comes with the best ammo the
             // request may use for it - otherwise it could never be a step
@@ -210,12 +213,12 @@ public final class LoadoutOptimizer {
             // it brings the best shield the request may use - re-picked per
             // weapon, the dragonfire and required-shield locks held.
             List<GearItem> shieldOptions = new ArrayList<>();
-            boolean pairsShield = slot == WEAPON && !item.isTwoHanded();
+            boolean pairsShield = slot == WEAPON && !item.twoHanded;
             if (pairsShield) {
                 for (GearItem shield : candidates(data, request, SHIELD, SLOT_LIMIT, null)) {
                     // The pool's null is "no shield" - the fallback below covers it.
                     if (shield == null || (pass.dragonShield && !isProtectiveShield(shield))
-                        || (pass.required.containsKey(SHIELD) && !pass.required.get(SHIELD).contains(shield.getId()))) {
+                        || (pass.required.containsKey(SHIELD) && !pass.required.get(SHIELD).contains(shield.id))) {
                         continue;
                     }
                     shieldOptions.add(shield);
@@ -231,7 +234,7 @@ public final class LoadoutOptimizer {
                     // A fresh set per trial (the quiver's carried ammo rides
                     // each copy).
                     DpsResult result = bestSpellResult(request, swapped.with(AMMO, ammo).with(SHIELD, shield), pass.spells);
-                    if (result != null && (best == null || result.getDps() > best.getDps())) best = result;
+                    if (result != null && (best == null || result.dps > best.dps)) best = result;
                 }
             }
             if (best != null) swaps.add(best);
@@ -239,7 +242,7 @@ public final class LoadoutOptimizer {
         return swaps;
     }
 
-    private static boolean legalProtection(LoadoutData data, OptimizationRequest request, GearItem item) {
+    static boolean legalProtection(LoadoutData data, OptimizationRequest request, GearItem item) {
         return eligible(data, request, item) && allowedByMode(request, item);
     }
 
@@ -247,9 +250,9 @@ public final class LoadoutOptimizer {
      * locked/degraded variant (the base item stands in for those), not
      * excluded, and equippable at the request's levels and quests. */
     public static boolean eligible(LoadoutData data, OptimizationRequest request, GearItem item) {
-        return item.isStandardGear() && !data.isVariant(item.getId()) && !request.isExcluded(item.getId())
-            && request.getRequirementProfile().canWear(item)
-            && (request.getSetRules() == null || request.getSetRules().allows(item));
+        return item.standardGear && !data.isVariant(item.id) && !request.isExcluded(item.id)
+            && request.requirementProfile.canWear(item)
+            && (request.setRules == null || request.setRules.allows(item));
     }
 
     /** The dps-neutral fill for ONE slot: swap in the highest-utility item
@@ -258,12 +261,12 @@ public final class LoadoutOptimizer {
      * quiver relocation can fill just the freed ammo slot without the whole
      * sweep (field report 2026-08-09: rosters kept the arrow in the ammo
      * slot because the roster path never ran the sweep). */
-    private DpsResult fillSlot(LoadoutData data, OptimizationRequest request, DpsResult current, GearSlot slot, Pass pass, double floor) {
+    DpsResult fillSlot(LoadoutData data, OptimizationRequest request, DpsResult current, GearSlot slot, Pass pass, double floor) {
         // A pinned slot is the player's explicit choice - never swapped.
         if (slot == WEAPON || request.pinnedFor(slot) != null) return current;
-        GearItem weapon = current.getLoadout().getWeapon();
-        if (slot == SHIELD && weapon != null && weapon.isTwoHanded()) return current;
-        GearItem worn = current.getLoadout().get(slot);
+        GearItem weapon = current.loadout.getWeapon();
+        if (slot == SHIELD && weapon != null && weapon.twoHanded) return current;
+        GearItem worn = current.loadout.get(slot);
         // Only a strictly better utility can justify touching the slot.
         long wornUtility = worn == null ? 0 : utilityScore(worn);
         long wornDamage = damageBonus(request, worn);
@@ -277,15 +280,15 @@ public final class LoadoutOptimizer {
                 || damageBonus(request, item) < wornDamage
                 // And never SPEND the budget on a dps-neutral upgrade swap
                 // (game best has no budget - its ceiling swap is exempt).
-                || (worn != null && request.getCandidateMode() != ALL_STANDARD
+                || (worn != null && request.candidateMode != ALL_STANDARD
                     && budgetCost(request, item) > budgetCost(request, worn)) || !allowedByMode(request, item)
-                || (slot == AMMO && !compatible(item, weapon) && !(current.getLoadout().getQuiverAmmo() != null && passiveForQuiver(item)))
+                || (slot == AMMO && !compatible(item, weapon) && !(current.loadout.quiverAmmo != null && passiveForQuiver(item)))
                 // Dragonfire gear mode: never swap the protection away.
                 || (pass.dragonShield && slot == SHIELD && !isProtectiveShield(item))
                 // Same for a worn required-protection item (mirror
                 // shield, earmuffs): only acceptable swaps may touch it.
-                || (pass.required.containsKey(slot) && worn != null && pass.required.get(slot).contains(worn.getId())
-                    && !pass.required.get(slot).contains(item.getId()))) {
+                || (pass.required.containsKey(slot) && worn != null && pass.required.get(slot).contains(worn.id)
+                    && !pass.required.get(slot).contains(item.id))) {
                 continue;
             }
             options.add(item);
@@ -298,7 +301,7 @@ public final class LoadoutOptimizer {
         int tried = 0;
         for (GearItem item : options) {
             // Swap accounting: the replaced item's spend comes back.
-            int cost = (int) Math.min(Integer.MAX_VALUE, (long) current.getPurchaseCost() - budgetCost(request, worn)
+            int cost = (int) Math.min(Integer.MAX_VALUE, (long) current.purchaseCost - budgetCost(request, worn)
                     + budgetCost(request, item));
             if (!withinBudget(request, cost)) continue;
             // Slot legality (field report 2026-08-15: the Eclipse Moon BiS
@@ -307,24 +310,24 @@ public final class LoadoutOptimizer {
             // is never filled. The quiver's carried arrows ride every trial
             // (with() carries them), or the recompute would lose their
             // strength and reject the swap.
-            Loadout trial = current.getLoadout().with(slot, item);
+            Loadout trial = current.loadout.with(slot, item);
             // Risk rejections must not consume tries: in risk mode the
             // top utility items are exactly the expensive gear the
             // budget rejects, and the free tier (god books, diary
             // boots) sits below them - it starved behind the cap.
             if (pass.risk != null && pass.risk.vetoes(trial, null)) continue;
-            if (request.getSetRules() != null && !request.getSetRules().holds(trial)) continue;
+            if (request.setRules != null && !request.setRules.holds(trial)) continue;
             if (++tried > 12) break;
             DpsResult candidate = bestSpellResult(request, trial, pass.spells);
-            if (candidate == null || candidate.getDps() < Math.min(floor, current.getDps()) - 1e-9) continue;
+            if (candidate == null || candidate.dps < Math.min(floor, current.dps) - 1e-9) continue;
             // A dps-NEUTRAL utility swap must not displace gear that is
             // stronger for this style (field report 2026-08-12: Virtus
             // robe top, +2 prayer, replaced Ancestral robe top on Vorkath
             // because the 1% magic damage gap vanished into max-hit
             // truncation). Utility is only free when nothing offensive is
             // given up; a strictly better dps still wins outright.
-            boolean neutral = candidate.getDps() <= current.getDps() + 1e-9;
-            if (neutral && worn != null && worn.roughScore(request.getStyle()) > item.roughScore(request.getStyle())) {
+            boolean neutral = candidate.dps <= current.dps + 1e-9;
+            if (neutral && worn != null && worn.roughScore(request.style) > item.roughScore(request.style)) {
                 continue;
             }
             current = candidate.withPurchaseCost(cost);
@@ -341,16 +344,16 @@ public final class LoadoutOptimizer {
      * the input unchanged when no relocation applies, so it is safe on
      * every shown set. */
     public DpsResult relocateQuiverAmmo(LoadoutData data, OptimizationRequest request, DpsResult result) {
-        if (result == null || !QuiverAmmo.relocatable(result.getLoadout())) return result;
+        if (result == null || !QuiverAmmo.relocatable(result.loadout)) return result;
         var pass = new Pass(data, request);
-        Loadout worn = result.getLoadout();
+        Loadout worn = result.loadout;
         Loadout relocated = worn.with(AMMO, null).withQuiverAmmo(worn.get(AMMO));
         DpsResult moved = bestSpellResult(request, relocated, pass.spells);
-        if (moved == null || moved.getDps() < result.getDps() - 1e-9) {
+        if (moved == null || moved.dps < result.dps - 1e-9) {
             return result; // relocation must be dps-neutral, or leave it
         }
-        moved = moved.withPurchaseCost(result.getPurchaseCost());
-        return fillSlot(data, request, moved, AMMO, pass, moved.getDps());
+        moved = moved.withPurchaseCost(result.purchaseCost);
+        return fillSlot(data, request, moved, AMMO, pass, moved.dps);
     }
 
     /**
@@ -361,7 +364,7 @@ public final class LoadoutOptimizer {
      * accessible the set is returned unchanged (the monster note warns).
      */
     public DpsResult ensureRequiredUtility(LoadoutData data, OptimizationRequest request, DpsResult result) {
-        if (result == null || !RequiredUtility.requiresRecoil(request.getMonster()) || RequiredUtility.hasRecoil(result.getLoadout())
+        if (result == null || !RequiredUtility.requiresRecoil(request.monster) || RequiredUtility.hasRecoil(result.loadout)
             // A pinned ring is the player's explicit pick - the forced
             // recoil swap must not override it.
             || request.pinnedFor(RING) != null) {
@@ -374,9 +377,9 @@ public final class LoadoutOptimizer {
             // them), or the recoil trial silently sheds their strength and
             // accuracy (found 2026-08-09: the roster golden halved at Zulrah
             // when the relocate-then-recoil chain dropped the quiver ammo).
-            DpsResult swapped = bestSpellResult(request, result.getLoadout().with(candidate.getSlot(), candidate), sc);
-            if (swapped != null && (best == null || swapped.getDps() > best.getDps())) {
-                best = swapped.withPurchaseCost(result.getPurchaseCost() + budgetCost(request, candidate));
+            DpsResult swapped = bestSpellResult(request, result.loadout.with(candidate.slot, candidate), sc);
+            if (swapped != null && (best == null || swapped.dps > best.dps)) {
+                best = swapped.withPurchaseCost(result.purchaseCost + budgetCost(request, candidate));
             }
         }
         return best == null ? result : best;
@@ -391,7 +394,7 @@ public final class LoadoutOptimizer {
     public Set<GearSlot> beatenSlots(LoadoutData data, OptimizationRequest own, OptimizationRequest game, DpsResult shown) {
         Set<GearSlot> beaten = EnumSet.noneOf(GearSlot.class);
         var pass = new Pass(data, own);
-        Loadout worn = shown.getLoadout();
+        Loadout worn = shown.loadout;
         DpsResult base = bestSpellResult(own, worn, pass.spells);
         for (GearSlot slot : worn.getGear().keySet()) {
             if (base == null || slot == WEAPON || pass.required.containsKey(slot) || slot == SHIELD && pass.dragonShield) {
@@ -399,7 +402,7 @@ public final class LoadoutOptimizer {
             }
             for (GearItem item : candidates(data, game, slot, SLOT_LIMIT, worn.getWeapon())) {
                 DpsResult swapped = bestSpellResult(own, worn.with(slot, item), pass.spells);
-                if (swapped != null && swapped.getDps() > base.getDps() + 1e-6) {
+                if (swapped != null && swapped.dps > base.dps + 1e-6) {
                     beaten.add(slot);
                     break;
                 }
@@ -414,40 +417,40 @@ public final class LoadoutOptimizer {
      * incoming dps, so the beam walks the offence/defence frontier the
      * defensive modes sweep (restored from 491b6c0, ISS-01M5G5CZC9SK46499FACRSJ8ZT).
      */
-    private static double beamScore(OptimizationRequest request, DpsResult score, Loadout loadout, Prepared incoming) {
-        double value = score.getDps() + score.getAttackRoll() * 1e-9;
-        if (incoming != null) value -= request.getDefenseWeight() * incoming.totalDps(loadout);
+    static double beamScore(OptimizationRequest request, DpsResult score, Loadout loadout, Prepared incoming) {
+        double value = score.dps + score.attackRoll * 1e-9;
+        if (incoming != null) value -= request.defenseWeight * incoming.totalDps(loadout);
         return value;
     }
 
     /** The style's damage-driving bonus (melee strength / ranged strength /
      * magic damage) of an item's or a set's bonuses. */
-    private static long damageBonus(CombatStyle style, StatBlock bonuses) {
+    static long damageBonus(CombatStyle style, StatBlock bonuses) {
         switch (style) {
             case RANGED:
-                return bonuses.getRangedStrength();
+                return bonuses.rangedStrength;
             case MAGIC:
-                return bonuses.getMagicDamage();
+                return bonuses.magicDamage;
             case MELEE:
             default:
-                return bonuses.getStrength();
+                return bonuses.strength;
         }
     }
 
     /** An item's damage bonus (0 for an empty slot). A DPS-neutral fill
      * swap must never REDUCE it. */
-    private static long damageBonus(OptimizationRequest request, GearItem item) {
-        return item == null ? 0 : damageBonus(request.getStyle(), item.getBonuses());
+    static long damageBonus(OptimizationRequest request, GearItem item) {
+        return item == null ? 0 : damageBonus(request.style, item.bonuses);
     }
 
     /** Prayer first, then the sum of defensive bonuses - of an item, or of
      * the whole set. */
-    private static long utility(StatBlock bonuses, StatBlock defensive) {
-        return bonuses.getPrayer() * 1000L + (defensive.getStab() + defensive.getSlash()
-            + defensive.getCrush() + defensive.getMagic() + defensive.getRanged());
+    static long utility(StatBlock bonuses, StatBlock defensive) {
+        return bonuses.prayer * 1000L + (defensive.stab + defensive.slash
+            + defensive.crush + defensive.magic + defensive.ranged);
     }
 
-    private static long utilityScore(GearItem item) { return utility(item.getBonuses(), item.getDefensive()); }
+    static long utilityScore(GearItem item) { return utility(item.bonuses, item.defensive); }
 
     /**
      * The set's total damage bonus for the style - the FIRST DPS-tie
@@ -457,8 +460,8 @@ public final class LoadoutOptimizer {
      * moon (+4). Only when damage ties (helms with zero offence: slayer helm
      * vs bare black mask) does setUtility decide on defence.
      */
-    private static long setDamageBonus(OptimizationRequest request, Loadout loadout) {
-        return damageBonus(request.getStyle(), loadout.getBonuses());
+    static long setDamageBonus(OptimizationRequest request, Loadout loadout) {
+        return damageBonus(request.style, loadout.bonuses);
     }
 
     /**
@@ -468,7 +471,7 @@ public final class LoadoutOptimizer {
      * damage bonus (zero), so this decides on defence. Same DPS, same risk,
      * same damage: prefer the set that protects better.
      */
-    private static long setUtility(Loadout loadout) { return utility(loadout.getBonuses(), loadout.getDefensive()); }
+    static long setUtility(Loadout loadout) { return utility(loadout.bonuses, loadout.defensive); }
 
     /**
      * TERTIARY DPS-tie breaker, after setUtility: the set's damage bonuses
@@ -478,15 +481,18 @@ public final class LoadoutOptimizer {
      * (max) - data order decided. When everything the style cares about
      * ties, prefer the set that is better everywhere else.
      */
-    private static long setCrossStyleDamage(Loadout loadout) {
-        return loadout.getBonuses().getStrength() + loadout.getBonuses().getRangedStrength() + loadout.getBonuses().getMagicDamage();
+    static long setCrossStyleDamage(Loadout loadout) {
+        return loadout.bonuses.strength + loadout.bonuses.rangedStrength + loadout.bonuses.magicDamage;
     }
 
     public List<DpsResult> optimize(LoadoutData data, OptimizationRequest request) {
-        if (request.getMonster() == null || request.getStyle() == null || request.getLevels() == null) {
+        if (request.monster == null || request.style == null || request.getLevels() == null) {
             return List.of();
         }
-        if (request.getStyle() == ANY) return optimizeAny(data, request);
+        if (request.style == ANY) return optimizeAny(data, request);
+        // A task's one style (Mage of the Ruins): every other style has no set.
+        SetRules rules = request.setRules;
+        if (rules != null && !rules.allowsStyle(request.style)) return List.of();
         List<DpsResult> results = optimize(data, request, preparePools(data, request));
         // The fold-in doubles the search, so it runs only where its
         // mechanism exists: the salve amulet (undead-only) is the one
@@ -496,7 +502,7 @@ public final class LoadoutOptimizer {
         // the beam cannot go backwards - and the shadow optimize was
         // pure cost (field report 2026-08-14: a task-only Sire roster
         // ground for minutes once on-task became always-on).
-        return request.isOnSlayerTask() && request.getMonster() != null && request.getMonster().hasAttribute("undead")
+        return request.onSlayerTask && request.monster != null && request.monster.hasAttribute("undead")
             ? guaranteeTaskMonotone(data, request, results) : results;
     }
 
@@ -514,15 +520,15 @@ public final class LoadoutOptimizer {
      * Off-task sets never wear a bonus helm, so their dps is task-invariant
      * (no recompute needed).
      */
-    private List<DpsResult> guaranteeTaskMonotone(LoadoutData data, OptimizationRequest request, List<DpsResult> onTask) {
+    List<DpsResult> guaranteeTaskMonotone(LoadoutData data, OptimizationRequest request, List<DpsResult> onTask) {
         OptimizationRequest offRequest = request.withSlayerTask(false);
         List<DpsResult> ot = optimize(data, offRequest, preparePools(data, offRequest));
         if (ot.isEmpty()) return onTask;
         List<DpsResult> merged = new ArrayList<>(onTask);
         Set<String> seen = new HashSet<>();
-        for (DpsResult r : onTask) seen.add(signature(r.getLoadout()));
+        for (DpsResult r : onTask) seen.add(signature(r.loadout));
         for (DpsResult r : ot) {
-            if (seen.add(signature(r.getLoadout()))) merged.add(r);
+            if (seen.add(signature(r.loadout))) merged.add(r);
         }
         merged.sort(ranking(request, Map.of(), Map.of()));
         return limit(merged, request);
@@ -532,16 +538,16 @@ public final class LoadoutOptimizer {
      * then the set tie-breakers - damage bonus, utility, cross-style damage
      * - and the purchase cost. The maps are per-result overrides (empty
      * when the run has none). */
-    private static Comparator<DpsResult> ranking(OptimizationRequest request, Map<DpsResult, Double> weighted, Map<DpsResult, Long> risk) {
-        return Comparator.comparingDouble((DpsResult r) -> weighted.getOrDefault(r, r.getDps())).reversed()
+    static Comparator<DpsResult> ranking(OptimizationRequest request, Map<DpsResult, Double> weighted, Map<DpsResult, Long> risk) {
+        return Comparator.comparingDouble((DpsResult r) -> weighted.getOrDefault(r, r.dps)).reversed()
             .thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed()) .thenComparingLong(r -> risk.getOrDefault(r, 0L))
-            .thenComparingLong(r -> -setDamageBonus(request, r.getLoadout())) .thenComparingLong(r -> -setUtility(r.getLoadout()))
-            .thenComparingLong(r -> -setCrossStyleDamage(r.getLoadout())) .thenComparingInt(DpsResult::getPurchaseCost);
+            .thenComparingLong(r -> -setDamageBonus(request, r.loadout)) .thenComparingLong(r -> -setUtility(r.loadout))
+            .thenComparingLong(r -> -setCrossStyleDamage(r.loadout)) .thenComparingInt(DpsResult::getPurchaseCost);
     }
 
     /** The first resultLimit results. */
-    private static List<DpsResult> limit(List<DpsResult> results, OptimizationRequest request) {
-        return results.size() > request.getResultLimit() ? new ArrayList<>(results.subList(0, request.getResultLimit())) : results;
+    static List<DpsResult> limit(List<DpsResult> results, OptimizationRequest request) {
+        return results.size() > request.resultLimit ? new ArrayList<>(results.subList(0, request.resultLimit)) : results;
     }
 
     /**
@@ -549,18 +555,12 @@ public final class LoadoutOptimizer {
      * weapon pool, the non-weapon slot pools, and (lazily, per weapon) the
      * compatible-ammo pools. Confined to the optimizer worker.
      */
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static final class CandidatePools {
-        private final List<SpellStats> spells;
-        private final List<GearItem> weapons;
-        private final Map<GearSlot, List<GearItem>> slotCandidates;
-        private final Map<GearItem, List<GearItem>> ammoByWeapon = new IdentityHashMap<>();
-
-        /** The weapons the search will consider - test surface. */
-        List<GearItem> weaponPool() { return weapons; }
-
-        /** One slot's candidates (a leading null = the slot left empty) - test surface. */
-        List<GearItem> slotPool(GearSlot slot) { return slotCandidates.getOrDefault(slot, List.of()); }
+    @AllArgsConstructor
+    public static class CandidatePools {
+        final List<SpellStats> spells;
+        final List<GearItem> weapons;
+        final Map<GearSlot, List<GearItem>> slotCandidates;
+        final Map<GearItem, List<GearItem>> ammoByWeapon = new IdentityHashMap<>();
     }
 
     /**
@@ -581,11 +581,17 @@ public final class LoadoutOptimizer {
 
     /** optimize() over prebuilt pools - see preparePools for the contract. */
     public List<DpsResult> optimize(LoadoutData data, OptimizationRequest request, CandidatePools pools) {
-        if (request.getMonster() == null || request.getStyle() == null || request.getLevels() == null) {
+        if (request.monster == null || request.style == null || request.getLevels() == null) {
             return List.of();
         }
         List<SpellStats> spells = pools.spells;
         List<GearItem> weapons = pools.weapons;
+        // No weapon: manual casting (Trying to fit in: no Vampyrium weapon is a
+        // staff), or bare fists (The Fremennik Way).
+        if (request.setRules != null && request.setRules.emptyHanded(request.style)) {
+            weapons = new ArrayList<>(weapons);
+            weapons.add(null);
+        }
         var sc = new SpellContext(request, spells);
 
         List<DpsResult> results = new ArrayList<>();
@@ -613,7 +619,7 @@ public final class LoadoutOptimizer {
         // unconstrained hunt and let the mechanics note explain the gap. A
         // pin on the slot outranks - the player's explicit choice.
         Map<GearSlot, Set<Integer>> required = new EnumMap<>(GearSlot.class);
-        for (RequiredGear.Rule rule : RequiredGear.rulesFor(request.getMonster(), request.getWaivers())) {
+        for (RequiredGear.Rule rule : RequiredGear.rulesFor(request.monster, request.waivers)) {
             Set<Integer> acceptable = rule.ids(data);
             if (request.pinnedFor(rule.slot) == null && !onlyIds(pools.slotCandidates.get(rule.slot), acceptable).isEmpty()) {
                 required.put(rule.slot, acceptable);
@@ -621,19 +627,19 @@ public final class LoadoutOptimizer {
         }
         // The monster-side incoming constants for a defense-weighted beam,
         // hoisted once per optimize (call-scoped, worker-thread confined).
-        Prepared incoming = request.getDefenseWeight() > 0 ? new IncomingDpsCalculator.Prepared(request.getMonster(),
-                BossIncomingOverrides.overridesFor(request.getMonster()),
-                request.getLevels().getDefence(), request.getLevels().getMagic(), request.getAntifireTier()) : null;
+        Prepared incoming = request.defenseWeight > 0 ? new IncomingDpsCalculator.Prepared(request.monster,
+                BossIncomingOverrides.overridesFor(request.monster),
+                request.getLevels().defence, request.getLevels().magic, request.antifireTier) : null;
         RiskGuard risk = RiskGuard.of(data, request);
         GearItem e2 = data.getGear(VampyreRules.EFARITAY);
-        boolean seedRing = VampyreRules.tier(request.getMonster()) == 2 && pools.slotCandidates.get(RING).contains(e2);
+        boolean seedRing = VampyreRules.tier(request.monster) == 2 && pools.slotCandidates.get(RING).contains(e2);
         for (GearItem weapon : weapons) {
             // Dragonfire without a potion: the shield slot is spoken for,
             // so two-handed weapons cannot provide protection.
-            if (dragonShield && weapon.isTwoHanded()) continue;
+            if (dragonShield && weapon != null && weapon.twoHanded) continue;
             // Same for a required protective shield (basilisk gaze, the
             // harpies' lantern): a two-hander cannot comply.
-            if (required.containsKey(SHIELD) && weapon.isTwoHanded()) continue;
+            if (required.containsKey(SHIELD) && weapon != null && weapon.twoHanded) continue;
             // The ammo top-N must be cut AFTER weapon compatibility: bolts
             // and javelins out-score every arrow on raw ranged strength, so
             // a global cut starves arrow weapons of usable ammo entirely.
@@ -653,8 +659,8 @@ public final class LoadoutOptimizer {
             // Set rules (ISS-01M5XA7NVZYGVR3EVTM05XHXKP): each slot still to fill
             // bounds what it can add, so a partial set dies only when no choice
             // left could meet a rule; the last slot's bound is 0 - exact.
-            RuleBounds bounds = request.getSetRules() == null || request.getSetRules().getRules().isEmpty() ? null
-                : new RuleBounds(request.getSetRules(), pools, ammoCandidates, weapon);
+            RuleBounds bounds = request.setRules == null || request.setRules.rules.isEmpty() ? null
+                : new RuleBounds(request.setRules, pools, ammoCandidates, weapon);
             // Beam trials never reach the panel - skip the counted-bonus
             // bookkeeping until the final rescore below.
             calculator.setCollectCounted(false);
@@ -724,7 +730,7 @@ public final class LoadoutOptimizer {
             calculator.setCollectCounted(true);
             for (SearchState state : states) {
                 Loadout loadout = Loadout.adopting(state.gear);
-                if (request.getSetRules() != null && !request.getSetRules().holds(loadout)) continue;
+                if (request.setRules != null && !request.setRules.holds(loadout)) continue;
                 String signature = signature(loadout);
                 if (!seen.add(signature)) continue;
                 DpsResult scored = bestSpellResult(request, loadout, sc);
@@ -735,7 +741,7 @@ public final class LoadoutOptimizer {
         Map<DpsResult, Long> rbr = new IdentityHashMap<>();
         if (request.isRiskConstrained()) {
             for (DpsResult result : results) {
-                rbr.put(result, riskGp(result.getLoadout(), null, request.getMaxTradeables()));
+                rbr.put(result, riskGp(result.loadout, null, request.maxTradeables));
             }
         }
         // A defense-weighted run ranks its results by the same weighted
@@ -743,7 +749,7 @@ public final class LoadoutOptimizer {
         Map<DpsResult, Double> weighted = new IdentityHashMap<>();
         if (incoming != null) {
             for (DpsResult result : results) {
-                weighted.put(result, beamScore(request, result, result.getLoadout(), incoming));
+                weighted.put(result, beamScore(request, result, result.loadout, incoming));
             }
         }
         results.sort(ranking(request, weighted, rbr));
@@ -759,19 +765,19 @@ public final class LoadoutOptimizer {
      * weapon. Created and confined per optimize/fill call (the worker
      * thread), never stored on the optimizer.
      */
-    private static final class SpellContext {
-        private final List<SpellStats> spells;
-        private final OptimizationRequest[] spellRequests;
-        private final Map<GearItem, boolean[]> allowedByWeapon = new IdentityHashMap<>();
+    static class SpellContext {
+        final List<SpellStats> spells;
+        final OptimizationRequest[] spellRequests;
+        final Map<GearItem, boolean[]> allowedByWeapon = new IdentityHashMap<>();
 
-        private SpellContext(OptimizationRequest request, List<SpellStats> spells) {
+        SpellContext(OptimizationRequest request, List<SpellStats> spells) {
             this.spells = spells;
-            boolean magic = request.getStyle() == MAGIC && request.isAutoSpell();
+            boolean magic = request.style == MAGIC && request.isAutoSpell();
             this.spellRequests = new OptimizationRequest[magic ? spells.size() : 0];
             for (int i = 0; i < spellRequests.length; i++) spellRequests[i] = request.withSpell(spells.get(i));
         }
 
-        private boolean[] allowedFor(OptimizationRequest request, Loadout loadout) {
+        boolean[] allowedFor(OptimizationRequest request, Loadout loadout) {
             GearItem weapon = loadout.getWeapon();
             boolean[] allowed = allowedByWeapon.get(weapon);
             if (allowed == null) {
@@ -784,7 +790,7 @@ public final class LoadoutOptimizer {
     }
 
     /** Spell contexts by request, for bestSpellFor's repeat callers. */
-    private final Map<OptimizationRequest, SpellContext> spellContexts = Collections.synchronizedMap(new WeakHashMap<>());
+    final Map<OptimizationRequest, SpellContext> spellContexts = Collections.synchronizedMap(new WeakHashMap<>());
 
     /** A set's DPS with the best autocast an auto-spell magic request may
      * cast - the pick optimize() makes - on the caller's calculator. A group
@@ -804,17 +810,17 @@ public final class LoadoutOptimizer {
         return best;
     }
 
-    private DpsResult bestSpellResult(OptimizationRequest request, Loadout loadout, SpellContext context) {
-        if (request.getStyle() != MAGIC || !request.isAutoSpell()) {
+    DpsResult bestSpellResult(OptimizationRequest request, Loadout loadout, SpellContext context) {
+        if (request.style != MAGIC || !request.isAutoSpell()) {
             // A pinned spell rides only weapons that can autocast it - the
             // same legality the auto path enforces. Without this a powered
             // staff priced its own built-in and outbid the legal staves
             // (field report 2026-08-09: Blood Barrage pin, Trident answer).
-            if (request.getStyle() == MAGIC && request.getSpell() != null && !spellAllowed(request, loadout, request.getSpell())) {
+            if (request.style == MAGIC && request.spell != null && !spellAllowed(request, loadout, request.spell)) {
                 // A PINNED powered staff is the stronger intent: it casts
                 // its built-in (Apathy, Discord 2026-09-06: the sceptre pin
                 // vanished under a pinned spell).
-                if (!isPoweredStaff(loadout.getWeapon()) || !request.isPinned(loadout.getWeapon().getId())) {
+                if (!isPoweredStaff(loadout.getWeapon()) || !request.isPinned(loadout.getWeapon().id)) {
                     return null;
                 }
             }
@@ -844,28 +850,30 @@ public final class LoadoutOptimizer {
         // resurrect a spell the player cannot pay for. The ceiling and the
         // upgrade-budget mode keep every spell - one prices the game, the
         // other already assumes purchases.
-        if (request.getCandidateMode() == OWNED_ONLY) {
-            all = keep(all, spell -> SpellRunes .premiumRunesOwned(spell.getName(), request.getOwnedItems()));
+        if (request.candidateMode == OWNED_ONLY) {
+            all = keep(all, spell -> SpellRunes .premiumRunesOwned(spell.name, request.ownedItems));
         }
         // Nibblers: locked to the barrages (field decision 2026-08-06) -
         // Ice clears the trio, Blood heals off it; any other autocast is
         // the wrong advice for the mob whose role is being barraged.
-        if (isNibbler(request.getMonster())) {
-            return keep(all, spell -> "Ice Barrage".equals(spell.getName()) || "Blood Barrage".equals(spell.getName()));
+        if (isNibbler(request.monster)) {
+            return keep(all, spell -> "Ice Barrage".equals(spell.name) || "Blood Barrage".equals(spell.name));
         }
         // Salarin: strike casts are the ONLY damage (the same whitelist
         // isImmune enforces), and the elemental prune would drop them as
         // dominated - short-circuit past it.
-        if (isSalarin(request.getMonster())) return keep(all, MonsterMechanics::salarinDamagingSpell);
-        if (!request.getSpellbookLock().isEmpty()) {
-            all = keep(all, spell -> request.getSpellbookLock().equalsIgnoreCase(spell.getSpellbook()));
+        if (isSalarin(request.monster)) return keep(all, MonsterMechanics::salarinDamagingSpell);
+        if (!request.spellbookLock.isEmpty()) {
+            all = keep(all, spell -> request.spellbookLock.equalsIgnoreCase(spell.spellbook));
         }
+        // A task's spell family (You're a wizard: earth spells only).
+        if (request.setRules != null) all = keep(all, spell -> request.setRules.allowsSpell(Names.lower(spell.name)));
         return pruneDominatedElementals(all, request);
     }
 
     /** The elements passing one predicate - the shape every pool filter
      * shares. Runs per optimize or per weapon line, never in the beam. */
-    private static <T> List<T> keep(List<T> all, java.util.function.Predicate<T> filter) {
+    static <T> List<T> keep(List<T> all, Predicate<T> filter) {
         List<T> kept = new ArrayList<>(all.size());
         for (T element : all) {
             if (filter.test(element)) kept.add(element);
@@ -883,10 +891,10 @@ public final class LoadoutOptimizer {
      * with their own rules (Magic Dart, god/Iban casts, demonbane,
      * ancients) are never pruned.
      */
-    private static List<SpellStats> pruneDominatedElementals(List<SpellStats> spells, OptimizationRequest request) {
-        if (spells.isEmpty() || request.getMonster() == null) return spells;
-        String weakness = request.getMonster().getWeaknessElement();
-        int magicLevel = request.getLevels().getMagic();
+    static List<SpellStats> pruneDominatedElementals(List<SpellStats> spells, OptimizationRequest request) {
+        if (spells.isEmpty() || request.monster == null) return spells;
+        String weakness = request.monster.weaknessElement;
+        int magicLevel = request.getLevels().magic;
         List<SpellStats> kept = new ArrayList<>(spells.size());
         // Dominance is per (weakness-match, twinflame-doubling) CELL, not
         // per class alone: the staff's 40% second hit applies to
@@ -907,9 +915,9 @@ public final class LoadoutOptimizer {
                 kept.add(spell);
                 continue;
             }
-            boolean match = spell.getElement().equals(weakness);
+            boolean match = spell.element.equals(weakness);
             int cell = (match ? 2 : 0) + (DpsCalculator.twinflameDoubles(spell) ? 1 : 0)
-                + (pe ? 4 * ELEMENTS.indexOf(spell.getElement()) : 0);
+                + (pe ? 4 * ELEMENTS.indexOf(spell.element) : 0);
             int effective = DpsCalculator.elementalSpellMax(spell, magicLevel);
             if (effective > best[cell]) {
                 kept.add(spell);
@@ -919,40 +927,40 @@ public final class LoadoutOptimizer {
         return kept;
     }
 
-    private static final List<String> ELEMENTS = List.of("air", "water", "earth", "fire");
+    static final List<String> ELEMENTS = List.of("air", "water", "earth", "fire");
     /** Amulet of air, water, earth, fire (gameval ids). */
-    private static final int[] ELEMENT_AMULETS = {34407, 34413, 34419, 34425};
+    static final int[] ELEMENT_AMULETS = {34407, 34413, 34419, 34425};
 
-    private static boolean elementAmuletInPool(OptimizationRequest request) {
-        return request.getCandidateMode() != OWNED_ONLY || Arrays.stream(ELEMENT_AMULETS).anyMatch(request.getOwnedItems()::owns);
+    static boolean elementAmuletInPool(OptimizationRequest request) {
+        return request.candidateMode != OWNED_ONLY || Arrays.stream(ELEMENT_AMULETS).anyMatch(request.ownedItems::owns);
     }
 
-    private static List<SpellStats> spellsForUnfiltered(LoadoutData data, OptimizationRequest request) {
-        if (request.getStyle() != MAGIC || !request.isAutoSpell()) return List.of();
+    static List<SpellStats> spellsForUnfiltered(LoadoutData data, OptimizationRequest request) {
+        if (request.style != MAGIC || !request.isAutoSpell()) return List.of();
         List<SpellStats> spells = new ArrayList<>();
-        for (SpellStats spell : data.getSpells()) {
-            if (request.getLevels().getMagic() >= spell.getMagicLevel()) spells.add(spell);
+        for (SpellStats spell : data.spells) {
+            if (request.getLevels().magic >= spell.magicLevel) spells.add(spell);
         }
         spells.sort(Comparator.comparingInt(SpellStats::getMaxHit).reversed());
-        return spells.isEmpty() ? data.getSpells() : spells;
+        return spells.isEmpty() ? data.spells : spells;
     }
 
-    private List<DpsResult> optimizeAny(LoadoutData data, OptimizationRequest request) {
+    List<DpsResult> optimizeAny(LoadoutData data, OptimizationRequest request) {
         List<DpsResult> merged = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (CombatStyle style : concreteValues()) {
             OptimizationRequest styled = request.withStyle(style);
             for (DpsResult result : optimize(data, styled)) {
-                String signature = result.getAttackType() + ":" + signature(result.getLoadout());
+                String signature = result.attackType + ":" + signature(result.loadout);
                 if (seen.add(signature)) merged.add(result);
             }
         }
-        merged.sort(Comparator.comparingDouble(DpsResult::getDps).reversed() .thenComparingLong(r -> -setUtility(r.getLoadout()))
-            .thenComparingLong(r -> -setCrossStyleDamage(r.getLoadout())) .thenComparingInt(DpsResult::getPurchaseCost));
+        merged.sort(Comparator.comparingDouble(DpsResult::getDps).reversed() .thenComparingLong(r -> -setUtility(r.loadout))
+            .thenComparingLong(r -> -setCrossStyleDamage(r.loadout)) .thenComparingInt(DpsResult::getPurchaseCost));
         return limit(merged, request);
     }
 
-    private List<GearItem> candidates(LoadoutData data, OptimizationRequest request, GearSlot slot, int limit, GearItem fw) {
+    List<GearItem> candidates(LoadoutData data, OptimizationRequest request, GearSlot slot, int limit, GearItem fw) {
         // A pinned slot has exactly one candidate: the player's explicit
         // choice (bracelet of slaughter class - value the model cannot
         // price) bypasses exclusions, mode, scoring, and dedupe; the
@@ -972,14 +980,14 @@ public final class LoadoutOptimizer {
         // or earmuffs would die at the score cut, and the beam's enforcement
         // needs them present in the pool.
         Set<Integer> rk = request.pinnedFor(slot) == null
-            ? RequiredGear.requiredIds(request.getMonster(), data, request.getWaivers()).get(slot) : null;
+            ? RequiredGear.requiredIds(request.monster, data, request.waivers).get(slot) : null;
         boolean a2 = slot != WEAPON && atlatlInPlay(data, request);
         // Vampyres (ISS-01M5RM2A7FFR9XWKATPX877TDD): Efaritay's aid has no
         // stats, so it rides past the score cut; vs tier 2 so does a
         // vampyrebane weapon (the sunspear hits uncapped there; silver ones
         // cap at 10, and every other weapon needs the ring, which the beam
         // seeds - immune lines just score nothing).
-        int tier = VampyreRules.tier(request.getMonster());
+        int tier = VampyreRules.tier(request.monster);
         List<GearItem> protectives = new ArrayList<>();
         List<GearItem> rows = new ArrayList<>();
         for (GearItem item : data.getGearItems(slot)) {
@@ -996,23 +1004,23 @@ public final class LoadoutOptimizer {
             // weapons and halberds never win generic rough-score ranking, but
             // vs tier-3 vampyres / flying monsters they are the only weapons
             // that can deal damage at all.
-            if (slot == WEAPON && (!item.isWeaponFor(request.getStyle()) || !weaponUsable(request.getMonster(), request.getStyle(), item)
-                || !weaponCanEverWork(request.getMonster(), request.getStyle(), item))) {
+            if (slot == WEAPON && (!item.isWeaponFor(request.style) || !weaponUsable(request.monster, request.style, item)
+                || !weaponCanEverWork(request.monster, request.style, item))) {
                 continue;
             }
-            boolean hurts = tier == 2 && slot == WEAPON && VampyreRules.bane(2, request.getStyle(), item);
+            boolean hurts = tier == 2 && slot == WEAPON && VampyreRules.bane(2, request.style, item);
             // A charged tome scores like an empty shield (0% damage) and the
             // three share one stat key, so without this rescue the pool keeps
             // at most one and the spell-matched one is luck (rakaykhan1512,
             // Discord 2026-10-18: the tome of water lost to the ward).
-            boolean protective = needProtectiveShield && isProtectiveShield(item) || slot == SHIELD && request.getStyle() == MAGIC
-                    && item.getNameLower().startsWith("tome of ") && "charged".equals(item.getVersionLower())
-                || hurts || slot == RING && tier > 0 && item.getId() == VampyreRules.EFARITAY || keepInPool(request.getMonster(), item);
-            boolean ri = rk != null && rk.contains(item.getId());
+            boolean protective = needProtectiveShield && isProtectiveShield(item) || slot == SHIELD && request.style == MAGIC
+                    && item.nameLower.startsWith("tome of ") && "charged".equals(item.versionLower)
+                || hurts || slot == RING && tier > 0 && item.id == VampyreRules.EFARITAY || keepInPool(request.monster, item);
+            boolean ri = rk != null && rk.contains(item.id);
             // Defense-weighted runs must SEE pure-defence gear - ring of
             // suffering, guardian boots, tank shields score zero offence and
             // would never enter the pool otherwise.
-            boolean defensiveCandidate = request.getDefenseWeight() > 0 && slot != WEAPON && utilityScore(item) > 0;
+            boolean defensiveCandidate = request.defenseWeight > 0 && slot != WEAPON && utilityScore(item) > 0;
             // A weapon's own paired ammo never dies at the score cut: atlatl
             // darts carry no stats, and without them the atlatl's line had no
             // ammo and never scored a set (ISS-01M5PTESXPE03VZP9JB8X93KRF).
@@ -1040,13 +1048,13 @@ public final class LoadoutOptimizer {
             // must be a weapon the search saw (ISS-01M5PHE6WD81W8542RW71EXSHC).
             if (slot == WEAPON) {
                 for (GearItem item : rows.subList(limit, rows.size())) {
-                    if (request.getOwnedItems().owns(item.getId()) || request.isDream(item.getId())) cut.add(item);
+                    if (request.ownedItems.owns(item.id) || request.isDream(item.id)) cut.add(item);
                 }
             }
             // Defense-weighted runs keep a second tier: the best defensive
             // items by utility beyond the offensive cut, so the beam can
             // genuinely trade damage for safety.
-            if (request.getDefenseWeight() > 0 && slot != WEAPON) {
+            if (request.defenseWeight > 0 && slot != WEAPON) {
                 List<GearItem> defensive = new ArrayList<>(rows.subList(limit, rows.size()));
                 defensive.sort(Comparator.comparingLong(LoadoutOptimizer::utilityScore).reversed());
                 for (GearItem item : defensive.subList(0, Math.min(8, defensive.size()))) {
@@ -1066,7 +1074,7 @@ public final class LoadoutOptimizer {
      * even though a cheap compliant set exists. The reserve guarantees a
      * low-risk line reaches the last slot. Ties keep score order (next is
      * score-sorted and the sort is stable). */
-    private static List<SearchState> cutBeam(List<SearchState> next, boolean riskConstrained) {
+    static List<SearchState> cutBeam(List<SearchState> next, boolean riskConstrained) {
         if (next.size() <= BEAM_WIDTH) return next;
         if (!riskConstrained) return new ArrayList<>(next.subList(0, BEAM_WIDTH));
         // The reserve rides ON TOP of the score cut (96 + 8) rather than
@@ -1087,24 +1095,24 @@ public final class LoadoutOptimizer {
 
     /** The candidates whose ids are acceptable for a required slot -
      * nulls drop too, a mandated slot may not ride empty. */
-    private static List<GearItem> onlyIds(List<GearItem> candidates, Set<Integer> ids) {
-        return keep(candidates, item -> item != null && ids.contains(item.getId()));
+    static List<GearItem> onlyIds(List<GearItem> candidates, Set<Integer> ids) {
+        return keep(candidates, item -> item != null && ids.contains(item.id));
     }
 
-    private static List<GearItem> candidatesForSlotWithWeapon(List<GearItem> candidates, GearItem weapon, GearSlot slot) {
-        if (slot == SHIELD && weapon != null && weapon.isTwoHanded()) return Collections.singletonList(null);
+    static List<GearItem> candidatesForSlotWithWeapon(List<GearItem> candidates, GearItem weapon, GearSlot slot) {
+        if (slot == SHIELD && weapon != null && weapon.twoHanded) return Collections.singletonList(null);
         if (slot != AMMO) return candidates;
         List<GearItem> result = keep(candidates, item -> compatible(item, weapon));
         if (result.isEmpty() && compatible(null, weapon)) return Collections.singletonList(null);
         return result;
     }
 
-    private static final int ECLIPSE_ATLATL = 29000;
+    static final int ECLIPSE_ATLATL = 29000;
 
     /** The eclipse atlatl can be this ranged request's weapon: eligible and
      * allowed by the candidate mode (owned, simmed, or the whole game). */
-    private static boolean atlatlInPlay(LoadoutData data, OptimizationRequest request) {
-        GearItem a2 = request.getStyle() == RANGED ? data.getGear(ECLIPSE_ATLATL) : null;
+    static boolean atlatlInPlay(LoadoutData data, OptimizationRequest request) {
+        GearItem a2 = request.style == RANGED ? data.getGear(ECLIPSE_ATLATL) : null;
         return a2 != null && eligible(data, request, a2) && allowedByMode(request, a2);
     }
 
@@ -1116,30 +1124,30 @@ public final class LoadoutOptimizer {
      * be trying to match it with range boosting gear": ferocious gloves,
      * ultor, torture and primordials never entered the ranged pools). */
     static double candidateScore(OptimizationRequest request, GearItem item, boolean a2) {
-        double score = item.roughScore(request.getStyle());
+        double score = item.roughScore(request.style);
         if (a2) {
-            score = Math.max(score, item.getOffensive().getRanged() + item.getBonuses().getStrength() * 2.5
-                + Math.max(0, item.getBonuses().getPrayer()) * 0.25);
+            score = Math.max(score, item.offensive.ranged + item.bonuses.strength * 2.5
+                + Math.max(0, item.bonuses.prayer) * 0.25);
         }
         if (slayerTaskHeadCandidate(request, item)) score += 10_000.0;
         String name = label(item);
-        if (request.getStyle() == MAGIC) {
+        if (request.style == MAGIC) {
             // Flat spell adds live in the DPS model, not the raw stats: the
             // gauntlets score zero here and the element amulets tie a crowd
             // of glories, so the pool cut dropped them (field report
             // 2026-09-08: simmed chaos gauntlets lost to the bracelet).
-            SpellStats spell = request.getSpell();
-            if (name.contains("chaos gauntlets") && (spell == null || "Bolt".equals(spell.getNameSecondWord()))) {
+            SpellStats spell = request.spell;
+            if (name.contains("chaos gauntlets") && (spell == null || "Bolt".equals(spell.nameSecondWord))) {
                 score += 2_000.0;
             }
-            String element = spell == null ? "" : spell.getElement();
+            String element = spell == null ? "" : spell.element;
             if (name.equals("elemental amulet") && (spell == null || !element.isEmpty())
                 || name.startsWith("amulet of ") && (spell == null ? ELEMENTS.contains(name.substring(10)) : name.equals("amulet of " + element))) {
                 score += 2_000.0;
             }
         }
-        if (request.getMonster() != null) {
-            if (request.getMonster().hasAttribute("undead") && name.contains("salve amulet")) {
+        if (request.monster != null) {
+            if (request.monster.hasAttribute("undead") && name.contains("salve amulet")) {
                 // Tiered: the salve family stat-ties at zero raw stats, so
                 // dedupe keeps the first of equals - score the stronger
                 // enchant/imbue higher so the survivor is the variant the
@@ -1148,13 +1156,13 @@ public final class LoadoutOptimizer {
                 // pools, so ranged/magic "salve" suggestions did nothing.
                 score += name.contains("(ei)") ? 5_300.0 : name.contains("(i)") || name.contains("salve amulet (e)") ? 5_150.0 : 5_000.0;
             }
-            if (item.isDemonbane() && request.getMonster().hasAttribute("demon")) score += 4_000.0;
+            if (item.demonbane && request.monster.hasAttribute("demon")) score += 4_000.0;
             // One-shot demonbane vs the Sire's vents lives entirely in the
             // DPS model - raw stats rank the Scorching bow under a blowpipe,
             // so without a boost the weapon cut prunes the actual answer
             // (pool lesson; field report 2026-08-05). Flag first: this runs
             // inside the pool sort's comparator.
-            if (item.isDemonbane() && isRespiratorySystem(request.getMonster())) {
+            if (item.demonbane && isRespiratorySystem(request.monster)) {
                 score += 10_000.0;
             }
         }
@@ -1166,10 +1174,10 @@ public final class LoadoutOptimizer {
         // battleaxe, golembane, Verac's at a prayer-immune phase - see the
         // table's notes), keyed "attr:<attribute>".
         boolean usable = !badVersion(item);
-        List<String> keys = new ArrayList<>(List.of("all", request.getStyle().name(),
-            usable && request.isInWilderness() ? "wilderness" : "", usable && isRevenantMonster(request) ? "revenant" : ""));
-        if (request.getMonster() != null) {
-            for (String attribute : request.getMonster().getAttributesLower()) keys.add("attr:" + attribute);
+        List<String> keys = new ArrayList<>(List.of("all", request.style.name(),
+            usable && request.inWilderness ? "wilderness" : "", usable && isRevenantMonster(request) ? "revenant" : ""));
+        if (request.monster != null) {
+            for (String attribute : request.monster.attributesLower) keys.add("attr:" + attribute);
         }
         for (String key : keys) {
             for (Map<String, Integer> block : SHORTLIST_BOOSTS.getOrDefault(key, List.of())) {
@@ -1190,27 +1198,27 @@ public final class LoadoutOptimizer {
      * nothing is pinned (the overwhelmingly common case).
      */
     public static long pinnedRiskFloor(LoadoutData data, OptimizationRequest request) {
-        if (request.getPinnedItems().isEmpty()) return 0;
+        if (request.pinnedItems.isEmpty()) return 0;
         var gear = new EnumMap<GearSlot, GearItem>(GearSlot.class);
-        for (var entry : request.getPinnedItems().entrySet()) {
+        for (var entry : request.pinnedItems.entrySet()) {
             GearItem item = data.getGear(entry.getValue());
             if (item != null) gear.put(entry.getKey(), item);
         }
-        return gear.isEmpty() ? 0 : riskGp(Loadout.adopting(gear), null, request.getMaxTradeables());
+        return gear.isEmpty() ? 0 : riskGp(Loadout.adopting(gear), null, request.maxTradeables);
     }
 
-    private static Set<Integer> pinnedIds(OptimizationRequest request) {
-        return request.getPinnedItems().isEmpty() ? Set.of() : new HashSet<>(request.getPinnedItems().values());
+    static Set<Integer> pinnedIds(OptimizationRequest request) {
+        return request.pinnedItems.isEmpty() ? Set.of() : new HashSet<>(request.pinnedItems.values());
     }
 
     /** Per rule, the least and most the slots from index k on can still add
      * (each slot's pool, the empty slot counting 0) - suffix sums. */
-    private final class RuleBounds {
+    class RuleBounds {
         final List<SetRules.Rule> rules;
         final double[][] lo, hi;
 
         RuleBounds(SetRules setRules, CandidatePools pools, List<GearItem> ammo, GearItem weapon) {
-            rules = setRules.getRules();
+            rules = setRules.rules;
             int n = NON_WEAPON_SLOTS.length;
             lo = new double[rules.size()][n + 1];
             hi = new double[rules.size()][n + 1];
@@ -1247,17 +1255,17 @@ public final class LoadoutOptimizer {
      * items' own risk floor, since the cap constrains the REST of the set),
      * the pinned ids and the protect-only ids. Null off the Wilderness.
      */
-    public static final class RiskGuard {
+    public static class RiskGuard {
         final int kept;
         final long capGp;
         final Set<Integer> pinned;
         final Set<Integer> protectOnly;
 
-        private RiskGuard(LoadoutData data, OptimizationRequest request) {
-            kept = request.getMaxTradeables();
-            capGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
+        RiskGuard(LoadoutData data, OptimizationRequest request) {
+            kept = request.maxTradeables;
+            capGp = request.riskBudgetGp + pinnedRiskFloor(data, request);
             pinned = pinnedIds(request);
-            protectOnly = request.getProtectOnlyItems();
+            protectOnly = request.protectOnlyItems;
         }
 
         public static RiskGuard of(LoadoutData data, OptimizationRequest request) {
@@ -1279,26 +1287,26 @@ public final class LoadoutOptimizer {
         }
     }
 
-    private static boolean isRevenantMonster(OptimizationRequest request) {
-        return request.getMonster() != null && request.getMonster().isRevenantMonster();
+    static boolean isRevenantMonster(OptimizationRequest request) {
+        return request.monster != null && request.monster.isRevenantMonster();
     }
 
-    private static boolean slayerTaskHeadCandidate(OptimizationRequest request, GearItem item) {
-        if (!request.isOnSlayerTask() || request.getMonster() == null || !request.getMonster().isSlayerMonster() || item == null || !item.isSlayerHead()) {
+    static boolean slayerTaskHeadCandidate(OptimizationRequest request, GearItem item) {
+        if (!request.onSlayerTask || request.monster == null || !request.monster.slayerMonster || item == null || !item.isSlayerHead()) {
             return false;
         }
-        return request.getStyle() == MELEE || item.isImbuedSlayerHead();
+        return request.style == MELEE || item.isImbuedSlayerHead();
     }
 
     /** Style -> blocks of name -> shortlist boost (shortlist_boosts.json). */
-    private static final Map<String, List<Map<String, Integer>>> SHORTLIST_BOOSTS = new HashMap<>();
+    static final Map<String, List<Map<String, Integer>>> SHORTLIST_BOOSTS = new HashMap<>();
 
     static {
-        com.google.gson.JsonObject root = JsonResources.object("shortlist_boosts.json");
+        JsonObject root = JsonResources.object("shortlist_boosts.json");
         for (String key : root.keySet()) {
             if (!key.startsWith("_")) {
                 List<Map<String, Integer>> blocks = new ArrayList<>();
-                for (com.google.gson.JsonElement b : root.getAsJsonArray(key)) {
+                for (JsonElement b : root.getAsJsonArray(key)) {
                     Map<String, Integer> block = new LinkedHashMap<>();
                     b.getAsJsonObject().entrySet().forEach(e -> block.put(e.getKey(), e.getValue().getAsInt()));
                     blocks.add(block);
@@ -1309,10 +1317,10 @@ public final class LoadoutOptimizer {
     }
 
     /** Spell -> the weapons that cast it (spell_staves.json). */
-    private static final Map<String, List<String>> SPELL_STAVES = new HashMap<>();
+    static final Map<String, List<String>> SPELL_STAVES = new HashMap<>();
 
     static {
-        com.google.gson.JsonObject root = JsonResources.object("spell_staves.json");
+        JsonObject root = JsonResources.object("spell_staves.json");
         for (String key : root.keySet()) {
             if (!key.startsWith("_")) {
                 List<String> names = new ArrayList<>();
@@ -1322,47 +1330,47 @@ public final class LoadoutOptimizer {
         }
     }
 
-    private static boolean spellAllowed(OptimizationRequest request, Loadout loadout, SpellStats spell) {
-        String sn = spell.getName();
+    static boolean spellAllowed(OptimizationRequest request, Loadout loadout, SpellStats spell) {
+        String sn = spell.name;
         String weapon = label(loadout.getWeapon());
         if (isPoweredStaff(loadout.getWeapon())) return false;
-        if (sn.contains("Demonbane") && (request.getMonster() == null || !request.getMonster().hasAttribute("demon"))) {
+        if (sn.contains("Demonbane") && (request.monster == null || !request.monster.hasAttribute("demon"))) {
             return false;
         }
-        if ("Crumble Undead".equals(sn) && (request.getMonster() == null || !request.getMonster().hasAttribute("undead"))) {
+        if ("Crumble Undead".equals(sn) && (request.monster == null || !request.monster.hasAttribute("undead"))) {
             return false;
         }
-        List<String> staves = SPELL_STAVES.get("ancient".equalsIgnoreCase(spell.getSpellbook()) ? "ancient" : sn);
+        List<String> staves = SPELL_STAVES.get("ancient".equalsIgnoreCase(spell.spellbook) ? "ancient" : sn);
         return staves == null || !weapon.contains("harmonised") && staves.stream().anyMatch(weapon::contains);
     }
 
-    private static String label(GearItem item) { return item == null ? "" : item.labelLower(); }
+    static String label(GearItem item) { return item == null ? "" : item.labelLower(); }
 
-    private static boolean isPoweredStaff(GearItem weapon) { return DpsCalculator.isPoweredStaff(weapon); }
+    static boolean isPoweredStaff(GearItem weapon) { return DpsCalculator.isPoweredStaff(weapon); }
 
-    private static boolean allowedByMode(OptimizationRequest request, GearItem item) {
+    static boolean allowedByMode(OptimizationRequest request, GearItem item) {
         // THE GAUNTLET (field spec 2026-07-18): fights inside are locked
         // to the raid-crafted tiers - mainland gear never enters, and
         // ownership is irrelevant because everything is made in the run.
-        String g = GauntletRules.family(request.getMonster());
+        String g = GauntletRules.family(request.monster);
         if (g != null) return GauntletRules.allowed(g, item);
-        boolean owned = request.getOwnedItems().owns(item.getId()) || request.isDream(item.getId());
-        CandidateMode mode = request.getCandidateMode();
-        if (!item.isTradeable()) {
+        boolean owned = request.ownedItems.owns(item.id) || request.isDream(item.id);
+        CandidateMode mode = request.candidateMode;
+        if (!item.tradeable) {
             // ALL_STANDARD means "everything obtainable in the game" - untradeables
             // (fire cape, void, barrows gloves...) count without being owned.
             // Every other mode is ownership/budget-scoped, and untradeables can't
             // be bought, so there they require ownership.
             // Exception: quest rewards (mostly untradeable) can be earned, so the
             // upgrade budget - the "show me obtainable gear" switch - admits them.
-            return request.isIncludeUntradeables() && (mode == ALL_STANDARD || owned
+            return request.includeUntradeables && (mode == ALL_STANDARD || owned
                     || (mode == OWNED_OR_BUDGET && QuestRewardItems.isQuestReward(item)));
         }
         // A tradeable with no price is unaffordable in the budget modes.
-        boolean affordable = item.getEstimatedPrice() != null && item.getPriceOrZero() <= request.getBudget();
+        boolean affordable = item.estimatedPrice != null && item.getPriceOrZero() <= request.budget;
         switch (mode) {
             case ALL_STANDARD:
-                return item.getEstimatedPrice() != null || owned;
+                return item.estimatedPrice != null || owned;
             case OWNED_ONLY:
                 return owned;
             case OWNED_OR_BUDGET:
@@ -1375,23 +1383,23 @@ public final class LoadoutOptimizer {
         }
     }
 
-    private static int budgetCost(OptimizationRequest request, GearItem item) {
+    static int budgetCost(OptimizationRequest request, GearItem item) {
         // Dream items are pretend-owned: free against the upgrade budget
         // (the panel prices the dream separately). Quest rewards are free
         // too when the budget admitted them - they cost effort, not gp
         // (the panel labels them with their source quest instead).
-        if (item == null || request.getOwnedItems().owns(item.getId()) || request.isDream(item.getId())
-            || request.isPinned(item.getId()) || (request.getCandidateMode() == OWNED_OR_BUDGET && QuestRewardItems.isQuestReward(item))) {
+        if (item == null || request.ownedItems.owns(item.id) || request.isDream(item.id)
+            || request.isPinned(item.id) || (request.candidateMode == OWNED_OR_BUDGET && QuestRewardItems.isQuestReward(item))) {
             return 0;
         }
         return item.getPriceOrZero();
     }
 
-    private static boolean withinBudget(OptimizationRequest request, int cost) {
-        return request.getCandidateMode() == ALL_STANDARD || cost <= request.getBudget();
+    static boolean withinBudget(OptimizationRequest request, int cost) {
+        return request.candidateMode == ALL_STANDARD || cost <= request.budget;
     }
 
-    private static List<GearItem> dedupe(List<GearItem> rows, OptimizationRequest request) {
+    static List<GearItem> dedupe(List<GearItem> rows, OptimizationRequest request) {
         Map<StatKey, GearItem> best = new LinkedHashMap<>();
         for (GearItem item : rows) {
             var key = new StatKey(item);
@@ -1410,27 +1418,27 @@ public final class LoadoutOptimizer {
      * blessings collapsed and the tradeable preference ate Rada's
      * blessing 4 (+2 prayer) in favor of a +1 tradeable blessing.
      */
-    private static final class StatKey {
-        private final String category;
-        private final boolean twoHanded;
-        private final int[] stats;
-        private final int hash;
+    static class StatKey {
+        final String category;
+        final boolean twoHanded;
+        final int[] stats;
+        final int hash;
 
-        private StatKey(GearItem item) {
+        StatKey(GearItem item) {
             // The element amulets are stat-identical and differ only in the
             // spell they lift: collapsed, the pool kept air and lost fire
             // (field 2026-09-27). Their name keeps them apart.
-            String name = item.getNameLower();
-            this.category = item.getCategory() + (name.equals("elemental amulet")
+            String name = item.nameLower;
+            this.category = item.category + (name.equals("elemental amulet")
                 || name.startsWith("amulet of ") && ELEMENTS.contains(name.substring(10)) ? name : "");
-            this.twoHanded = item.isTwoHanded();
+            this.twoHanded = item.twoHanded;
             this.stats = new int[]{
-                item.getSpeed(), item.getOffensive().getStab(), item.getOffensive().getSlash(),
-                item.getOffensive().getCrush(), item.getOffensive().getMagic(), item.getOffensive().getRanged(),
-                item.getBonuses().getStrength(), item.getBonuses().getRangedStrength(),
-                item.getBonuses().getMagicDamage(), item.getBonuses().getPrayer(), item.getDefensive().getStab(),
-                item.getDefensive().getSlash(), item.getDefensive().getCrush(), item.getDefensive().getMagic(),
-                item.getDefensive().getRanged(), };
+                item.speed, item.offensive.stab, item.offensive.slash,
+                item.offensive.crush, item.offensive.magic, item.offensive.ranged,
+                item.bonuses.strength, item.bonuses.rangedStrength,
+                item.bonuses.magicDamage, item.bonuses.prayer, item.defensive.stab,
+                item.defensive.slash, item.defensive.crush, item.defensive.magic,
+                item.defensive.ranged, };
             this.hash = (category.hashCode() * 31 + (twoHanded ? 1 : 0)) * 31 + Arrays.hashCode(stats);
         }
 
@@ -1443,9 +1451,9 @@ public final class LoadoutOptimizer {
         public int hashCode() { return hash; }
     }
 
-    private static boolean betterEquivalent(OptimizationRequest request, GearItem candidate, GearItem current) {
-        boolean co = request.getOwnedItems().owns(candidate.getId());
-        boolean currentOwned = request.getOwnedItems().owns(current.getId());
+    static boolean betterEquivalent(OptimizationRequest request, GearItem candidate, GearItem current) {
+        boolean co = request.ownedItems.owns(candidate.id);
+        boolean currentOwned = request.ownedItems.owns(current.id);
         if (co != currentOwned) return co;
         // Between versions of the SAME item, version state breaks the tie
         // BEFORE tradeability: the tradeable Uncharged twin of a wilderness
@@ -1453,7 +1461,7 @@ public final class LoadoutOptimizer {
         // +50% passive (field report: craw's bow missing at revenants).
         // Cross-item ties (uncharged glory vs amulet of the damned) must
         // NOT use this - there tradeability/death behavior decides.
-        if (candidate.getNameLower().equals(current.getNameLower())) {
+        if (candidate.nameLower.equals(current.nameLower)) {
             boolean cb = badVersion(candidate);
             if (cb != badVersion(current)) return !cb;
             // Poison tiers stat-tie but are NOT equal in game: the venom
@@ -1467,12 +1475,12 @@ public final class LoadoutOptimizer {
         // A Rada's blessing beats the god blessing it stat-ties with: the
         // teleports are the free edge (Muuffin, Discord 2026-10-19 - the
         // tradeable rule below had been handing the slot to a holy blessing).
-        boolean cr = candidate.getNameLower().startsWith("rada's blessing");
-        if (cr != current.getNameLower().startsWith("rada's blessing")) return cr;
+        boolean cr = candidate.nameLower.startsWith("rada's blessing");
+        if (cr != current.nameLower.startsWith("rada's blessing")) return cr;
         // Stat ties prefer the tradeable base item: untradeable stat-clones
         // (fire arrows, locked variants) read as 'cost 0' and would shadow
         // the item players actually recognize.
-        if (candidate.isTradeable() != current.isTradeable()) return candidate.isTradeable();
+        if (candidate.tradeable != current.tradeable) return candidate.tradeable;
         // Destroyed-on-ANY-death items (amulet of the damned) lose stat
         // ties everywhere, not just the wilderness - their only edge,
         // enhancing barrows set effects, is not modeled yet (ENGINE-GAPS);
@@ -1494,8 +1502,8 @@ public final class LoadoutOptimizer {
     }
 
     /** The per-death fee this item pays no matter what is protected. */
-    private static long alwaysDeathFee(GearItem item) {
-        if (item.isTradeable() && !isDestroyedOnDeath(item)) {
+    static long alwaysDeathFee(GearItem item) {
+        if (item.tradeable && !isDestroyedOnDeath(item)) {
             return 0; // priced by the kept-slot ranking instead
         }
         if (isConvertible(item)) {
@@ -1504,38 +1512,38 @@ public final class LoadoutOptimizer {
         return costFor(item);
     }
 
-    private static boolean badVersion(GearItem item) {
-        String version = item.getVersionLower();
+    static boolean badVersion(GearItem item) {
+        String version = item.versionLower;
         return version.contains("broken") || version.contains("locked") || version.contains("uncharged") || version.contains("inactive");
     }
 
-    private static String signature(Loadout loadout) {
+    static String signature(Loadout loadout) {
         var builder = new StringBuilder();
         for (GearSlot slot : GearSlot.values()) {
             GearItem item = loadout.get(slot);
             builder.append(slot.name()).append('=');
-            if (item != null) builder.append(item.getId());
+            if (item != null) builder.append(item.id);
             builder.append(';');
         }
         return builder.toString();
     }
 
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    private static final class SearchState {
-        private final EnumMap<GearSlot, GearItem> gear;
-        @Getter(AccessLevel.PRIVATE)
-        private final int cost;
-        @Getter(AccessLevel.PRIVATE)
-        private final double score;
-        @Getter(AccessLevel.PRIVATE)
-        private final long riskGp;
+    @AllArgsConstructor
+    static class SearchState {
+        final EnumMap<GearSlot, GearItem> gear;
+        @Getter
+        final int cost;
+        @Getter
+        final double score;
+        @Getter
+        final long riskGp;
         // Total droppable value with NOTHING protected. The RISK_RESERVE
         // sorts on this, not riskGp: early partials all tie at riskGp 0
         // (the first worn items ride the kept slots), so a riskGp reserve
         // just re-kept the score leaders and the cheap line still starved.
-        @Getter(AccessLevel.PRIVATE)
-        private final long potentialRiskGp;
+        @Getter
+        final long potentialRiskGp;
 
-        private SearchState(EnumMap<GearSlot, GearItem> gear, int cost) { this(gear, cost, 0.0, 0L, 0L); }
+        SearchState(EnumMap<GearSlot, GearItem> gear, int cost) { this(gear, cost, 0.0, 0L, 0L); }
     }
 }

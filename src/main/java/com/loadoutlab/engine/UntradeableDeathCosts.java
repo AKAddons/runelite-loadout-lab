@@ -22,28 +22,28 @@ import java.util.*;
  *   is the flat 500k mangle fee.
  *
  * Entries in untradeable_death.json are keyed by lowercase item name
- * (GearItem.getName(), no version suffix). An UNLISTED untradeable that
+ * (GearItem.name, no version suffix). An UNLISTED untradeable that
  * carries any combat stats falls back to a conservative 500,000 default:
  * unknowns must not smuggle into "low-risk" sets for free - curation
  * whittles the list, the default keeps the risk budget honest meanwhile.
  * Untradeables with no combat stats (graceful class) cost nothing.
  */
-public final class UntradeableDeathCosts {
-    private static final String RESOURCE = "untradeable_death.json";
+public class UntradeableDeathCosts {
+    static final String RESOURCE = "untradeable_death.json";
 
     /** Conservative fallback for combat untradeables we have not curated. */
     public static final long UNKNOWN_COMBAT_UNTRADEABLE_GP = 500_000L;
 
-    private static final Map<String, Long> COST_BY_NAME = new HashMap<>();
-    private static final Map<String, Integer> CATEGORY_BY_NAME = new HashMap<>();
+    static final Map<String, Long> COST_BY_NAME = new HashMap<>();
+    static final Map<String, Integer> CATEGORY_BY_NAME = new HashMap<>();
     /** Curated rebuild-errand proxies (re-obtain/re-enchant/re-imbue time,
      * NOT gp - imbue points refund since April 2024). Counted into the
      * risk total and the risk cap so "free but a 25-minute errand" items
      * never read as safe (field request). */
-    private static final Map<String, Long> FRICTION_BY_NAME = new HashMap<>();
+    static final Map<String, Long> FRICTION_BY_NAME = new HashMap<>();
 
     static {
-        JsonObject root = com.loadoutlab.data.JsonResources.object(RESOURCE);
+        JsonObject root = JsonResources.object(RESOURCE);
         if (root == null) {
             throw new IllegalStateException("Could not load " + RESOURCE);
         } {
@@ -57,8 +57,6 @@ public final class UntradeableDeathCosts {
         }
     }
 
-    private UntradeableDeathCosts() {
-    }
 
     /**
      * Per-death gp cost of wearing this item into PvP above 20 Wilderness.
@@ -68,11 +66,11 @@ public final class UntradeableDeathCosts {
      */
     public static long costFor(GearItem item) {
         if (item == null) return 0L;
-        if (item.isTradeable()) {
-            Long destroyed = categoryFor(item) == 5 ? COST_BY_NAME.get(item.getNameLower()) : null;
+        if (item.tradeable) {
+            Long destroyed = categoryFor(item) == 5 ? COST_BY_NAME.get(item.nameLower) : null;
             return destroyed == null ? 0L : destroyed;
         }
-        Long listed = COST_BY_NAME.get(item.getNameLower());
+        Long listed = COST_BY_NAME.get(item.nameLower);
         if (listed != null) return listed;
         return hasCombatStats(item) ? UNKNOWN_COMBAT_UNTRADEABLE_GP : 0L;
     }
@@ -80,7 +78,7 @@ public final class UntradeableDeathCosts {
     /** Rebuild-errand proxy for a death loss (0 when none curated). */
     public static long frictionFor(GearItem item) {
         if (item == null) return 0L;
-        Long friction = FRICTION_BY_NAME.get(item.getNameLower());
+        Long friction = FRICTION_BY_NAME.get(item.nameLower);
         return friction == null ? 0L : friction;
     }
 
@@ -98,16 +96,16 @@ public final class UntradeableDeathCosts {
     /** Curated category (1, 2, 3 or 4-converts), or 0 when unlisted. */
     public static int categoryFor(GearItem item) {
         if (item == null) return 0;
-        Integer listed = CATEGORY_BY_NAME.get(item.getNameLower());
+        Integer listed = CATEGORY_BY_NAME.get(item.nameLower);
         return listed == null ? 0 : listed;
     }
 
-    private static boolean hasCombatStats(GearItem item) {
-        return nonZero(item.getOffensive()) || nonZero(item.getDefensive()) || nonZero(item.getBonuses());
+    static boolean hasCombatStats(GearItem item) {
+        return nonZero(item.offensive) || nonZero(item.defensive) || nonZero(item.bonuses);
     }
 
-    private static boolean nonZero(StatBlock block) {
-        return block.getStab() != 0 || block.getSlash() != 0 || block.getCrush() != 0 || block.getMagic() != 0 || block.getRanged() != 0
-            || block.getStrength() != 0 || block.getRangedStrength() != 0 || block.getMagicDamage() != 0 || block.getPrayer() != 0;
+    static boolean nonZero(StatBlock block) {
+        return block.stab != 0 || block.slash != 0 || block.crush != 0 || block.magic != 0 || block.ranged != 0
+            || block.strength != 0 || block.rangedStrength != 0 || block.magicDamage != 0 || block.prayer != 0;
     }
 }

@@ -16,15 +16,13 @@ import com.loadoutlab.data.*;
  *
  * Not modeled: the Unshielded-phase bonus for crush/heavy/spell attacks.
  */
-public final class TormentedDemonRules {
-    private static final String[] ABYSSAL = {
+public class TormentedDemonRules {
+    static final String[] ABYSSAL = {
         "abyssal whip", "abyssal tentacle", "abyssal dagger", "abyssal bludgeon", };
 
-    private TormentedDemonRules() {
-    }
 
     public static boolean applies(MonsterStats monster) {
-        return monster != null && "Tormented Demon".equalsIgnoreCase(monster.getName());
+        return monster != null && "Tormented Demon".equalsIgnoreCase(monster.name);
     }
 
     /** The flat 20% reduction, bypassed by demonbane and abyssal weapons. */
@@ -33,16 +31,16 @@ public final class TormentedDemonRules {
         return bypassesReduction(style, weapon, spellName) ? 1.0 : 0.8;
     }
 
-    private static boolean bypassesReduction(CombatStyle style, GearItem weapon, String spellName) {
+    static boolean bypassesReduction(CombatStyle style, GearItem weapon, String spellName) {
         if (style == CombatStyle.MAGIC) return spellName != null && spellName.contains("Demonbane");
         // The demonbane weapon vocabulary lives on GearItem (one list with
         // MonsterMechanics and the optimizer's demon bump); a melee name
         // can never be the weapon of a RANGED attack, so one flag serves
         // both remaining styles.
         if (weapon == null) return false;
-        if (weapon.isDemonbane()) return true;
+        if (weapon.demonbane) return true;
         for (String abyssal : ABYSSAL) {
-            if (weapon.getNameLower().startsWith(abyssal)) return true;
+            if (weapon.nameLower.startsWith(abyssal)) return true;
         }
         return false;
     }

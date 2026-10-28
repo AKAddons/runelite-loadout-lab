@@ -8,16 +8,16 @@ import static com.loadoutlab.data.JsonResources.*;
 
 /** Weapon/ammo compatibility. The id tables (arrow/bolt tiers, javelins,
  * fixed weapon-ammo pairs) live in ranged_ammo.json - hub token cap. */
-public final class RangedAmmo {
-    private static final int DORGESHUUN_CROSSBOW = 8880;
-    private static final Map<Integer, Integer> ARROW_TIER_BY_WEAPON = new HashMap<>();
-    private static final Map<Integer, Integer> BOLT_TIER_BY_WEAPON = new HashMap<>();
-    private static final Map<Integer, Integer> ARROW_TIER_BY_AMMO = new HashMap<>();
-    private static final Map<Integer, Integer> BOLT_TIER_BY_AMMO = new HashMap<>();
-    private static final Set<Integer> JAVELIN_AMMO = new HashSet<>();
-    private static final Set<Integer> JAVELIN_WEAPONS = new HashSet<>();
-    private static final Map<Integer, Set<Integer>> PAIRS = new HashMap<>();
-    private static final Set<Integer> DORGESHUUN_EXTRA_BOLTS = new HashSet<>();
+public class RangedAmmo {
+    static final int DORGESHUUN_CROSSBOW = 8880;
+    static final Map<Integer, Integer> ARROW_TIER_BY_WEAPON = new HashMap<>();
+    static final Map<Integer, Integer> BOLT_TIER_BY_WEAPON = new HashMap<>();
+    static final Map<Integer, Integer> ARROW_TIER_BY_AMMO = new HashMap<>();
+    static final Map<Integer, Integer> BOLT_TIER_BY_AMMO = new HashMap<>();
+    static final Set<Integer> JAVELIN_AMMO = new HashSet<>();
+    static final Set<Integer> JAVELIN_WEAPONS = new HashSet<>();
+    static final Map<Integer, Set<Integer>> PAIRS = new HashMap<>();
+    static final Set<Integer> DORGESHUUN_EXTRA_BOLTS = new HashSet<>();
 
     static {
         JsonObject root = object("ranged_ammo.json");
@@ -37,8 +37,6 @@ public final class RangedAmmo {
         }
     }
 
-    private RangedAmmo() {
-    }
 
     /** Sims plus the exclusive ammo of every simmed weapon (a crossbow
      * that fires only its own bolts is no sim without them). */
@@ -61,23 +59,23 @@ public final class RangedAmmo {
     /** Arrow or bolt weapons only - the classes Dizana's quiver can hold
      * (javelins, darts and chinchompas stay in their own slots). */
     static boolean usesArrowsOrBolts(GearItem weapon) {
-        return weapon != null && (ARROW_TIER_BY_WEAPON.containsKey(weapon.getId())
-                || BOLT_TIER_BY_WEAPON.containsKey(weapon.getId()) || weapon.getId() == DORGESHUUN_CROSSBOW);
+        return weapon != null && (ARROW_TIER_BY_WEAPON.containsKey(weapon.id)
+                || BOLT_TIER_BY_WEAPON.containsKey(weapon.id) || weapon.id == DORGESHUUN_CROSSBOW);
     }
 
     /** A blessing (or other passive ammo-slot item) may ride the freed
      * slot when the quiver carries the projectiles. */
     static boolean passiveForQuiver(GearItem item) { return passiveAmmoSlotItem(item); }
 
-    private static boolean weaponUsesProjectileAmmo(GearItem weapon) {
+    static boolean weaponUsesProjectileAmmo(GearItem weapon) {
         return usesArrowsOrBolts(weapon)
-            || weapon != null && (JAVELIN_WEAPONS.contains(weapon.getId()) || PAIRS.containsKey(weapon.getId()));
+            || weapon != null && (JAVELIN_WEAPONS.contains(weapon.id) || PAIRS.containsKey(weapon.id));
     }
 
-    private static boolean projectileMatches(GearItem ammo, GearItem weapon) {
+    static boolean projectileMatches(GearItem ammo, GearItem weapon) {
         if (ammo == null || weapon == null) return false;
-        int ammoId = ammo.getId();
-        int weaponId = weapon.getId();
+        int ammoId = ammo.id;
+        int weaponId = weapon.id;
         if (weaponId == DORGESHUUN_CROSSBOW) {
             int tier = BOLT_TIER_BY_AMMO.getOrDefault(ammoId, 0);
             return (tier > 0 && tier <= 16) || DORGESHUUN_EXTRA_BOLTS.contains(ammoId);
@@ -98,7 +96,7 @@ public final class RangedAmmo {
         return false;
     }
 
-    private static boolean passiveAmmoSlotItem(GearItem ammo) {
-        return ammo.getBonuses().getRangedStrength() <= 0 && ammo.getOffensive().getRanged() <= 0;
+    static boolean passiveAmmoSlotItem(GearItem ammo) {
+        return ammo.bonuses.rangedStrength <= 0 && ammo.offensive.ranged <= 0;
     }
 }

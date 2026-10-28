@@ -37,13 +37,13 @@ class ScopeRegressionTest {
 	@Test
 	@DisplayName("an upgraded install does not hand the main's list to a second character")
 	void legacyListDoesNotLeakToTheAlt() {
-		ExclusionStore store = new ExclusionStore(configManager, gson);
+		IdSetStore store = new IdSetStore(configManager, gson, "excludedItems");
 
 		store.loadScope(MAIN);
-		assertTrue(store.isExcluded(11832), "the main lost its pre-0.4.1 list");
+		assertTrue(store.contains(11832), "the main lost its pre-0.4.1 list");
 
 		store.loadScope(ALT);
-		assertFalse(store.isExcluded(11832),
+		assertFalse(store.contains(11832),
 			"the alt inherited the main's pre-0.4.1 exclude list");
 	}
 
@@ -54,28 +54,28 @@ class ScopeRegressionTest {
 		// account it belonged to - only one of them can have it, and the first
 		// to load wins. Documented because it makes the UPGRADE order matter
 		// even though steady-state scoping does not.
-		ExclusionStore store = new ExclusionStore(configManager, gson);
+		IdSetStore store = new IdSetStore(configManager, gson, "excludedItems");
 
 		store.loadScope(ALT);
-		assertTrue(store.isExcluded(11832), "the first character in did not adopt");
+		assertTrue(store.contains(11832), "the first character in did not adopt");
 
 		store.loadScope(MAIN);
-		assertFalse(store.isExcluded(11832),
+		assertFalse(store.contains(11832),
 			"the second character in must start clean, not inherit a copy");
 	}
 
 	@Test
 	@DisplayName("an item added on the alt survives the next region change")
 	void addOnTheAltSurvivesAReload() {
-		ExclusionStore store = new ExclusionStore(configManager, gson);
+		IdSetStore store = new IdSetStore(configManager, gson, "excludedItems");
 		store.loadScope(ALT);
 
 		store.toggle(20997); // twisted bow
-		assertTrue(store.isExcluded(20997), "the toggle did not take");
+		assertTrue(store.contains(20997), "the toggle did not take");
 
 		// GameState.LOGGED_IN fires on every region change and reloads the scope.
 		store.loadScope(ALT);
-		assertTrue(store.isExcluded(20997),
+		assertTrue(store.contains(20997),
 			"walking through a loading zone dropped the item the alt just added");
 	}
 
@@ -87,12 +87,12 @@ class ScopeRegressionTest {
 		// store is still unscoped and writes to the pre-0.4.1 key - which the
 		// first character to load then adopts. The earlier cut scoped these
 		// writes to a bare "std" bucket that nothing ever read again.
-		ExclusionStore store = new ExclusionStore(configManager, gson);
+		IdSetStore store = new IdSetStore(configManager, gson, "excludedItems");
 		store.toggle(20997);
-		assertTrue(store.isExcluded(20997));
+		assertTrue(store.contains(20997));
 
 		store.loadScope(ALT);
-		assertTrue(store.isExcluded(20997),
+		assertTrue(store.contains(20997),
 			"the add was abandoned once the character was identified");
 	}
 }

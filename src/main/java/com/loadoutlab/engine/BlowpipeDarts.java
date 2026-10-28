@@ -14,10 +14,10 @@ import java.util.*;
  * with no owned darts gets no bonus and naturally falls out of the
  * suggestions - it cannot fire.
  */
-public final class BlowpipeDarts {
+public class BlowpipeDarts {
     /** Dart tiers, strongest first: {ranged strength, ids...} (all poison variants). */
-    private static final int[][] TIERS;
-    private static final String[] TIER_NAMES;
+    static final int[][] TIERS;
+    static final String[] TIER_NAMES;
 
     static {
         JsonObject root = JsonResources.objectOrThrow("blowpipe_darts.json");
@@ -33,15 +33,13 @@ public final class BlowpipeDarts {
         }
     }
 
-    private BlowpipeDarts() {
-    }
 
     /** Every tier for the pickers: [{id (unpoisoned base), name}],
      * strongest first - excluding the base id protects the whole tier. */
-    public static List<Map<String, Object>> tiers() {
-        List<Map<String, Object>> out = new ArrayList<>();
+    public static List<Map> tiers() {
+        List<Map> out = new ArrayList<>();
         for (int tier = 0; tier < TIERS.length; tier++) {
-            Map<String, Object> node = new LinkedHashMap<>();
+            Map node = new LinkedHashMap<>();
             node.put("id", TIERS[tier][1]);
             node.put("name", TIER_NAMES[tier]);
             out.add(node);
@@ -71,17 +69,17 @@ public final class BlowpipeDarts {
     }
 
     /** Excluding any variant of a dart tier protects the whole tier. */
-    private static boolean tierExcluded(OptimizationRequest request, int tier) {
+    static boolean tierExcluded(OptimizationRequest request, int tier) {
         for (int i = 1; i < TIERS[tier].length; i++) {
             if (request.isExcluded(TIERS[tier][i])) return true;
         }
         return false;
     }
 
-    private static int tierFor(OptimizationRequest request, GearItem weapon) {
-        if (weapon == null || !weapon.getNameLower().contains("blowpipe")) return -1;
-        boolean ownershipScoped = request.getCandidateMode() == CandidateMode.OWNED_ONLY
-            || request.getCandidateMode() == CandidateMode.OWNED_OR_BUDGET;
+    static int tierFor(OptimizationRequest request, GearItem weapon) {
+        if (weapon == null || !weapon.nameLower.contains("blowpipe")) return -1;
+        boolean ownershipScoped = request.candidateMode == CandidateMode.OWNED_ONLY
+            || request.candidateMode == CandidateMode.OWNED_OR_BUDGET;
         if (!ownershipScoped) {
             // Game best: the best dart tier that is not excluded.
             for (int tier = 0; tier < TIERS.length; tier++) {
@@ -92,7 +90,7 @@ public final class BlowpipeDarts {
         for (int tier = 0; tier < TIERS.length; tier++) {
             if (tierExcluded(request, tier)) continue;
             for (int i = 1; i < TIERS[tier].length; i++) {
-                if (request.getOwnedItems().owns(TIERS[tier][i])) return tier;
+                if (request.ownedItems.owns(TIERS[tier][i])) return tier;
             }
         }
         return -1; // owns no usable darts: the blowpipe cannot fire

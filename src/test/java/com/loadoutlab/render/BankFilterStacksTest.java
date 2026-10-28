@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * view" - the filter carried gear, bench and runes; the Supplies and
  * Inventory rows draw more than that. */
 class BankFilterStacksTest {
-	private static List<Integer> ids(List<Map<String, Object>> stacks) {
+	private static List<Integer> ids(List<Map> stacks) {
 		List<Integer> out = new ArrayList<>();
 		for (Map<String, Object> s : stacks) {
 			out.add(Model.id(s, "id"));
@@ -26,7 +26,7 @@ class BankFilterStacksTest {
 		Map<String, Object> mob = Map.of("castingPouch", 27281, "castingCape", 9763,
 			"mobFilters", List.of(Map.of("id", 9789, "name", "Construction cape", "scope", "all")));
 		Map<String, Object> assume = Map.of("boostItem", 23685, "boostSupplied", false);
-		List<Map<String, Object>> supplies = List.of(
+		List<Map> supplies = List.of(
 			Map.of("category", "prayerRestore", "itemId", 3024, "ids", List.of(3024, 3026, 3028, 3030)),
 			Map.of("category", "food", "itemId", 29143, "ids", List.of(29143)));
 		List<Integer> got = ids(BankLayout.tripStacks(mob, assume, supplies,

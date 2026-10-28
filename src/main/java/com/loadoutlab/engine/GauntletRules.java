@@ -9,14 +9,12 @@ import com.loadoutlab.data.*;
  * Detection keys off the bestiary's name prefixes - every Gauntlet mob
  * is "Crystalline ..." and every Corrupted Gauntlet mob "Corrupted ...".
  */
-public final class GauntletRules {
-    private GauntletRules() {
-    }
+public class GauntletRules {
 
     /** "crystal" inside the Gauntlet, "corrupted" inside the Corrupted
      * Gauntlet, null anywhere else. */
     public static String family(MonsterStats monster) {
-        String name = monster.getNameLower();
+        String name = monster.nameLower;
         if (name.startsWith("corrupted ")) return "corrupted";
         if (name.startsWith("crystalline ")) return "crystal";
         return null;
@@ -24,7 +22,7 @@ public final class GauntletRules {
 
     /** Only the family's raid-crafted tiers exist inside. */
     public static boolean allowed(String family, GearItem item) {
-        String name = item.getNameLower();
+        String name = item.nameLower;
         if (!name.startsWith(family + " ")) return false;
         return name.endsWith("(basic)") || name.endsWith("(attuned)") || name.endsWith("(perfected)");
     }

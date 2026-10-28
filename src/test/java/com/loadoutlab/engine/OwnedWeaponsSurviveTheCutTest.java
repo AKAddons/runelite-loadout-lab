@@ -58,7 +58,7 @@ class OwnedWeaponsSurviveTheCutTest {
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL), null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 3);
 
-		Set<Integer> pool = new LoadoutOptimizer().preparePools(data, request).weaponPool().stream()
+		Set<Integer> pool = new LoadoutOptimizer().preparePools(data, request).weapons.stream()
 			.map(GearItem::getId).collect(Collectors.toSet());
 		List<String> missing = staves.stream()
 			.filter(s -> !STAT_TWINS.contains(s.getNameLower()) && !pool.contains(s.getId()))

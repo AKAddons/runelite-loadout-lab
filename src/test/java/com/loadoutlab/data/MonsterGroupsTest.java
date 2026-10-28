@@ -194,7 +194,7 @@ class MonsterGroupsTest {
 			com.loadoutlab.engine.CombatStyle.MAGIC};
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
-				assertEquals(i == j, com.loadoutlab.engine.MonsterMechanics
+				assertEquals(i == j, com.loadoutlab.engine.Immunity
 						.styleImmune(tds.getMobs().get(i), styles[j]),
 					tds.getMobs().get(i).getVersion() + " vs " + styles[j]);
 			}
@@ -242,24 +242,24 @@ class MonsterGroupsTest {
 		// A Vasilias form takes damage ONLY from its own style.
 		MonsterStats meleeForm = byName("Theatre of Blood (Hard)").getMobs().stream()
 			.filter(m -> m.getVersion().contains("Melee form")).findFirst().orElseThrow(AssertionError::new);
-		assertFalse(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+		assertFalse(com.loadoutlab.engine.Immunity.styleImmune(
 			meleeForm, com.loadoutlab.engine.CombatStyle.MELEE));
-		assertTrue(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+		assertTrue(com.loadoutlab.engine.Immunity.styleImmune(
 			meleeForm, com.loadoutlab.engine.CombatStyle.RANGED));
-		assertTrue(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+		assertTrue(com.loadoutlab.engine.Immunity.styleImmune(
 			meleeForm, com.loadoutlab.engine.CombatStyle.MAGIC));
 		// The P2 Wardens are single-style; KQ crawling is melee-only.
 		MonsterStats elidinis = byName("Tombs of Amascut").getMobs().stream()
 			.filter(m -> m.getVersion().contains("magic only")).findFirst().orElseThrow(AssertionError::new);
-		assertTrue(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+		assertTrue(com.loadoutlab.engine.Immunity.styleImmune(
 			elidinis, com.loadoutlab.engine.CombatStyle.MELEE));
-		assertFalse(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+		assertFalse(com.loadoutlab.engine.Immunity.styleImmune(
 			elidinis, com.loadoutlab.engine.CombatStyle.MAGIC));
 		MonsterStats crawling = byName("Kalphite Queen").getMobs().stream()
 			.filter(m -> m.getVersion().contains("melee only")).findFirst().orElseThrow(AssertionError::new);
-		assertFalse(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+		assertFalse(com.loadoutlab.engine.Immunity.styleImmune(
 			crawling, com.loadoutlab.engine.CombatStyle.MELEE));
-		assertTrue(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+		assertTrue(com.loadoutlab.engine.Immunity.styleImmune(
 			crawling, com.loadoutlab.engine.CombatStyle.RANGED));
 		assertEquals("Kalphite Queen",
 			MonsterGroups.search(groups, "kq", 5).get(0).getName());
@@ -272,12 +272,12 @@ class MonsterGroupsTest {
 		// final phase of akkha").
 		assertEquals(4, akkha.size());
 		assertEquals("Final stand (melee only)", akkha.get(3).getVersion());
-		assertFalse(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+		assertFalse(com.loadoutlab.engine.Immunity.styleImmune(
 			akkha.get(3), com.loadoutlab.engine.CombatStyle.MELEE));
 		for (MonsterStats phase : akkha) {
 			int immune = 0;
 			for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues()) {
-				if (com.loadoutlab.engine.MonsterMechanics.styleImmune(phase, style)) {
+				if (com.loadoutlab.engine.Immunity.styleImmune(phase, style)) {
 					immune++;
 				}
 			}

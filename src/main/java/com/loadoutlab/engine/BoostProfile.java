@@ -28,11 +28,11 @@ public enum BoostProfile {
     SUPER_MAGIC("Super magic", 5, 0.15, "m"), OVERLOAD("Overload", 5, 0.13, "asdrm"),
     OVERLOAD_PLUS("Overload (+)", 6, 0.16, "asdrm"), SMELLING_SALTS("Smelling salts", 11, 0.16, "asdrm");
 
-    private final String label;
-    private final int flat;
-    private final double factor;
+    final String label;
+    final int flat;
+    final double factor;
     /** Which skills this profile boosts, as letters from "asdrm". */
-    private final String skills;
+    final String skills;
 
     BoostProfile(String label, int flat, double factor, String skills) {
         this.label = label;
@@ -47,8 +47,8 @@ public enum BoostProfile {
         // NONE boosts nothing and must hand back the SAME instance: the
         // general path below always allocates a fresh PlayerLevels.
         if (skills.isEmpty()) return source;
-        return source.withBoosts( boostIf('a', source.getAttack()), boostIf('s', source.getStrength()),
-            boostIf('d', source.getDefence()), boostIf('r', source.getRanged()), boostIf('m', source.getMagic()));
+        return source.withBoosts( boostIf('a', source.attack), boostIf('s', source.strength),
+            boostIf('d', source.defence), boostIf('r', source.ranged), boostIf('m', source.magic));
     }
 
     /** True when this profile boosts the skill letter (from "asdrm") - the
@@ -56,7 +56,7 @@ public enum BoostProfile {
     public boolean boosts(char skill) { return skills.indexOf(skill) >= 0; }
 
     /** floor(flat + level * factor), or 0 when this profile skips the skill. */
-    private int boostIf(char skill, int level) {
+    int boostIf(char skill, int level) {
         return skills.indexOf(skill) < 0 ? 0 : (int) Math.floor(flat + level * factor);
     }
 

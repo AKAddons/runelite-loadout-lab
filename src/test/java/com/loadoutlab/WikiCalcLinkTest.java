@@ -60,7 +60,7 @@ class WikiCalcLinkTest {
 			"their import iterates defenceReductions - it must exist");
 
 		Map<String, Object> loadout =
-			((List<Map<String, Object>>) payload.get("loadouts")).get(0);
+			((List<Map>) payload.get("loadouts")).get(0);
 		assertEquals(List.of(13), loadout.get("prayers"), "Piety = their ordinal 13");
 		Map<String, Object> buffs = (Map<String, Object>) loadout.get("buffs");
 		assertEquals(List.of(14), buffs.get("potions"),
@@ -83,7 +83,7 @@ class WikiCalcLinkTest {
 			"Attack & strength potions", PlayerLevels.MAXED, PlayerLevels.MAXED,
 			false, false);
 		Map<String, Object> twoLoadout =
-			((List<Map<String, Object>>) twoPotions.get("loadouts")).get(0);
+			((List<Map>) twoPotions.get("loadouts")).get(0);
 		assertEquals(List.of(1, 10),
 			((Map<String, Object>) twoLoadout.get("buffs")).get("potions"),
 			"attack & strength potions = their ordinals 1 and 10");
@@ -108,7 +108,7 @@ class WikiCalcLinkTest {
 			"Rigour + Divine ranging potion", PlayerLevels.MAXED, PlayerLevels.MAXED,
 			false, false);
 		Map<String, Object> equipment = (Map<String, Object>)
-			((List<Map<String, Object>>) payload.get("loadouts")).get(0).get("equipment");
+			((List<Map>) payload.get("loadouts")).get(0).get("equipment");
 		Map<String, Object> weapon = (Map<String, Object>) equipment.get("weapon");
 		Map<String, Object> vars = (Map<String, Object>) weapon.get("itemVars");
 		assertNotNull(vars, "the dart travels on the weapon");
@@ -141,7 +141,7 @@ class WikiCalcLinkTest {
 			"Augury + Saturated heart", PlayerLevels.MAXED, PlayerLevels.MAXED,
 			false, false);
 		Map<String, String> style = (Map<String, String>)
-			((List<Map<String, Object>>) payload.get("loadouts")).get(0).get("style");
+			((List<Map>) payload.get("loadouts")).get(0).get("style");
 		assertEquals("magic", style.get("type"));
 		assertEquals("Accurate", style.get("stance"));
 	}

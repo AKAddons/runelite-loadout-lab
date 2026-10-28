@@ -47,12 +47,12 @@ public class RoyalTitansTest {
 	@Test
 	public void farFormsAreMeleeImmuneNearFormsAreNot() {
 		MonsterStats far = farTitan("branda");
-		Assert.assertTrue(MonsterMechanics.styleImmune(far, CombatStyle.MELEE));
-		Assert.assertFalse(MonsterMechanics.styleImmune(far, CombatStyle.RANGED));
+		Assert.assertTrue(com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.MELEE));
+		Assert.assertFalse(com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.RANGED));
 		MonsterStats near = data().searchMonsters("branda the fire queen", 1).get(0);
 		Assert.assertFalse("the near-phase base row keeps melee",
-			MonsterMechanics.styleImmune(near, CombatStyle.MELEE));
-		Assert.assertTrue(MonsterMechanics.styleImmune(farTitan("eldric"), CombatStyle.MELEE));
+			com.loadoutlab.engine.Immunity.styleImmune(near, CombatStyle.MELEE));
+		Assert.assertTrue(com.loadoutlab.engine.Immunity.styleImmune(farTitan("eldric"), CombatStyle.MELEE));
 	}
 
 	@Test

@@ -8,16 +8,16 @@ import lombok.Getter;
 import com.loadoutlab.engine.CombatStyle;
 
 @Getter
-public final class GearItem {
+public class GearItem {
     /** The name vocabulary behind poweredStaff, the demonbane class and
      * isWeaponFor lives in gear_words.json (hub token cap); the lists are
      * walked once per item at load, or once per pool build. */
-    private static final List<String> POWERED = new ArrayList<>();
-    private static final List<String> MELEE_DEMONBANE = new ArrayList<>();
-    private static final List<String> RANGED_WEAPON = new ArrayList<>();
-    private static final List<String> MAGIC_WEAPON = new ArrayList<>();
-    private static final List<String> NOT_MELEE = new ArrayList<>();
-    private static final List<String> MELEE_STAFF = new ArrayList<>();
+    static final List<String> POWERED = new ArrayList<>();
+    static final List<String> MELEE_DEMONBANE = new ArrayList<>();
+    static final List<String> RANGED_WEAPON = new ArrayList<>();
+    static final List<String> MAGIC_WEAPON = new ArrayList<>();
+    static final List<String> NOT_MELEE = new ArrayList<>();
+    static final List<String> MELEE_STAFF = new ArrayList<>();
 
     static {
         JsonObject words = JsonResources.objectOrThrow("gear_words.json");
@@ -29,35 +29,35 @@ public final class GearItem {
         JsonResources.strings(words, "meleeStaff", MELEE_STAFF);
     }
 
-    private final int id;
-    private final String name;
-    private final String version;
-    private final GearSlot slot;
-    private final String category;
-    private final int speed;
-    private final boolean twoHanded;
-    private final boolean standardGear;
-    private final boolean tradeable;
-    private final boolean members;
-    private final Integer estimatedPrice;
-    private final StatBlock offensive;
-    private final StatBlock defensive;
-    private final StatBlock bonuses;
-    private final GearRequirements requirements;
+    public final int id;
+    public final String name;
+    public final String version;
+    public final GearSlot slot;
+    public final String category;
+    public final int speed;
+    public final boolean twoHanded;
+    public final boolean standardGear;
+    public final boolean tradeable;
+    final boolean members;
+    public final Integer estimatedPrice;
+    public final StatBlock offensive;
+    public final StatBlock defensive;
+    public final StatBlock bonuses;
+    public final GearRequirements requirements;
     // Lowercase views, precomputed once: the engine matches items by name
     // fragment on every candidate evaluation, and per-call toLowerCase was
     // the single hottest path in the whole optimize (64% of CPU samples).
-    private final String nameLower;
-    private final String versionLower;
-    private final String categoryLower;
-    private final String labelLower;
-    private final String nameVersionLower;
+    public final String nameLower;
+    public final String versionLower;
+    public final String categoryLower;
+    final String labelLower;
+    final String nameVersionLower;
     /** Powered staff (built-in spell, no autocast) - see DpsCalculator.isPoweredStaff. */
-    private final boolean poweredStaff;
-    private final boolean meleeDemonbane;
-    private final boolean demonbane;
+    public final boolean poweredStaff;
+    public final boolean meleeDemonbane;
+    public final boolean demonbane;
     /** Kilograms, from the corpus (negative for weight-reducing gear); set once at load. */
-    private double weight;
+    public double weight;
 
     public GearItem( int id, String name, String version, GearSlot slot, String category, int speed, boolean twoHanded,
         boolean standardGear, boolean tradeable, boolean members, Integer estimatedPrice, StatBlock offensive,
@@ -78,10 +78,10 @@ public final class GearItem {
         this.bonuses = bonuses == null ? StatBlock.ZERO : bonuses;
         this.requirements = requirements == null ? GearRequirements.NONE : requirements;
         this.nameLower = Names.lower(this.name);
-        this.versionLower = Names.lower(this.version);
+        versionLower = Names.lower(this.version);
         this.categoryLower = Names.lower(this.category);
-        this.labelLower = Names.lower(label());
-        this.nameVersionLower = (this.name + " " + this.version).toLowerCase(Locale.ROOT);
+        labelLower = Names.lower(label());
+        nameVersionLower = (this.name + " " + this.version).toLowerCase(Locale.ROOT);
         // Precomputed once: the optimizer asks this on every trial, and the
         // name-fragment chain was the single hottest call in the profile.
         // DpsCalculator.isPoweredStaff stays the API - it delegates here.
@@ -109,9 +109,9 @@ public final class GearItem {
         if (slot != GearSlot.WEAPON) return false;
         switch (style) {
             case RANGED:
-                return RANGED_WEAPON.stream().anyMatch(categoryLower::contains) || offensive.getRanged() > 0;
+                return RANGED_WEAPON.stream().anyMatch(categoryLower::contains) || offensive.ranged > 0;
             case MAGIC:
-                return MAGIC_WEAPON.stream().anyMatch(categoryLower::contains) || offensive.getMagic() > 0;
+                return MAGIC_WEAPON.stream().anyMatch(categoryLower::contains) || offensive.magic > 0;
             case MELEE:
             default:
                 return NOT_MELEE.stream().noneMatch(categoryLower::contains) || MELEE_STAFF.stream().anyMatch(nameLower::startsWith);
@@ -121,13 +121,13 @@ public final class GearItem {
     public double roughScore(CombatStyle style) {
         switch (style) {
             case MELEE:
-                return Math.max(offensive.getStab(), Math.max(offensive.getSlash(), offensive.getCrush()))
-                    + bonuses.getStrength() * 2.5 + Math.max(0, bonuses.getPrayer()) * 0.25;
+                return Math.max(offensive.stab, Math.max(offensive.slash, offensive.crush))
+                    + bonuses.strength * 2.5 + Math.max(0, bonuses.prayer) * 0.25;
             case RANGED:
-                return offensive.getRanged() + bonuses.getRangedStrength() * 2.5 + Math.max(0, bonuses.getPrayer()) * 0.25;
+                return offensive.ranged + bonuses.rangedStrength * 2.5 + Math.max(0, bonuses.prayer) * 0.25;
             case MAGIC:
             default:
-                return offensive.getMagic() + bonuses.getMagicDamage() * 3.0 + Math.max(0, bonuses.getPrayer()) * 0.25;
+                return offensive.magic + bonuses.magicDamage * 3.0 + Math.max(0, bonuses.prayer) * 0.25;
         }
     }
 

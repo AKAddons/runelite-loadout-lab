@@ -6,6 +6,11 @@
    "reason": "Shadow Barrage stuns the Sire for ~27s (100%, even on a splash) - the standard subdue method",
    "spell": "Shadow Barrage"
   },
+  "vorkath": {
+   "book": "standard",
+   "reason": "Crumble Undead kills the zombified spawn in one cast - usually autocast from a slayer's staff",
+   "spell": "Crumble Undead"
+  },
   "respiratory system": {
    "book": "ancient",
    "reason": "Shadow Barrage stuns the Sire and its tentacles, leaving the vents open to attack",

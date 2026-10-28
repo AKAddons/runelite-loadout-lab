@@ -4,7 +4,7 @@ import java.awt.*;
 
 /** The classic chip-row layout (ported verbatim): FlowLayout that
  * actually wraps, so no control silently clips off the row's end. */
-final class WrapLayout extends FlowLayout {
+class WrapLayout extends FlowLayout {
     WrapLayout(int align, int hgap, int vgap) { super(align, hgap, vgap); }
 
     public Dimension preferredLayoutSize(Container target) {

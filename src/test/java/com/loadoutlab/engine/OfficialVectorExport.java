@@ -290,8 +290,8 @@ public class OfficialVectorExport {
 		LoadoutData data = new DataService().load();
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
-		List<Map<String, Object>> vectors = new ArrayList<>();
-		List<Map<String, Object>> ours = new ArrayList<>();
+		List<Map> vectors = new ArrayList<>();
+		List<Map> ours = new ArrayList<>();
 
 		for (String[] m : SWEEP_MONSTERS) {
 			MonsterStats monster = data.searchMonsters(m[0], 10).stream()
@@ -361,8 +361,8 @@ public class OfficialVectorExport {
 
 		LoadoutData data = new DataService().load();
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
-		List<Map<String, Object>> vectors = new ArrayList<>();
-		List<Map<String, Object>> ours = new ArrayList<>();
+		List<Map> vectors = new ArrayList<>();
+		List<Map> ours = new ArrayList<>();
 
 		for (String[] s : SCENARIOS) {
 			if (s[4] == null) {

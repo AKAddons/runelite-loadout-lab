@@ -6,29 +6,29 @@ import java.util.*;
 import lombok.Getter;
 
 @Getter
-public final class MonsterStats {
-    private final int id;
-    private final String name;
-    private final String version;
-    private final int combatLevel;
-    private final int hitpoints;
-    private final int size;
-    private final int defence;
-    private final int magic;
-    private final int offensiveMagic;
-    private final MonsterDefences defensive;
-    private final MonsterOffence offence;
-    private final List<String> attributes;
-    private final Set<String> attributesLower;
-    private final boolean slayerMonster;
-    private final String weaknessElement;
-    private final int weaknessSeverity;
+public class MonsterStats {
+    public final int id;
+    public final String name;
+    public final String version;
+    public final int combatLevel;
+    public final int hitpoints;
+    public final int size;
+    public final int defence;
+    public final int magic;
+    public final int offensiveMagic;
+    public final MonsterDefences defensive;
+    public final MonsterOffence offence;
+    final List<String> attributes;
+    public final Set<String> attributesLower;
+    public final boolean slayerMonster;
+    public final String weaknessElement;
+    public final int weaknessSeverity;
     /** Lowercased monster name, cached (per-trial engine gates). */
-    private final String nameLower;
-    private final boolean wilderness;
-    private final boolean revenant;
+    public final String nameLower;
+    final boolean wilderness;
+    final boolean revenant;
     /** 0, or the vampyre tier (attribute vampyre1-3): read per trial set. */
-    private final int vampyreTier;
+    public final int vampyreTier;
 
     public MonsterStats( int id, String name, String version, int combatLevel, int hitpoints, int defence, int magic,
         MonsterDefences defensive, List<String> attributes) {
@@ -49,7 +49,7 @@ public final class MonsterStats {
         this.offensiveMagic = offensiveMagic;
         this.defensive = defensive == null ? MonsterDefences.ZERO : defensive;
         this.offence = offence == null ? MonsterOffence.NONE : offence;
-        this.attributes = attributes == null ? List.of() : Collections.unmodifiableList(attributes);
+        this.attributes = attributes == null ? List.of() : attributes;
         this.slayerMonster = slayerMonster;
         this.weaknessElement = weaknessElement == null ? "" : Names.lower(weaknessElement);
         this.weaknessSeverity = Math.max(0, weaknessSeverity);
@@ -60,12 +60,12 @@ public final class MonsterStats {
             if (value != null) lower.add(Names.lower(value));
         }
         this.attributesLower = lower;
-        this.vampyreTier = lower.contains("vampyre3") ? 3 : lower.contains("vampyre2") ? 2 : lower.contains("vampyre1") ? 1 : 0;
+        vampyreTier = lower.contains("vampyre3") ? 3 : lower.contains("vampyre2") ? 2 : lower.contains("vampyre1") ? 1 : 0;
         // The revenant/wilderness gates lowercase the name per DPS trial -
         // that allocation was ~20% of optimizer samples. Once, here.
-        this.nameLower = Names.lower(this.name);
-        this.wilderness = WildernessMonsters.containsName(this.nameLower);
-        this.revenant = this.nameLower.startsWith("revenant");
+        nameLower = Names.lower(this.name);
+        this.wilderness = WildernessMonsters.containsName(nameLower);
+        this.revenant = nameLower.startsWith("revenant");
     }
 
     /**
@@ -80,7 +80,7 @@ public final class MonsterStats {
      * normalization of quest/post-quest noise). */
     public MonsterStats withVersion(String newVersion) { return copy(id, newVersion, attributes, defence); }
 
-    private MonsterStats copy(int newId, String newVersion, List<String> newAttributes, int newDefence) {
+    MonsterStats copy(int newId, String newVersion, List<String> newAttributes, int newDefence) {
         var copy = new MonsterStats(newId, name, newVersion, combatLevel, hitpoints,
             size, newDefence, magic, offensiveMagic, defensive, offence, newAttributes, slayerMonster, weaknessElement, weaknessSeverity);
         copy.wikiVersion = getWikiVersion();
@@ -95,7 +95,7 @@ public final class MonsterStats {
      * Field 2026-08-21: exporting the DISPLAY version made the calc's
      * import miss and silently fall back to the FIRST same-id row -
      * the post-quest Duke opened as Awakened. */
-    private String wikiVersion;
+    String wikiVersion;
 
     public String getWikiVersion() { return wikiVersion == null ? version : wikiVersion; }
 
@@ -104,7 +104,7 @@ public final class MonsterStats {
      * getName() stays the real name, so every name-keyed rule - notes, TD
      * damage reduction, boss overrides - keeps applying, and profile
      * pins/exclusions follow the real row. */
-    private String displayName;
+    String displayName;
 
     /** The value after a "prefix:" attribute (group stipulations), or null. */
     public String attributeValue(String prefix) {
@@ -128,7 +128,7 @@ public final class MonsterStats {
      * re-shows, spec sims - prices the same invocation; 0 everywhere
      * else. The engine scales defence rolls by (250+level)/250 (the
      * official engine's rule) for invocation-scaled rows. */
-    private int toaInvocationLevel;
+    int toaInvocationLevel;
 
     public int getToaInvocationLevel() { return toaInvocationLevel; }
 

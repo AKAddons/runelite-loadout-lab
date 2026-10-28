@@ -273,6 +273,14 @@
 				{"name": "Spectral spirit shield", "ids": [12821]}
 			],
 			"note": "equip it for the summoned souls - it halves their prayer drain"
+		},
+		{
+			"monsters": ["vorkath"],
+			"items": [
+				{"name": "Slayer's staff (e)", "ids": [21255]},
+				{"name": "Slayer's staff", "ids": [4170]}
+			],
+			"note": "autocast Crumble Undead on the zombified spawn (Andrew 2026-10-27)"
 		}
 	],
 	"ward": ["cerberus"],

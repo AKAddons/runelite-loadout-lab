@@ -22,7 +22,7 @@ class MolaniskBellTest {
 		data = new DataService().load();
 	}
 
-	private static List<Map<String, Object>> carried(String mob, boolean ownsBell) {
+	private static List<Map> carried(String mob, boolean ownsBell) {
 		return RequiredGear.carriedPicks(data.searchMonsters(mob, 1).get(0), id -> ownsBell && id == SLAYER_BELL);
 	}
 

@@ -7,7 +7,7 @@ import lombok.Getter;
 public enum CombatStyle {
     ANY("Any"), MELEE("Melee"), RANGED("Ranged"), MAGIC("Magic");
 
-    private final String label;
+    final String label;
 
     CombatStyle(String label) { this.label = label; }
 

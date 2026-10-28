@@ -100,7 +100,7 @@ public interface LoadoutLabConfig extends Config {
     enum OptimizeModeDefault {
         MAX_DPS("Max DPS"), BALANCED("Balanced (beta)"), TANKY("Tanky (beta)");
 
-        private final String label;
+        final String label;
 
         @Override
         public String toString() { return label; }

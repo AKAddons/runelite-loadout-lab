@@ -19,15 +19,15 @@ import static com.loadoutlab.engine.UntradeableDeathCosts.*;
  * competes for kept slots exactly like worn gear and can displace a
  * cheaper item into the lost pile.
  */
-public final class PvpRisk {
+public class PvpRisk {
     /** One worn untradeable and its per-death cost (repair/mangle fee). */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    public static final class Charge {
+    @RequiredArgsConstructor
+    public static class Charge {
         public final GearItem item;
         public final long costGp;
     }
 
-    public static final class Assessment {
+    public static class Assessment {
         /** Total per-death cost: lost items + untradeable fees. */
         public final long riskGp;
         /** Most valuable losable items, kept on death - best first.
@@ -45,20 +45,18 @@ public final class PvpRisk {
 
         Assessment(long riskGp, List<GearItem> kept, List<GearItem> lost, List<Charge> untradeableCharges, Map<Integer, Long> valueById) {
             this.riskGp = riskGp;
-            this.kept = Collections.unmodifiableList(kept);
-            this.lost = Collections.unmodifiableList(lost);
-            this.untradeableCharges = Collections.unmodifiableList(untradeableCharges);
-            this.valueById = Collections.unmodifiableMap(valueById);
+            this.kept = kept;
+            this.lost = lost;
+            this.untradeableCharges = untradeableCharges;
+            this.valueById = valueById;
         }
 
         public long valueOf(GearItem item) {
-            Long value = valueById.get(item.getId());
+            Long value = valueById.get(item.id);
             return value == null ? item.getPriceOrZero() : value;
         }
     }
 
-    private PvpRisk() {
-    }
 
     /** The PvP mode a world type implies: 0 off, 1 PvP world, 2 High
      * Risk (wiki: all items lost there, Protect Item unusable). */
@@ -77,19 +75,19 @@ public final class PvpRisk {
      * default 3-item protection is gone (1 item with Protect Item). Maps
      * the caller's kept-slot count (3 or 4) onto the skulled reality.
      */
-    private static int effectiveKeptSlots(Loadout loadout, int keptSlots) {
+    static int effectiveKeptSlots(Loadout loadout, int keptSlots) {
         if (keptSlots <= 0) return keptSlots;
         GearItem neck = loadout.get(GearSlot.NECK);
-        if (neck != null && "amulet of avarice".equals(neck.getNameLower())) return keptSlots >= 4 ? 1 : 0;
+        if (neck != null && "amulet of avarice".equals(neck.nameLower)) return keptSlots >= 4 ? 1 : 0;
         return keptSlots;
     }
 
     /** The carried spec weapon is already on the character (the same
      * item id sits in a worn slot) - it must be counted ONCE. */
-    private static boolean alreadyWorn(Loadout loadout, GearItem spec) {
+    static boolean alreadyWorn(Loadout loadout, GearItem spec) {
         if (spec == null) return false;
         for (GearItem worn : loadout.getGear().values()) {
-            if (worn != null && worn.getId() == spec.getId()) return true;
+            if (worn != null && worn.id == spec.id) return true;
         }
         return false;
     }
@@ -108,13 +106,13 @@ public final class PvpRisk {
         // for it twice is not (field report 2026-08-22: the Accursed
         // sceptre appeared twice in one lost list).
         if (!alreadyWorn(loadout, carriedSpecWeapon)) sort(carriedSpecWeapon, pool, charges, valueById);
-        pool.sort(Comparator.comparingLong((GearItem g) -> valueById.getOrDefault(g.getId(), 0L)).reversed());
+        pool.sort(Comparator.comparingLong((GearItem g) -> valueById.getOrDefault(g.id, 0L)).reversed());
         charges.sort(Comparator.comparingLong((Charge c) -> c.costGp).reversed());
         int keep = Math.max(0, effectiveKeptSlots(loadout, keptSlots));
         List<GearItem> kept = new ArrayList<>(pool.subList(0, Math.min(keep, pool.size())));
         List<GearItem> lost = new ArrayList<>(pool.subList(Math.min(keep, pool.size()), pool.size()));
         long risk = 0;
-        for (GearItem item : lost) risk += valueById.getOrDefault(item.getId(), 0L);
+        for (GearItem item : lost) risk += valueById.getOrDefault(item.id, 0L);
         for (Charge charge : charges) risk += charge.costGp;
         return new Assessment(risk, kept, lost, charges, valueById);
     }
@@ -222,9 +220,9 @@ public final class PvpRisk {
 
     /** An unpinned item the set is required to protect - engine friction
      * (salve line) OR the player's protect-only flag. */
-    private static boolean mustProtect(GearItem item, Set<Integer> pinnedIds, Set<Integer> protectOnlyIds) {
-        if (item == null || pinnedIds.contains(item.getId())) return false;
-        return frictionFor(item) > 0 || protectOnlyIds.contains(item.getId());
+    static boolean mustProtect(GearItem item, Set<Integer> pinnedIds, Set<Integer> protectOnlyIds) {
+        if (item == null || pinnedIds.contains(item.id)) return false;
+        return frictionFor(item) > 0 || protectOnlyIds.contains(item.id);
     }
 
     /**
@@ -234,7 +232,7 @@ public final class PvpRisk {
      * at values[count]", bit0 = "and is an unpinned must-protect item"
      * (0 = not poolable, contributes nothing).
      */
-    private static int offerRebuild(GearItem item, long[] values, int count, Set<Integer> pinnedIds, Set<Integer> protectOnlyIds) {
+    static int offerRebuild(GearItem item, long[] values, int count, Set<Integer> pinnedIds, Set<Integer> protectOnlyIds) {
         if (item == null) return 0;
         long value = poolValue(item);
         boolean protect = mustProtect(item, pinnedIds, protectOnlyIds);
@@ -255,14 +253,14 @@ public final class PvpRisk {
      * (0 except the destroyed/fee classes). Shared classification for
      * assess() and the lean riskGp().
      */
-    private static long poolValue(GearItem item) {
+    static long poolValue(GearItem item) {
         if (item == null) {
             return -1; // costFor(null) == 0
         }
         if (isDestroyedOnDeath(item)) {
             return -1; // always a charge, never poolable
         }
-        if (item.isTradeable()) return item.getPriceOrZero();
+        if (item.tradeable) return item.getPriceOrZero();
         long cost = costFor(item);
         if (cost <= 0) {
             return -1; // costs nothing either way
@@ -275,7 +273,7 @@ public final class PvpRisk {
     }
 
     /** Insert value into the ascending top-N array; returns the new count. */
-    private static int offerTop(long[] top, int count, long value) {
+    static int offerTop(long[] top, int count, long value) {
         if (top.length == 0) return 0;
         if (count < top.length) {
             int i = count;
@@ -298,12 +296,12 @@ public final class PvpRisk {
 
     /** Losable items join the protection pool; the rest accrue fees.
      * Classification lives in poolValue() - shared with the lean riskGp(). */
-    private static void sort(GearItem item, List<GearItem> pool, List<Charge> charges, Map<Integer, Long> valueById) {
+    static void sort(GearItem item, List<GearItem> pool, List<Charge> charges, Map<Integer, Long> valueById) {
         if (item == null) return;
         long value = poolValue(item);
         if (value >= 0) {
             pool.add(item);
-            valueById.put(item.getId(), value);
+            valueById.put(item.id, value);
             return;
         }
         if (isDestroyedOnDeath(item)) {

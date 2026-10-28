@@ -12,11 +12,11 @@ import java.util.*;
  * in defence_floors.json are copied verbatim from the wiki calc's
  * constants - the same weirdgloop ids our corpus carries.
  */
-public final class DefenceFloors {
+public class DefenceFloors {
     /** Sentinel: the floor IS the boss's base defence (undrainable). */
-    private static final int BASE = -1;
+    static final int BASE = -1;
 
-    private static final Map<Integer, Integer> BY_ID = new HashMap<>();
+    static final Map<Integer, Integer> BY_ID = new HashMap<>();
 
     static {
         JsonObject root = JsonResources.objectOrThrow( "defence_floors.json");
@@ -28,8 +28,6 @@ public final class DefenceFloors {
         if (BY_ID.isEmpty()) throw new IllegalStateException("defence_floors.json loaded empty");
     }
 
-    private DefenceFloors() {
-    }
 
     /** The defence level a drain cannot pass for this monster - 0 when
      * unfloored. Synthetic group rows resolve through profileId(). */
@@ -37,6 +35,6 @@ public final class DefenceFloors {
         if (monster == null) return 0;
         Integer floor = BY_ID.get(monster.profileId());
         if (floor == null) return 0;
-        return floor == BASE ? monster.getDefence() : floor;
+        return floor == BASE ? monster.defence : floor;
     }
 }

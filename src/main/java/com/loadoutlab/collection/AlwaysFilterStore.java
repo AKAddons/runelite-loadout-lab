@@ -20,7 +20,7 @@ public class AlwaysFilterStore extends ScopedMapStore<Integer, String> {
         super(configManager, gson, KEY, new TypeToken<Map<Integer, String>>(){}.getType());
     }
 
-    public synchronized Map<Integer, String> all() { return Collections.unmodifiableMap(new LinkedHashMap<>(items)); }
+    public synchronized Map<Integer, String> all() { return new LinkedHashMap<>(items); }
 
     public synchronized void add(int itemId, String name) {
         items.put(itemId, name == null ? ("item " + itemId) : name);

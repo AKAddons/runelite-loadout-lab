@@ -24,7 +24,7 @@ class GwdSelectionTest {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			published = page;
 		}
 	}
@@ -62,7 +62,7 @@ class GwdSelectionTest {
 		assertEquals(5, ((PageState) select("general graardor")[0]).paramsNode().get("maxSwaps"));
 		assertEquals(6, ((PageState) select("kree'arra")[0]).paramsNode().get("maxSwaps"));
 		assertEquals(5, ((PageState) select("sergeant strongstack")[0]).paramsNode().get("maxSwaps"));
-		assertEquals(1, ((PageState) select("vorkath")[0]).paramsNode().get("maxSwaps"), "other singles keep 1");
+		assertEquals(1, ((PageState) select("zulrah")[0]).paramsNode().get("maxSwaps"), "other singles keep 1");
 	}
 
 	@Test
@@ -72,9 +72,9 @@ class GwdSelectionTest {
 		PageState state = (PageState) s[0];
 		CommandEngine engine = (CommandEngine) s[1];
 		assertEquals(Boolean.FALSE, state.paramsNode().get("gwdAncient"));
-		assertFalse(engine.gwdAncient());
+		assertFalse(Boolean.TRUE.equals(engine.state.paramsNode().get("gwdAncient")));
 		engine.execute("set-param", Map.of("param", "gwdAncient", "value", true));
-		assertTrue(engine.gwdAncient());
+		assertTrue(Boolean.TRUE.equals(engine.state.paramsNode().get("gwdAncient")));
 	}
 
 	@Test

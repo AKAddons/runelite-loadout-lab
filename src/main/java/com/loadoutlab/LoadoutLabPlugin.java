@@ -43,6 +43,7 @@ import static com.loadoutlab.collection.CollectionLedger.Source.*;
 import static com.loadoutlab.collection.StoragesApi.*;
 import static javax.swing.SwingUtilities.*;
 import static net.runelite.api.gameval.VarbitID.*;
+import com.loadoutlab.optimizer.BoostSelector;
 
 /**
  * Loadout Lab - best-in-slot from the gear YOU own.
@@ -52,98 +53,98 @@ import static net.runelite.api.gameval.VarbitID.*;
  * inventory, and equipment, and a local DPS engine.
  */
 @Slf4j
-@PluginDependency(net.runelite.client.plugins.banktags.BankTagsPlugin.class)
+@PluginDependency(BankTagsPlugin.class)
 @PluginDescriptor(
     name = "Loadout Lab", description = "Best-in-slot sets from the gear you own, per enemy and combat style, with exact DPS",
     tags = {"gear", "bis", "dps", "loadout", "equipment"}
 ) public class LoadoutLabPlugin extends Plugin {
     @Inject
-    private Client client;
+    Client client;
 
     @Inject
-    private ClientThread clientThread;
+    ClientThread clientThread;
 
     @Inject
-    private ClientToolbar clientToolbar;
+    ClientToolbar clientToolbar;
 
     @Inject
-    private ConfigManager configManager;
+    ConfigManager configManager;
 
     @Inject
-    private LoadoutLabConfig config;
+    LoadoutLabConfig config;
 
     @Inject
-    private Gson gson;
+    Gson gson;
 
     @Inject
-    private okhttp3.OkHttpClient okHttpClient;
+    okhttp3.OkHttpClient okHttpClient;
 
-    private MonsterIcons monsterIcons;
-
-    @Inject
-    private ItemManager itemManager;
+    MonsterIcons monsterIcons;
 
     @Inject
-    private OverlayManager overlayManager;
+    ItemManager itemManager;
 
     @Inject
-    private BankTagsService bankTagsService;
+    OverlayManager overlayManager;
 
     @Inject
-    private TagManager tagManager;
+    BankTagsService bankTagsService;
 
     @Inject
-    private LayoutManager layoutManager;
+    TagManager tagManager;
 
     @Inject
-    private TabManager tabManager;
+    LayoutManager layoutManager;
 
     @Inject
-    private SpriteManager spriteManager;
+    TabManager tabManager;
 
     @Inject
-    private net.runelite.client.game.SkillIconManager skillIconManager;
+    SpriteManager spriteManager;
 
     @Inject
-    private ChatboxItemSearch chatboxItemSearch;
+    SkillIconManager skillIconManager;
 
     @Inject
-    private ClientUI clientUI;
+    ChatboxItemSearch chatboxItemSearch;
 
     @Inject
-    private EventBus eventBus;
+    ClientUI clientUI;
 
     @Inject
-    private PluginManager pluginManager;
+    EventBus eventBus;
 
-    private CollectionLedger ledger;
-    private ExclusionStore exclusions;
-    private ProtectOnlyStore protectOnly;
+    @Inject
+    PluginManager pluginManager;
+
+    CollectionLedger ledger;
+    IdSetStore exclusions;
+    IdSetStore protectOnly;
     /** "Show in bank": the expanded id set the overlay outlines; null = off. */
-    private volatile Set<Integer> bankHighlight;
+    volatile Set<Integer> bankHighlight;
     /** "Filter bank": a VIRTUAL bank tag (never persisted to the player's
      * tag config) containing the active set's expanded ids; null = off. */
-    private volatile Set<Integer> bankFilter;
-    private static final String BANK_TAG = "loadout-lab";
+    volatile Set<Integer> bankFilter;
+    static final String BANK_TAG = "loadout-lab";
     /** DWMS's exact plugin name - detection and icon lookup key off it. */
-    private static final String DWMS_PLUGIN_NAME = "Dude, Where's My Stuff?";
-    private BankHighlightOverlay bankOverlay;
-    private DreamStore dreams;
-    private MonsterProfileStore mobProfiles;
-    private AlwaysFilterStore alwaysFilter;
-    private SupplyDefaultsStore supplyDefaults;
-    private DwmsLink dwmsLink;
-    private volatile CompanionLink companionLink;
-    private volatile CommandEngine commandEngine;
-    private volatile RenderSurface internalSurface;
-    private CompanionHost companionHost;
-    private LoadoutData data;
+    static final String DWMS_PLUGIN_NAME = "Dude, Where's My Stuff?";
+    BankHighlightOverlay bankOverlay;
+    IdSetStore dreams;
+    MonsterProfileStore mobProfiles;
+    AlwaysFilterStore alwaysFilter;
+    SupplyDefaultsStore supplyDefaults;
+    DwmsLink dwmsLink;
+    volatile CompanionLink companionLink;
+    volatile CommandEngine commandEngine;
+    volatile RenderSurface internalSurface;
+    CompanionHost companionHost;
+    LoadoutData data;
     /** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
-    private volatile StashUnits stashUnits;
+    volatile StashUnits stashUnits;
     /** One chart read per opening, mirroring the container-scan coalescing. */
-    private boolean stashChartSeen;
-    private OptimizerService optimizerService;
-    private NavigationButton navButton;
+    boolean stashChartSeen;
+    OptimizerService optimizerService;
+    NavigationButton navButton;
 
     /**
      * Requirement profile (levels + finished quests), snapshotted lazily on
@@ -151,37 +152,37 @@ import static net.runelite.api.gameval.VarbitID.*;
      * (~200 quests), so this must never run per-query or per-tick.
      * Invalidated on login.
      */
-    private RequirementProfile requirementProfile;
-    private PlayerLevels realLevels;
-    private PlayerLevels boostedLevels;
+    RequirementProfile requirementProfile;
+    PlayerLevels realLevels;
+    PlayerLevels boostedLevels;
     /** Last published world type, so the F2P filter is forced only on a flip
      * and a manual untick survives a loading zone. */
-    private Boolean lastF2pWorld;
-    private Integer lastPvpWorld;
-    private PrayerUnlocks prayerUnlocks;
+    Boolean lastF2pWorld;
+    Integer lastPvpWorld;
+    PrayerUnlocks prayerUnlocks;
     /** Account the snapshot above was taken for (-1 = none/hashless). */
-    private long snapshotAccount = -1;
+    long snapshotAccount = -1;
 
     /** Container-change coalescing - events mark, the per-tick drain scans. */
     /** Trailing debounce for ledger-driven recomputes (game ticks). */
-    private int ledgerRecomputeTicks;
+    int ledgerRecomputeTicks;
 
-    private final EnumSet<Source> dirtySources = EnumSet.noneOf(Source.class);
+    final EnumSet<Source> dirtySources = EnumSet.noneOf(Source.class);
 
     /** The rune pouch's six slots: a type varbit (RUNEPOUCH_RUNE enum key)
      * and a quantity varbit each, as RuneLite's own pouch overlay reads them. */
-    private static final int[] POUCH_TYPES = {RUNE_POUCH_TYPE_1, RUNE_POUCH_TYPE_2,
+    static final int[] POUCH_TYPES = {RUNE_POUCH_TYPE_1, RUNE_POUCH_TYPE_2,
         RUNE_POUCH_TYPE_3, RUNE_POUCH_TYPE_4, RUNE_POUCH_TYPE_5, RUNE_POUCH_TYPE_6};
-    private static final int[] POUCH_QUANTITIES = {RUNE_POUCH_QUANTITY_1, RUNE_POUCH_QUANTITY_2,
+    static final int[] POUCH_QUANTITIES = {RUNE_POUCH_QUANTITY_1, RUNE_POUCH_QUANTITY_2,
         RUNE_POUCH_QUANTITY_3, RUNE_POUCH_QUANTITY_4, RUNE_POUCH_QUANTITY_5, RUNE_POUCH_QUANTITY_6};
 
     /** Event-time snapshots for storage containers that cannot be
      * re-fetched by id at drain time (see onItemContainerChanged). */
-    private final Map<Source, Map<Integer, Integer>> pendingScans = new EnumMap<>(Source.class);
+    final Map<Source, Map<Integer, Integer>> pendingScans = new EnumMap<>(Source.class);
 
     /** Ticks left to re-scan the looting bag after its Check screen opens
      * (the contents can land a tick after the widget). */
-    private int lootingBagScanTicks;
+    int lootingBagScanTicks;
 
     /**
      * Cross-plugin link-in: other plugins (e.g. Goal Planner) post
@@ -261,23 +262,23 @@ import static net.runelite.api.gameval.VarbitID.*;
 
     /** The NPC's own right-click menu offers Attack - composition actions,
      * client thread. */
-    private static boolean attackable(NPC npc) {
+    static boolean attackable(NPC npc) {
         return npc.getComposition() != null && npc.getComposition().getActions() != null
             && Arrays.stream(npc.getComposition().getActions()).anyMatch("Attack"::equalsIgnoreCase);
     }
 
     /** Cheap client-thread gate: exact id or normalized-name match. */
-    private boolean knownMonster(String name, int id) {
+    boolean knownMonster(String name, int id) {
         String normalized = name.toLowerCase().replaceAll("[^a-z0-9]", "");
-        return data.getMonsters().stream().anyMatch(m -> m.getId() == id
-            || m.getName().toLowerCase().replaceAll("[^a-z0-9]", "").equals(normalized));
+        return data.monsters.stream().anyMatch(m -> m.id == id
+            || m.name.toLowerCase().replaceAll("[^a-z0-9]", "").equals(normalized));
     }
 
     protected void startUp() {
         ledger = new CollectionLedger(configManager, gson);
-        exclusions = new ExclusionStore(configManager, gson);
-        protectOnly = new ProtectOnlyStore(configManager, gson);
-        dreams = new DreamStore(configManager, gson);
+        exclusions = new IdSetStore(configManager, gson, "excludedItems");
+        protectOnly = new IdSetStore(configManager, gson, "protectOnlyItems");
+        dreams = new IdSetStore(configManager, gson, "dreamItems");
         mobProfiles = new MonsterProfileStore(configManager, gson);
         alwaysFilter = new AlwaysFilterStore(configManager, gson);
         supplyDefaults = new SupplyDefaultsStore(configManager, gson);
@@ -318,11 +319,11 @@ import static net.runelite.api.gameval.VarbitID.*;
                 data = loaded;
                 mobProfiles.setDegradableIds(degradable);
                 optimizerService = new OptimizerService(loaded);
-                commandEngine = new CommandEngine( loaded, new com.loadoutlab.model.PageState(), this::compute, companionLink);
+                commandEngine = new CommandEngine( loaded, new PageState(), this::compute, companionLink);
                 commandEngine.setCounts(() -> {
-                    List<Map<String, Object>> ei = rows(exclusions.snapshot());
-                    List<Map<String, Object>> si = rows(dreams.snapshot());
-                    List<Map<String, Object>> fi = new ArrayList<>();
+                    List<Map> ei = rows(exclusions.snapshot());
+                    List<Map> si = rows(dreams.snapshot());
+                    List<Map> fi = new ArrayList<>();
                     alwaysFilter.all().forEach((id, name) -> fi.add(row(id, name, null)));
                     return JsonResources.map("excluded", ei.size(), "simmed", si.size(),
                         "simmedNames", si.stream().map(r -> r.get("name")).collect(Collectors.toList()),
@@ -342,16 +343,10 @@ import static net.runelite.api.gameval.VarbitID.*;
                 // The master scroll book (ISS-01M5VDZXT4W4D5DP468R5R7NSW): a scroll owned, but not loose.
                 commandEngine.setInScrollBook(id -> PotionStorage.isScroll(id) && ledger != null
                     && ledger.owned().getOrDefault(id, 0) == 0 && ownedItems().getOrDefault(id, 0) > 0);
-                // Ward of Arceuus (ISS-01M5VCXYGF51P5NJCDNC1QJZD1): members, 73 Magic, A Kingdom Divided.
-                commandEngine.setWardReady(() -> !Boolean.TRUE.equals(lastF2pWorld) && realLevels != null
-                    && realLevels.getMagic() >= 73 && requirementProfile != null
-                    && requirementProfile.getCompletedQuests().contains(Quest.A_KINGDOM_DIVIDED.name()));
-                // Sinister Offering (ISS-01M5VJAHRWNHFRPPNK3J6B63SZ): members, 92 Magic, A Kingdom Divided.
-                commandEngine.setSinisterReady(() -> !Boolean.TRUE.equals(lastF2pWorld) && realLevels != null
-                    && realLevels.getMagic() >= 92 && requirementProfile != null
-                    && requirementProfile.getCompletedQuests().contains(Quest.A_KINGDOM_DIVIDED.name()));
-                commandEngine.setOfferingReady(() -> !Boolean.TRUE.equals(lastF2pWorld) && realLevels != null
-                    && realLevels.getMagic() >= 84 && requirementProfile != null
+                // Ward of Arceuus (ISS-01M5VCXYGF51P5NJCDNC1QJZD1, 73 Magic), Demonic Offering (84) and
+                // Sinister Offering (ISS-01M5VJAHRWNHFRPPNK3J6B63SZ, 92): members and A Kingdom Divided.
+                commandEngine.setArceuusReady(magic -> !Boolean.TRUE.equals(lastF2pWorld) && realLevels != null
+                    && realLevels.magic >= magic && requirementProfile != null
                     && requirementProfile.getCompletedQuests().contains(Quest.A_KINGDOM_DIVIDED.name()));
                 // Source dots: the storage an item must be fetched from
                 // (at-hand gear returns "" and stays unmarked).
@@ -366,9 +361,9 @@ import static net.runelite.api.gameval.VarbitID.*;
                     // fallback seeded Death Charge ON for a fresh login, and
                     // on a F2P account: field report 2026-08-27).
                     var bag = new OwnedItems(ownedItems(), ledger != null && ledger.bankKnown());
-                    int magic = com.loadoutlab.optimizer.BoostSelector .reachableMagic(realLevels, boostedLevels, bag);
+                    int magic = BoostSelector .reachableMagic(realLevels, boostedLevels, bag);
                     boolean members = !Boolean.TRUE.equals(lastF2pWorld);
-                    Map<String, Object> seeds = new LinkedHashMap<>();
+                    Map seeds = new LinkedHashMap<>();
                     seeds.put("specWeapon", config.defaultSpecWeapon());
                     seeds.put("optimizeMode", config.defaultOptimizeMode().name());
                     // DETECT keeps the derived answer; NONE means off, as
@@ -508,21 +503,21 @@ import static net.runelite.api.gameval.VarbitID.*;
                         mobProfiles.addSim(mi, ii, itemLabel(ii));
                     }
 
-                    public List<Map<String, Object>> mobExclusions(int mi) {
-                        List<Map<String, Object>> out = new ArrayList<>();
+                    public List<Map> mobExclusions(int mi) {
+                        List<Map> out = new ArrayList<>();
                         mobProfiles.allExclusions(mi).forEach((scope, ids) ->
                             ids.forEach(id -> out.add(row(id, itemLabel(id), scope))));
                         return out;
                     }
 
-                    public List<Map<String, Object>> mobSims(int mi) {
-                        List<Map<String, Object>> out = new ArrayList<>();
+                    public List<Map> mobSims(int mi) {
+                        List<Map> out = new ArrayList<>();
                         mobProfiles.allSims(mi).forEach((id, name) -> out.add(row(id, name, null)));
                         return out;
                     }
 
-                    public List<Map<String, Object>> mobFilters(int mi) {
-                        List<Map<String, Object>> out = new ArrayList<>();
+                    public List<Map> mobFilters(int mi) {
+                        List<Map> out = new ArrayList<>();
                         mobProfiles.allFilterItems(mi).forEach((scope, items) ->
                             items.forEach((id, name) -> out.add(row(id, name, scope))));
                         return out;
@@ -644,7 +639,7 @@ import static net.runelite.api.gameval.VarbitID.*;
     /** Settings the RENDERER honours, so flipping one must redraw. The
      * old PANEL_CONFIG_KEYS listed 42 keys for a panel that no longer
      * exists and nothing ever read it (audit 2026-08-22). */
-    private static final Set<String> RENDER_KEYS =
+    static final Set<String> RENDER_KEYS =
         Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons", "showTripBreakdown", "showDegradableChip", "showPvpWorldChip");
 
     /** Client-thread staging push: the castability state the panel's
@@ -654,11 +649,11 @@ import static net.runelite.api.gameval.VarbitID.*;
      * tiers. (The classic panel's spellbook/D-charge display state died
      * with it; detect-grade spellbook awareness returns via the model
      * when the arceuus-clash rendering ports.) */
-    private void pushPanelCastState(PlayerLevels live) {
+    void pushPanelCastState(PlayerLevels live) {
         CommandEngine engine = commandEngine;
         if (engine != null) {
-            engine.setMagicLevel(live.getMagic());
-            engine.setRangedLevel(live.getRanged());
+            engine.setMagicLevel(live.magic);
+            engine.setRangedLevel(live.ranged);
             // Sailing is not a PlayerLevels combat stat - read it straight
             // off the client for the crew cannon's (stale-formula) base.
             engine.setSailingLevel(client.getBoostedSkillLevel( Skill.SAILING));
@@ -668,7 +663,7 @@ import static net.runelite.api.gameval.VarbitID.*;
     /** The persistent trip-supply defaults (choice keys by TripSupplies
      * category) - store-backed, every category DETECT_BEST until the grey
      * chip's menu changes it. The panel resolves them per result. */
-    private Map<String, String> buildSupplyDefaults() {
+    Map<String, String> buildSupplyDefaults() {
         Map<String, String> defaults = new LinkedHashMap<>();
         List<String> categories = new ArrayList<>(List.of(TripSupplies.CATEGORY_KEYS));
         categories.addAll(List.of("arceuusAccess", "ashes", "bones"));
@@ -686,7 +681,7 @@ import static net.runelite.api.gameval.VarbitID.*;
         resetForIdentityChange();
     }
 
-    private void resetForIdentityChange() {
+    void resetForIdentityChange() {
         loadAllScopes();
         if (dwmsLink != null) {
             // The live snapshot belongs to the PREVIOUS identity; drop it and
@@ -763,7 +758,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * storage, the looting bag, the cargo holds) may not be re-fetchable
      * later under the unmasked id, so its contents are captured off the
      * event (rare one-shot opens, not bank-style event storms). */
-    private static final EnumSet<Source> LIVE_SOURCES = EnumSet.of( EQUIPMENT, INVENTORY, BANK);
+    static final EnumSet<Source> LIVE_SOURCES = EnumSet.of( EQUIPMENT, INVENTORY, BANK);
 
     @Subscribe
     public void onItemContainerChanged(ItemContainerChanged event) {
@@ -854,7 +849,7 @@ import static net.runelite.api.gameval.VarbitID.*;
         }
     }
 
-    private void tickLedgerDebounce() {
+    void tickLedgerDebounce() {
         if (ledgerRecomputeTicks > 0 && --ledgerRecomputeTicks == 0) {
             invokeLater(() -> {
                 CommandEngine engine = commandEngine;
@@ -865,7 +860,7 @@ import static net.runelite.api.gameval.VarbitID.*;
 
     /** The pouch's runes by item id (Mumblerit, Discord 2026-10-10: runes
      * moved into the pouch vanished and Fire Wave fell off the magic set). */
-    private Map<Integer, Integer> scanRunePouch() {
+    Map<Integer, Integer> scanRunePouch() {
         int[] types = new int[POUCH_TYPES.length];
         int[] quantities = new int[POUCH_TYPES.length];
         for (int i = 0; i < POUCH_TYPES.length; i++) {
@@ -876,7 +871,7 @@ import static net.runelite.api.gameval.VarbitID.*;
         return RunePouchScan.items(types, quantities, type -> runes == null ? 0 : runes.getIntValue(type));
     }
 
-    private static Map<Integer, Integer> itemsOf(ItemContainer container) {
+    static Map<Integer, Integer> itemsOf(ItemContainer container) {
         Map<Integer, Integer> items = new HashMap<>();
         for (Item item : container.getItems()) {
             if (item.getId() > 0 && item.getQuantity() > 0) {
@@ -887,7 +882,7 @@ import static net.runelite.api.gameval.VarbitID.*;
     }
 
     /** Tier panels on the STASH chart, beginner through master. */
-    private static final int[] STASH_TIER_CHILDREN = {4, 6, 8, 10, 12, 14};
+    static final int[] STASH_TIER_CHILDREN = {4, 6, 8, 10, 12, 14};
 
     /**
      * The STASH chart (widget group 493, the noticeboard by Watson's house)
@@ -896,7 +891,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * owned; the whole STASH source is replaced per read, so emptied units
      * drop out. Client thread, once per chart opening.
      */
-    private void scanStashChart() {
+    void scanStashChart() {
         if (client.getWidget(493, 2) == null) {
             stashChartSeen = false;
             return;
@@ -930,16 +925,16 @@ import static net.runelite.api.gameval.VarbitID.*;
      * same canonicalization the optimizer itself uses. Cached per ledger
      * fingerprint; the canonicalization walks the whole bank otherwise.
      */
-    private volatile Set<Integer> canonicalOwnedCache;
-    private volatile int canonicalOwnedFingerprint;
+    volatile Set<Integer> canonicalOwnedCache;
+    volatile int canonicalOwnedFingerprint;
 
     /** The detections' owned check: the canonical owned scan plus the sims
      * (Andrew, client test 2026-10-19: a simmed sunfire rune must count). */
-    private boolean ownsOrSimmed(int ii) {
-        return ownsCanonical(ii) || dreams != null && dreams.isDreamed(ii);
+    boolean ownsOrSimmed(int ii) {
+        return ownsCanonical(ii) || dreams != null && dreams.contains(ii);
     }
 
-    private boolean ownsCanonical(int ii) {
+    boolean ownsCanonical(int ii) {
         if (data == null) return ledger != null && ownedItems().containsKey(ii);
         int fingerprint = ownedFingerprint();
         Set<Integer> cache = canonicalOwnedCache;
@@ -958,12 +953,12 @@ import static net.runelite.api.gameval.VarbitID.*;
      */
     /** The bank's potion storage, read from its varbits at each compute
      * and on change (Andrew 2026-10-19: the super antifires lived there). */
-    private volatile Map<Integer, Integer> potionStorage = Map.of();
+    volatile Map<Integer, Integer> potionStorage = Map.of();
     /** The supply unlock varbits that are set (the ring of shadows' tablets,
      * ISS-01M5RMNK62507Q42KKCJ9A7AEE), read with the potion storage. */
-    private volatile Set<Integer> supplyUnlocks = Set.of();
+    volatile Set<Integer> supplyUnlocks = Set.of();
 
-    private Map<Integer, Integer> ownedItems() {
+    Map<Integer, Integer> ownedItems() {
         Map<Integer, Integer> owned = ledger.owned();
         potionStorage.forEach((id, n) -> owned.merge(id, n, Integer::sum));
         if (!config.useDwmsData()) {
@@ -979,7 +974,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * effective DWMS source - the optimizer/panel cache key, so any of them
      * changing is a real ownership change everywhere a bank deposit would be.
      */
-    private int ownedFingerprint() {
+    int ownedFingerprint() {
         int fingerprint = 31 * ledger.fingerprint() + potionStorage.hashCode();
         int dwms = config.useDwmsData() ? dwmsLink.snapshot().hashCode() : 0;
         return 31 * fingerprint + dwms;
@@ -993,7 +988,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * data, and the live snapshot is flat); an owned item with no known
      * origin simply gets no hint.
      */
-    private Map<String, Map<Integer, Integer>> ownedBySources() {
+    Map<String, Map<Integer, Integer>> ownedBySources() {
         var origins = new LinkedHashMap<String, Map<Integer, Integer>>();
         origins.put("equipped", ledger.snapshot(EQUIPMENT));
         origins.put("inventory", ledger.snapshot(INVENTORY));
@@ -1019,10 +1014,10 @@ import static net.runelite.api.gameval.VarbitID.*;
     }
 
     /** DWMS response categories -> the origin labels the hints show. */
-    private static final Map<String, String> DWMS_FAMILIES = Map.of("poh", "POH costume room", "stash", "STASH",
+    static final Map<String, String> DWMS_FAMILIES = Map.of("poh", "POH costume room", "stash", "STASH",
         "death", "death storage", "sailing", "cargo hold", "carryable", "carried container");
 
-    private static String dwmsFamilyLabel(String family) {
+    static String dwmsFamilyLabel(String family) {
         return DWMS_FAMILIES.getOrDefault(family, "world storage") + ItemLocations.VIA_DWMS;
     }
 
@@ -1031,7 +1026,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * has left the corpus (a data refresh) is no pin: the optimizer
      * ignores it, and a roster member's shown set is refused over a pin
      * it cannot wear (calcRespecting), so it must not travel. */
-    private Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle(MonsterStats mob, int mi, boolean ot) {
+    Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle(MonsterStats mob, int mi, boolean ot) {
         EnumMap<CombatStyle, Map<GearSlot, Integer>> bs = new EnumMap<>(CombatStyle.class);
         for (CombatStyle style : CombatStyle.values()) {
             Map<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
@@ -1046,16 +1041,16 @@ import static net.runelite.api.gameval.VarbitID.*;
     /** Item label for command descriptions, from the gear corpus (EDT-safe -
      * never ItemManager, which is client-thread-only). */
     /** One trio-menu row: {id, name[, scope]}. */
-    private static Map<String, Object> row(int id, String name, String scope) {
+    static Map row(int id, String name, String scope) {
         return scope == null ? Map.of("id", id, "name", name) : Map.of("id", id, "name", name, "scope", scope);
     }
 
     /** {id, name} rows for a global store's ids, corpus-labelled. */
-    private List<Map<String, Object>> rows(Set<Integer> ids) {
+    List<Map> rows(Set<Integer> ids) {
         return ids.stream().map(id -> row(id, itemLabel(id), null)).collect(Collectors.toList());
     }
 
-    private String itemLabel(int ii) {
+    String itemLabel(int ii) {
         GearItem item = data == null ? null : data.getGear(ii);
         return item == null ? ("item " + ii) : item.label();
     }
@@ -1066,7 +1061,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * no profile can hold (-1) therefore yields the plain global map -
      * the roster path's base, with per-mob exclusions layered on top
      * inside the optimizer. */
-    private Map<CombatStyle, Set<Integer>> excludedByStyle(int mi) {
+    Map<CombatStyle, Set<Integer>> excludedByStyle(int mi) {
         Set<Integer> global = exclusions.snapshot();
         EnumMap<CombatStyle, Set<Integer>> bs = new EnumMap<>(CombatStyle.class);
         for (CombatStyle style : CombatStyle.concreteValues()) {
@@ -1088,7 +1083,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * answer never wears it). Global exclusions ride the style map; each
      * mob's own exclusions ride this per-profileId map, so synthetic
      * phase variants (TD shields) inherit their real monster's profile. */
-    private Map<Integer, Map<CombatStyle, Set<Integer>>> perMobExclusions( List<MonsterStats> mobs) {
+    Map<Integer, Map<CombatStyle, Set<Integer>>> perMobExclusions( List<MonsterStats> mobs) {
         Map<Integer, Map<CombatStyle, Set<Integer>>> bm = new HashMap<>();
         for (MonsterStats mob : mobs) {
             var bs = new EnumMap<CombatStyle, Set<Integer>>(CombatStyle.class);
@@ -1105,14 +1100,14 @@ import static net.runelite.api.gameval.VarbitID.*;
      * single-mob compute (field spec 2026-07-18). */
     /** The max cape and the combos you can make, simmed with it
      * (ISS-01M5QY13K6YHTYDW1CCYD30CSY). */
-    private Set<Integer> withMaxCape(ComputeParams p, Set<Integer> sims) {
+    Set<Integer> withMaxCape(ComputeParams p, Set<Integer> sims) {
         if (p == null || !p.simMaxCape) return sims;
         Set<Integer> out = new HashSet<>(sims);
         out.addAll(MaxCapeSims.ids(data, this::ownsOrSimmed));
         return out;
     }
 
-    private Set<Integer> dreamsWithMobSims(MonsterStats monster) {
+    Set<Integer> dreamsWithMobSims(MonsterStats monster) {
         Set<Integer> global = dreams.snapshot();
         Set<Integer> local = mobProfiles == null ? Set.of() : mobProfiles.simsFor(monster.profileId());
         if (local.isEmpty()) return global;
@@ -1122,7 +1117,7 @@ import static net.runelite.api.gameval.VarbitID.*;
     }
 
     /** Per-mob sims for a roster, keyed by profileId. */
-    private Map<Integer, Set<Integer>> perMobSims(List<MonsterStats> mobs) {
+    Map<Integer, Set<Integer>> perMobSims(List<MonsterStats> mobs) {
         Map<Integer, Set<Integer>> bm = new HashMap<>();
         if (mobProfiles == null) return bm;
         for (MonsterStats mob : mobs) {
@@ -1133,10 +1128,10 @@ import static net.runelite.api.gameval.VarbitID.*;
     }
 
     /** The mob's pinned autocast spell resolved to the dataset, or null. */
-    private SpellStats resolvedPinnedSpell(int mi) {
+    SpellStats resolvedPinnedSpell(int mi) {
         String name = mobProfiles == null ? "" : mobProfiles.pinnedSpell(mi);
         if (name.isEmpty() || data == null) return null;
-        return data.getSpells().stream().filter(spell -> spell.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
+        return data.spells.stream().filter(spell -> spell.name.equalsIgnoreCase(name)).findFirst().orElse(null);
     }
 
     /**
@@ -1145,7 +1140,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * its display name there (the only thread where that is legal) and
      * returns to the EDT.
      */
-    private ItemPicker itemSearchView() {
+    ItemPicker itemSearchView() {
         return (prompt, onPicked) -> {
             clientThread.invokeLater(() -> chatboxItemSearch .tooltipText(prompt) .onItemSelected(ii -> {
                         String name = itemManager.getItemComposition(ii).getName();
@@ -1163,7 +1158,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * reply (a DWMS predating 2.11.5) just means its storages do not
      * count until it updates.
      */
-    private void requestDwmsStorages() {
+    void requestDwmsStorages() {
         if (!config.useDwmsData() || !pluginEnabled(DWMS_PLUGIN_NAME)) return;
         eventBus.post(new PluginMessage( DwmsLink.DWMS_NAMESPACE, DwmsLink.REQUEST_NAME, DwmsLink.request()));
     }
@@ -1174,27 +1169,27 @@ import static net.runelite.api.gameval.VarbitID.*;
      * same way the optimizer counts them). Fire-and-forget like the DWMS
      * side: no reply while the stores are down (plugin shutting down).
      */
-    private void respondWithStorages(String target) {
+    void respondWithStorages(String target) {
         CollectionLedger cl = ledger;
         if (cl == null) return;
         // Canonicalization needs the item cache; before the login screen
         // exists, ship raw ids rather than crash (DWMS guards the same way).
         IntUnaryOperator canonicalize = client.getGameState().getState() >= GameState.LOGIN_SCREEN.getState()
                 ? itemManager::canonicalize : IntUnaryOperator.identity();
-        List<Map<String, Object>> storages = Arrays.stream(Source.values())
+        List<Map> storages = Arrays.stream(Source.values())
             .map(source -> storage("collection", source.key(), -1L, cl.snapshot(source), canonicalize))
             .filter(Objects::nonNull).collect(Collectors.toList());
         eventBus.post(new PluginMessage(NAMESPACE, RESPONSE_NAME, response(target, storages)));
     }
 
     /** Not Enough Runes enabled? (A method reference for the engine's NER link.) */
-    private boolean nerPresent() { return pluginEnabled("Not Enough Runes"); }
+    boolean nerPresent() { return pluginEnabled("Not Enough Runes"); }
 
     /** The named plugin is on. Check ALL same-named plugins - a hub copy
      * and a sideloaded dev copy can coexist and the first match may be
      * the disabled loser. Shared by the NER, DWMS and Bank Tag Layouts
      * detections. */
-    private boolean pluginEnabled(String name) {
+    boolean pluginEnabled(String name) {
         for (Plugin p : pluginManager.getPlugins()) {
             if (name.equals(p.getName()) && pluginManager.isPluginEnabled(p)) return true;
         }
@@ -1203,28 +1198,27 @@ import static net.runelite.api.gameval.VarbitID.*;
 
     /** Open Not Enough Runes on an item - its own PluginMessage contract
      * (Hannah-GBS/notenoughrunes: "displayItemById" {itemId: Integer}). */
-    private void openNer(int ii) {
-        Map<String, Object> data = new HashMap<>();
+    void openNer(int ii) {
+        Map data = new HashMap<>();
         data.put("itemId", ii);
         eventBus.post(new PluginMessage("notenoughrunes", "displayItemById", data));
     }
 
-    private boolean pathPresent() { return pluginEnabled("Shortest Path"); }
+    boolean pathPresent() { return pluginEnabled("Shortest Path"); }
 
     /** Inventory Setups with add-setup (ISS-01M5V8P2430MQ61C5QKHHRQR6Z): its get-setups reply
      * reports API version 2+. Asked once per plugin change. */
-    private volatile boolean setupsReady;
+    volatile boolean setupsReady;
 
-    private void detectSetups() {
-        Map<String, Object> data = JsonResources.map("setups", new ArrayList<String>());
+    void detectSetups() {
+        Map data = JsonResources.map("setups", new ArrayList<String>());
         if (pluginEnabled("Inventory Setups")) eventBus.post(new PluginMessage("inventory-setups", "get-setups", data));
         setupsReady = data.get("version") instanceof Integer && (Integer) data.get("version") >= 2;
     }
 
     /** The shown card as a new setup in the "Loadout Lab" section, on the client
      * thread (stackability; the saved name, " (2)" when taken, comes back in data). */
-    @SuppressWarnings("unchecked")
-    private void saveSetup(Map<String, Object> a) {
+    void saveSetup(Map a) {
         clientThread.invokeLater(() -> {
             var data = SetupExport.payload((String) a.get("setup"), (Map<String, Integer>) a.get("worn"),
                 (List<int[]>) a.get("stacks"), (List<Integer>) a.get("extra"), (Map<Integer, Integer>) a.get("pouch"),
@@ -1238,17 +1232,17 @@ import static net.runelite.api.gameval.VarbitID.*;
      * a Collection of its packed points, the nearest walked to; no start =
      * you}), posted on the client thread, where it reads your location. The
      * engine only asks for a mob MobLocations places. */
-    private void openPath(String mob) {
+    void openPath(String mob) {
         List<Integer> targets = new ArrayList<>();
         for (int p : MobLocations.of(mob)) targets.add(p);
-        Map<String, Object> data = new HashMap<>();
+        Map data = new HashMap<>();
         data.put("target", targets);
         clientThread.invokeLater(() -> eventBus.post(new PluginMessage("shortestpath", "path", data)));
     }
 
     /** A plugin turned on or off: the ladder's NER and the footer's path links follow. */
     @Subscribe
-    public void onPluginChanged(net.runelite.client.events.PluginChanged event) {
+    public void onPluginChanged(PluginChanged event) {
         CommandEngine engine = commandEngine;
         if (engine != null) {
             invokeLater(() -> {
@@ -1265,7 +1259,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * log on every query, so any in-game result can be reproduced headless
      * (./gradlew query) or attached to a bug report. Local only.
      */
-    private void exportProfile(PlayerProfile profile) {
+    void exportProfile(PlayerProfile profile) {
         var writer = new Thread(() -> {
             try {
                 Path file = new File(RuneLite.RUNELITE_DIR, "loadout-lab/profile.json").toPath();
@@ -1278,12 +1272,12 @@ import static net.runelite.api.gameval.VarbitID.*;
     }
 
     /** Panel hook: set (or clear, with null) the bank-highlighted item ids. */
-    private void setBankHighlight(Set<Integer> itemIds) {
+    void setBankHighlight(Set<Integer> itemIds) {
         bankHighlight = itemIds == null || itemIds.isEmpty() || data == null ? null : equivalents(itemIds);
     }
 
     /** The ids plus every variant that canonicalizes with them. */
-    private Set<Integer> equivalents(Set<Integer> itemIds) {
+    Set<Integer> equivalents(Set<Integer> itemIds) {
         Set<Integer> expanded = new HashSet<>();
         itemIds.forEach(id -> expanded.addAll(data.equivalentIds(id)));
         return expanded;
@@ -1292,7 +1286,7 @@ import static net.runelite.api.gameval.VarbitID.*;
     /** Panel hook: filter the open bank to these ids via a virtual tag, and -
      * when {@code layout} is non-null - arrange the set in the bank in the
      * equipment + inventory shape (a bank-tag layout position array). */
-    private void setBankFilter(Set<Integer> itemIds, int[] layout) {
+    void setBankFilter(Set<Integer> itemIds, int[] layout) {
         if (itemIds == null || itemIds.isEmpty() || data == null) {
             bankFilter = null;
             clientThread.invokeLater(() -> {
@@ -1323,10 +1317,10 @@ import static net.runelite.api.gameval.VarbitID.*;
     /** The hub "Bank Tag Layouts" plugin's config coordinates - kept only to
      * clean up the layout its auto-enable wrote for our tag before the
      * real-tab fix below existed. */
-    private static final String BTL_GROUP = "banktaglayouts";
-    private static final String BTL_LAYOUT_KEY = "layout_" + BANK_TAG;
+    static final String BTL_GROUP = "banktaglayouts";
+    static final String BTL_LAYOUT_KEY = "layout_" + BANK_TAG;
     /** The filter tab's icon in the bank's tag strip (rune scimitar). */
-    private static final int BANK_TAB_ICON = 1333;
+    static final int BANK_TAB_ICON = 1333;
 
     /** With Bank Tag Layouts running, our tag must exist as a REAL tag tab
      * while the filter is on: BTL only defers to the core bank-tags layout
@@ -1342,7 +1336,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * WIPE their real tabs if the list isn't loaded yet. BTL's find() and
      * the tab strip both read the live list, so persistence buys nothing;
      * the bank-build hook below re-adds it whenever core reloads the list. */
-    private void ensureBankTagTab() {
+    void ensureBankTagTab() {
         if (!pluginEnabled("Bank Tag Layouts") || tabManager.find(BANK_TAG) != null) return;
         var tab = new TagTab();
         tab.setTag(BANK_TAG);
@@ -1350,13 +1344,13 @@ import static net.runelite.api.gameval.VarbitID.*;
         tabManager.add(tab);
     }
 
-    private void removeBankTagTab() {
+    void removeBankTagTab() {
         if (tabManager.find(BANK_TAG) != null) tabManager.remove(BANK_TAG);
     }
 
     /** The virtual tag's layout, tab and registration all go (shutdown
      * and the filter-clear share it). */
-    private void dropBankTag() {
+    void dropBankTag() {
         layoutManager.removeLayout(BANK_TAG);
         removeBankTagTab();
         tagManager.unregisterTag(BANK_TAG);
@@ -1366,7 +1360,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      * next bank open - across sessions our virtual tag then leads to
      * NOTHING (no filter registered yet; field bug 2026-07-21). Forgotten
      * whenever a session starts and whenever the filter clears. */
-    private void forgetRememberedTab() {
+    void forgetRememberedTab() {
         if (BANK_TAG.equals(configManager.getConfiguration("banktags", "tab"))) {
             configManager.setConfiguration("banktags", "tab", "");
         }
@@ -1410,7 +1404,7 @@ import static net.runelite.api.gameval.VarbitID.*;
     /** Client-thread staging shared by both computes: the profile snapshot,
      * the DWMS re-read, levels, the one owned-items merge and its presence
      * fingerprint (the optimizer cache keys on presence, not quantities). */
-    private final class Staging {
+    class Staging {
         final RequirementProfile profile;
         final PlayerLevels live;
         final PlayerLevels real;
@@ -1436,7 +1430,12 @@ import static net.runelite.api.gameval.VarbitID.*;
             potionStorage = PotionStorage.owned(client::getVarbitValue);
             supplyUnlocks = TripSupplies.unlocked(client::getVarbitValue);
             mergedOwned = ownedItems();
-            owned = new OwnedItems(mergedOwned, ledger.bankKnown());
+            // What is at hand, so a same-stats item in the bank beats its twin
+            // in the costume room (Andrew 2026-10-27).
+            Set<Integer> atHand = new HashSet<>(ledger.snapshot(EQUIPMENT).keySet());
+            atHand.addAll(ledger.snapshot(INVENTORY).keySet());
+            atHand.addAll(ledger.snapshot(BANK).keySet());
+            owned = new OwnedItems(mergedOwned, ledger.bankKnown(), atHand);
             fingerprint = data.chargeFreeFingerprint(mergedOwned);
             unlocks = prayerUnlocks != null ? prayerUnlocks : PrayerUnlocks.ALL;
         }
@@ -1479,9 +1478,9 @@ import static net.runelite.api.gameval.VarbitID.*;
             var s = new Staging(p);
             exportProfile(new PlayerProfile( s.real, s.live, s.unlocks, s.profile, s.mergedOwned, ledger.bankKnown(), ownedBySources()));
             optimizerService.bestPerStyle(monster, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, p,
-                excludedByStyle(monster.getId()), withMaxCape(p, dreamsWithMobSims(monster)),
-                pinnedByStyle(monster, monster.getId(), p.onSlayerTask), resolvedPinnedSpell(monster.getId()),
-                mobProfiles.pinnedSpec(monster.getId()), protectOnly.snapshot(), results -> invokeLater(() -> {
+                excludedByStyle(monster.id), withMaxCape(p, dreamsWithMobSims(monster)),
+                pinnedByStyle(monster, monster.id, p.onSlayerTask), resolvedPinnedSpell(monster.id),
+                mobProfiles.pinnedSpec(monster.id), protectOnly.snapshot(), results -> invokeLater(() -> {
                     CommandEngine engine = commandEngine;
                     if (engine != null) {
                         engine.onResults(monster, results);
@@ -1494,7 +1493,7 @@ import static net.runelite.api.gameval.VarbitID.*;
 
     /** The one-surface mount: Core's single nav slot hosts the
      * model-driven surface. */
-    private void refreshHostedView() {
+    void refreshHostedView() {
         invokeLater(() -> {
             if (navButton == null || companionHost == null || internalSurface == null) {
                 return; // still loading
@@ -1506,7 +1505,7 @@ import static net.runelite.api.gameval.VarbitID.*;
     }
 
     /** VarbitID.SPELLBOOK values -> the contract's book names. */
-    private static String spellbookName(int varbit) {
+    static String spellbookName(int varbit) {
         switch (varbit) {
             case 1: return "ancient";
             case 2: return "lunar";
@@ -1532,10 +1531,10 @@ import static net.runelite.api.gameval.VarbitID.*;
     /** The classic provenance memo (rebuilt only when ownership moves):
      * an item's primary storage NAME when a fetch trip is needed, "" at
      * hand - the source dots key off it. */
-    private volatile ItemLocations cachedLocations;
-    private volatile int cachedLocationsFingerprint;
+    volatile ItemLocations cachedLocations;
+    volatile int cachedLocationsFingerprint;
 
-    private String primaryLocationOf(int ii) {
+    String primaryLocationOf(int ii) {
         if (ledger == null || dwmsLink == null) return "";
         int fingerprint = ownedFingerprint();
         ItemLocations found = cachedLocations;
@@ -1549,7 +1548,7 @@ import static net.runelite.api.gameval.VarbitID.*;
     }
 
     /** Client-thread only. Quest scan is the expensive part - done once per login. */
-    private void snapshotProfileIfNeeded() {
+    void snapshotProfileIfNeeded() {
         if (requirementProfile != null && boostedLevels != null && realLevels != null) return;
         Map<Skill, Integer> real = new EnumMap<>(Skill.class);
         Map<Skill, Integer> boosted = new EnumMap<>(Skill.class);
@@ -1597,7 +1596,7 @@ import static net.runelite.api.gameval.VarbitID.*;
      *  store added later cannot be wired into two of the three call sites and
      *  silently stay global on the third - which is how the exclude/sim lists
      *  ended up shared across characters (field report 2026-08-25). */
-    private void loadAllScopes() {
+    void loadAllScopes() {
         String scope = worldScope();
         if (scope == null) {
             // LOGGED_IN fires before getAccountHash() is populated. Reloading
@@ -1611,9 +1610,9 @@ import static net.runelite.api.gameval.VarbitID.*;
 
     /** Every per-character store, ONE list (loadAllScopes, the profile
      * reload and the reset all walk it); empty until startUp builds them. */
-    private ScopedStore[] stores = {};
+    ScopedStore[] stores = {};
 
-    private String worldScope() {
+    String worldScope() {
         long account = client.getAccountHash();
         if (account == -1) return null;
         String world = client.getWorldType().contains(WorldType.SEASONAL) ? "seasonal" : "std";
@@ -1621,7 +1620,7 @@ import static net.runelite.api.gameval.VarbitID.*;
     }
 
     /** True only when logged in to a non-members world - the F2P filter default. */
-    private boolean onF2pWorld() {
+    boolean onF2pWorld() {
         return client.getGameState() == GameState.LOGGED_IN && !client.getWorldType().contains(WorldType.MEMBERS);
     }
 

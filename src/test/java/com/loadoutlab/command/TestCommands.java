@@ -1,6 +1,6 @@
 package com.loadoutlab.command;
 
-import com.loadoutlab.collection.ExclusionStore;
+import com.loadoutlab.collection.IdSetStore;
 import com.loadoutlab.collection.MonsterProfileStore;
 import com.loadoutlab.data.GearSlot;
 import java.util.LinkedHashSet;
@@ -30,7 +30,7 @@ final class TestCommands {
 	}
 
 	/** Wipe the global exclusion list as ONE undo entry; undo restores every id. */
-	static Command clearExclusions(ExclusionStore store) {
+	static Command clearExclusions(IdSetStore store) {
 		Set<Integer> before = new LinkedHashSet<>(store.snapshot());
 		return Commands.of("Clear exclusions (" + before.size() + ")",
 			() -> {
@@ -42,7 +42,7 @@ final class TestCommands {
 			},
 			() -> {
 				for (int id : before) {
-					setFlag(store::isExcluded, store::toggle, id, true);
+					setFlag(store::contains, store::toggle, id, true);
 				}
 				return true;
 			});
@@ -50,8 +50,8 @@ final class TestCommands {
 
 	// ---- global item-flag toggles ------------------------------------
 
-	static Command toggleExclusion(ExclusionStore store, int itemId, String label) {
-		return toggleFlag(store::isExcluded, store::toggle, itemId, "Exclude ", "Include ", label);
+	static Command toggleExclusion(IdSetStore store, int itemId, String label) {
+		return toggleFlag(store::contains, store::toggle, itemId, "Exclude ", "Include ", label);
 	}
 
 	/**

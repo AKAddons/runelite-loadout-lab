@@ -40,13 +40,13 @@ public class MaggotKingTest {
 	public void theFarPhaseIsMeleeImmuneTheOthersAreNot() {
 		MonsterStats far = version("Far");
 		Assert.assertTrue("Far is out of melee reach",
-			MonsterMechanics.styleImmune(far, CombatStyle.MELEE));
-		Assert.assertFalse(MonsterMechanics.styleImmune(far, CombatStyle.RANGED));
-		Assert.assertFalse(MonsterMechanics.styleImmune(far, CombatStyle.MAGIC));
+			com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.MELEE));
+		Assert.assertFalse(com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.RANGED));
+		Assert.assertFalse(com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.MAGIC));
 		Assert.assertFalse("he closes in - Nearby takes melee",
-			MonsterMechanics.styleImmune(version("Nearby"), CombatStyle.MELEE));
+			com.loadoutlab.engine.Immunity.styleImmune(version("Nearby"), CombatStyle.MELEE));
 		Assert.assertFalse("the punish window takes melee",
-			MonsterMechanics.styleImmune(version("Roaring"), CombatStyle.MELEE));
+			com.loadoutlab.engine.Immunity.styleImmune(version("Roaring"), CombatStyle.MELEE));
 	}
 
 	/** The version cache-collision (field report 2026-08-20, grZ + Andrew):
@@ -102,7 +102,7 @@ public class MaggotKingTest {
 			if ("Maggot King".equals(group.getName())) {
 				Assert.assertEquals(3, group.getMobs().size());
 				long meleeImmune = group.getMobs().stream()
-					.filter(m -> MonsterMechanics.styleImmune(m, CombatStyle.MELEE))
+					.filter(m -> com.loadoutlab.engine.Immunity.styleImmune(m, CombatStyle.MELEE))
 					.count();
 				Assert.assertEquals("exactly the Far phase is out of reach",
 					1, meleeImmune);

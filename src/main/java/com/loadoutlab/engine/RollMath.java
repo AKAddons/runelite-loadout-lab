@@ -2,11 +2,9 @@
 package com.loadoutlab.engine;
 import static java.lang.Math.*;
 
-public final class RollMath {
+public class RollMath {
     static final double SECONDS_PER_TICK = 0.6;
 
-    private RollMath() {
-    }
 
     public static double normalAccuracy(long attackRoll, long defenceRoll) {
         double atk = attackRoll;
@@ -98,7 +96,7 @@ public final class RollMath {
     }
 
     /** 0 + 1 + ... + n; n below zero is an empty run. */
-    private static long triangle(long n) { return n <= 0 ? 0 : n * (n + 1) / 2; }
+    static long triangle(long n) { return n <= 0 ? 0 : n * (n + 1) / 2; }
 
     public static double expectedHit(double accuracy, int minHit, int maxHit) {
         if (maxHit <= 0 || accuracy <= 0.0) return 0.0;

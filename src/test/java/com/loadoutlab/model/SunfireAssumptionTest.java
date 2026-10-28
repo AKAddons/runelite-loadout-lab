@@ -83,9 +83,9 @@ class SunfireAssumptionTest {
 	@Test
 	@DisplayName("with the assumption on, the trip runes carry sunfire runes in place of fire runes")
 	void tripRunesSwap() {
-		List<Map<String, Object>> runes = SpellRunes.costFor("Fire Surge", null, null);
+		List<Map> runes = SpellRunes.costFor("Fire Surge", null, null);
 		assertTrue(ids(runes).contains(FIRE_RUNE), "fixture: a bare Fire Surge costs fire runes");
-		List<Map<String, Object>> swapped = SpellRunes.withSunfire(runes);
+		List<Map> swapped = SpellRunes.withSunfire(runes);
 		assertFalse(ids(swapped).contains(FIRE_RUNE));
 		assertTrue(ids(swapped).contains(SUNFIRE_RUNE));
 		Map<String, Object> sunfire = swapped.stream()
@@ -93,11 +93,11 @@ class SunfireAssumptionTest {
 		assertEquals("Sunfire rune", sunfire.get("name"));
 		assertEquals(runes.stream().filter(r -> ((Number) r.get("id")).intValue() == FIRE_RUNE)
 			.findFirst().orElseThrow().get("qty"), sunfire.get("qty"), "same count per cast");
-		List<Map<String, Object>> water = SpellRunes.costFor("Water Surge", null, null);
+		List<Map> water = SpellRunes.costFor("Water Surge", null, null);
 		assertEquals(ids(water), ids(SpellRunes.withSunfire(water)), "a water spell's runes are untouched");
 	}
 
-	private static List<Integer> ids(List<Map<String, Object>> runes) {
+	private static List<Integer> ids(List<Map> runes) {
 		List<Integer> out = new ArrayList<>();
 		for (Map<String, Object> r : runes) {
 			out.add(((Number) r.get("id")).intValue());

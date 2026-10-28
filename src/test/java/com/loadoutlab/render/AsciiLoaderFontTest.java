@@ -32,7 +32,7 @@ class AsciiLoaderFontTest {
 		Font art = AsciiLoader.moodFont();
 		assertEquals("DejaVu Sans Mono", art.getFamily(), "the art face, not a platform fallback");
 		assertEquals(12, art.getSize());
-		assertEquals("Cascadia Mono", AsciiLoader.brailleFont().getFamily());
+		assertEquals("Cascadia Mono", AsciiLoader.BRAILLE_FONT.getFamily());
 		assertTrue(shadeInk(art, '\u2592') >= 0.40, "the medium shade must read dark: " + shadeInk(art, '\u2592'));
 	}
 
@@ -58,7 +58,7 @@ class AsciiLoaderFontTest {
 	@DisplayName("every distinct character of the frames resource is drawable, at one advance width")
 	void framesFitTheFont() throws Exception {
 		Font font = AsciiLoader.moodFont();
-		Font braille = AsciiLoader.brailleFont();
+		Font braille = AsciiLoader.BRAILLE_FONT;
 		Set<Integer> glyphs = new LinkedHashSet<>();
 		try (InputStream in = AsciiLoaderFontTest.class.getResourceAsStream(FRAMES)) {
 			assertNotNull(in, "frames resource");

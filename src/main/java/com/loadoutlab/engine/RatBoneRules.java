@@ -11,9 +11,7 @@ import com.loadoutlab.data.*;
  * Magic = trident-of-the-seas scaling + 10), so only the mace and
  * shortbow take the flat bonus here.
  */
-public final class RatBoneRules {
-    private RatBoneRules() {
-    }
+public class RatBoneRules {
 
     /** False when this weapon literally cannot be swung at this monster. */
     public static boolean canUse(MonsterStats monster, GearItem weapon) { return !isRatBone(weapon) || isRat(monster); }
@@ -21,15 +19,15 @@ public final class RatBoneRules {
     /** Flat max-hit bonus vs rats for the non-staff rat bone weapons. */
     public static int flatMaxHitBonus(MonsterStats monster, GearItem weapon) {
         if (weapon == null || !isRat(monster)) return 0;
-        String name = weapon.getNameLower();
+        String name = weapon.nameLower;
         return name.startsWith("bone mace") || name.startsWith("bone shortbow") ? 10 : 0;
     }
 
-    private static boolean isRatBone(GearItem weapon) {
+    static boolean isRatBone(GearItem weapon) {
         if (weapon == null) return false;
-        String name = weapon.getNameLower();
+        String name = weapon.nameLower;
         return name.startsWith("bone mace") || name.startsWith("bone shortbow") || name.startsWith("bone staff");
     }
 
-    private static boolean isRat(MonsterStats monster) { return monster != null && monster.hasAttribute("rat"); }
+    static boolean isRat(MonsterStats monster) { return monster != null && monster.hasAttribute("rat"); }
 }

@@ -25,7 +25,7 @@ class RosterReorderTest {
 
 	private static final class CaptureLink extends CompanionLink {
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 		}
 	}
 
@@ -109,7 +109,7 @@ class RosterReorderTest {
 		Map<String, Object> page;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			this.page = page;
 		}
 

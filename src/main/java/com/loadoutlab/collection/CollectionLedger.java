@@ -29,7 +29,7 @@ import net.runelite.client.config.ConfigManager;
  */
 public class CollectionLedger implements ScopedStore {
     static final String CONFIG_GROUP = "loadoutlab";
-    private static final TypeToken<Map<Integer, Integer>> MAP_TYPE = new TypeToken<Map<Integer, Integer>>() {};
+    static final TypeToken<Map<Integer, Integer>> MAP_TYPE = new TypeToken<Map<Integer, Integer>>() {};
 
     /** Ledger sources, each persisted under its own key. */
     @lombok.RequiredArgsConstructor
@@ -57,8 +57,8 @@ public class CollectionLedger implements ScopedStore {
         CARGO_HOLD_3("cargoHold3", InventoryID.SAILING_BOAT_3_CARGOHOLD), CARGO_HOLD_4("cargoHold4", InventoryID.SAILING_BOAT_4_CARGOHOLD),
         CARGO_HOLD_5("cargoHold5", InventoryID.SAILING_BOAT_5_CARGOHOLD);
 
-        private final String key;
-        private final int containerId;
+        final String key;
+        final int containerId;
 
         /** The item-container id this source is scanned from, or -1 when
          * the source is not container-backed (STASH). */
@@ -80,16 +80,16 @@ public class CollectionLedger implements ScopedStore {
         public String key() { return key; }
     }
 
-    private final ConfigManager configManager;
-    private final Gson gson;
+    final ConfigManager configManager;
+    final Gson gson;
 
     /** "std" or "seasonal" - set on login before any update/load. */
-    private String worldScope = "std";
+    String worldScope = "std";
 
-    private final Map<Source, Map<Integer, Integer>> snapshots = new HashMap<>();
+    final Map<Source, Map<Integer, Integer>> snapshots = new HashMap<>();
 
     /** Cached fingerprint of the merged view; recomputed lazily. */
-    private transient Integer fingerprint;
+    transient Integer fingerprint;
 
     public CollectionLedger(ConfigManager configManager, Gson gson) {
         this.configManager = configManager;
@@ -102,7 +102,7 @@ public class CollectionLedger implements ScopedStore {
      * scope's persisted snapshots, replacing in-memory state.
      */
     public void loadScope(String scope) {
-        this.worldScope = scope;
+        worldScope = scope;
         for (Source s : Source.values()) {
             // One-time adoption of pre-account-scoping data ("std.*"): the
             // FIRST character to load it takes it and the legacy entry is
@@ -153,5 +153,5 @@ public class CollectionLedger implements ScopedStore {
         return fingerprint;
     }
 
-    private String key(Source s) { return worldScope + ".collection." + s.key; }
+    String key(Source s) { return worldScope + ".collection." + s.key; }
 }

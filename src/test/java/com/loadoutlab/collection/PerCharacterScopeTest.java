@@ -32,9 +32,9 @@ class PerCharacterScopeTest {
 	@Test
 	@DisplayName("two characters keep separate exclude, sim and protect lists")
 	void listsDoNotBleedBetweenCharacters() {
-		ExclusionStore exclusions = new ExclusionStore(configManager, gson);
-		DreamStore dreams = new DreamStore(configManager, gson);
-		ProtectOnlyStore protect = new ProtectOnlyStore(configManager, gson);
+		IdSetStore exclusions = new IdSetStore(configManager, gson, "excludedItems");
+		IdSetStore dreams = new IdSetStore(configManager, gson, "dreamItems");
+		IdSetStore protect = new IdSetStore(configManager, gson, "protectOnlyItems");
 
 		exclusions.loadScope("std.1111");
 		dreams.loadScope("std.1111");
@@ -42,24 +42,24 @@ class PerCharacterScopeTest {
 		exclusions.toggle(11832);   // bandos chestplate
 		dreams.toggle(20997);       // twisted bow
 		protect.toggle(4151);       // whip
-		assertTrue(exclusions.isExcluded(11832));
-		assertTrue(dreams.isDreamed(20997));
+		assertTrue(exclusions.contains(11832));
+		assertTrue(dreams.contains(20997));
 		assertTrue(protect.contains(4151));
 
 		// Switch character - the same store objects, a new scope.
 		exclusions.loadScope("std.2222");
 		dreams.loadScope("std.2222");
 		protect.loadScope("std.2222");
-		assertFalse(exclusions.isExcluded(11832), "the alt inherited the main's excludes");
-		assertFalse(dreams.isDreamed(20997), "the alt inherited the main's sims");
+		assertFalse(exclusions.contains(11832), "the alt inherited the main's excludes");
+		assertFalse(dreams.contains(20997), "the alt inherited the main's sims");
 		assertFalse(protect.contains(4151), "the alt inherited the main's protect list");
 
 		// ...and switching back finds the main's lists intact.
 		exclusions.loadScope("std.1111");
 		dreams.loadScope("std.1111");
 		protect.loadScope("std.1111");
-		assertTrue(exclusions.isExcluded(11832), "the main lost its excludes on return");
-		assertTrue(dreams.isDreamed(20997), "the main lost its sims on return");
+		assertTrue(exclusions.contains(11832), "the main lost its excludes on return");
+		assertTrue(dreams.contains(20997), "the main lost its sims on return");
 		assertTrue(protect.contains(4151), "the main lost its protect list on return");
 	}
 
@@ -69,21 +69,21 @@ class PerCharacterScopeTest {
 		// What a pre-0.4.1 install looks like: a bare, unscoped key.
 		configManager.setConfiguration("loadoutlab", "excludedItems", "[11832,4151]");
 
-		ExclusionStore exclusions = new ExclusionStore(configManager, gson);
+		IdSetStore exclusions = new IdSetStore(configManager, gson, "excludedItems");
 		exclusions.loadScope("std.1111");
-		assertTrue(exclusions.isExcluded(11832), "the pre-0.4.1 list was dropped on upgrade");
-		assertTrue(exclusions.isExcluded(4151), "the pre-0.4.1 list was dropped on upgrade");
+		assertTrue(exclusions.contains(11832), "the pre-0.4.1 list was dropped on upgrade");
+		assertTrue(exclusions.contains(4151), "the pre-0.4.1 list was dropped on upgrade");
 	}
 
 	@Test
 	@DisplayName("seasonal and standard worlds are separate scopes for the same account")
 	void seasonalIsItsOwnScope() {
-		ExclusionStore exclusions = new ExclusionStore(configManager, gson);
+		IdSetStore exclusions = new IdSetStore(configManager, gson, "excludedItems");
 		exclusions.loadScope("std.1111");
 		exclusions.toggle(11832);
 
 		exclusions.loadScope("seasonal.1111");
-		assertFalse(exclusions.isExcluded(11832),
+		assertFalse(exclusions.contains(11832),
 			"a leagues account inherited the main game's excludes");
 	}
 

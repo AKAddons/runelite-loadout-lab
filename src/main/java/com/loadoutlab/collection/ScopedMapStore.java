@@ -13,11 +13,11 @@ import net.runelite.client.config.ConfigManager;
 abstract class ScopedMapStore<K, V> implements ScopedStore {
     static final String CONFIG_GROUP = "loadoutlab";
 
-    private final ConfigManager configManager;
-    private final Gson gson;
-    private final String configKey;
-    private final Type type;
-    private String worldScope;
+    final ConfigManager configManager;
+    final Gson gson;
+    final String configKey;
+    final Type type;
+    String worldScope;
     final Map<K, V> items = new LinkedHashMap<>();
 
     ScopedMapStore(ConfigManager configManager, Gson gson, String configKey, Type type) {
@@ -28,11 +28,11 @@ abstract class ScopedMapStore<K, V> implements ScopedStore {
         load();
     }
 
-    private String key() { return ScopedKeys.key(worldScope, configKey); }
+    String key() { return ScopedKeys.key(worldScope, configKey); }
 
     /** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). */
     public synchronized void loadScope(String scope) {
-        this.worldScope = scope;
+        worldScope = scope;
         load();
     }
 
@@ -44,7 +44,7 @@ abstract class ScopedMapStore<K, V> implements ScopedStore {
         save();
     }
 
-    private void load() {
+    void load() {
         items.clear();
         Map<K, V> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, configKey), type);
         if (stored != null) items.putAll(stored);

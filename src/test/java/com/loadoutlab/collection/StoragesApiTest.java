@@ -75,7 +75,7 @@ class StoragesApiTest {
 	@Test
 	@DisplayName("the response envelope echoes the requester and states version 1")
 	void responseEnvelope() {
-		List<Map<String, Object>> storages = List.of(
+		List<Map> storages = List.of(
 			StoragesApi.storage("collection", "bank", -1L, Map.of(4151, 1), IDENTITY));
 
 		Map<String, Object> response = StoragesApi.response("Some Plugin", storages);

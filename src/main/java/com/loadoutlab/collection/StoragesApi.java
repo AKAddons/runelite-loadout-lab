@@ -23,19 +23,17 @@ import java.util.function.IntUnaryOperator;
  * <p>This class is the pure, testable part; the plugin gathers the
  * snapshots and posts on the client thread (ids canonicalize there).
  */
-public final class StoragesApi {
+public class StoragesApi {
     public static final String NAMESPACE = "loadoutlab";
     public static final String REQUEST_NAME = "storages-request";
     public static final String RESPONSE_NAME = "storages-response";
     static final int VERSION = 1;
     static final String SOURCE = "Loadout Lab";
 
-    private StoragesApi() {
-    }
 
     /** The validated requester name from a storages-request payload,
      * or null when the request carries no usable source. */
-    public static String requester(Map<String, Object> data) {
+    public static String requester(Map data) {
         if (data == null) return null;
         Object source = data.get("source");
         return source instanceof String && !((String) source).isEmpty() ? (String) source : null;
@@ -47,7 +45,7 @@ public final class StoragesApi {
      * Returns null when nothing survives - empty storages are omitted,
      * matching the DWMS side of the contract.
      */
-    public static Map<String, Object> storage(String category, String name, long lastUpdated,
+    public static Map storage(String category, String name, long lastUpdated,
         Map<Integer, Integer> items, IntUnaryOperator canonicalize) {
         Map<Integer, Long> canonical = new LinkedHashMap<>();
         for (var e : items.entrySet()) {
@@ -55,7 +53,7 @@ public final class StoragesApi {
             canonical.merge(canonicalize.applyAsInt(e.getKey()), (long) e.getValue(), Long::sum);
         }
         if (canonical.isEmpty()) return null;
-        List<Map<String, Object>> itemList = new ArrayList<>(canonical.size());
+        List<Map> itemList = new ArrayList<>(canonical.size());
         for (var e : canonical.entrySet()) {
             itemList.add(JsonResources.map("id", e.getKey(), "quantity", e.getValue()));
         }
@@ -63,7 +61,7 @@ public final class StoragesApi {
     }
 
     /** The response envelope addressed back to the requester. */
-    public static Map<String, Object> response(String target, List<Map<String, Object>> storages) {
+    public static Map response(String target, List<Map> storages) {
         return JsonResources.map("source", SOURCE, "target", target, "version", VERSION, "storages", storages);
     }
 }

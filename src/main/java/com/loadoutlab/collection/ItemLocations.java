@@ -12,16 +12,16 @@ import java.util.stream.Collectors;
  * the optimizer suggests.
  */
 @lombok.AllArgsConstructor
-public final class ItemLocations {
+public class ItemLocations {
     /** Suffix convention for origins the DWMS import contributed. */
     public static final String VIA_DWMS = " (via DWMS)";
 
     /** Origin label -> itemId -> quantity, in display order. */
-    private final Map<String, Map<Integer, Integer>> origins;
+    final Map<String, Map<Integer, Integer>> origins;
 
     /** id -> all ids interchangeable with it for ownership (incl. itself);
      * null means exact-id matching only (dataset still loading). */
-    private final Function<Integer, Set<Integer>> equivalents;
+    final Function<Integer, Set<Integer>> equivalents;
 
     /** Origin labels holding this item or an interchangeable variant. */
     public List<String> where(int itemId) {

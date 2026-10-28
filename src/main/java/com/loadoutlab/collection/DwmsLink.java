@@ -33,23 +33,23 @@ public class DwmsLink {
     /** Our display name - sent as "source", echoed back as "target". */
     static final String SOURCE = "Loadout Lab";
 
-    private volatile Map<Integer, Integer> items = Map.of();
+    volatile Map<Integer, Integer> items = Map.of();
     /** Response "category" (carryable/death/poh/stash/world...) -> items -
      * the location-hint provenance families. */
-    private volatile Map<String, Map<Integer, Integer>> families = Map.of();
+    volatile Map<String, Map<Integer, Integer>> families = Map.of();
     /** True once DWMS has answered for the current identity. */
     @Getter
-    private volatile boolean live;
+    volatile boolean live;
 
     /** The request payload for PluginMessage(DWMS_NAMESPACE, REQUEST_NAME, ...). */
-    public static Map<String, Object> request() { return Collections.singletonMap("source", SOURCE); }
+    public static Map request() { return Collections.singletonMap("source", SOURCE); }
 
     /**
      * Consume a candidate storages-response payload (namespace/name gating
      * happens at the caller). Returns true - and replaces the snapshot -
      * only for a well-formed version-1 response addressed to us.
      */
-    public boolean accept(Map<String, Object> data) {
+    public boolean accept(Map data) {
         if (data == null || !SOURCE.equals(data.get("target")) || !(data.get("version") instanceof Number)
             || ((Number) data.get("version")).intValue() != SUPPORTED_VERSION || !(data.get("storages") instanceof List)) {
             return false;
@@ -68,14 +68,14 @@ public class DwmsLink {
                 mergeItem(item, family);
             }
         }
-        items = next.isEmpty() ? Map.of() : Collections.unmodifiableMap(next);
-        families = nextFamilies.isEmpty() ? Map.of() : Collections.unmodifiableMap(nextFamilies);
+        items = next.isEmpty() ? Map.of() : next;
+        families = nextFamilies.isEmpty() ? Map.of() : nextFamilies;
         live = true;
         return true;
     }
 
     /** One {"id", "quantity"} entry; anything malformed is dropped. */
-    private static void mergeItem(Object item, Map<Integer, Integer> into) {
+    static void mergeItem(Object item, Map<Integer, Integer> into) {
         if (!(item instanceof Map)) return;
         Object id = ((Map<?, ?>) item).get("id");
         Object quantity = ((Map<?, ?>) item).get("quantity");

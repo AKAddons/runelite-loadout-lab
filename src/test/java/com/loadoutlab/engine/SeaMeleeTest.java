@@ -28,7 +28,7 @@ class SeaMeleeTest {
 	@DisplayName("every roster sea monster rejects melee; land mobs are untouched")
 	void seaMonstersRejectMelee() {
 		Loadout bare = new Loadout(new EnumMap<>(com.loadoutlab.data.GearSlot.class));
-		for (String name : com.loadoutlab.data.NavalCombat.navalNames()) {
+		for (String name : com.loadoutlab.data.NavalCombat.NAVAL) {
 			MonsterStats mob = data.searchMonsters(name, 1).get(0);
 			assertTrue(MonsterMechanics.isImmune(mob, CombatStyle.MELEE, bare, null),
 				name + " must reject melee at sea");

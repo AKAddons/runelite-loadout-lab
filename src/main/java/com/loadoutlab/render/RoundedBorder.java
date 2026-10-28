@@ -1,13 +1,14 @@
 package com.loadoutlab.render;
 
 import java.awt.*;
+import javax.swing.border.AbstractBorder;
 
 /** The classic pill border (ported verbatim from the panel). */
 @lombok.AllArgsConstructor
-final class RoundedBorder extends javax.swing.border.AbstractBorder {
-    private final Color color;
-    private final int vPad;
-    private final int hPad;
+class RoundedBorder extends AbstractBorder {
+    final Color color;
+    final int vPad;
+    final int hPad;
 
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
         Graphics2D g2 = Ui.smooth(g);

@@ -8,23 +8,17 @@ import static net.runelite.api.Skill.*;
 
 /** The seven combat levels; toString() is the optimizer's cache-key form. */
 @ToString
-public final class PlayerLevels {
+@Getter
+public class PlayerLevels {
     public static final PlayerLevels MAXED = new PlayerLevels(99, 99, 99, 99, 99, 99, 99);
 
-    @Getter
-    private final int attack;
-    @Getter
-    private final int strength;
-    @Getter
-    private final int defence;
-    @Getter
-    private final int ranged;
-    @Getter
-    private final int magic;
-    @Getter
-    private final int prayer;
-    @Getter
-    private final int hitpoints;
+    public final int attack;
+    public final int strength;
+    public final int defence;
+    public final int ranged;
+    public final int magic;
+    public final int prayer;
+    public final int hitpoints;
 
     public PlayerLevels(int attack, int strength, int defence, int ranged, int magic, int prayer, int hitpoints) {
         this.attack = clamp(attack);
@@ -78,5 +72,5 @@ public final class PlayerLevels {
         return (boostProfile == null ? BoostProfile.NONE : boostProfile).apply(this, liveCurrent);
     }
 
-    private static int clamp(int value) { return Math.max(1, Math.min(126, value)); }
+    static int clamp(int value) { return Math.max(1, Math.min(126, value)); }
 }

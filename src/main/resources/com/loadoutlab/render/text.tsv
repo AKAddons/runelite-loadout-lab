@@ -50,7 +50,7 @@ cell.pinnedhere	<br><font color='#D2B464'>pinned for this mob - right-click to u
 cell.swaps	<br><font color='#969696'>click: %s the swaps</font></html>
 menu.simmob.tip	Search an item and sim it as owned for this mob only
 menu.simall.tip	Search an item and sim it as owned everywhere
-mode.max	<html><b>Max DPS</b> - the set that deals the most damage.<br>The card shows that set and its DPS; the swaps rank each item<br>by the DPS it adds.</html>
+mode.max	<html><b>Max DPS</b> - the set that deals the most damage.<br>The card shows that set and its DPS; the swaps rank each item<br>by the DPS it adds. This is the original formula.</html>
 mode.balanced	<html><b>Balanced (beta)</b> - the best damage dealt per damage taken:<br>it gives up a little DPS where that cuts more of the damage you take.<br>The card shows the trade (DPS cost, damage cut); the swaps show<br>both the DPS change and the damage taken change.</html>
 mode.tanky	<html><b>Tanky (beta)</b> - the least damage taken, then the most DPS<br>among those sets. The card shows the damage cut and its DPS cost;<br>the swaps rank items by the damage taken per second.</html>
 wiki.head	<b>Open in the official wiki calculator</b><br><font color='#969696'>shares this exact setup via the wiki's shortlink</font>
@@ -71,3 +71,10 @@ footer.cancel.tip	Stop this search and go back to the start
 hint.empty	Search a mob, group, or raid to begin.
 ledger.line	<tr><td>%s</td><td align='right'>&nbsp;&nbsp;%s</td><td>%s</td></tr>
 chip.stats.tip	Sim your levels: a box is a level to sim (your own where it matches), Max cape adds the cape and the combos you can make, Max is all 99 with the cape, Mine is back to yours
+req.stats	Stab att,Slash att,Crush att,Magic att,Ranged att,Stab def,Slash def,Crush def,Magic def,Ranged def,Strength,Ranged str,Magic dmg,Prayer,Weight
+req.stat	The stat
+req.op	>= at least, > more than, <= at most, < less than
+req.value	A number: 12 prayer, 100 ranged defence, 40 kg
+req.keys	stab,slash,crush,magic,ranged,def_stab,def_slash,def_crush,def_magic,def_ranged,str,ranged_str,magic_str,prayer,weight
+ca.pick	Click to plan for it.
+ca.drop	Click to drop the task.

@@ -11,9 +11,9 @@ import java.util.function.Consumer;
  * the renderer lives in this plugin now.)
  */
 public class CompanionLink {
-    private volatile Map<String, Object> lastPage;
-    private volatile Runnable pageListener;
-    private volatile Consumer<Boolean> statusListener;
+    volatile Map lastPage;
+    volatile Runnable pageListener;
+    volatile Consumer<Boolean> statusListener;
 
     public void setPageListener(Runnable pageListener) { this.pageListener = pageListener; }
 
@@ -26,7 +26,7 @@ public class CompanionLink {
     }
 
     /** Publish an assembled page (the CommandEngine builds them). */
-    public void publishPage(Map<String, Object> page) {
+    public void publishPage(Map page) {
         // Identical pages do not republish (perf, 2026-08-15: post-boss
         // silent refreshes usually land the SAME answer - the deep
         // equals is pennies next to the render it prevents).
@@ -37,5 +37,5 @@ public class CompanionLink {
     }
 
     /** The latest published page - the hosted view renders it. */
-    public Map<String, Object> lastPage() { return lastPage; }
+    public Map lastPage() { return lastPage; }
 }

@@ -33,8 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CommandHistory {
     public static final int CAP = 50;
 
-    private final Deque<Command> undoStack = new ArrayDeque<>();
-    private final Deque<Command> redoStack = new ArrayDeque<>();
+    final Deque<Command> undoStack = new ArrayDeque<>();
+    final Deque<Command> redoStack = new ArrayDeque<>();
 
     /**
      * Run a command and push it onto the undo stack on success.
@@ -67,7 +67,7 @@ public class CommandHistory {
 
     /** Pop from one stack, run the command, push onto the other; a refusal
      * or a throw drops the entry (fail-open). */
-    private static boolean move(Deque<Command> from, Deque<Command> to, boolean apply, String verb) {
+    static boolean move(Deque<Command> from, Deque<Command> to, boolean apply, String verb) {
         if (from.isEmpty()) return false;
         Command cmd = from.pop();
         if (!attempt(cmd, apply, verb)) return false;
@@ -76,7 +76,7 @@ public class CommandHistory {
     }
 
     /** Runs apply or revert; false - and a warning - when it refused or threw. */
-    private static boolean attempt(Command cmd, boolean apply, String verb) {
+    static boolean attempt(Command cmd, boolean apply, String verb) {
         try {
             if (apply ? cmd.apply() : cmd.revert()) return true;
             log.warn("Command {} returned false, dropping: {}", verb, cmd.getDescription());

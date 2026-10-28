@@ -109,12 +109,12 @@ class SlayerRequirementsTest {
 		Map<String, Integer> expect = Map.of("gargoyle", 21742, "zygomite", 7421, "rockslug", 4161,
 			"desert lizard", 6696);
 		for (Map.Entry<String, Integer> e : expect.entrySet()) {
-			List<Map<String, Object>> picks = RequiredGear.carriedPicks(mob(e.getKey()), item -> false);
+			List<Map> picks = RequiredGear.carriedPicks(mob(e.getKey()), item -> false);
 			assertEquals(1, picks.size(), e.getKey());
 			assertEquals(e.getValue(), picks.get(0).get("id"), e.getKey() + ": the best when you own none");
 			assertTrue(String.valueOf(picks.get(0).get("why")).contains("not owned"), e.getKey());
 		}
-		List<Map<String, Object>> owned = RequiredGear.carriedPicks(mob("gargoyle"), item -> item == 4162);
+		List<Map> owned = RequiredGear.carriedPicks(mob("gargoyle"), item -> item == 4162);
 		assertEquals(4162, owned.get(0).get("id"), "the rock hammer you own beats the granite hammer you don't");
 		assertFalse(String.valueOf(owned.get(0).get("why")).contains("not owned"));
 		assertTrue(RequiredGear.carriedPicks(mob("abyssal demon"), item -> false).isEmpty());

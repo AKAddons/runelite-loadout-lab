@@ -72,7 +72,7 @@ class SaveSetupTest {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			published = page;
 		}
 	}
@@ -128,14 +128,14 @@ class SaveSetupTest {
 		}, link);
 		engine.setStoreOps(new TestStoreOps());
 		engine.setOwnedCheck(id -> id == 27281);
-		MonsterStats mob = data.searchMonsters("vorkath", 1).get(0);
+		MonsterStats mob = data.searchMonsters("zulrah", 1).get(0);
 		engine.execute("select", Map.of("id", mob.getId()));
 		engine.onResults(mob, Map.of());
 		javax.swing.SwingUtilities.invokeAndWait(() -> {
 		});
 		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
 		Map<?, ?> node = (Map<?, ?>) ((List<?>) entry.get("mobs")).get(0);
-		assertEquals(List.of(), node.get("utilityRunes"), "no utility casts at Vorkath");
+		assertEquals(List.of(), node.get("utilityRunes"), "no utility casts at Zulrah");
 		assertEquals(27281, node.get("castingPouch"));
 	}
 
@@ -152,7 +152,7 @@ class SaveSetupTest {
 	@DisplayName("with Inventory Setups ready the save command hands the card's payload over; not ready, nothing is sent")
 	void commandGate() {
 		LoadoutData data = new DataService().load();
-		List<Map<String, Object>> sent = new ArrayList<>();
+		List<Map> sent = new ArrayList<>();
 		for (boolean ready : new boolean[]{true, false}) {
 			PageState state = new PageState();
 			CommandEngine engine = new CommandEngine(data, state, (m, p, onDone) -> {

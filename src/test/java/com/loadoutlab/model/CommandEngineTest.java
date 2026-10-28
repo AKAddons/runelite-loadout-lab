@@ -43,7 +43,7 @@ class CommandEngineTest {
 		private Map<String, Object> last;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			published = page;
 			last = page;
 		}
@@ -179,15 +179,15 @@ class CommandEngineTest {
 				return -1;
 			}
 
-			public List<Map<String, Object>> mobExclusions(int monsterId) {
+			public List<Map> mobExclusions(int monsterId) {
 				return java.util.Collections.emptyList();
 			}
 
-			public List<Map<String, Object>> mobSims(int monsterId) {
+			public List<Map> mobSims(int monsterId) {
 				return java.util.Collections.emptyList();
 			}
 
-			public List<Map<String, Object>> mobFilters(int monsterId) {
+			public List<Map> mobFilters(int monsterId) {
 				return java.util.Collections.emptyList();
 			}
 

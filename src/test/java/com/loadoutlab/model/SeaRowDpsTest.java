@@ -29,7 +29,7 @@ class SeaRowDpsTest {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			published = page;
 		}
 	}

@@ -34,12 +34,12 @@ class SpellbookSwapTest {
 		return engine;
 	}
 
-	private static List<Map<String, Object>> runesOf(Map<String, Object> page) {
+	private static List<Map> runesOf(Map<String, Object> page) {
 		List<?> entries = (List<?>) page.get("entries");
 		Map<?, ?> entry = (Map<?, ?>) entries.get(0);
 		List<?> mobs = (List<?>) entry.get("mobs");
 		Object runes = ((Map<?, ?>) mobs.get(0)).get("utilityRunes");
-		return runes instanceof List ? (List<Map<String, Object>>) runes
+		return runes instanceof List ? (List<Map>) runes
 			: java.util.Collections.emptyList();
 	}
 
@@ -94,7 +94,7 @@ class SpellbookSwapTest {
 		assertTrue(engine.execute("set-param",
 			Map.of("param", "spellbookSwap", "value", true)));
 		flushEdt();
-		List<Map<String, Object>> runes = runesOf(link.published);
+		List<Map> runes = runesOf(link.published);
 		assertTrue(runes.stream().anyMatch(r ->
 			String.valueOf(r.get("why")).contains("Spellbook Swap")), "swap runes: " + runes);
 		assertTrue(runes.stream().anyMatch(r ->
@@ -123,7 +123,7 @@ class SpellbookSwapTest {
 		assertTrue(engine.execute("set-param",
 			Map.of("param", "spellbookSwap", "value", true)));
 		flushEdt();
-		List<Map<String, Object>> runes = runesOf(link.published);
+		List<Map> runes = runesOf(link.published);
 		assertTrue(runes.stream().anyMatch(r ->
 			String.valueOf(r.get("why")).contains("Vengeance")), "vengeance rides alone");
 		assertTrue(runes.stream().noneMatch(r ->
@@ -162,7 +162,7 @@ class SpellbookSwapTest {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			published = page;
 		}
 	}

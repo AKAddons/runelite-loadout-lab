@@ -5,13 +5,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Name matching is lower-case, locale-free, everywhere. */
-public final class Names {
-    private Names() {
-    }
+public class Names {
 
     public static String lower(String s) { return s.toLowerCase(Locale.ROOT); }
 
-    private static final Map<String, String> KEYS = new ConcurrentHashMap<>();
+    static final Map<String, String> KEYS = new ConcurrentHashMap<>();
 
     /** lower() memoised, for the fixed markers the per-set checks match on
      * (gear names, monster attributes): the profile had toLowerCase at 29% of

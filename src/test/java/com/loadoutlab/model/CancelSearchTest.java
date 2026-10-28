@@ -26,7 +26,7 @@ class CancelSearchTest {
 		Boolean status;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			this.page = page;
 		}
 

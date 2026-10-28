@@ -10,9 +10,7 @@ import java.util.function.IntUnaryOperator;
  * into the client's RUNEPOUCH_RUNE enum, 0 = empty) and a QUANTITY varbit.
  * Pure over the two value arrays so the plugin's varbit reads stay thin.
  */
-public final class RunePouchScan {
-    private RunePouchScan() {
-    }
+public class RunePouchScan {
 
     /** itemId -> quantity for every filled slot; an empty or zero slot adds nothing. */
     public static Map<Integer, Integer> items(int[] types, int[] quantities, IntUnaryOperator typeToItem) {

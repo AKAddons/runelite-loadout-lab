@@ -24,7 +24,7 @@ public enum TaskBracelet {
      * (Andrew 2026-10-18: Orca wore the bracelet). */
     public static Map<CombatStyle, Map<GearSlot, Integer>> overlay(
         Map<CombatStyle, Map<GearSlot, Integer>> pins, MonsterStats monster, boolean onTask, TaskBracelet choice) {
-        if (!onTask || monster == null || !monster.isSlayerMonster() || choice == null || choice == NONE) {
+        if (!onTask || monster == null || !monster.slayerMonster || choice == null || choice == NONE) {
             return pins;
         }
         var out = new EnumMap<CombatStyle, Map<GearSlot, Integer>>(CombatStyle.class);

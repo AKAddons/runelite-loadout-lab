@@ -29,11 +29,11 @@ class PrayerCarryTest {
 		data = new DataService().load();
 	}
 
-	private static List<Map<String, Object>> picks(String mob, Set<Integer> bank) {
+	private static List<Map> picks(String mob, Set<Integer> bank) {
 		return LootContainers.picks(data.searchMonsters(mob, 1).get(0), bank::contains, false);
 	}
 
-	private static List<String> names(List<Map<String, Object>> picks) {
+	private static List<String> names(List<Map> picks) {
 		return picks.stream().map(r -> (String) r.get("name")).collect(Collectors.toList());
 	}
 

@@ -5,12 +5,13 @@ import com.google.gson.reflect.TypeToken;
 import java.util.*;
 import net.runelite.client.config.ConfigManager;
 
-@lombok.RequiredArgsConstructor
-public abstract class IdSetStore implements ScopedStore {
+/** A scoped set of item ids: the exclusions ("excludedItems"), the dream
+ * items ("dreamItems") and the protect-only items ("protectOnlyItems"). */
+public class IdSetStore implements ScopedStore {
     static final String CONFIG_GROUP = "loadoutlab";
 
-    private final ConfigManager configManager;
-    private final Gson gson;
+    final ConfigManager configManager;
+    final Gson gson;
     final Set<Integer> ids = new LinkedHashSet<>();
     /** "std" / "seasonal", plus ".<accountHash>" once a character is known.
      * Field report 2026-08-25: switching from a main to a test account showed
@@ -20,12 +21,19 @@ public abstract class IdSetStore implements ScopedStore {
 
     /** The unscoped key this store used before 0.4.1 - read once so an
      * existing install keeps its list when the key gains the account hash. */
-    abstract String legacyKey();
+    final String legacyKey;
 
-    String key() { return ScopedKeys.key(worldScope, legacyKey()); }
+    public IdSetStore(ConfigManager configManager, Gson gson, String legacyKey) {
+        this.configManager = configManager;
+        this.gson = gson;
+        this.legacyKey = legacyKey;
+        load();
+    }
+
+    String key() { return ScopedKeys.key(worldScope, legacyKey); }
 
     public synchronized void loadScope(String scope) {
-        this.worldScope = scope;
+        worldScope = scope;
         load();
     }
 
@@ -33,7 +41,7 @@ public abstract class IdSetStore implements ScopedStore {
 
     final void load() {
         ids.clear();
-        Set<Integer> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, legacyKey()),
+        Set<Integer> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, legacyKey),
             new TypeToken<Set<Integer>>(){}.getType());
         if (stored != null) ids.addAll(stored);
     }
@@ -53,5 +61,5 @@ public abstract class IdSetStore implements ScopedStore {
 
     public synchronized boolean contains(int itemId) { return ids.contains(itemId); }
 
-    public synchronized Set<Integer> snapshot() { return Collections.unmodifiableSet(new LinkedHashSet<>(ids)); }
+    public synchronized Set<Integer> snapshot() { return new LinkedHashSet<>(ids); }
 }

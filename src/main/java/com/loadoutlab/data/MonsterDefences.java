@@ -4,19 +4,19 @@ package com.loadoutlab.data;
 import lombok.*;
 
 @AllArgsConstructor
-public final class MonsterDefences {
+public class MonsterDefences {
     public static final MonsterDefences ZERO = new MonsterDefences(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-    private final int stab;
-    private final int slash;
-    private final int crush;
-    private final int magic;
-    private final int ranged;
+    final int stab;
+    final int slash;
+    final int crush;
+    final int magic;
+    final int ranged;
     @Getter
-    private final int flatArmour;
-    private final int light;
-    private final int standard;
-    private final int heavy;
+    final int flatArmour;
+    final int light;
+    final int standard;
+    final int heavy;
 
     public MonsterDefences(int stab, int slash, int crush, int magic, int ranged, int light, int standard, int heavy) {
         this(stab, slash, crush, magic, ranged, 0, light, standard, heavy);

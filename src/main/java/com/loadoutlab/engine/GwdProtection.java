@@ -12,13 +12,13 @@ import java.util.*;
  * "Follow the wiki's route table"). The Ancient chip adds Zaros: the Nex
  * respite area's banker. Data: gwd_protection.json (scripts/gen_gwd_protection.py).
  */
-public final class GwdProtection {
+public class GwdProtection {
     public static final String ZAROS = "zaros";
 
     /** Monster name (lower case) -> the gods its route needs, in table order. */
-    private static final Map<String, List<String>> ROUTE_BY_MONSTER = new HashMap<>();
+    static final Map<String, List<String>> ROUTE_BY_MONSTER = new HashMap<>();
     /** Item name (lower case) -> the gods it protects against. */
-    private static final Map<String, Set<String>> GODS_BY_ITEM = new HashMap<>();
+    static final Map<String, Set<String>> GODS_BY_ITEM = new HashMap<>();
 
     static {
         JsonObject root = JsonResources.objectOrThrow("gwd_protection.json");
@@ -27,7 +27,7 @@ public final class GwdProtection {
             JsonResources.strings(route.getValue().getAsJsonObject(), "gods", gods);
             List<String> monsters = new ArrayList<>();
             JsonResources.strings(route.getValue().getAsJsonObject(), "monsters", monsters);
-            for (String monster : monsters) ROUTE_BY_MONSTER.put(monster, Collections.unmodifiableList(gods));
+            for (String monster : monsters) ROUTE_BY_MONSTER.put(monster, gods);
         }
         for (var god : root.getAsJsonObject("items").entrySet()) {
             for (JsonElement name : god.getValue().getAsJsonArray()) {
@@ -36,18 +36,16 @@ public final class GwdProtection {
         }
     }
 
-    private GwdProtection() {
-    }
 
     /** True for the generals and their bodyguards. */
     public static boolean isGwd(MonsterStats monster) {
-        return monster != null && ROUTE_BY_MONSTER.containsKey(monster.getNameLower());
+        return monster != null && ROUTE_BY_MONSTER.containsKey(monster.nameLower);
     }
 
     /** The gods this monster's route needs (Zaros added for the Ancient chip);
      * empty anywhere else. */
     public static List<String> godsFor(MonsterStats monster, boolean ancient) {
-        List<String> route = monster == null ? null : ROUTE_BY_MONSTER.get(monster.getNameLower());
+        List<String> route = monster == null ? null : ROUTE_BY_MONSTER.get(monster.nameLower);
         if (route == null) return List.of();
         if (!ancient) return route;
         List<String> gods = new ArrayList<>(route);
@@ -56,7 +54,7 @@ public final class GwdProtection {
     }
 
     public static Set<String> godsOf(GearItem item) {
-        Set<String> gods = item == null ? null : GODS_BY_ITEM.get(item.getNameLower());
+        Set<String> gods = item == null ? null : GODS_BY_ITEM.get(item.nameLower);
         return gods == null ? Set.of() : gods;
     }
 

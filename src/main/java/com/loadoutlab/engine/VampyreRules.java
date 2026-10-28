@@ -16,9 +16,9 @@ import static com.loadoutlab.engine.CombatStyle.*;
  * damage to vampyres"). The names and numbers ride vampyre_weapons.json,
  * whose comment carries every place this follows the wiki over the calc.
  */
-public final class VampyreRules {
-    private static final Map<String, List<String>> NAMES = new HashMap<>();
-    private static final Map<String, Integer> N = new HashMap<>();
+public class VampyreRules {
+    static final Map<String, List<String>> NAMES = new HashMap<>();
+    static final Map<String, Integer> N = new HashMap<>();
 
     static {
         JsonObject data = objectOrThrow("vampyre_weapons.json");
@@ -30,17 +30,15 @@ public final class VampyreRules {
 
     static final int EFARITAY = N.get("efaritay");
 
-    private VampyreRules() {
-    }
 
     /** 1-3 for a vampyre's tier, 0 for anything else. */
     static int tier(MonsterStats m) {
-        return m == null ? 0 : m.getVampyreTier();
+        return m == null ? 0 : m.vampyreTier;
     }
 
-    private static String name(GearItem item) { return item == null ? "" : item.getNameLower(); }
+    static String name(GearItem item) { return item == null ? "" : item.nameLower; }
 
-    private static boolean in(String list, GearItem item) { return NAMES.get(list).contains(name(item)); }
+    static boolean in(String list, GearItem item) { return NAMES.get(list).contains(name(item)); }
 
     /** Vampyrebane at a tier: the stake in ranged; the listed weapons in
      * melee, and vs tier 2 in any style (the calc's wearingVampyrebane). */
@@ -54,7 +52,7 @@ public final class VampyreRules {
             : style == MELEE && in("silver", loadout.getWeapon());
     }
 
-    private static boolean ring(Loadout loadout) { return name(loadout.get(GearSlot.RING)).equals("efaritay's aid"); }
+    static boolean ring(Loadout loadout) { return name(loadout.get(GearSlot.RING)).equals("efaritay's aid"); }
 
     /** The weapon-level tier-3 bar the pool filter shares: a tier-3
      * weapon, and never a spell (ISS-01M5RGMT70PG86MWHPF28DBJ3V). */
@@ -84,7 +82,7 @@ public final class VampyreRules {
      * by the mapped sum over the plain one, where an accurate 0 already
      * counts as 1. */
     static DpsResult apply(MonsterStats monster, CombatStyle style, Loadout loadout, DpsResult result) {
-        int tier = tier(monster), top = result.getMaxHit();
+        int tier = tier(monster), top = result.maxHit;
         if (tier == 0) return result;
         GearItem weapon = loadout.getWeapon();
         boolean ring = ring(loadout), silver = silver(style, loadout);
@@ -99,6 +97,6 @@ public final class VampyreRules {
             plain += Math.max(1, d);
         }
         double r = mapped / plain;
-        return result.withHitModel(result.getDps() * r, result.getAccuracy(), result.getExpectedHit() * r, v);
+        return result.withHitModel(result.dps * r, result.accuracy, result.expectedHit * r, v);
     }
 }

@@ -17,15 +17,15 @@ class LoaderRepickTest {
 		try {
 			loader.setKey("sea");
 			loader.setRunning(true);
-			assertEquals("sea", loader.playingKey());
+			assertEquals("sea", loader.playingKey);
 			// The user searched again before the first compute finished.
 			loader.setKey("toa");
 			loader.setRunning(true);
-			assertEquals("toa", loader.playingKey());
+			assertEquals("toa", loader.playingKey);
 			// Land falls back to the flask pool (null key).
 			loader.setKey(null);
 			loader.setRunning(true);
-			assertNull(loader.playingKey());
+			assertNull(loader.playingKey);
 		} finally {
 			loader.setRunning(false);
 		}

@@ -8,24 +8,22 @@ import java.util.function.IntPredicate;
  * "max cape should automatically unlock the fire/inferno, mage/ rage cape
  * combo versions"): the max cape, and every combo max cape whose other
  * half you own. The pairs live in max_capes.json. */
-public final class MaxCapeSims {
-    private static final Map<String, String> COMBOS = new LinkedHashMap<>();
+public class MaxCapeSims {
+    static final Map<String, String> COMBOS = new LinkedHashMap<>();
 
     static {
         JsonResources.stringMap(JsonResources.object("max_capes.json"), "combos", COMBOS);
     }
 
-    private MaxCapeSims() {
-    }
 
     public static Set<Integer> ids(LoadoutData data, IntPredicate owns) {
         Set<Integer> out = new LinkedHashSet<>();
         GearItem max = cape(data, "max cape");
-        if (max != null) out.add(max.getId());
+        if (max != null) out.add(max.id);
         for (var combo : COMBOS.entrySet()) {
             GearItem base = cape(data, combo.getKey());
             GearItem made = cape(data, combo.getValue());
-            if (base != null && made != null && owns.test(base.getId())) out.add(made.getId());
+            if (base != null && made != null && owns.test(base.id)) out.add(made.id);
         }
         return out;
     }
@@ -45,17 +43,17 @@ public final class MaxCapeSims {
         for (var combo : COMBOS.entrySet()) {
             if (cape(data, combo.getValue()) == null) continue;
             for (GearItem item : data.getGearItems(GearSlot.CAPE)) {
-                if (item.getNameLower().equals(combo.getKey())) out.add(item.getId());
+                if (item.nameLower.equals(combo.getKey())) out.add(item.id);
             }
         }
         return out;
     }
 
     /** The wearable row of a cape by name (not a broken or locked twin). */
-    private static GearItem cape(LoadoutData data, String name) {
+    static GearItem cape(LoadoutData data, String name) {
         for (GearItem item : data.getGearItems(GearSlot.CAPE)) {
-            String version = item.getVersionLower();
-            if (item.getNameLower().equals(name) && item.isStandardGear() && !data.isVariant(item.getId())
+            String version = item.versionLower;
+            if (item.nameLower.equals(name) && item.standardGear && !data.isVariant(item.id)
                 && !version.contains("broken") && !version.contains("locked")) {
                 return item;
             }

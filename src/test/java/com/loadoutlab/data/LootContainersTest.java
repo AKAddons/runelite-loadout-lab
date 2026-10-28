@@ -31,7 +31,7 @@ class LootContainersTest {
 	@Test
 	@DisplayName("killerwatts: the herb sack you own rides along, with how often herbs drop")
 	void killerwattHerbSack() {
-		List<Map<String, Object>> picks = LootContainers.picks(data.searchMonsters("killerwatt", 1).get(0),
+		List<Map> picks = LootContainers.picks(data.searchMonsters("killerwatt", 1).get(0),
 			id -> id == 13226, false);
 		assertEquals(1, picks.size(), picks.toString());
 		assertEquals(13226, picks.get(0).get("id"));

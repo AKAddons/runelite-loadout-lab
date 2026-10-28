@@ -4,27 +4,19 @@ package com.loadoutlab.data;
 import lombok.*;
 
 @AllArgsConstructor
-public final class StatBlock {
+@Getter
+public class StatBlock {
     public static final StatBlock ZERO = new StatBlock(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-    @Getter
-    private final int stab;
-    @Getter
-    private final int slash;
-    @Getter
-    private final int crush;
-    @Getter
-    private final int magic;
-    @Getter
-    private final int ranged;
-    @Getter
-    private final int strength;
-    @Getter
-    private final int rangedStrength;
-    @Getter
-    private final int magicDamage;
-    @Getter
-    private final int prayer;
+    public final int stab;
+    public final int slash;
+    public final int crush;
+    public final int magic;
+    public final int ranged;
+    public final int strength;
+    public final int rangedStrength;
+    public final int magicDamage;
+    public final int prayer;
 
     public int getAttackBonus(String type) {
         switch (type) {

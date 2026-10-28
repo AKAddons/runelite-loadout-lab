@@ -214,7 +214,7 @@ class VampyreParityTest {
 		OptimizationRequest request = new OptimizationRequest(monster(SENTINEL), CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
-		assertTrue(new LoadoutOptimizer().preparePools(data, request).slotPool(GearSlot.RING).stream()
+		assertTrue(new LoadoutOptimizer().preparePools(data, request).slotCandidates.get(GearSlot.RING).stream()
 			.anyMatch(g -> g != null && g.getId() == EFARITAY));
 	}
 }

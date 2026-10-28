@@ -9,7 +9,7 @@ public enum GearSlot {
     HEAD("head"), CAPE("cape"), NECK("neck"), AMMO("ammo"), WEAPON("weapon"), BODY("body"), SHIELD("shield"),
     LEGS("legs"), HANDS("hands"), FEET("feet"), RING("ring");
 
-    private final String jsonName;
+    public final String jsonName;
 
     GearSlot(String jsonName) { this.jsonName = jsonName; }
 

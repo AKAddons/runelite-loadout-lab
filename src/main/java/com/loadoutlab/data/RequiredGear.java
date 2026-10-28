@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.loadoutlab.data.JsonResources.*;
+import java.util.function.IntPredicate;
 
 /**
  * Mandatory protective slayer gear per monster (grZ field request
@@ -17,21 +18,21 @@ import static com.loadoutlab.data.JsonResources.*;
  * Data-driven from required_gear.json (a resource - token-free), every
  * row wiki-verified before encoding.
  */
-public final class RequiredGear {
+public class RequiredGear {
     /** One monster family's requirement: the slot, the acceptable item
      * specs (corpus names, optionally name#Version), and the why. */
     @lombok.RequiredArgsConstructor
-    public static final class Rule {
+    public static class Rule {
         public final GearSlot slot;
         public final String note;
-        private final List<String> itemSpecs;
+        final List<String> itemSpecs;
         /** A waiver key that lifts the rule (KOUREND_ELITE), or null. */
         public final String waivedBy;
         /** A convention, not a must (the Barrows hilt, the Shayzien set):
          * enforced from what you own, never forced unowned. */
         public final boolean soft;
         /** Resolved once per corpus - the corpus never changes post-load. */
-        private volatile Set<Integer> resolved;
+        volatile Set<Integer> resolved;
 
         /** The acceptable item ids, resolved against the loaded corpus
          * (standard-gear rows only; variants fold via the candidate
@@ -48,10 +49,10 @@ public final class RequiredGear {
                     name = spec.substring(0, hash);
                     version = spec.substring(hash + 1);
                 }
-                for (GearItem item : data.getGearItems()) {
-                    if (item.getNameLower().equals(name) && item.isStandardGear()
-                        && (version == null || version.equals(item.getVersion()))) {
-                        out.add(item.getId());
+                for (GearItem item : data.gearItems) {
+                    if (item.nameLower.equals(name) && item.standardGear
+                        && (version == null || version.equals(item.version))) {
+                        out.add(item.id);
                     }
                 }
             }
@@ -60,7 +61,7 @@ public final class RequiredGear {
         }
     }
 
-    private static final Map<String, List<Rule>> BY_NAME = new HashMap<>();
+    static final Map<String, List<Rule>> BY_NAME = new HashMap<>();
 
     /** The elite Kourend & Kebos diary (varbit KOUREND_DIARY_ELITE_COMPLETE):
      * once its rewards are claimed Karuulm's floor no longer burns (wiki,
@@ -71,15 +72,15 @@ public final class RequiredGear {
      * hammer, fungicide, salt, ice cooler): acceptable items best first,
      * each with its ids (not gear, so ids rather than corpus names). */
     @lombok.RequiredArgsConstructor
-    public static final class Carried {
+    public static class Carried {
         public final String note;
         final List<String> names;
         final List<int[]> ids;
     }
 
-    private static final Map<String, List<Carried>> CARRIED_BY_NAME = new HashMap<>();
-    private static final Map<String, List<Carried>> SWAPS_BY_NAME = new HashMap<>();
-    private static final Set<String> WARD = new HashSet<>();
+    static final Map<String, List<Carried>> CARRIED_BY_NAME = new HashMap<>();
+    static final Map<String, List<Carried>> SWAPS_BY_NAME = new HashMap<>();
+    static final Set<String> WARD = new HashSet<>();
 
     static {
         // Fail LOUD (the name_rules pattern): a silently empty table would
@@ -90,7 +91,7 @@ public final class RequiredGear {
             List<String> items = new ArrayList<>();
             strings(row, "items", items);
             var rule = new Rule( GearSlot.valueOf(string(row, "slot")), string(row, "note"),
-                Collections.unmodifiableList(items), row.has("waivedBy") ? row.get("waivedBy").getAsString() : null,
+                items, row.has("waivedBy") ? row.get("waivedBy").getAsString() : null,
                 bool(row, "soft", false));
             for (JsonElement m : row.getAsJsonArray("monsters")) {
                 BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(rule);
@@ -117,12 +118,10 @@ public final class RequiredGear {
         }
     }
 
-    private RequiredGear() {
-    }
 
     /** The fight's swap rules (ISS-01M5VCXYGF51P5NJCDNC1QJZD1): Cerberus' spectral spirit shield. */
     public static List<Carried> swaps(MonsterStats monster) {
-        return monster == null ? List.of() : SWAPS_BY_NAME.getOrDefault(monster.getNameLower(), List.of());
+        return monster == null ? List.of() : SWAPS_BY_NAME.getOrDefault(monster.nameLower, List.of());
     }
 
     /** Every swap id for the monster, each rule's best first. */
@@ -149,13 +148,13 @@ public final class RequiredGear {
     }
 
     /** A fight whose prayer drain is demonic: Ward of Arceuus rides the trip (ISS-01M5VCXYGF51P5NJCDNC1QJZD1). */
-    public static boolean ward(MonsterStats monster) { return monster != null && WARD.contains(monster.getNameLower()); }
+    public static boolean ward(MonsterStats monster) { return monster != null && WARD.contains(monster.nameLower); }
 
     /** The requirement for this monster, or null. Name-keyed like the
      * notes, so RequiredGearTest pins every key against loaded rows. */
     /** Every rule for the monster (a full armour set is one rule per slot). */
     public static List<Rule> rulesFor(MonsterStats monster) {
-        return monster == null ? List.of() : BY_NAME.getOrDefault(monster.getNameLower(), List.of());
+        return monster == null ? List.of() : BY_NAME.getOrDefault(monster.nameLower, List.of());
     }
 
     /** The rules still standing once the player's waivers lift theirs. */
@@ -180,10 +179,10 @@ public final class RequiredGear {
      * the best one you own, else the best one there is, flagged unowned
      * (Andrew 2026-10-22: "show them as necessary even when the player
      * doesn't own those items"). Each row: id, name, qty, why, owned. */
-    public static List<java.util.Map<String, Object>> carriedPicks(MonsterStats monster, java.util.function.IntPredicate owns) {
-        List<java.util.Map<String, Object>> out = new ArrayList<>();
+    public static List<Map> carriedPicks(MonsterStats monster, IntPredicate owns) {
+        List<Map> out = new ArrayList<>();
         if (monster == null) return out;
-        for (Carried rule : CARRIED_BY_NAME.getOrDefault(monster.getNameLower(), List.of())) {
+        for (Carried rule : CARRIED_BY_NAME.getOrDefault(monster.nameLower, List.of())) {
             int pick = -1;
             for (int i = 0; i < rule.ids.size() && pick < 0; i++) {
                 for (int id : rule.ids.get(i)) {
@@ -200,7 +199,4 @@ public final class RequiredGear {
         }
         return out;
     }
-
-    /** Every curated monster key (test seam). */
-    public static Set<String> monsterKeys() { return Collections.unmodifiableSet(BY_NAME.keySet()); }
 }

@@ -12,11 +12,11 @@ import java.util.function.IntUnaryOperator;
  * 4-dose item it detects (Andrew 2026-10-19: super antifires kept there
  * were invisible, so Detect best said shield).
  */
-public final class PotionStorage {
+public class PotionStorage {
     /** varbit id -> 4-dose item id. */
     static final Map<Integer, Integer> BY_VARBIT = new LinkedHashMap<>();
     /** The master scroll book's scrolls (ISS-01M5VDZXT4W4D5DP468R5R7NSW): shown as the book when held only there. */
-    private static final Set<Integer> SCROLLS = new HashSet<>();
+    static final Set<Integer> SCROLLS = new HashSet<>();
 
     static {
         JsonObject root = JsonResources.objectOrThrow("potion_storage.json");
@@ -26,8 +26,6 @@ public final class PotionStorage {
         }
     }
 
-    private PotionStorage() {
-    }
 
     public static boolean tracks(int varbitId) { return BY_VARBIT.containsKey(varbitId); }
 

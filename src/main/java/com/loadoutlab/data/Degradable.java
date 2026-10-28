@@ -5,9 +5,9 @@ import java.util.*;
 
 /** Gear that costs to use: wears down or burns charges per hit/cast
  * (degradable_gear.json; definition Andrew 2026-09-08). */
-public final class Degradable {
-    private static final List<String> FAMILIES = new ArrayList<>();
-    private static final List<String> EXCEPT = new ArrayList<>();
+public class Degradable {
+    static final List<String> FAMILIES = new ArrayList<>();
+    static final List<String> EXCEPT = new ArrayList<>();
 
     static {
         JsonObject root = JsonResources.objectOrThrow("degradable_gear.json");
@@ -21,8 +21,8 @@ public final class Degradable {
 
     public static Set<Integer> ids(LoadoutData data) {
         Set<Integer> ids = new HashSet<>();
-        data.getGearItems().forEach(item -> {
-            if (matches(item.getNameLower())) ids.add(item.getId());
+        data.gearItems.forEach(item -> {
+            if (matches(item.nameLower)) ids.add(item.id);
         });
         return ids;
     }

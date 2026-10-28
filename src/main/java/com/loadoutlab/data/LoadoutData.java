@@ -5,19 +5,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import lombok.Getter;
+import java.util.regex.Pattern;
+import com.google.gson.JsonObject;
 
-public final class LoadoutData {
-    @Getter
-    private final List<GearItem> gearItems;
-    @Getter
-    private final List<MonsterStats> monsters;
-    @Getter
-    private final List<SpellStats> spells;
-    private final Map<Integer, GearItem> gearById;
-    private final Map<Integer, Integer> variantToBase;
+@Getter
+public class LoadoutData {
+    public final List<GearItem> gearItems;
+    public final List<MonsterStats> monsters;
+    public final List<SpellStats> spells;
+    final Map<Integer, GearItem> gearById;
+    final Map<Integer, Integer> variantToBase;
     /** Corpus partitioned by equip slot, corpus order preserved - so slot
      * scans (every optimizer pool build) skip the other ~5k rows. */
-    private final Map<GearSlot, List<GearItem>> gearBySlot;
+    final Map<GearSlot, List<GearItem>> gearBySlot;
 
     LoadoutData( List<GearItem> gearItems, List<MonsterStats> monsters, List<SpellStats> spells,
         Map<Integer, GearItem> gearById, Map<Integer, Integer> variantToBase) {
@@ -29,7 +29,7 @@ public final class LoadoutData {
         var bySlot = new EnumMap<GearSlot, List<GearItem>>(GearSlot.class);
         for (GearSlot slot : GearSlot.values()) {
             bySlot.put(slot, Collections.unmodifiableList(this.gearItems.stream()
-                .filter(item -> item.getSlot() == slot).collect(Collectors.toList())));
+                .filter(item -> item.slot == slot).collect(Collectors.toList())));
         }
         this.gearBySlot = Collections.unmodifiableMap(bySlot);
     }
@@ -43,11 +43,11 @@ public final class LoadoutData {
      * tighten that later.
      */
     public LoadoutData freeToPlayView() {
-        List<GearItem> free = gearItems.stream().filter(g -> !g.isMembers()).collect(Collectors.toList());
+        List<GearItem> free = gearItems.stream().filter(g -> !g.members).collect(Collectors.toList());
         Map<Integer, GearItem> byId = new HashMap<>();
-        free.forEach(g -> byId.put(g.getId(), g));
+        free.forEach(g -> byId.put(g.id, g));
         return new LoadoutData(free, monsters, spells.stream()
-            .filter(spell -> "standard".equalsIgnoreCase(spell.getSpellbook())).collect(Collectors.toList()), byId, variantToBase);
+            .filter(spell -> "standard".equalsIgnoreCase(spell.spellbook)).collect(Collectors.toList()), byId, variantToBase);
     }
 
     /**
@@ -60,7 +60,7 @@ public final class LoadoutData {
      * Owned quantities with every variant also credited to its base item,
      * so an owned "Abyssal whip (or)" satisfies an "Abyssal whip" pick.
      */
-    private static final java.util.regex.Pattern CHARGE = java.util.regex.Pattern.compile("\\(*i?\\d+\\)*");
+    static final Pattern CHARGE = Pattern.compile("\\(*i?\\d+\\)*");
 
     /** The result cache's ownership key with charge counts folded
      * (ISS-01M5V7W28574DBWHTR5ATE37Q8, Andrew 2026-10-25: "when i teleport it
@@ -74,7 +74,7 @@ public final class LoadoutData {
             if (e.getValue() == null || e.getValue() <= 0) continue;
             GearItem g = getGear(e.getKey());
             keys.add(g == null ? String.valueOf(e.getKey())
-                : g.getNameLower() + "|" + (CHARGE.matcher(g.getVersionLower()).matches() ? "#" : g.getVersionLower()));
+                : g.nameLower + "|" + (CHARGE.matcher(g.versionLower).matches() ? "#" : g.versionLower));
         }
         return keys.hashCode();
     }
@@ -94,13 +94,13 @@ public final class LoadoutData {
      * anchor for "what do I wear there". Keys and values are in
      * normalizeQuery form.
      */
-    private static final Map<String, String> SEARCH_ALIASES = new HashMap<>();
+    static final Map<String, String> SEARCH_ALIASES = new HashMap<>();
     /** Extra search words for one version ("name|version" -> words): the
      * Wardens' "p2 phase 2" (ISS-01M5HKWBZNJF0V8ZD58FH9XS5B). */
-    private static final Map<String, String> VERSION_TERMS = new HashMap<>();
+    static final Map<String, String> VERSION_TERMS = new HashMap<>();
 
     static {
-        com.google.gson.JsonObject aliases = JsonResources.objectOrThrow("search_aliases.json");
+        JsonObject aliases = JsonResources.objectOrThrow("search_aliases.json");
         JsonResources.stringMap(aliases, "aliases", SEARCH_ALIASES);
         JsonResources.stringMap(aliases, "version_terms", VERSION_TERMS);
     }
@@ -114,8 +114,8 @@ public final class LoadoutData {
         var prefix = new ArrayList<MonsterStats>();
         var contains = new ArrayList<MonsterStats>();
         for (MonsterStats monster : monsters) {
-            String name = MonsterStats.normalizeQuery(monster.getName());
-            if (name.equals(text) || String.valueOf(monster.getId()).equals(text)) {
+            String name = MonsterStats.normalizeQuery(monster.name);
+            if (name.equals(text) || String.valueOf(monster.id).equals(text)) {
                 exact.add(monster);
             } else if (name.startsWith(text)) {
                 prefix.add(monster);
@@ -132,9 +132,9 @@ public final class LoadoutData {
         // report 2026-08-16: "whisperer" kept returning the Awakened row -
         // "the whisperer" is not an exact match for it, so the version
         // sort never ran on the bucket it landed in).
-        exact.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
-        prefix.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
-        contains.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
+        exact.sort(Comparator.comparingInt(m -> versionTier(m.version)));
+        prefix.sort(Comparator.comparingInt(m -> versionTier(m.version)));
+        contains.sort(Comparator.comparingInt(m -> versionTier(m.version)));
 
         var result = new ArrayList<MonsterStats>(limit);
         addLimited(result, exact, limit);
@@ -147,9 +147,9 @@ public final class LoadoutData {
      * version terms, a trailing "s" forgiven - "tumeken warden" ("tumekens
      * warden"), "wardens", "elidinis active", "warden p2" (Andrew 2026-10-22:
      * the phase-2 Warden was unsearchable without "toa"). */
-    private static boolean wordsMatch(String text, MonsterStats monster) {
-        String terms = VERSION_TERMS.get(MonsterStats.normalizeQuery(monster.getName())
-            + "|" + MonsterStats.normalizeQuery(monster.getVersion()));
+    static boolean wordsMatch(String text, MonsterStats monster) {
+        String terms = VERSION_TERMS.get(MonsterStats.normalizeQuery(monster.name)
+            + "|" + MonsterStats.normalizeQuery(monster.version));
         String[] words = (monster.searchText() + (terms == null ? "" : " " + terms)).split(" +");
         for (String typed : text.split(" +")) {
             if (typed.isEmpty()) continue;
@@ -167,7 +167,7 @@ public final class LoadoutData {
     }
 
     /** Lower = a better default for a bare-name search. */
-    private static int versionTier(String version) {
+    static int versionTier(String version) {
         if (version == null || version.isEmpty()) return 1;
         String v = Names.lower(version);
         if (v.contains("post-quest")) {
@@ -187,7 +187,7 @@ public final class LoadoutData {
         return 2;
     }
 
-    private static <T> void addLimited(List<T> target, List<T> source, int limit) {
+    static <T> void addLimited(List<T> target, List<T> source, int limit) {
         for (T entry : source) {
             if (target.size() >= limit) return;
             target.add(entry);

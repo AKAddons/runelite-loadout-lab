@@ -7,20 +7,18 @@ import static com.loadoutlab.data.JsonResources.map;
 /** A shown card as an Inventory Setups add-setup (ISS-01M5V8P2430MQ61C5QKHHRQR6Z,
  * Andrew 2026-10-25: "a button that creates a new inventory setup under a
  * "Loadout Lab" section"). */
-public final class SetupExport {
+public class SetupExport {
     /** RuneLite's EquipmentInventorySlot order; "" marks slots no card fills. */
-    private static final List<String> SLOTS = List.of("head", "cape", "neck", "weapon", "body", "shield", "", "legs", "",
+    static final List<String> SLOTS = List.of("head", "cape", "neck", "weapon", "body", "shield", "", "legs", "",
         "hands", "feet", "", "ring", "ammo");
 
-    private SetupExport() {
-    }
 
     /** The payload: 14 worn ids (-1 empty), then 28 inventory slots from the
      * trip's stacks in order - a stackable once at its quantity, anything else a
      * slot per item, each id once - and the utility items as additional filtered
      * items (ISS-01M5VBB3E4DM65MHHYWB3A8GSP: "stuff like the magic cape"), and the
      * rune pouch's runes in slot order (ISS-01M5VC3V5DCEEDGVNMC37VHJ2K). */
-    public static Map<String, Object> payload(String name, Map<String, Integer> worn, List<int[]> stacks,
+    public static Map payload(String name, Map<String, Integer> worn, List<int[]> stacks,
         List<Integer> extra, Map<Integer, Integer> pouch, IntPredicate stackable) {
         var eq = new ArrayList<Integer>();
         for (String slot : SLOTS) eq.add(worn.getOrDefault(slot, 0) > 0 ? worn.get(slot) : -1);

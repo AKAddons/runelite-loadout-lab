@@ -132,7 +132,7 @@ class UndoIntegrityTest {
 		private Map<String, Object> last;
 
 		@Override
-		public void publishPage(Map<String, Object> page) {
+		public void publishPage(Map page) {
 			published = page;
 			last = page;
 		}

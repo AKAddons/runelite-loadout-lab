@@ -19,65 +19,65 @@ import java.util.*;
  * entry's note. The "_unpriced" block names the monsters the wiki cannot
  * price yet, with the reason the card shows instead of a number.
  */
-public final class BossIncomingOverrides {
-    private static final String RESOURCE = "boss_incoming.json";
+public class BossIncomingOverrides {
+    static final String RESOURCE = "boss_incoming.json";
 
     /** One curated attack in the boss's rotation. */
-    @AllArgsConstructor(access = AccessLevel.PACKAGE)
+    @AllArgsConstructor
     @Getter
-    public static final class Attack {
-        private final String style;
-        private final int maxHit;
-        private final double share;
-        private final boolean prayable;
+    public static class Attack {
+        public final String style;
+        public final int maxHit;
+        final double share;
+        final boolean prayable;
         /** Fraction of damage that gets THROUGH the matching protection
          * prayer: 0 = fully blocked, 0.5 = half pierces (Callisto melee,
          * Corp magic), 1 = prayer does nothing. maxHit is always the TRUE
          * unprayed value. */
-        private final double prayerFactor;
+        final double prayerFactor;
         /** 0 means "use the stat sheet's attack speed". */
-        private final int speedTicks;
+        public final int speedTicks;
         /** Dodgeable by design (Zulrah's magma slam): the standard play
          * takes zero, so the attack is excluded from both dps totals and
          * kept in the threat list for the tooltip - the same philosophy as
          * assuming the protection prayer is up. */
-        private final boolean avoidable;
+        final boolean avoidable;
         /** The card's row label when the style alone would not tell two
          * rows apart ("ranged volley", "melee (x2)"); "" = the style. */
-        private final String name;
+        public final String name;
         /** Hits per attack (three projectiles a volley, a 42 x2 melee):
          * the rate scales with it, the card's max hit does not. */
-        private final int hits;
+        final int hits;
         /** Telegraphed: the standard play prays it on cue whatever single
          * prayer it camps (ISS-01M5PBSZBBBAS9Y46X04MVMHZB). */
-        private final boolean flicked;
+        final boolean flicked;
         /** The fraction of a flicked attack that still lands under standard
          * play - a mixed volley's odd projectile, a late swap. */
-        private final double leak;
+        final double leak;
         /** Dragonfire by protection layers (Vorkath): key "none" / "shield" /
          * "antifire" / "super" / "shield+antifire" / "shield+super" ->
          * {max without, max with Protect from Magic}; null for other attacks. */
-        private final Map<String, int[]> layers;
+        final Map<String, int[]> layers;
     }
 
     /** The full curated picture for one boss. */
     @Getter
-    public static final class BossOverride {
-        private final List<Attack> attacks;
-        private final String note;
+    public static class BossOverride {
+        final List<Attack> attacks;
+        final String note;
 
         BossOverride(List<Attack> attacks, String note) {
-            this.attacks = Collections.unmodifiableList(attacks);
+            this.attacks = attacks;
             this.note = note;
         }
     }
 
-    private static final Map<String, BossOverride> OVERRIDES = new HashMap<>();
+    static final Map<String, BossOverride> OVERRIDES = new HashMap<>();
     /** Monsters the wiki cannot price yet, with the reason the card shows. */
-    private static final Map<String, String> UNPRICED = new HashMap<>();
+    static final Map<String, String> UNPRICED = new HashMap<>();
 
     static {
-        JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
+        JsonObject root = JsonResources.objectOrThrow(RESOURCE);
         for (var entry : root.entrySet()) {
             if ("_unpriced".equals(entry.getKey())) {
                 for (var why : entry.getValue().getAsJsonObject().entrySet()) {
@@ -99,7 +99,7 @@ public final class BossIncomingOverrides {
      * "resource missing" throw stays here: that is a packaging failure, not
      * bad data.
      */
-    private static BossOverride parse(JsonObject json) {
+    static BossOverride parse(JsonObject json) {
         List<Attack> attacks = new ArrayList<>();
         for (JsonElement element : json.getAsJsonArray("attacks")) {
             JsonObject a = element.getAsJsonObject();
@@ -117,7 +117,7 @@ public final class BossIncomingOverrides {
         return new BossOverride(attacks, json.has("note") ? json.get("note").getAsString() : "");
     }
 
-    private static Map<String, int[]> layers(JsonObject json) {
+    static Map<String, int[]> layers(JsonObject json) {
         Map<String, int[]> map = new HashMap<>();
         for (var e : json.entrySet()) {
             JsonArray pair = e.getValue().getAsJsonArray();
@@ -126,8 +126,6 @@ public final class BossIncomingOverrides {
         return map;
     }
 
-    private BossIncomingOverrides() {
-    }
 
     /** The curated override for this monster, or null to use the v1 model.
      * Keyed by display name so every version/phase row shares one entry. */
@@ -142,14 +140,14 @@ public final class BossIncomingOverrides {
      * each must carry ITS OWN attacks and protect prayer (field report
      * 2026-07-17: every Zulrah form said pray mage). The bare name stays as
      * the whole-fight fallback. */
-    private static <T> T lookup(Map<String, T> map, MonsterStats monster) {
+    static <T> T lookup(Map<String, T> map, MonsterStats monster) {
         if (monster == null) return null;
-        String version = monster.getVersion();
+        String version = monster.version;
         if (version != null && !version.isEmpty()) {
-            T byForm = map.get((monster.getNameLower() + "|" + version).toLowerCase(Locale.ROOT));
+            T byForm = map.get((monster.nameLower + "|" + version).toLowerCase(Locale.ROOT));
             if (byForm != null) return byForm;
         }
-        return map.get(monster.getNameLower());
+        return map.get(monster.nameLower);
     }
 
     /** All curated boss names (lowercase) - test and tooling surface. */

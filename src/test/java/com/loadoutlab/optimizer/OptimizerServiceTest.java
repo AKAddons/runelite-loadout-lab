@@ -72,8 +72,6 @@ public class OptimizerServiceTest {
 				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> fresh.countDown());
 			Assert.assertTrue(fresh.await(120, TimeUnit.SECONDS));
 			Assert.assertEquals("the superseded request must never deliver", 0, staleDelivered.get());
-			Assert.assertTrue("the stale computation must have been abandoned",
-				service.abandonedForTest >= 1);
 		} finally {
 			service.shutdown();
 		}

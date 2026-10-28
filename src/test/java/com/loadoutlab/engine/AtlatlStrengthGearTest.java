@@ -81,12 +81,12 @@ class AtlatlStrengthGearTest {
 	@DisplayName("with an eclipse atlatl in the bank the ranged slot pools admit the strength pieces: torture, ferocious gloves, ultor ring, infernal cape, primordial boots")
 	void strengthGearReachesTheRangedPools() {
 		LoadoutOptimizer.CandidatePools pools = new LoadoutOptimizer().preparePools(data, request());
-		assertTrue(holds(pools.slotPool(GearSlot.NECK), "amulet of torture"), "torture");
-		assertTrue(holds(pools.slotPool(GearSlot.HANDS), "ferocious gloves"), "ferocious gloves");
-		assertTrue(holds(pools.slotPool(GearSlot.RING), "ultor ring"), "ultor ring");
-		assertTrue(holds(pools.slotPool(GearSlot.CAPE), "infernal cape"), "infernal cape");
-		assertTrue(holds(pools.slotPool(GearSlot.FEET), "primordial boots"), "primordial boots");
-		assertTrue(holds(pools.slotPool(GearSlot.NECK), "necklace of anguish"), "the ranged pieces stay too");
+		assertTrue(holds(pools.slotCandidates.get(GearSlot.NECK), "amulet of torture"), "torture");
+		assertTrue(holds(pools.slotCandidates.get(GearSlot.HANDS), "ferocious gloves"), "ferocious gloves");
+		assertTrue(holds(pools.slotCandidates.get(GearSlot.RING), "ultor ring"), "ultor ring");
+		assertTrue(holds(pools.slotCandidates.get(GearSlot.CAPE), "infernal cape"), "infernal cape");
+		assertTrue(holds(pools.slotCandidates.get(GearSlot.FEET), "primordial boots"), "primordial boots");
+		assertTrue(holds(pools.slotCandidates.get(GearSlot.NECK), "necklace of anguish"), "the ranged pieces stay too");
 	}
 
 	@Test

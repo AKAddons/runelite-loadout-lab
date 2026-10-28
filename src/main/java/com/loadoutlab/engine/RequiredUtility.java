@@ -11,16 +11,16 @@ import java.util.*;
  * main search; owning the UNCHARGED suffering counts as access to the
  * charged form (recoil rings are pocket change).
  */
-public final class RequiredUtility {
-    private static final int RING_OF_RECOIL = 2550;
-    private static final int SUFFERING_RECOIL = 20655;
-    private static final int SUFFERING_UNCHARGED = 19550;
-    private static final int SUFFERING_I_RECOIL = 20657;
-    private static final int SUFFERING_I_UNCHARGED = 19710;
-    private static final int ECHO_BOOTS = 28945;
+public class RequiredUtility {
+    static final int RING_OF_RECOIL = 2550;
+    static final int SUFFERING_RECOIL = 20655;
+    static final int SUFFERING_UNCHARGED = 19550;
+    static final int SUFFERING_I_RECOIL = 20657;
+    static final int SUFFERING_I_UNCHARGED = 19710;
+    static final int ECHO_BOOTS = 28945;
 
     /** Satisfying item id -> the owned id that grants access to it. */
-    private static final Map<Integer, Integer> RECOIL_ACCESS = new LinkedHashMap<>();
+    static final Map<Integer, Integer> RECOIL_ACCESS = new LinkedHashMap<>();
 
     static {
         RECOIL_ACCESS.put(SUFFERING_I_RECOIL, SUFFERING_I_UNCHARGED);
@@ -29,16 +29,14 @@ public final class RequiredUtility {
         RECOIL_ACCESS.put(RING_OF_RECOIL, RING_OF_RECOIL);
     }
 
-    private RequiredUtility() {
-    }
 
     public static boolean requiresRecoil(MonsterStats monster) {
-        return monster != null && "zulrah".equalsIgnoreCase(monster.getName());
+        return monster != null && "zulrah".equalsIgnoreCase(monster.name);
     }
 
     public static boolean hasRecoil(Loadout loadout) {
         for (GearItem item : loadout.getGear().values()) {
-            if (item != null && RECOIL_ACCESS.containsKey(item.getId())) return true;
+            if (item != null && RECOIL_ACCESS.containsKey(item.id)) return true;
         }
         return false;
     }
@@ -48,11 +46,11 @@ public final class RequiredUtility {
         List<GearItem> result = new ArrayList<>();
         for (var entry : RECOIL_ACCESS.entrySet()) {
             GearItem item = data.getGear(entry.getKey());
-            if (item == null || request.isExcluded(item.getId()) || !request.getRequirementProfile().canEquip(item.getRequirements())) {
+            if (item == null || request.isExcluded(item.id) || !request.requirementProfile.canEquip(item.requirements)) {
                 continue;
             }
-            boolean accessible = request.getCandidateMode() == CandidateMode.ALL_STANDARD
-                || request.getOwnedItems().owns(entry.getKey()) || request.getOwnedItems().owns(entry.getValue())
+            boolean accessible = request.candidateMode == CandidateMode.ALL_STANDARD
+                || request.ownedItems.owns(entry.getKey()) || request.ownedItems.owns(entry.getValue())
                 || request.isDream(entry.getKey());
             if (accessible) result.add(item);
         }

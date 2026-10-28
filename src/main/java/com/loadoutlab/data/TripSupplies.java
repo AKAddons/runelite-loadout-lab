@@ -14,7 +14,7 @@ import static com.loadoutlab.data.JsonResources.*;
  * dose of. Anti-venom only applies against the wiki Venom page's inflictor
  * list (the only monsters able to inflict venom).
  */
-public final class TripSupplies {
+public class TripSupplies {
     public static final String FOOD = "food";
     public static final String FAST_FOOD = "fastFood";
     public static final String PRAYER_RESTORE = "prayerRestore";
@@ -35,7 +35,7 @@ public final class TripSupplies {
     /** One supply choice: ids best-first, ids[0] the display/cell id and the
      * full list the bank-filter membership (every dose matches). */
     @lombok.AllArgsConstructor
-    public static final class Option {
+    public static class Option {
         public final String key;
         public final String name;
         public final int[] ids;
@@ -60,11 +60,11 @@ public final class TripSupplies {
         public final int unlock;
     }
 
-    private static final Map<String, List<Option>> CATEGORIES = new LinkedHashMap<>();
-    private static final Map<String, String> LABELS = new LinkedHashMap<>();
-    private static final Set<String> VENOMOUS = new HashSet<>();
-    private static final Set<String> POISONOUS = new HashSet<>();
-    private static final Set<String> NO_CANNON = new HashSet<>();
+    static final Map<String, List<Option>> CATEGORIES = new LinkedHashMap<>();
+    static final Map<String, String> LABELS = new LinkedHashMap<>();
+    static final Set<String> VENOMOUS = new HashSet<>();
+    static final Set<String> POISONOUS = new HashSet<>();
+    static final Set<String> NO_CANNON = new HashSet<>();
 
     static {
         JsonObject root = object("trip_supplies.json");
@@ -80,7 +80,7 @@ public final class TripSupplies {
                             words(o, "names"), cells(o), words(o, "monsters"), integer(o, "unlock", 0)));
                     }
                 }
-                CATEGORIES.put(category, Collections.unmodifiableList(options));
+                CATEGORIES.put(category, options);
             }
             stringMap(root, "labels", LABELS);
             strings(root, "venomousMonsters", VENOMOUS);
@@ -89,13 +89,13 @@ public final class TripSupplies {
         }
     }
 
-    private static String[] words(JsonObject o, String key) {
+    static String[] words(JsonObject o, String key) {
         List<String> out = new ArrayList<>();
         strings(o, key, out);
         return out.toArray(new String[0]);
     }
 
-    private static int[][] cells(JsonObject o) {
+    static int[][] cells(JsonObject o) {
         JsonArray rows = o.getAsJsonArray("cells");
         if (rows == null) return null;
         int[][] out = new int[rows.size()][];
@@ -103,8 +103,6 @@ public final class TripSupplies {
         return out;
     }
 
-    private TripSupplies() {
-    }
 
     /** The grey chip's submenu label, or null for a category the menu never
      * shows (ship repair kits ride the sea card). */
@@ -146,7 +144,7 @@ public final class TripSupplies {
     public static List<Option> fitting(String category, List<MonsterStats> mobs, IntPredicate unlocked) {
         List<Option> out = new ArrayList<>();
         for (Option o : options(category)) {
-            if ((o.monsters.length == 0 || mobs.stream().anyMatch(m -> Arrays.asList(o.monsters).contains(m.getNameLower())))
+            if ((o.monsters.length == 0 || mobs.stream().anyMatch(m -> Arrays.asList(o.monsters).contains(m.nameLower)))
                 && (o.unlock == 0 || unlocked.test(o.unlock))) { out.add(o); }
         }
         return out;
@@ -171,12 +169,12 @@ public final class TripSupplies {
 
     /** No cannon here: a prohibited arena or cannon-immune (exact names). */
     public static boolean noCannon(MonsterStats monster) {
-        return monster != null && NO_CANNON.contains(monster.getNameLower());
+        return monster != null && NO_CANNON.contains(monster.nameLower);
     }
 
-    private static boolean named(MonsterStats monster, Set<String> tokens) {
+    static boolean named(MonsterStats monster, Set<String> tokens) {
         if (monster == null) return false;
-        String name = monster.getNameLower();
+        String name = monster.nameLower;
         return tokens.stream().anyMatch(name::contains);
     }
 }

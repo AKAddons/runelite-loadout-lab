@@ -81,8 +81,8 @@ class TfaStipulationsTest {
 	@Test
 	@DisplayName("Xarth's first phase has no melee card; his second does")
 	void xarthPhases() {
-		assertTrue(MonsterMechanics.styleImmune(member("P1 (from the pillars)"), CombatStyle.MELEE));
-		assertFalse(MonsterMechanics.styleImmune(member("P2"), CombatStyle.MELEE));
+		assertTrue(com.loadoutlab.engine.Immunity.styleImmune(member("P1 (from the pillars)"), CombatStyle.MELEE));
+		assertFalse(com.loadoutlab.engine.Immunity.styleImmune(member("P2"), CombatStyle.MELEE));
 		assertFalse(best(member("P2"), CombatStyle.MELEE).isEmpty());
 	}
 

@@ -9,7 +9,7 @@ import java.util.Map;
  * its copy before handing it on: the fire gate, the fight-book lock, the
  * Arceuus veto.
  */
-public final class ComputeParams implements Cloneable {
+public class ComputeParams implements Cloneable {
     public boolean f2pOnly;
     public boolean onSlayerTask;
     public boolean inWilderness;
@@ -19,6 +19,9 @@ public final class ComputeParams implements Cloneable {
     public boolean antifirePotion;
     /** antifireMode as is: 0 none, 1 antifire, 2 super antifire. */
     public int antifireTier;
+    /** The combat achievement task's rules plus the player's requirements
+     * (ISS-01M5XC7XYMMEN3Q4QC6CGZFVPK); null = none. */
+    public SetRules setRules;
     public boolean sunfireRunes;
     public int deathCharge;
     public boolean specWeapon = true;

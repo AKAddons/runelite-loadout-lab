@@ -21,7 +21,7 @@ import static com.loadoutlab.engine.BoostProfile.*;
  * un-assumed. Ids verified against net.runelite.api.ItemID 2026-08-25; the
  * divine arrays below match its DIVINE_* constants exactly.
  */
-public final class BoostSelector {
+public class BoostSelector {
     /** All dose variants - owning any counts (GE-verified ids 2026-07-21). */
     /** Base (non-divine) potions - these used to be assumed unconditionally. */
     /** Bastion and battlemage carry the SAME offensive boost as the ranging /
@@ -31,7 +31,7 @@ public final class BoostSelector {
      * profile rather than inventing a duplicate constant. */
 
     /** Every dose of each boost, by BoostProfile name (boost_items.json). */
-    private static final Map<String, int[]> IDS = new HashMap<>();
+    static final Map<String, int[]> IDS = new HashMap<>();
 
     static {
         JsonObject root = JsonResources.objectOrThrow("boost_items.json");
@@ -44,10 +44,8 @@ public final class BoostSelector {
         }
     }
 
-    private static int[] ids(String profile) { return IDS.get(profile); }
+    static int[] ids(String profile) { return IDS.get(profile); }
 
-    private BoostSelector() {
-    }
 
     /** The best boost in the GAME per style - the BiS ceiling assumption.
      * F2P mode: members consumables do not exist on a free world - the
@@ -66,7 +64,7 @@ public final class BoostSelector {
 
     /** Each style's ladder, best first (the divine and bastion/battlemage
      * families outrank the plain potions; the hearts lead magic). */
-    private static final Map<CombatStyle, String[]> LADDERS = Map.of(
+    static final Map<CombatStyle, String[]> LADDERS = Map.of(
         CombatStyle.MELEE, new String[]{"DIVINE_SUPER_COMBAT", "SUPER_COMBAT"},
         CombatStyle.RANGED, new String[]{"DIVINE_BASTION", "BASTION", "DIVINE_RANGING", "RANGING"},
         CombatStyle.MAGIC, new String[]{"SATURATED_HEART", "IMBUED_HEART", "DIVINE_BATTLEMAGE", "BATTLEMAGE", "DIVINE_MAGIC", "MAGIC"});
@@ -93,16 +91,16 @@ public final class BoostSelector {
      * never a potion they don't have, and never MAXED as a stand-in for
      * unknown levels (the old Death Charge seed did both). */
     public static int reachableMagic(PlayerLevels real, PlayerLevels live, OwnedItems owned) {
-        if (real == null) return live == null ? 0 : live.getMagic();
-        int reachable = live == null ? real.getMagic() : live.getMagic();
+        if (real == null) return live == null ? 0 : live.magic;
+        int reachable = live == null ? real.magic : live.magic;
         if (owned != null) {
             BoostProfile best = bestFor(CombatStyle.MAGIC, owned, false, false);
-            reachable = Math.max(reachable, best.apply(real, live).getMagic());
+            reachable = Math.max(reachable, best.apply(real, live).magic);
         }
-        return Math.max(reachable, real.getMagic());
+        return Math.max(reachable, real.magic);
     }
 
-    private static boolean ownsAny(OwnedItems owned, int[] ids) {
+    static boolean ownsAny(OwnedItems owned, int[] ids) {
         for (int id : ids) {
             if (owned.owns(id)) return true;
         }
