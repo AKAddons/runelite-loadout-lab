@@ -28,8 +28,8 @@ class IncomingDefenceRollTest {
 		MonsterStats demon = new DataService().load().searchMonsters("abyssal demon", 1).get(0);
 		// Roll (97+9)*64 = 6784 vs 576 at Defence 1 and 6848 at Defence 99
 		// (osrs-dps-calc DamageTaken.test.ts: 1.596 and 0.825 dps).
-		assertEquals(1.5957, IncomingDpsCalculator.calculate(demon, NAKED, 1, 1).unprayedDps, 0.0005);
-		assertEquals(0.8254, IncomingDpsCalculator.calculate(demon, NAKED, 99, 1).unprayedDps, 0.0005);
+		assertEquals(1.5957, IncomingDpsCalculator.calculate(demon, NAKED, 1, 1, 0).unprayedDps, 0.0005);
+		assertEquals(0.8254, IncomingDpsCalculator.calculate(demon, NAKED, 99, 1, 0).unprayedDps, 0.0005);
 	}
 
 	@Test
@@ -44,6 +44,6 @@ class IncomingDefenceRollTest {
 		double acc = 1 - 6274.0 / (2 * 13377.0);
 		int max = (int) (((long) 209 * 64 + 320) / 640);
 		double expected = acc * (max / 2.0) / 2.4;
-		assertEquals(expected, IncomingDpsCalculator.calculate(mage, NAKED, 70, 99).unprayedDps, 1e-9);
+		assertEquals(expected, IncomingDpsCalculator.calculate(mage, NAKED, 70, 99, 0).unprayedDps, 1e-9);
 	}
 }

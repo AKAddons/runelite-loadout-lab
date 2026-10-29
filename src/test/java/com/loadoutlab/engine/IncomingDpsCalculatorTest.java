@@ -38,7 +38,7 @@ public class IncomingDpsCalculatorTest {
 	@Test
 	public void singleStyleMonsterIsFullyBlockedByTheProtectionPrayer() {
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
-			monster(List.of("Crush")), armour(200, 200, 200, 0, 150), 99, 99);
+			monster(List.of("Crush")), armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertEquals("Protect from Melee", result.protectPrayer);
 		Assert.assertEquals(0.0, result.totalDps, 1e-9);
 		Assert.assertTrue(result.unprayedDps > 0);
@@ -54,19 +54,19 @@ public class IncomingDpsCalculatorTest {
 		// (field report 2026-08-08, grZ: "this is wrong should be melee
 		// protect"), magical ranged by Protect from MISSILES.
 		IncomingDpsCalculator.Result melee = IncomingDpsCalculator.calculate(
-			monster(List.of("Magical melee")), armour(200, 200, 200, 0, 150), 99, 99);
+			monster(List.of("Magical melee")), armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertEquals("Protect from Melee", melee.protectPrayer);
 		IncomingDpsCalculator.Result ranged = IncomingDpsCalculator.calculate(
-			monster(List.of("Magical ranged")), armour(200, 200, 200, 0, 150), 99, 99);
+			monster(List.of("Magical ranged")), armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertEquals("Protect from Missiles", ranged.protectPrayer);
 		// The inverse hybrids: ranged magic (Kree'arra, Spinolyps) is a
 		// CAST that rolls vs ranged defence - Protect from Magic blocks
 		// it; ranged melee (dust devils) is melee-blocked.
 		IncomingDpsCalculator.Result cast = IncomingDpsCalculator.calculate(
-			monster(List.of("Ranged magic")), armour(200, 200, 200, 0, 150), 99, 99);
+			monster(List.of("Ranged magic")), armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertEquals("Protect from Magic", cast.protectPrayer);
 		IncomingDpsCalculator.Result swing = IncomingDpsCalculator.calculate(
-			monster(List.of("Ranged melee")), armour(200, 200, 200, 0, 150), 99, 99);
+			monster(List.of("Ranged melee")), armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertEquals("Protect from Melee", swing.protectPrayer);
 	}
 
@@ -79,7 +79,7 @@ public class IncomingDpsCalculatorTest {
 		// max (359*104+320)/640=58 -> dps 0.80553*29/3.6 = 6.4890 (worst).
 		// Protect Missiles; chip = crush share 6.1198/2 = 3.0599.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
-			monster(Arrays.asList("Crush", "Ranged")), armour(200, 200, 200, 0, 150), 99, 99);
+			monster(Arrays.asList("Crush", "Ranged")), armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertEquals("Protect from Missiles", result.protectPrayer);
 		Assert.assertEquals(3.0599, result.totalDps, 0.0005);
 		// Unprayed adds the blocked ranged share: 3.0599 + 6.4890/2 = 6.3044.
@@ -98,9 +98,9 @@ public class IncomingDpsCalculatorTest {
 			armour(200, 180, 210, 40, 150),
 			armour(-20, 300, 5, 120, 60),
 		};
-		IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(sheet, BossIncomingOverrides.overridesFor(sheet), 82, 91);
+		IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(sheet, BossIncomingOverrides.overridesFor(sheet), 82, 91, 0);
 		for (Loadout loadout : armours) {
-			IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(sheet, loadout, 82, 91);
+			IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(sheet, loadout, 82, 91, 0);
 			Assert.assertEquals(full.totalDps, prepared.totalDps(loadout), 0.0);
 		}
 	}
@@ -110,10 +110,10 @@ public class IncomingDpsCalculatorTest {
 		com.loadoutlab.data.LoadoutData data = new com.loadoutlab.data.DataService().load();
 		for (String name : new String[]{"Callisto", "Zulrah", "Corporeal Beast"}) {
 			MonsterStats boss = data.searchMonsters(name, 1).get(0);
-			IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(boss, BossIncomingOverrides.overridesFor(boss), 85, 89);
+			IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(boss, BossIncomingOverrides.overridesFor(boss), 85, 89, 0);
 			for (Loadout loadout : new Loadout[]{
 				armour(0, 0, 0, 0, 0), armour(220, 240, 230, 80, 200)}) {
-				IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(boss, loadout, 85, 89);
+				IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(boss, loadout, 85, 89, 0);
 				Assert.assertEquals(full.totalDps, prepared.totalDps(loadout), 0.0);
 			}
 		}
@@ -127,9 +127,9 @@ public class IncomingDpsCalculatorTest {
 		com.loadoutlab.data.LoadoutData data = new com.loadoutlab.data.DataService().load();
 		Loadout[] armours = {armour(0, 0, 0, 0, 0), armour(220, 240, 230, 80, 200)};
 		for (MonsterStats mob : data.getMonsters()) {
-			IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(mob, BossIncomingOverrides.overridesFor(mob), 85, 89);
+			IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(mob, BossIncomingOverrides.overridesFor(mob), 85, 89, 0);
 			for (Loadout loadout : armours) {
-				IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(mob, loadout, 85, 89);
+				IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(mob, loadout, 85, 89, 0);
 				Assert.assertEquals(mob.getName() + " " + mob.getVersion(),
 					full.totalDps, prepared.totalDps(loadout), 0.0);
 			}
@@ -139,26 +139,26 @@ public class IncomingDpsCalculatorTest {
 	@Test
 	public void betterArmourMeansLessIncomingDps() {
 		double tank = IncomingDpsCalculator.calculate(
-			monster(Arrays.asList("Crush", "Ranged")), armour(300, 300, 300, 0, 300), 99, 99).totalDps;
+			monster(Arrays.asList("Crush", "Ranged")), armour(300, 300, 300, 0, 300), 99, 99, 0).totalDps;
 		double naked = IncomingDpsCalculator.calculate(
-			monster(Arrays.asList("Crush", "Ranged")), armour(0, 0, 0, 0, 0), 99, 99).totalDps;
+			monster(Arrays.asList("Crush", "Ranged")), armour(0, 0, 0, 0, 0), 99, 99, 0).totalDps;
 		Assert.assertTrue(tank + " < " + naked, tank < naked);
 	}
 
 	@Test
 	public void magicDefenceUsesMagicLevelAndMagicDefBonus() {
 		MonsterStats mage = monster(List.of("Magic", "Ranged"));
-		double lowMagic = IncomingDpsCalculator.calculate(mage, armour(0, 0, 0, 0, 0), 99, 1).totalDps;
-		double highMagic = IncomingDpsCalculator.calculate(mage, armour(0, 0, 0, 0, 0), 99, 99).totalDps;
+		double lowMagic = IncomingDpsCalculator.calculate(mage, armour(0, 0, 0, 0, 0), 99, 1, 0).totalDps;
+		double highMagic = IncomingDpsCalculator.calculate(mage, armour(0, 0, 0, 0, 0), 99, 99, 0).totalDps;
 		Assert.assertTrue(highMagic <= lowMagic);
-		double magicArmour = IncomingDpsCalculator.calculate(mage, armour(0, 0, 0, 120, 0), 99, 99).totalDps;
+		double magicArmour = IncomingDpsCalculator.calculate(mage, armour(0, 0, 0, 120, 0), 99, 99, 0).totalDps;
 		Assert.assertTrue(magicArmour < highMagic);
 	}
 
 	@Test
 	public void unmodeledStylesAreSurfacedNotSilentlyDropped() {
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
-			monster(Arrays.asList("Typeless")), armour(200, 200, 200, 0, 150), 99, 99);
+			monster(Arrays.asList("Typeless")), armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertFalse(result.fullyModeled);
 		Assert.assertNull(result.protectPrayer);
 		Assert.assertEquals(0.0, result.totalDps, 1e-9);
@@ -170,9 +170,9 @@ public class IncomingDpsCalculatorTest {
 		// Generic "Melee" must use min(stab, slash, crush) = 50 here,
 		// so it hits harder than a typed Crush attack against crush 300.
 		double generic = IncomingDpsCalculator.calculate(
-			monster(List.of("Melee", "Ranged")), armour(50, 300, 300, 0, 0), 99, 99).totalDps;
+			monster(List.of("Melee", "Ranged")), armour(50, 300, 300, 0, 0), 99, 99, 0).totalDps;
 		double typed = IncomingDpsCalculator.calculate(
-			monster(List.of("Crush", "Ranged")), armour(50, 300, 300, 0, 0), 99, 99).totalDps;
+			monster(List.of("Crush", "Ranged")), armour(50, 300, 300, 0, 0), 99, 99, 0).totalDps;
 		Assert.assertTrue(generic >= typed);
 	}
 }

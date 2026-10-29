@@ -98,12 +98,8 @@ public class PrayerBonuses {
         return names;
     }
 
-    /** A specific pick's bonuses for ONE style: the fallback's factors with
-     * this style's replaced by the named tier (the other styles' values are
-     * irrelevant to a single-style request). Unknown names fall back. */
-    /** name -> {accuracy, strength-or-damage} per style, best first -
-     * mirrors bestAvailable's cascade exactly. */
-
+    /** name -> {accuracy, strength-or-damage, Defence %, Magic-defence %} per
+     * style, best first - mirrors bestAvailable's cascade exactly. */
     static final Map<String, Object[][]> PICKS = new HashMap<>();
 
     static {
@@ -113,7 +109,8 @@ public class PrayerBonuses {
             Object[][] picks = new Object[rows.size()][];
             for (int i = 0; i < picks.length; i++) {
                 JsonArray row = rows.get(i).getAsJsonArray();
-                picks[i] = new Object[]{row.get(0).getAsString(), row.get(1).getAsDouble(), row.get(2).getAsDouble()};
+                picks[i] = new Object[]{row.get(0).getAsString(), row.get(1).getAsDouble(), row.get(2).getAsDouble(),
+                    row.get(3).getAsInt(), row.get(4).getAsInt()};
             }
             PICKS.put(style, picks);
         }
@@ -149,5 +146,12 @@ public class PrayerBonuses {
             case MAGIC: return magicName;
             default: return meleeName;
         }
+    }
+
+    /** {Defence, Magic} a boss rolls against under the style's named prayer:
+     * Piety +25% Defence, Augury +25% both (ISS-01M6415DFFW34P8QY468GA74KY). */
+    public static int[] defending(CombatStyle style, String prayer, int defence, int magic) {
+        for (Object[] row : picksFor(style)) if (row[0].equals(prayer)) return new int[]{defence * (int) row[3] / 100, magic * (int) row[4] / 100};
+        return new int[]{defence, magic};
     }
 }

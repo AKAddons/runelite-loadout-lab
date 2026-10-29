@@ -1,89 +1,121 @@
 {
-	"_comment": "Prayer picks per style, best first: [name, accuracy factor, damage (factor for melee/ranged, percent for magic)].",
+	"_comment": "Prayer picks per style, best first: [name, accuracy factor, damage (factor for melee/ranged, percent for magic), Defence percent, Magic-defence percent]. The two percents raise the levels a boss rolls against (osrs-dps-calc Prayer.ts; Zeal per the wiki).",
 	"melee": [
 		[
 			"Zeal",
 			1.25,
-			1.28
+			1.28,
+			125,
+			100
 		],
 		[
 			"Piety",
 			1.2,
-			1.23
+			1.23,
+			125,
+			100
 		],
 		[
 			"Chivalry",
 			1.15,
-			1.18
+			1.18,
+			120,
+			100
 		],
 		[
 			"Ultimate Strength + Incredible Reflexes",
 			1.15,
-			1.15
+			1.15,
+			100,
+			100
 		],
 		[
 			"Superhuman Strength + Improved Reflexes",
 			1.1,
-			1.1
+			1.1,
+			100,
+			100
 		],
 		[
 			"Burst of Strength + Clarity of Thought",
 			1.05,
-			1.05
+			1.05,
+			100,
+			100
 		]
 	],
 	"ranged": [
 		[
 			"Rigour",
 			1.2,
-			1.23
+			1.23,
+			125,
+			100
 		],
 		[
 			"Deadeye",
 			1.18,
-			1.18
+			1.18,
+			105,
+			100
 		],
 		[
 			"Eagle Eye",
 			1.15,
-			1.15
+			1.15,
+			100,
+			100
 		],
 		[
 			"Hawk Eye",
 			1.1,
-			1.1
+			1.1,
+			100,
+			100
 		],
 		[
 			"Sharp Eye",
 			1.05,
-			1.05
+			1.05,
+			100,
+			100
 		]
 	],
 	"magic": [
 		[
 			"Augury",
 			1.25,
-			4.0
+			4.0,
+			125,
+			125
 		],
 		[
 			"Mystic Vigour",
 			1.18,
-			3.0
+			3.0,
+			105,
+			118
 		],
 		[
 			"Mystic Might",
 			1.15,
-			2.0
+			2.0,
+			100,
+			115
 		],
 		[
 			"Mystic Lore",
 			1.1,
-			1.0
+			1.0,
+			100,
+			110
 		],
 		[
 			"Mystic Will",
 			1.05,
-			0.0
+			0.0,
+			100,
+			105
 		]
 	]
 }

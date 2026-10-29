@@ -70,7 +70,7 @@ class OptimizeModeTest {
 
 	private static double dtps(String mob, OptimizerService.StyleResult result) {
 		return IncomingDpsCalculator.calculate(data.searchMonsters(mob, 1).get(0),
-			result.owned.get(0).getLoadout(), 99, 99).totalDps;
+			result.owned.get(0).getLoadout(), 99, 99, 0).totalDps;
 	}
 
 	@Test

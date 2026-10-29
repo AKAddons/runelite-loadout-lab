@@ -28,7 +28,7 @@ class WhispererIncomingTest {
 		MonsterStats whisperer = data.searchMonsters("the whisperer", 10).stream()
 			.filter(m -> m.getName().equals("The Whisperer") && m.getHitpoints() == 900).findFirst()
 			.orElseThrow(() -> new AssertionError("no 900-hp Whisperer in the corpus"));
-		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(whisperer, new Loadout(Map.of()), 99, 99);
+		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(whisperer, new Loadout(Map.of()), 99, 99, 0);
 
 		assertEquals(IncomingDpsCalculator.CURATED, result.coverage);
 		assertNotNull(result.protectPrayer);

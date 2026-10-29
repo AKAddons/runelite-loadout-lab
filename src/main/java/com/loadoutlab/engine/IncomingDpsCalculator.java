@@ -21,8 +21,8 @@ import static com.loadoutlab.data.MaxHits.Family.*;
  *   each style owns an equal share of the attack cadence and the blocked
  *   style's share is dead time. Real rotations (Zulrah phases, Vorkath
  *   specials) are a curated-override layer we build up over time.
- * - No defensive stance, boost, or defence-raising prayer on the player -
- *   protection is assumed to occupy the prayer slot.
+ * - The style's prayer raises Defence and Magic beside the protection one
+ *   (Piety +25%: PrayerBonuses.defending); no defensive stance or boost.
  * - Styles the sheet cannot express (Typeless, Dragonfire, Curse...) are
  *   surfaced as unmodeled rather than silently dropped.
  *
@@ -153,8 +153,10 @@ public class IncomingDpsCalculator {
         final Map<String, int[]> layers;
         final int antifireTier;
 
-        Prepared(MonsterStats monster, BossOverride override, int defenceLevel, int ml) {
-            this(monster, override, defenceLevel, ml, 0);
+        /** The beam's constants: the request's mob at the levels its prayer defends with. */
+        static Prepared of(OptimizationRequest r) {
+            int[] dm = PrayerBonuses.defending(r.style, r.prayers.nameFor(r.style), r.levels.defence, r.levels.magic);
+            return new Prepared(r.monster, BossIncomingOverrides.overridesFor(r.monster), dm[0], dm[1], r.antifireTier);
         }
 
         Prepared(MonsterStats monster, BossOverride override, int defenceLevel, int ml, int antifireTier) {
@@ -587,10 +589,6 @@ public class IncomingDpsCalculator {
         // offensive stance, which adds no defence.
         long level = kind >= KIND_STAB && kind <= KIND_RANGED ? defenceLevel + 8 : magicEffective;
         return accuracy(ar, level * (defenceBonusOf(kind, def) + 64));
-    }
-
-    public static Result calculate(MonsterStats monster, Loadout loadout, int defenceLevel, int ml) {
-        return calculate(monster, loadout, defenceLevel, ml, 0);
     }
 
     /** antifireTier: the page's antifireMode - 0 no potion, 1 antifire, 2 super
