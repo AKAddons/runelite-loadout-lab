@@ -491,6 +491,18 @@ public class OptimizerService {
         return best;
     }
 
+    /** One side's polished optimize for a card: a style card's through the
+     * optimize cache (mode and bench are not in its key, so a flip of either
+     * reuses it), a multi tool's direct - as is a miss the ticket abandoned. */
+    List<DpsResult> sideBest(boolean game, ComputeContext ctx, OptimizationRequest req, ToolPick tool) {
+        List<DpsResult> best = tool == null ? optimizeCached(req.monster, req.style, game, ctx, req, ctx.ticket) : null;
+        if (best == null) {
+            best = optimizer.optimize(ctx.dataset, req);
+            polish(optimizer, ctx.dataset, req, best);
+        }
+        return best;
+    }
+
     /** The displayed set's finish, shared by every optimize site: top up
      * DPS-neutral empty slots and required utility (verified DPS-neutral). */
     static void polish(LoadoutOptimizer opt, LoadoutData dataset, OptimizationRequest req, List<DpsResult> best) {
@@ -576,10 +588,9 @@ public class OptimizerService {
             // admits anything buyable within it (total spend, tracked
             // by the beam).
             OptimizationRequest ownedRequest = ownedRequestFor(ctx, monster, style, sl, tool);
-            List<DpsResult> ob = ownedSide ? optimizer.optimize(ctx.dataset, ownedRequest) : new ArrayList<>();
             // The displayed set: top up DPS-neutral empty slots with
             // prayer/defensive gear (verified not to change the DPS).
-            polish(optimizer, ctx.dataset, ownedRequest, ob);
+            List<DpsResult> ob = ownedSide ? sideBest(false, ctx, ownedRequest, tool) : new ArrayList<>();
             // A defensive mode swaps the shown set for its frontier pick
             // BEFORE spec, incoming and bench, so every downstream number
             // describes the set the card shows. Style cards only - a
@@ -611,8 +622,7 @@ public class OptimizerService {
             // the game-best card shows YOUR god d'hide coif, not an
             // arbitrary god's, and the BiS border matches by id.
             OptimizationRequest gr = gameRequestFor(ctx, monster, style, gameLevels, tool);
-            List<DpsResult> gb = optimizer.optimize(ctx.dataset, gr);
-            polish(optimizer, ctx.dataset, gr, gb);
+            List<DpsResult> gb = sideBest(true, ctx, gr, tool);
             // GWD protection (ISS-01M5G9KPDQWBR014Z10F79B29T): the route's
             // gods worn when free, the rest carried - and carried protection
             // takes its Inventory slots before the spec weapon does.
@@ -3345,15 +3355,16 @@ public class OptimizerService {
         return view;
     }
 
-    /** Drop all cached results - account or profile switched. */
+    /** Drop all cached results - account or profile switched. The optimize
+     * cache goes too: its key carries no quest or diary state. */
     public void clearCache() {
         synchronized (cache) { cache.clear(); }
+        synchronized (optimizeCache) { optimizeCache.clear(); }
     }
 
     public void shutdown() {
         worker.shutdownNow();
         rosterPool.shutdownNow();
         clearCache();
-        synchronized (optimizeCache) { optimizeCache.clear(); }
     }
 }
