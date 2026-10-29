@@ -28,6 +28,11 @@ public class DpsCalculator {
      * pre-tome max hit of a standard fire spell cast with sunfire runes
      * (official calc MIN_HIT_SUNFIRE, before the tome step), else 0. */
     int sunfireMinHit;
+    /** applyRules' lists cut to the rules whose monster gate holds (lever
+     * 5): the gate reads only the monster, so each list is cut once per
+     * monster met, in file order (the group stop and products unchanged). */
+    MonsterStats rulesMob;
+    final Map<List<Rule>, List<Rule>> cutRules = new IdentityHashMap<>();
 
     /** Toggle counted-bonus collection (optimizer beam: off). */
     void setCollectCounted(boolean collect) { collectCounted = collect; }
@@ -983,9 +988,20 @@ public class DpsCalculator {
      * demonbane percent that labels itself.
      */
     long applyRules(OptimizationRequest request, Loadout loadout, long value, long base, List<Rule> rules) {
+        MonsterStats mob = request.monster;
+        if (mob != rulesMob) {
+            cutRules.clear();
+            rulesMob = mob;
+        }
+        List<Rule> cut = cutRules.get(rules);
+        if (cut == null) {
+            cut = new ArrayList<>();
+            for (Rule rule : rules) if (rule.attr == null || mob.hasAttribute(rule.attr)) cut.add(rule);
+            cutRules.put(rules, cut);
+        }
         String applied = null;
-        for (Rule rule : rules) {
-            if (rule.group != null && rule.group.equals(applied) || rule.attr != null && !request.monster.hasAttribute(rule.attr)
+        for (Rule rule : cut) {
+            if (rule.group != null && rule.group.equals(applied)
                 || rule.rev != null && !revWeaponBuff(request, loadout, rule.rev) || rule.any != null && !wearsAny(loadout, rule.any, false)
                 || rule.anySet != null && !wearsAny(loadout, rule.anySet, false)
                 || rule.allSet != null && !wearsAll(loadout, rule.allSet)) {
