@@ -11,7 +11,6 @@ import java.io.File;
 import java.nio.file.*;
 import java.util.*;
 import javax.inject.Inject;
-import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;

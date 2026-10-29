@@ -2,7 +2,6 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.*;
 import com.loadoutlab.engine.*;
-import com.loadoutlab.optimizer.OptimizerService;
 import java.util.*;
 import java.util.stream.Collectors;
 import com.loadoutlab.optimizer.OptimizerService.StyleResult;

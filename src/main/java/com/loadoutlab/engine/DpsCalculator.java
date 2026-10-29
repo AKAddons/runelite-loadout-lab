@@ -211,8 +211,7 @@ public class DpsCalculator {
      * blood moon set check's precedent: its weapon leads the list). */
     static boolean fullVeracSet(Loadout loadout) {
         GearItem weapon = loadout.getWeapon();
-        return weapon != null && weapon.nameLower.startsWith("verac's flail") && wearing(loadout, "verac's helm")
-            && wearing(loadout, "verac's brassard") && wearing(loadout, "verac's plateskirt");
+        return weapon != null && weapon.nameLower.startsWith("verac's flail") && wearsAll(loadout, VERAC);
     }
 
     DpsResult meleeVariant(OptimizationRequest request, Loadout loadout, String attackType, int attackStance, int strengthStance) {
@@ -865,7 +864,7 @@ public class DpsCalculator {
      * weights of the scaling sets. */
     static final JsonObject SETS = objectOrThrow("gear_sets.json");
     static final List<String> BLOOD_MOON = set("all", "bloodMoon"), ECLIPSE_MOON = set("all", "eclipseMoon"),
-        BLUE_MOON = set("all", "blueMoon"), ELITE_VOID = set("all", "eliteVoid"),
+        BLUE_MOON = set("all", "blueMoon"), VERAC = set("all", "verac"), ELITE_VOID = set("all", "eliteVoid"),
         CRYSTAL_BOW = set("any", "crystalBow"), VOID_TOP = set("any", "voidTop"), VOID_ROBE = set("any", "voidRobe");
     static final Map<String, Integer> CRYSTAL = new LinkedHashMap<>();
     static final Map<String, Integer> INQUISITOR = new LinkedHashMap<>();

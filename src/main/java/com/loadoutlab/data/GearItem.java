@@ -69,28 +69,34 @@ public class GearItem {
 
     public static int markerBit(String marker) {
         Integer bit = MARKERS.get(marker);
-        return bit != null ? bit : newMarker(marker);
+        if (bit == null) synchronized (MARKERS) {
+            assert marker.equals(Names.lower(marker)) : marker;
+            bit = MARKERS.computeIfAbsent(marker, k -> {
+                MARKER_LIST.add(k);
+                return MARKER_LIST.size() - 1;
+            });
+        }
+        return bit;
     }
 
-    static synchronized int newMarker(String marker) {
-        assert marker.equals(Names.lower(marker)) : marker;
-        return MARKERS.computeIfAbsent(marker, k -> {
-            MARKER_LIST.add(k);
-            return MARKER_LIST.size() - 1;
-        });
-    }
-
-    public boolean nameHas(int bit) {
-        int[] m = marks;
-        if (m[0] <= bit) marks = m = marks();
-        return (m[1 + (bit >> 5)] >>> bit & 1) != 0;
-    }
-
-    int[] marks() {
+    /** The items' marks ORed: a set answers every marker check with one bit
+     * test (each spell re-asks them all of the same set). Active skips
+     * "Inactive" versions (uncharged crystal). */
+    public static int[] marks(GearItem[] items, boolean active) {
         int n = MARKER_LIST.size();
         int[] m = new int[2 + n / 32];
         m[0] = n;
-        for (int i = 0; i < n; i++) if (nameLower.contains(MARKER_LIST.get(i))) m[1 + (i >> 5)] |= 1 << i;
+        for (GearItem item : items) {
+            if (item == null || active && "inactive".equals(item.versionLower)) continue;
+            int[] im = item.marks;
+            if (im[0] < n) {
+                im = new int[m.length];
+                im[0] = n;
+                for (int i = 0; i < n; i++) if (item.nameLower.contains(MARKER_LIST.get(i))) im[1 + (i >> 5)] |= 1 << i;
+                item.marks = im;
+            }
+            for (int w = 1; w < m.length; w++) m[w] |= im[w];
+        }
         return m;
     }
 

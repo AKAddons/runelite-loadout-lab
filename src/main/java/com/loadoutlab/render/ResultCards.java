@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.List;
 import javax.swing.*;
 import net.runelite.client.game.*;
-import net.runelite.client.ui.ColorScheme;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.*;
 import com.loadoutlab.ui.MonsterIcons;

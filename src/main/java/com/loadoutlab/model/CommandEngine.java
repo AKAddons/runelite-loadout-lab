@@ -3,7 +3,6 @@ package com.loadoutlab.model;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.*;
 import com.loadoutlab.engine.*;
-import com.loadoutlab.optimizer.OptimizerService;
 import java.util.*;
 import java.util.stream.Collectors;
 import com.loadoutlab.command.*;
