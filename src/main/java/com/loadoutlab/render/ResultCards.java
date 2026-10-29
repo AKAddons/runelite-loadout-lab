@@ -186,6 +186,15 @@ public class ResultCards {
                 box.add(lensRow(mobs.get(i), tab, bis, i, mobs.size(), i == shownLens, rosterThralls));
                 if (i < mobs.size() - 1) box.add(Box.createVerticalStrut(2));
             }
+            // The trip's combined kill time under the members (Andrew
+            // 2026-10-29: "TTK for moons of peril, barrows should be the
+            // combined kill time of all 3 bosses").
+            Map trip = map(entry, bis ? "bisTripKillTime" : "tripKillTime");
+            if (trip != null) {
+                String[] tl = tripLine(trip);
+                box.add(Box.createVerticalStrut(2));
+                box.add(statLine(tl[0], tl[1], TEXT));
+            }
             if (addMob != null) {
                 JPanel ar = clear(new FlowLayout(FlowLayout.LEFT, 0, 2));
                 ar.add(addMob);
@@ -1639,6 +1648,50 @@ public class ResultCards {
         return (pct < 0 ? "+" : "-") + abs(pct);
     }
 
+    /** Seconds as m:ss; an infinite time reads never. */
+    static String mmss(double seconds) {
+        if (Double.isInfinite(seconds)) return "never";
+        long t = round(seconds);
+        return format("%d:%02d", t / 60, t % 60);
+    }
+
+    /** The line's short form: "~43 s" under a minute, "~2:13" above. */
+    static String about(double seconds) {
+        return Double.isInfinite(seconds) ? "never" : seconds < 60 ? format("~%.0f s", seconds) : "~" + mmss(seconds);
+    }
+
+    /** The band and the floor behind a P50, for a hover. */
+    static String band(Map kill) {
+        return format("P10 %s, P90 %s, Perfect %s", mmss(num(kill, "p10")), mmss(num(kill, "p90")), mmss(num(kill, "perfect")))
+            + (flag(kill, "approximate") ? " (approximate)" : "");
+    }
+
+    /** The card's Kill line (ISS-01M6415DTE84ZZ45C4YD3MZRBJ, Andrew 2026-10-29:
+     * "P50 is what is displayed, the other stuff is shown when hovered"):
+     * the P50 kill time, its band, Perfect and the boss's heal on hover. */
+    static String[] killLine(Map kill) {
+        double heal = num(kill, "healDps");
+        String heals = heal > 0 ? format("Heals ~%.1f/s off this set", heal) : "";
+        double p50 = num(kill, "p50");
+        if (Double.isInfinite(p50)) {
+            return new String[]{"never", "This set cannot outpace the heal, so it never kills. " + heals};
+        }
+        return new String[]{about(p50), format("Kill time (P50) %s - %s", mmss(p50), band(kill)) + (heals.isEmpty() ? "" : ". " + heals)};
+    }
+
+    /** A group's Trip line (Andrew 2026-10-29: "TTK for moons of peril,
+     * barrows should be the combined kill time of all 3 bosses"): the
+     * members' kill times combined, each member on hover. */
+    static String[] tripLine(Map trip) {
+        String never = str(trip, "never");
+        if (never != null) return new String[]{"Trip never", never + " never dies in the set shown, so the trip never ends"};
+        List<String> members = new ArrayList<>();
+        for (Map member : list(trip, "members")) members.add(str(member, "name") + " " + mmss(num(member, "p50")));
+        double p50 = num(trip, "p50");
+        return new String[]{"Trip " + about(p50),
+            format("Trip kill time (P50) %s - %s. %s", mmss(p50), band(trip), join(", ", members))};
+    }
+
     JLabel statIconLine(String text, String tooltip, Color color, int spriteId) {
         JLabel line = statLine(text, tooltip, color);
         if (spriteId > 0) {
@@ -1961,6 +2014,13 @@ public class ResultCards {
                 sc.add(statIconLine(str(trade, "reason") != null ? mode + " =max"
                         : mode + " " + cut(id(trade, "dpsLossPct")) + "%", modeLine(trade), new Color(0x9FD39F), -1));
             }
+        }
+        // How long the kill takes in this set (ISS-01M6415DTE84ZZ45C4YD3MZRBJ):
+        // the P50 on the line, the band and Perfect on hover.
+        Map kill = map(card, "killTime");
+        if (kill != null) {
+            String[] kl = killLine(kill);
+            sc.add(statLine("Kill " + kl[0], kl[1], TEXT));
         }
         Map stats = map(card, "stats");
         if (stats != null) {

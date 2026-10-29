@@ -194,7 +194,29 @@ public class DpsCalculator {
                 result = result.withHitModel(0, 0, 0, result.maxHit);
             }
         }
-        return counted.isEmpty() ? result : result.withCountedBonuses(countedLines());
+        if (!counted.isEmpty()) result = result.withCountedBonuses(countedLines());
+        return healed(request, loadout, result);
+    }
+
+    /** The monster last asked whether it heals, and the heal model per
+     * request (the beam alternates a few spell requests per set, so each
+     * keeps its own; ISS-01M6415DTE84ZZ45C4YD3MZRBJ). */
+    private MonsterStats healMob;
+    private boolean heals;
+    private final Map<OptimizationRequest, IncomingDpsCalculator.Prepared> heal = new IdentityHashMap<>();
+
+    /** The result with the boss's heal off this set taken off its net dps
+     * (the dps itself stays what the set deals); the result as it is where
+     * nothing heals. */
+    DpsResult healed(OptimizationRequest request, Loadout loadout, DpsResult result) {
+        if (request.monster != healMob) {
+            healMob = request.monster;
+            heals = BossIncomingOverrides.heals(healMob);
+        }
+        if (!heals) return result;
+        if (heal.size() > 64) heal.clear();
+        IncomingDpsCalculator.Prepared model = heal.computeIfAbsent(request, IncomingDpsCalculator.Prepared::of);
+        return result.withNet(result.dps - model.healRate(loadout));
     }
 
     DpsResult calculateMelee(OptimizationRequest request, Loadout loadout) {

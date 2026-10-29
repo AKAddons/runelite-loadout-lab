@@ -35,6 +35,46 @@
   ],
   "note": "Wiki: melee (35) only partially blocked by Protect from Melee - modeled as unblockable 18; magic 50 and ranged 17 prayable; no frequency - uniform.; melee TRUE max 35, Protect from Melee halves it (factor 0.5)"
  },
+ "blood moon": {
+  "attacks": [
+   {
+    "heal": {
+     "factor": 1
+    },
+    "maxHit": 4,
+    "name": "first hit",
+    "prayable": false,
+    "share": 1,
+    "speedTicks": 6,
+    "style": "slash"
+   },
+   {
+    "chain": true,
+    "heal": {
+     "factor": 2
+    },
+    "maxHit": 8,
+    "name": "second hit",
+    "prayable": false,
+    "share": 0,
+    "style": "slash"
+   },
+   {
+    "chain": true,
+    "heal": {
+     "factor": 3,
+     "max": 50,
+     "min": 30
+    },
+    "maxHit": 20,
+    "name": "third hit",
+    "prayable": false,
+    "share": 0,
+    "style": "slash"
+   }
+  ],
+  "note": "Wiki Blood_Moon: the standard attack is a three-hit stack (max 4, 8, 20) of typeless slash rolled against melee Defence every 6 ticks; once one hit misses the rest of the stack misses (chain). Landed hits heal her 1x, 2x and 3x the damage, the third clamped 30-50 (heal). Protection prayers do nothing at the Moons. Not modelled: the jaguar phase (heals 3x the damage taken), the blood rain and the jaguar blood pools (avoidable by the standard play)."
+ },
  "callisto": {
   "attacks": [
    {

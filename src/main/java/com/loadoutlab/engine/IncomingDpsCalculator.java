@@ -53,6 +53,8 @@ public class IncomingDpsCalculator {
         public final double totalDps;
         /** Expected incoming dps with NO protection prayer running. */
         public final double unprayedDps;
+        /** What the boss heals per second off this set (0 where nothing heals). */
+        public final double healDps;
         /** The prayer to run, e.g. "Protect from Missiles", or null. */
         public final String protectPrayer;
         public final List<StyleThreat> threats;
@@ -68,8 +70,14 @@ public class IncomingDpsCalculator {
 
         Result(double totalDps, double unprayedDps, String protectPrayer,
             List<StyleThreat> threats, String overrideNote, String coverage, List<String> unmodeled) {
+            this(totalDps, unprayedDps, 0, protectPrayer, threats, overrideNote, coverage, unmodeled);
+        }
+
+        Result(double totalDps, double unprayedDps, double healDps, String protectPrayer,
+            List<StyleThreat> threats, String overrideNote, String coverage, List<String> unmodeled) {
             this.totalDps = totalDps;
             this.unprayedDps = unprayedDps;
+            this.healDps = healDps;
             this.protectPrayer = protectPrayer;
             this.threats = threats;
             fullyModeled = unmodeled.isEmpty() && !NONE.equals(coverage);
@@ -139,6 +147,11 @@ public class IncomingDpsCalculator {
         final int[] hits;
         final boolean[] flicked;
         final double[] leaks;
+        /** Lands only if the previous attack landed (a stack); and the
+         * boss's mean heal per landed hit, 0 where it heals nothing
+         * (ISS-01M6415DTE84ZZ45C4YD3MZRBJ). Null in the sheet model. */
+        final boolean[] chain;
+        final double[] healPerLand;
         /** Per attack: index into the distinct prayer list (first-occurrence
          * order), and that list. */
         final int[] prayerIndex;
@@ -208,6 +221,8 @@ public class IncomingDpsCalculator {
                 leaks = null;
                 prayerIndex = null;
                 prayerNames = null;
+                chain = null;
+                healPerLand = null;
             } else {
                 shares = new double[n];
                 prayerFactors = new double[n];
@@ -217,6 +232,8 @@ public class IncomingDpsCalculator {
                 hits = new int[n];
                 flicked = new boolean[n];
                 leaks = new double[n];
+                chain = new boolean[n];
+                healPerLand = new double[n];
                 prayable = null;
                 share = 0;
                 note = override.note;
@@ -236,9 +253,12 @@ public class IncomingDpsCalculator {
                     kinds[i] = kind;
                     attackRolls[i] = kind == KIND_TYPELESS ? 0 : attackRollFor(kind, off);
                     maxHits[i] = attack.maxHit;
-                    shares[i] = attack.share;
+                    // A chained hit rides its stack's share and speed.
+                    chain[i] = attack.chain && i > 0;
+                    shares[i] = chain[i] ? shares[i - 1] : attack.share;
                     prayerFactors[i] = attack.prayerFactor;
-                    speeds[i] = attack.speedTicks > 0 ? attack.speedTicks : st;
+                    speeds[i] = chain[i] ? speeds[i - 1] : attack.speedTicks > 0 ? attack.speedTicks : st;
+                    healPerLand[i] = attack.heal == null ? 0 : meanHeal(attack.heal, attack.maxHit);
                     // Avoidable attacks are dodged by the standard play, and an
                     // unknown speed is no rate at all - the totals count neither.
                     avoidable[i] = attack.avoidable;
@@ -283,15 +303,44 @@ public class IncomingDpsCalculator {
 
         /** Each `which` attack's dps if it attacked every cycle - the ONE
          * rate path, for the beam's totals and the card's rows alike.
-         * Typeless attacks have no defence roll: they always hit. */
+         * Typeless attacks have no defence roll: they always hit; a chained
+         * hit lands only when the hit before it did. */
         void fillDps(Loadout loadout, double[] dps, boolean[] which, int[] row) {
+            double[] land = new double[kinds.length];
+            fillLand(loadout, land);
+            for (int i = 0; i < kinds.length; i++) {
+                if (which[i]) dps[i] = land[i] * (maxHit(i, row) / 2.0) * (hits == null ? 1 : hits[i]) / (speeds[i] * 0.6);
+            }
+        }
+
+        /** Each attack's chance to land against the set. */
+        void fillLand(Loadout loadout, double[] land) {
             StatBlock def = loadout.defensive;
             for (int i = 0; i < kinds.length; i++) {
-                if (!which[i]) continue;
                 double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
                     : accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective);
-                dps[i] = accuracy * (maxHit(i, row) / 2.0) * (hits == null ? 1 : hits[i]) / (speeds[i] * 0.6);
+                land[i] = chain != null && chain[i] ? accuracy * land[i - 1] : accuracy;
             }
+        }
+
+        /** What the boss heals per second off this set: each healing attack's
+         * land chance x its mean heal per landed hit, at its rate, through
+         * the picked prayer (a blocked hit heals nothing). */
+        public double healRate(Loadout loadout) {
+            if (healPerLand == null || revenant && wearsChargedEthereum(loadout)) return 0;
+            double[] land = new double[kinds.length];
+            fillLand(loadout, land);
+            double[] dps = new double[kinds.length];
+            int[] row = dragonfireRow(loadout);
+            fillDps(loadout, dps, live, row);
+            int prayer = bestPrayer(dps, row);
+            double heal = 0;
+            for (int i = 0; i < kinds.length; i++) {
+                if (live[i] && healPerLand[i] > 0) {
+                    heal += land[i] * healPerLand[i] * hits[i] * shares[i] / (speeds[i] * 0.6) * through(i, prayer, row);
+                }
+            }
+            return heal;
         }
 
         /** v1 uniform model: the nastiest prayable modeled style, or -1 -
@@ -446,8 +495,15 @@ public class IncomingDpsCalculator {
                     + (leaks[i] > 0 ? String.format(", ~%.0f%% lands", leaks[i] * 100) : "") + ")";
                 threats.add(new StyleThreat(label, dps[i], maxHit(i, row), true, through < 1, shares[i], through));
             }
-            return new Result(total, u, prayer, threats, note, unmodeled.isEmpty() ? CURATED : PARTIAL, unmodeled);
+            return new Result(total, u, healRate(loadout), prayer, threats, note, unmodeled.isEmpty() ? CURATED : PARTIAL, unmodeled);
         }
+    }
+
+    /** The mean of clamp(factor x d, min, max) over a uniform 0..max roll. */
+    static double meanHeal(double[] heal, int maxHit) {
+        double sum = 0;
+        for (int d = 0; d <= maxHit; d++) sum += Math.min(heal[2], Math.max(heal[1], heal[0] * d));
+        return sum / (maxHit + 1);
     }
 
     /** Corpus style text, cleaned: lower case, no DEL noise, single spaces. */

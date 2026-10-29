@@ -74,21 +74,87 @@ public class RenderModel {
         for (int i = 0; i < mobs.size(); i++) {
             Map node = mob(mobs.get(i));
             MOB.set(i);
+            HP.set(mobs.get(i).hitpoints);
             try {
                 node.put("styles", styles(perMob.get(i), rks, owned, simmed));
                 Map multi = multi(perMob.get(i), rks, owned, simmed);
                 if (multi != null) node.put("multi", multi);
             } finally {
                 MOB.remove();
+                HP.remove();
             }
             mn.add(node);
         }
-        return map("mobs", mn);
+        Map entry = map("mobs", mn);
+        if (mobs.size() > 1) {
+            Map trip = trip(mobs, perMob, false);
+            if (trip != null) entry.put("tripKillTime", trip);
+            trip = trip(mobs, perMob, true);
+            if (trip != null) entry.put("bisTripKillTime", trip);
+        }
+        return entry;
     }
 
     /** The roster index of the mob whose card is being built: a group
-     * ladder reads that mob's own numbers (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW). */
+     * ladder reads that mob's own numbers (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW);
+     * and its hitpoints, for the card's kill time. */
     static final ThreadLocal<Integer> MOB = new ThreadLocal<>();
+    static final ThreadLocal<Integer> HP = new ThreadLocal<>();
+
+    /** The trip's kill time (Andrew 2026-10-29: "TTK for moons of peril,
+     * barrows should be the combined kill time of all 3 bosses"): each
+     * member's table in the set its row recommends, convolved; the member
+     * that never dies named. Null with fewer than two members answered. */
+    static Map trip(List<MonsterStats> mobs, List<Map<CombatStyle, StyleResult>> perMob, boolean bis) {
+        List<KillTime> times = new ArrayList<>();
+        List<Object> members = new ArrayList<>();
+        String never = null;
+        for (int i = 0; i < mobs.size(); i++) {
+            KillTime k = killOf(perMob.get(i), mobs.get(i).hitpoints, bis);
+            if (k == null) continue;
+            times.add(k);
+            members.add(map("name", mobs.get(i).label(), "p50", k.p50));
+            if (never == null && Double.isInfinite(k.p50)) never = mobs.get(i).label();
+        }
+        if (times.size() < 2) return null;
+        Map node = killNode(KillTime.sum(times), 0);
+        node.put("members", members);
+        if (never != null) node.put("never", never);
+        return node;
+    }
+
+    /** The member's kill time in the set its row recommends: its kit-backed
+     * card with the most net DPS plus spec, or null when no style answers. */
+    static KillTime killOf(Map<CombatStyle, StyleResult> results, int hp, boolean bis) {
+        KillTime best = null;
+        double bd = -1;
+        for (StyleResult r : results.values()) {
+            DpsResult shown = r == null ? null : shown(r, bis);
+            if (shown == null || !(bis ? r.gameKitBacked : r.ownedKitBacked)) continue;
+            double d = shown.net + (bis ? r.gameSpecDpsAdded : r.specDpsAdded);
+            if (d > bd) {
+                bd = d;
+                best = killTime(r, shown, hp, bis);
+            }
+        }
+        return best;
+    }
+
+    static double healOf(StyleResult r, boolean bis) {
+        Result incoming = bis ? r.gameIncoming : r.incoming;
+        return incoming == null ? 0 : incoming.healDps;
+    }
+
+    /** The set's kill-time table vs this mob: the card's hit model, the
+     * boss's heal off the set and the sustained spec (KillTime). */
+    static KillTime killTime(StyleResult r, DpsResult shown, int hp, boolean bis) {
+        return KillTime.table(hp, shown.accuracy, shown.maxHit, shown.attackSpeed, shown.dps, healOf(r, bis),
+            bis ? r.gameSpecDpsAdded : r.specDpsAdded);
+    }
+
+    static Map killNode(KillTime k, double heal) {
+        return map("p10", k.p10, "p50", k.p50, "p90", k.p90, "perfect", k.perfect, "approximate", k.approximate, "healDps", heal);
+    }
 
     static Map mob(MonsterStats mob) {
         return map("id", mob.id, "profileId", mob.profileId(), "name", mob.name,
@@ -299,6 +365,9 @@ public class RenderModel {
         }
         card.putAll(map("gear", gear, "quiverAmmo", item(shown.loadout.quiverAmmo),
             "spec", spec(result, bis), "incoming", incoming(bis ? result.gameIncoming : result.incoming)));
+        // How long this set takes to kill (ISS-01M6415DTE84ZZ45C4YD3MZRBJ).
+        Integer hp = HP.get();
+        if (hp != null) card.put("killTime", killNode(killTime(result, shown, hp, bis), healOf(result, bis)));
         // The defensive mode's trade belongs to the Yours side only (BiS
         // stays the pure-DPS ceiling).
         ModeTrade trade = bis ? null : result.modeTrade;

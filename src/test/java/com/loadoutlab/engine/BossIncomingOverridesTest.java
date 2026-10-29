@@ -219,7 +219,9 @@ public class BossIncomingOverridesTest {
 			"the whisperer", "the whisperer|awakened", "the whisperer|quest",
 			"the leviathan", "the leviathan|awakened", "the leviathan|quest",
 			"phantom muspah|teleporting", "sol heredit", "the hueycoatl", "the hueycoatl|shielded",
-			"tormented demon", "mysterious figure");
+			"tormented demon", "mysterious figure",
+			// The heal rule (ISS-01M6415DTE84ZZ45C4YD3MZRBJ): a chained stack.
+			"blood moon");
 		for (String name : expected) {
 			BossIncomingOverrides.BossOverride override = BossIncomingOverrides
 				.overridesFor(named(name, List.of("Melee")));
@@ -236,7 +238,8 @@ public class BossIncomingOverridesTest {
 				Assert.assertTrue(name, attack.getMaxHit() > 0);
 				// An avoidable rider (tentacles after every volley) may carry no
 				// share of its own; every counted attack must.
-				Assert.assertTrue(name, attack.getShare() > 0 || attack.isAvoidable());
+				// A chained hit rides its stack's share (Blood Moon's 2nd and 3rd).
+				Assert.assertTrue(name, attack.getShare() > 0 || attack.isAvoidable() || attack.isChain());
 				Assert.assertTrue(name, attack.getShare() <= 1.0);
 				Assert.assertTrue(name, attack.getSpeedTicks() >= 0);
 				Assert.assertTrue(name, attack.getHits() >= 1);

@@ -58,6 +58,13 @@ public class BossIncomingOverrides {
          * "antifire" / "super" / "shield+antifire" / "shield+super" ->
          * {max without, max with Protect from Magic}; null for other attacks. */
         final Map<String, int[]> layers;
+        /** A landed hit of damage d heals the boss clamp(factor x d, min,
+         * max) - Blood Moon's 1x/2x/3x stack (ISS-01M6415DTE84ZZ45C4YD3MZRBJ);
+         * null when the attack heals nothing. */
+        final double[] heal;
+        /** Lands only if the previous attack in the list landed (one miss
+         * ends the stack); it rides that attack's share and speed. */
+        final boolean chain;
     }
 
     /** The full curated picture for one boss. */
@@ -65,10 +72,15 @@ public class BossIncomingOverrides {
     public static class BossOverride {
         final List<Attack> attacks;
         final String note;
+        /** Some attack heals the boss off what lands: the sets rank by net dps. */
+        final boolean heals;
 
         BossOverride(List<Attack> attacks, String note) {
             this.attacks = attacks;
             this.note = note;
+            boolean h = false;
+            for (Attack attack : attacks) h |= attack.heal != null;
+            heals = h;
         }
     }
 
@@ -112,9 +124,15 @@ public class BossIncomingOverrides {
                 a.has("avoidable") && a.get("avoidable").getAsBoolean(), a.has("name") ? a.get("name").getAsString() : "",
                 a.has("hits") ? Math.max(1, a.get("hits").getAsInt()) : 1,
                 a.has("flicked") && a.get("flicked").getAsBoolean(), a.has("leak") ? a.get("leak").getAsDouble() : 0.0,
-                a.has("layers") ? layers(a.getAsJsonObject("layers")) : null));
+                a.has("layers") ? layers(a.getAsJsonObject("layers")) : null,
+                a.has("heal") ? heal(a.getAsJsonObject("heal")) : null, a.has("chain") && a.get("chain").getAsBoolean()));
         }
         return new BossOverride(attacks, json.has("note") ? json.get("note").getAsString() : "");
+    }
+
+    static double[] heal(JsonObject json) {
+        return new double[]{json.get("factor").getAsDouble(), json.has("min") ? json.get("min").getAsDouble() : 0,
+            json.has("max") ? json.get("max").getAsDouble() : Double.POSITIVE_INFINITY};
     }
 
     static Map<String, int[]> layers(JsonObject json) {
@@ -130,6 +148,12 @@ public class BossIncomingOverrides {
     /** The curated override for this monster, or null to use the v1 model.
      * Keyed by display name so every version/phase row shares one entry. */
     public static BossOverride overridesFor(MonsterStats monster) { return lookup(OVERRIDES, monster); }
+
+    /** True when the monster's curated attacks heal it off what lands. */
+    public static boolean heals(MonsterStats monster) {
+        BossOverride override = overridesFor(monster);
+        return override != null && override.heals;
+    }
 
     /** Why the card shows no estimate for this monster, or null when the
      * curated data or the sheet prices it. */

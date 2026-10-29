@@ -7,6 +7,9 @@ import java.util.List;
 public class DpsResult {
     public final Loadout loadout;
     public final double dps;
+    /** DPS net of the boss's heal off this set - the dps where nothing
+     * heals; what every ranking reads (ISS-01M6415DTE84ZZ45C4YD3MZRBJ). */
+    public final double net;
     public final double accuracy;
     public final double expectedHit;
     public final int maxHit;
@@ -34,15 +37,16 @@ public class DpsResult {
 
     public DpsResult( Loadout loadout, double dps, double accuracy, double expectedHit, int maxHit, int attackSpeed,
         String attackType, long attackRoll, long defenceRoll, int purchaseCost, String spellName) {
-        this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType,
+        this(loadout, dps, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType,
             attackRoll, defenceRoll, purchaseCost, spellName, List.of(), false);
     }
 
-    DpsResult( Loadout loadout, double dps, double accuracy, double expectedHit, int maxHit, int attackSpeed,
+    DpsResult( Loadout loadout, double dps, double net, double accuracy, double expectedHit, int maxHit, int attackSpeed,
         String attackType, long attackRoll, long defenceRoll, int purchaseCost, String spellName,
         List<String> countedBonuses, boolean antifireAssumed) {
         this.loadout = loadout;
         this.dps = dps;
+        this.net = net;
         this.accuracy = accuracy;
         this.expectedHit = expectedHit;
         this.maxHit = maxHit;
@@ -57,18 +61,24 @@ public class DpsResult {
     }
 
     public DpsResult withCountedBonuses(List<String> bonuses) {
-        return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
+        return new DpsResult(loadout, dps, net, accuracy, expectedHit, maxHit, attackSpeed,
             attackType, attackRoll, defenceRoll, purchaseCost, spellName, List.copyOf(bonuses), antifireAssumed);
     }
 
+    /** The same set with the boss's heal taken off: net = dps - heal/s. */
+    DpsResult withNet(double net) {
+        return new DpsResult(loadout, dps, net, accuracy, expectedHit, maxHit, attackSpeed,
+            attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses, antifireAssumed);
+    }
+
     /**
-     * The higher-dps of two nullable results; the first wins ties. The
+     * The higher-NET-dps of two nullable results; the first wins ties. The
      * one comparison rule for "keep the better candidate" - previously
      * duplicated by DpsCalculator and LoadoutOptimizer.
      */
     public static DpsResult better(DpsResult first, DpsResult second) {
         if (second == null) return first;
-        if (first == null || second.dps > first.dps) return second;
+        if (first == null || second.net > first.net) return second;
         return first;
     }
 
@@ -76,7 +86,7 @@ public class DpsResult {
      * DpsCalculator.calculate() (Zulrah cap, vent one-shot, nibbler trio,
      * Salarin flat, Verac proc) change only these four numbers. */
     DpsResult withHitModel(double dps, double accuracy, double expectedHit, int maxHit) {
-        return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
+        return new DpsResult(loadout, dps, dps, accuracy, expectedHit, maxHit, attackSpeed,
             attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses, antifireAssumed);
     }
 

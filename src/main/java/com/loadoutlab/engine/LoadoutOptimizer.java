@@ -69,7 +69,7 @@ public class LoadoutOptimizer {
         DpsResult current = relocateQuiverAmmo(data, request, result);
         // Near-ties (Andrew 2026-10-20: the Mythical cape's 0.1% over the
         // fire cape): prayer and defence may cost up to 0.5% of the SET.
-        double floor = result.dps * 0.995;
+        double floor = result.net * 0.995;
         for (GearSlot slot : GearSlot.values()) current = fillSlot(data, request, current, slot, pass, floor);
         return current;
     }
@@ -128,7 +128,7 @@ public class LoadoutOptimizer {
                 if (pass.risk != null && pass.risk.exceedsCap(trial, null)) continue;
                 if (request.setRules != null && !request.setRules.holds(trial)) continue;
                 DpsResult candidate = bestSpellResult(request, trial, pass.spells);
-                if (candidate == null || candidate.dps < current.dps - 1e-9) {
+                if (candidate == null || candidate.net < current.net - 1e-9) {
                     continue; // protection is worn only when it costs nothing
                 }
                 current = candidate.withPurchaseCost(current.purchaseCost);
@@ -238,7 +238,7 @@ public class LoadoutOptimizer {
                     // A fresh set per trial (the quiver's carried ammo rides
                     // each copy).
                     DpsResult result = bestSpellResult(request, swapped.with(AMMO, ammo).with(SHIELD, shield), pass.spells);
-                    if (result != null && (best == null || result.dps > best.dps)) best = result;
+                    if (result != null && (best == null || result.net > best.net)) best = result;
                 }
             }
             if (best != null) swaps.add(best);
@@ -323,14 +323,14 @@ public class LoadoutOptimizer {
             if (request.setRules != null && !request.setRules.holds(trial)) continue;
             if (++tried > 12) break;
             DpsResult candidate = bestSpellResult(request, trial, pass.spells);
-            if (candidate == null || candidate.dps < min(floor, current.dps) - 1e-9) continue;
+            if (candidate == null || candidate.net < min(floor, current.net) - 1e-9) continue;
             // A dps-NEUTRAL utility swap must not displace gear that is
             // stronger for this style (field report 2026-08-12: Virtus
             // robe top, +2 prayer, replaced Ancestral robe top on Vorkath
             // because the 1% magic damage gap vanished into max-hit
             // truncation). Utility is only free when nothing offensive is
             // given up; a strictly better dps still wins outright.
-            boolean neutral = candidate.dps <= current.dps + 1e-9;
+            boolean neutral = candidate.net <= current.net + 1e-9;
             if (neutral && worn != null && worn.roughScore(request.style) > item.roughScore(request.style)) {
                 continue;
             }
@@ -353,11 +353,11 @@ public class LoadoutOptimizer {
         Loadout worn = result.loadout;
         Loadout relocated = worn.with(AMMO, null).withQuiverAmmo(worn.get(AMMO));
         DpsResult moved = bestSpellResult(request, relocated, pass.spells);
-        if (moved == null || moved.dps < result.dps - 1e-9) {
+        if (moved == null || moved.net < result.net - 1e-9) {
             return result; // relocation must be dps-neutral, or leave it
         }
         moved = moved.withPurchaseCost(result.purchaseCost);
-        return fillSlot(data, request, moved, AMMO, pass, moved.dps);
+        return fillSlot(data, request, moved, AMMO, pass, moved.net);
     }
 
     /**
@@ -382,7 +382,7 @@ public class LoadoutOptimizer {
             // accuracy (found 2026-08-09: the roster golden halved at Zulrah
             // when the relocate-then-recoil chain dropped the quiver ammo).
             DpsResult swapped = bestSpellResult(request, result.loadout.with(candidate.slot, candidate), sc);
-            if (swapped != null && (best == null || swapped.dps > best.dps)) {
+            if (swapped != null && (best == null || swapped.net > best.net)) {
                 best = swapped.withPurchaseCost(result.purchaseCost + budgetCost(request, candidate));
             }
         }
@@ -406,7 +406,7 @@ public class LoadoutOptimizer {
             }
             for (GearItem item : candidates(data, game, slot, SLOT_LIMIT, worn.getWeapon())) {
                 DpsResult swapped = bestSpellResult(own, worn.with(slot, item), pass.spells);
-                if (swapped != null && swapped.dps > base.dps + 1e-6) {
+                if (swapped != null && swapped.net > base.net + 1e-6) {
                     beaten.add(slot);
                     break;
                 }
@@ -422,7 +422,7 @@ public class LoadoutOptimizer {
      * defensive modes sweep (restored from 491b6c0, ISS-01M5G5CZC9SK46499FACRSJ8ZT).
      */
     static double beamScore(OptimizationRequest request, DpsResult score, Loadout loadout, Prepared incoming) {
-        double value = score.dps + score.attackRoll * 1e-9;
+        double value = score.net + score.attackRoll * 1e-9;
         if (incoming != null) value -= request.defenseWeight * incoming.totalDps(loadout);
         return value;
     }
@@ -543,7 +543,7 @@ public class LoadoutOptimizer {
      * - and the purchase cost. The maps are per-result overrides (empty
      * when the run has none). */
     static Comparator<DpsResult> ranking(OptimizationRequest request, Map<DpsResult, Double> weighted, Map<DpsResult, Long> risk) {
-        return comparingDouble((DpsResult r) -> weighted.getOrDefault(r, r.dps)).reversed()
+        return comparingDouble((DpsResult r) -> weighted.getOrDefault(r, r.net)).reversed()
             .thenComparing(comparingLong(DpsResult::getAttackRoll).reversed()) .thenComparingLong(r -> risk.getOrDefault(r, 0L))
             .thenComparingLong(r -> -setDamageBonus(request, r.loadout)) .thenComparingLong(r -> -setUtility(r.loadout))
             .thenComparingLong(r -> -setCrossStyleDamage(r.loadout)) .thenComparingInt(DpsResult::getPurchaseCost);

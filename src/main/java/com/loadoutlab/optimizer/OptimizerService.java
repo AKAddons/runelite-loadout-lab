@@ -792,7 +792,7 @@ public class OptimizerService {
 
     /** A set scored for the mode's ranking: its DPS and its damage taken. */
     static Rung rungOf(ComputeContext ctx, MonsterStats mob, CombatStyle style, DpsResult r) {
-        return new Rung(null, r.dps, incomingFor(mob, r.loadout, ctx, style).totalDps, false, null);
+        return new Rung(null, r.net, incomingFor(mob, r.loadout, ctx, style).totalDps, false, null);
     }
 
     /** Every worn slot's ladder for the shown Yours set: each swap scored by
@@ -805,24 +805,24 @@ public class OptimizerService {
         Set<Integer> dreams = dreamsFor(ctx, monster);
         for (GearSlot slot : GearSlot.values()) {
             if (shown.loadout.get(slot) == null) continue;
-            var base = new Rung(shown.loadout.get(slot), shown.dps, baseDtps, true, null);
+            var base = new Rung(shown.loadout.get(slot), shown.net, baseDtps, true, null);
             List<Rung> candidates = new ArrayList<>();
             boolean weapon = slot == WEAPON;
             for (DpsResult swap : optimizer.slotSwaps(ctx.dataset, request, shown, slot)) {
                 GearItem item = swap.loadout.get(slot);
                 double dtps = scoresDamage ? incomingFor(monster, swap.loadout, ctx, request.style).totalDps : baseDtps;
-                var rung = new Rung(item, swap.dps, dtps, ctx.effectiveOwned.owns(item.id) || dreams.contains(item.id),
+                var rung = new Rung(item, swap.net, dtps, ctx.effectiveOwned.owns(item.id) || dreams.contains(item.id),
                     weapon ? brought(swap.loadout, shown.loadout, AMMO) : null);
                 rung.offhand = weapon ? brought(swap.loadout, shown.loadout, SHIELD) : null;
                 rung.set = swap;
                 candidates.add(rung);
             }
             if (weapon) candidates = foldStaffFamilies(candidates, base.item);
-            Ladder ladder = rankSteps(ctx.mode, request.style, base, candidates, shown.dps, baseDtps);
+            Ladder ladder = rankSteps(ctx.mode, request.style, base, candidates, shown.net, baseDtps);
             if (ladder != null) {
                 if (weapon) {
                     ladder.all = allRanked(ctx.mode, request.style, candidates);
-                    splitByKind(ladder, ctx.mode, request.style, base, candidates, shown.dps, baseDtps);
+                    splitByKind(ladder, ctx.mode, request.style, base, candidates, shown.net, baseDtps);
                 }
                 ladders.put(slot, ladder);
             }
@@ -897,7 +897,7 @@ public class OptimizerService {
         }
         if (loadout == shown.loadout) return;
         DpsResult swapped = new DpsCalculator().calculate(request, loadout);
-        if (swapped != null && swapped.dps >= shown.dps - EPS) ob.set(0, swapped.withPurchaseCost(shown.purchaseCost));
+        if (swapped != null && swapped.net >= shown.net - EPS) ob.set(0, swapped.withPurchaseCost(shown.purchaseCost));
     }
 
     static boolean sameStats(GearItem a, GearItem b) {
@@ -1006,7 +1006,7 @@ public class OptimizerService {
     }
 
     static double dpsOf(List<List<DpsResult>> bests, int j) {
-        return bests == null || j >= bests.size() || emptyBest(bests.get(j)) ? 0 : bests.get(j).get(0).dps;
+        return bests == null || j >= bests.size() || emptyBest(bests.get(j)) ? 0 : bests.get(j).get(0).net;
     }
 
     /** Every side's shared-spec options together, best trip value first
@@ -1021,6 +1021,20 @@ public class OptimizerService {
         for (SharedSide side : sides.values()) all.addAll(side.specOptions);
         all.sort(Comparator.comparingDouble((SpecPick[] option) -> tripValue(option, weights)).reversed());
         return all;
+    }
+
+    /** A kill slower than this counts as this long in a trip's time: a member
+     * the set cannot damage neither vetoes the set nor drops out. */
+    static final double KILL_CAP = 600;
+
+    /** A member's say in a group's objective (ISS-01M6415DTE84ZZ45C4YD3MZRBJ,
+     * Andrew 2026-10-29: the kit ranks by total trip time): minus its weighted
+     * kill time, hp / net dps capped at KILL_CAP, so the higher sum still
+     * wins. The weight already carries its hp (kitWeight, specWeight), so
+     * the term is weight / net: the trip's seconds times the group weight. */
+    static double worth(double net, double weight, MonsterStats mob) {
+        double cap = KILL_CAP / max(1, mob.hitpoints);
+        return -weight * (net <= EPS ? cap : min(1 / net, cap));
     }
 
     /** Every member's spec weight: the trip's spec currency - a spec-only
@@ -1113,8 +1127,8 @@ public class OptimizerService {
             dreams.addAll(dreamsFor(ctx, mobs.get(j)));
             if (base[j] != null) {
                 total += weight[j];
-                baseDps += base[j].dps * weight[j];
-                basePerMob[j] = base[j].dps;
+                baseDps += base[j].net * weight[j];
+                basePerMob[j] = base[j].net;
             }
         }
         if (total <= 0) return ladders;
@@ -1133,10 +1147,10 @@ public class OptimizerService {
                         continue; // the strip's worn item: a member wearing another reads its own card
                     }
                     items.putIfAbsent(item.id, item);
-                    sums.computeIfAbsent(item.id, k -> new double[1])[0] += swap.dps * weight[j];
+                    sums.computeIfAbsent(item.id, k -> new double[1])[0] += swap.net * weight[j];
                     // Each member's own number for the step: its card shows
                     // that, the group figure ranks (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW).
-                    pmd.computeIfAbsent(item.id, k -> new double[n])[j] = swap.dps;
+                    pmd.computeIfAbsent(item.id, k -> new double[n])[j] = swap.net;
                 }
             }
             List<Rung> candidates = new ArrayList<>();
@@ -1381,7 +1395,7 @@ public class OptimizerService {
             }
             demanding.add(j);
             pd |= spellFor(ctx, mobs.get(j)) != null;
-            double weight = kitWeight(mobs.get(j)) * magic.dps;
+            double weight = kitWeight(mobs.get(j)) * magic.net;
             if (weight > heaviest.getOrDefault(book, -1.0)) {
                 heaviest.put(book, weight);
                 MonsterStats mob = mobs.get(j);
@@ -1474,7 +1488,7 @@ public class OptimizerService {
         OptimizationRequest request = ownedRequestFor(ctx, mobs.get(j), MAGIC, plan.levels, null)
             .withSpell(null).withSpellbookLock("arceuus");
         List<DpsResult> out = optimizer.optimize(ctx.dataset, request, optimizer.preparePools(ctx.dataset, request));
-        return out.isEmpty() ? 0 : out.get(0).dps;
+        return out.isEmpty() ? 0 : out.get(0).net;
     }
 
     /** The mob's shown owned magic set, or null. */
@@ -1486,7 +1500,7 @@ public class OptimizerService {
     /** Magic is how this mob gets fought: nothing else owned beats it. */
     static boolean usesMagic(Map<CombatStyle, StyleResult> results, DpsResult magic) {
         for (var entry : results.entrySet()) {
-            if (entry.getKey() != MAGIC && !entry.getValue().owned.isEmpty() && entry.getValue().owned.get(0).dps > magic.dps) {
+            if (entry.getKey() != MAGIC && !entry.getValue().owned.isEmpty() && entry.getValue().owned.get(0).net > magic.net) {
                 return false;
             }
         }
@@ -1504,11 +1518,11 @@ public class OptimizerService {
      * its own book, 0 when its staff can cast nothing from the other one. */
     double magicDpsUnder(ComputeContext ctx, List<MonsterStats> mobs, int j, Map<CombatStyle, StyleResult> results, String book) {
         DpsResult magic = ownedMagic(results);
-        if (book.equals(bookOf(ctx.dataset, magic.getSpellName()))) return magic.dps;
+        if (book.equals(bookOf(ctx.dataset, magic.getSpellName()))) return magic.net;
         StylePlan plan = stylePlan(ctx, MAGIC, suppliedAcross(mobs));
         OptimizationRequest request = ownedRequestFor(ctx, mobs.get(j), MAGIC, plan.levels, null) .withSpellbookLock(book);
         DpsResult cast = optimizer.bestSpellFor(ctx.dataset, request, magic.loadout, new DpsCalculator());
-        return cast == null ? 0 : cast.dps;
+        return cast == null ? 0 : cast.net;
     }
 
     /** The raid's own boost when EVERY mob is inside the same raid (CoX
@@ -1582,7 +1596,7 @@ public class OptimizerService {
         double sum = 0;
         for (int j = 0; j < reqs.size(); j++) {
             DpsResult worn = calcRespecting(calc, reqs.get(j), bestWorn(calc, reqs.get(j), base, carried));
-            sum += (worn == null ? 0 : worn.dps) * weights[j];
+            sum += worth(worn == null ? 0 : worn.net, weights[j], reqs.get(j).monster);
         }
         return sum;
     }
@@ -1814,7 +1828,7 @@ public class OptimizerService {
         Double hit = memo.get(key);
         if (hit != null) return hit;
         DpsResult shown = kitBest(calc, base, primary, rs, bundles, carriedOf(rs, bundles), sides, mi);
-        double dps = shown == null ? 0 : shown.dps;
+        double dps = shown == null ? 0 : shown.net;
         memo.put(key, dps);
         return dps;
     }
@@ -1867,7 +1881,7 @@ public class OptimizerService {
             CombatStyle answer = answerFor(sides, j);
             if (answer == null) continue;
             DpsResult winner = sides.get(answer).bests.get(j).get(0);
-            idealTotal += winner.dps * kitWeight(mobs.get(j));
+            idealTotal += worth(winner.net, kitWeight(mobs.get(j)), mobs.get(j));
             for (GearItem item : winner.loadout.items()) {
                 GearItem bi = base.get(item.slot);
                 if ((bi == null || bi.id != item.id)
@@ -1913,7 +1927,7 @@ public class OptimizerService {
         String baseBundlesKey = bundlesKeyOf(kit.bundles);
         for (int j = 0; j < n; j++) {
             mobDps[j] = evalMobDps(calc, base, primary, kit.singles, kit.bundles, baseBundlesKey, sides, rbm.get(j), j, memo);
-            current += mobDps[j] * hp[j];
+            current += worth(mobDps[j], hp[j], mobs.get(j));
         }
         while (true) {
             GearItem bestSingle = null;
@@ -1930,8 +1944,8 @@ public class OptimizerService {
                 kit.singles.add(candidate);
                 double total = current;
                 for (int j : affected) {
-                    total += (evalMobDps(calc, base, primary, kit.singles, kit.bundles,
-                        bundlesKey, sides, rbm.get(j), j, memo) - mobDps[j]) * hp[j];
+                    total += worth(evalMobDps(calc, base, primary, kit.singles, kit.bundles,
+                        bundlesKey, sides, rbm.get(j), j, memo), hp[j], mobs.get(j)) - worth(mobDps[j], hp[j], mobs.get(j));
                 }
                 kit.singles.remove(kit.singles.size() - 1);
                 if (total > bestTotal + EPS) {
@@ -1948,8 +1962,8 @@ public class OptimizerService {
                 String withKey = bundlesKeyOf(kit.bundles);
                 double total = 0;
                 for (int j = 0; j < n; j++) {
-                    total += evalMobDps(calc, base, primary, kit.singles, kit.bundles,
-                        withKey, sides, rbm.get(j), j, memo) * hp[j];
+                    total += worth(evalMobDps(calc, base, primary, kit.singles, kit.bundles,
+                        withKey, sides, rbm.get(j), j, memo), hp[j], mobs.get(j));
                 }
                 kit.bundles.remove(kit.bundles.size() - 1);
                 if (total > bestTotal + EPS) {
@@ -1986,7 +2000,7 @@ public class OptimizerService {
     Loadout bestWorn(DpsCalculator calc, OptimizationRequest req, Loadout base, List<GearItem> carried) {
         Loadout worn = base;
         DpsResult wr = calcRespecting(calc, req, worn);
-        double wd = wr == null ? 0 : wr.dps;
+        double wd = wr == null ? 0 : wr.net;
         boolean improved = true;
         Set<Integer> applied = new HashSet<>();
         while (improved) {
@@ -1999,7 +2013,7 @@ public class OptimizerService {
                 Loadout trial = withSwap(worn, swap);
                 if (trial == null) continue;
                 DpsResult r = calcRespecting(calc, req, trial);
-                double dps = r == null ? 0 : r.dps;
+                double dps = r == null ? 0 : r.net;
                 if (dps > bd + EPS) {
                     bd = dps;
                     bn = trial;
@@ -2046,12 +2060,12 @@ public class OptimizerService {
             if (!emptyBest(b)) candidates.add(b.get(0).loadout);
         }
         Loadout best = null;
-        double bs = -1;
+        double bs = Double.NEGATIVE_INFINITY;
         for (Loadout loadout : candidates) {
             double sum = 0;
             for (int j = 0; j < reqs.size(); j++) {
                 DpsResult r = calcRespecting(calc, reqs.get(j), loadout);
-                sum += (r == null ? 0 : r.dps) * weights[j];
+                sum += worth(r == null ? 0 : r.net, weights[j], reqs.get(j).monster);
             }
             if (sum > bs + EPS) {
                 bs = sum;
@@ -2476,15 +2490,15 @@ public class OptimizerService {
         Loadout variant = lightbearerVariant(ctx.dataset, side.shared, reqs, owned);
         if (variant == null) return;
         DpsResult[] shown = shownAcross(calc, reqs, variant);
-        double bt = topSpecScore(side.specOptions, side.weights);
+        double bt = topSpecScore(side.specOptions, side.weights, side.shown, mobs);
         double lt = 0;
         for (int j = 0; j < shown.length; j++) {
             double weight = side.weights[j];
-            if (shown[j] != null) lt += shown[j].dps * weight;
-            if (side.shown[j] != null) bt += side.shown[j].dps * weight;
+            if (shown[j] != null) lt += worth(shown[j].net, weight, mobs.get(j));
+            if (side.shown[j] != null) bt += worth(side.shown[j].net, weight, mobs.get(j));
         }
         List<SpecPick[]> options = chooseSharedSpec(ctx, mobs, reqs, shown, owned, side.weights);
-        lt += topSpecScore(options, side.weights);
+        lt += topSpecScore(options, side.weights, shown, mobs);
         if (lt > bt + EPS) {
             side.shared = variant;
             side.shown = shown;
@@ -2506,7 +2520,7 @@ public class OptimizerService {
         DpsResult top = null;
         for (var entry : sides.entrySet()) {
             List<DpsResult> best = entry.getValue().bests.get(j);
-            if (!emptyBest(best) && (top == null || best.get(0).dps > top.dps)) {
+            if (!emptyBest(best) && (top == null || best.get(0).net > top.net)) {
                 top = best.get(0);
                 answer = entry.getKey();
             }
@@ -2629,7 +2643,7 @@ public class OptimizerService {
                         ul2 = withSlot(ul2, SHIELD, null);
                     }
                     DpsResult unified = calcRespecting(calc, unifyReqs.get(j), ul2);
-                    if (unified != null && unified.dps >= best.get(0).dps * 0.995 && (!defensive
+                    if (unified != null && unified.net >= best.get(0).net * 0.995 && (!defensive
                         || incomingFor(mobs.get(j), ul2, ctx, e.getKey()).totalDps
                             <= incomingFor(mobs.get(j), best.get(0).loadout, ctx, e.getKey()).totalDps + EPS)) best.set(0, unified);
                 }
@@ -2650,7 +2664,7 @@ public class OptimizerService {
             GearItem ammo = top == null ? null : top.loadout.get(AMMO);
             if (ammo == null) continue;
             DpsResult without = calcRespecting(calc, sides.get(answer).reqs.get(j), withSlot(top.loadout, AMMO, null));
-            if (without == null || without.dps < top.dps - EPS) {
+            if (without == null || without.net < top.net - EPS) {
                 nb[j] = ammo;
                 rosterAmmo = rosterAmmo == null ? ammo : rosterAmmo;
             }
@@ -2665,7 +2679,7 @@ public class OptimizerService {
                 GearItem ammo = r.loadout.get(AMMO);
                 if (ammo != null && ammo.id == needed.id) continue;
                 DpsResult unified = calcRespecting(calc, sides.get(s).reqs.get(j), withSlot(r.loadout, AMMO, needed));
-                if (unified != null && unified.dps >= r.dps - EPS) best.set(0, unified);
+                if (unified != null && unified.net >= r.net - EPS) best.set(0, unified);
             }
         }
         if (rosterAmmo != null) {
@@ -2679,7 +2693,7 @@ public class OptimizerService {
                 for (int j = 0; j < n && neutral; j++) {
                     DpsResult before = calcRespecting(calc, reqs.get(j), b);
                     DpsResult after = calcRespecting(calc, reqs.get(j), ub);
-                    neutral = (after == null ? 0 : after.dps) >= (before == null ? 0 : before.dps) - EPS;
+                    neutral = (after == null ? 0 : after.net) >= (before == null ? 0 : before.net) - EPS;
                 }
                 if (neutral) ammoSide.shared = ub;
             }
@@ -2725,16 +2739,25 @@ public class OptimizerService {
                     int ss = slotsOf(slots);
                     KitAnswer kitSpec = ss == 0 ? kitFree : chooseKit(lc, base, primary, singlePool,
                             bundleCandidates(primary, base, slots[0], sides), sides, mobs, max(0, ctx.maxSwaps - ss), memo);
-                    double sv = 0;
+                    // The seat: the kill is shorter by the spec's damage (its
+                    // expected damage once per kill, as a share of the hp); the
+                    // score: by its honest dpsAdded. Both in worth's currency, a
+                    // spec-only member (the Warden's Core) at its spec weight.
+                    double specTotal = kitSpec.total;
+                    double tv = 0;
                     List<GearItem> carriedSpec = carriedOf(kitSpec);
                     for (int j = 0; j < n; j++) {
                         if (option[j] == null) continue;
                         DpsResult shown = kitBest(lc, base, primary, kitSpec.singles, kitSpec.bundles, carriedSpec, sides, j);
-                        if (shown != null && shown.dps > 0) {
-                            sv += option[j].expectedDamage * shown.dps;
+                        if (shown != null && shown.net > 0) {
+                            MonsterStats mob = mobs.get(j);
+                            double w = specWeight(mob);
+                            double was = worth(shown.net, w, mob);
+                            specTotal += worth(shown.net * (1 + option[j].expectedDamage / max(1, mob.hitpoints)), w, mob) - was;
+                            tv += worth(shown.net + option[j].dpsAdded, w, mob) - was;
                         }
                     }
-                    if (specPinned || kitSpec.total + sv >= kitFree.total) {
+                    if (specPinned || specTotal >= kitFree.total) {
                         kit = kitSpec;
                         ks = option;
                         kept = slots;
@@ -2746,7 +2769,7 @@ public class OptimizerService {
                         // of kit total while ignoring an elder maul worth
                         // 20x that in drain value, and the BiS card lost
                         // its spec entirely).
-                        score = kitSpec.total + tripValue(option, hpWeights(mobs));
+                        score = kitSpec.total + tv;
                         break;
                     }
                 }
@@ -3010,9 +3033,21 @@ public class OptimizerService {
         return shared.with(RING, l2);
     }
 
-    /** Weighted trip value of the top-ranked shared-spec option. */
-    static double topSpecScore(List<SpecPick[]> options, double[] weights) {
-        return options.isEmpty() ? 0 : tripValue(options.get(0), weights);
+    /** The trip time the top-ranked shared-spec option saves on these shown sets. */
+    static double topSpecScore(List<SpecPick[]> options, double[] weights, DpsResult[] shown, List<MonsterStats> mobs) {
+        return options.isEmpty() ? 0 : tripValue(options.get(0), weights, shown, mobs);
+    }
+
+    /** The trip time a spec option saves (worth's currency): each member's
+     * kill with the spec's dpsAdded on top of its shown set's net dps. */
+    static double tripValue(SpecPick[] picks, double[] weights, DpsResult[] shown, List<MonsterStats> mobs) {
+        double score = 0;
+        for (int j = 0; j < weights.length; j++) {
+            if (picks[j] != null && shown[j] != null) {
+                score += worth(shown[j].net + picks[j].dpsAdded, weights[j], mobs.get(j)) - worth(shown[j].net, weights[j], mobs.get(j));
+            }
+        }
+        return score;
     }
 
     /** Weighted trip value of one shared-spec option (null = no spec there):
@@ -3088,8 +3123,8 @@ public class OptimizerService {
         if (variant == null) return spec;
         SpecPick variantSpec = bestSpec(dataset, request, variant, owned, rt, rt != null);
         if (variantSpec == null) return spec;
-        double bt = base.dps + spec.dpsAdded;
-        double variantTotal = variant.dps + variantSpec.dpsAdded;
+        double bt = base.net + spec.dpsAdded;
+        double variantTotal = variant.net + variantSpec.dpsAdded;
         if (variantTotal > bt + EPS) {
             results.set(0, variant);
             return variantSpec;
@@ -3254,7 +3289,7 @@ public class OptimizerService {
     double specDpsAdded( DpsCalculator calculator, SpecialAttack spec, DpsResult specBase, double expected,
         OptimizationRequest request, DpsResult mr, boolean l2) {
         MonsterStats monster = request.monster;
-        double md = mr.dps;
+        double md = mr.net;
         if (md <= 0.01) return 0;
         double ts = min(600, max(0.6, monster.hitpoints / md));
         double replacedAuto = mr.expectedHit + md * spec.extraTicks(specBase) * 0.6;
@@ -3295,7 +3330,7 @@ public class OptimizerService {
             drained = max(drained, DefenceFloors.floorFor(monster));
             if (drained < monster.defence) {
                 DpsResult after = calculator.calculate( request.withMonster(monster.withDefence(drained)), mr.loadout);
-                if (after != null && after.dps > md) {
+                if (after != null && after.net > md) {
                     double p = max(0.01, spec.landChance(specBase));
                     // Fractional attempts are the sustained regime: 0.5
                     // attempts per kill = fishing lands on half the kills
@@ -3307,7 +3342,7 @@ public class OptimizerService {
                     // - not the full attempt cap (which overcharges exactly
                     // when the land comes early).
                     double spent = landed / p;
-                    dd = landed * (after.dps - md) - spent * replacedAuto / ts;
+                    dd = landed * (after.net - md) - spent * replacedAuto / ts;
                 }
             }
         }

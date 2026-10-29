@@ -47,7 +47,9 @@ class GroupModesTest {
 		"dragon defender", "helm of neitiznot", "blood moon helm", "blood moon chestplate", "blood moon tassets",
 		"fighter torso", "bandos chestplate", "bandos tassets", "obsidian platelegs", "dragon platelegs",
 		"amulet of fury", "amulet of torture", "fire cape", "barrows gloves", "dragon boots", "berserker ring (i)",
-		"holy blessing");
+		"holy blessing",
+		// A tank shield with no strength: kill time never wears it, Tanky can.
+		"dragonfire shield");
 	static final PlayerLevels LV = new PlayerLevels(80, 80, 80, 75, 75, 77, 85);
 
 	private static LoadoutData data;
@@ -107,28 +109,49 @@ class GroupModesTest {
 		return card.owned.get(0).getLoadout().ids();
 	}
 
+	// Since kill time (ISS-01M6415DTE84ZZ45C4YD3MZRBJ) Max DPS already wears
+	// the tank set on Blood Moon (her heal makes it the faster kill), so the
+	// modes' cuts are asserted across the three moons: never worse, and a real
+	// trade on at least one (Blue Moon's macuahuitl gives way to a defender).
+
 	@Test
-	@DisplayName("Tanky: Blood Moon's melee card takes less damage than on Max DPS, and its trade says what it cost")
-	void tankyCutsBloodMoonsDamage() {
-		StyleResult max = card(MAX_DPS, 0, CombatStyle.MELEE);
-		StyleResult tanky = card(TANKY, 0, CombatStyle.MELEE);
-		assertTrue(dtps(tanky) < dtps(max) - 0.01, "DTPS " + dtps(tanky) + " vs Max DPS " + dtps(max));
-		assertNotNull(tanky.modeTrade);
-		assertEquals(TANKY, tanky.modeTrade.mode);
-		assertNull(tanky.modeTrade.reason, "a safer set, not Max DPS kept");
-		assertTrue(tanky.modeTrade.dmgCutPct > 0, "the card shows the damage cut");
+	@DisplayName("Tanky: no moon's melee card takes more damage than on Max DPS, at least one takes less, and its trade says what it cost")
+	void tankyCutsAMoonsDamage() {
+		int cut = 0;
+		for (int j = 0; j < moons.size(); j++) {
+			StyleResult max = card(MAX_DPS, j, CombatStyle.MELEE);
+			StyleResult tanky = card(TANKY, j, CombatStyle.MELEE);
+			String where = moons.get(j).name + " DTPS " + dtps(tanky) + " vs Max DPS " + dtps(max);
+			assertTrue(dtps(tanky) <= dtps(max) + 1e-9, where);
+			assertNotNull(tanky.modeTrade, where);
+			assertEquals(TANKY, tanky.modeTrade.mode);
+			if (dtps(tanky) < dtps(max) - 0.01) {
+				cut++;
+				assertNull(tanky.modeTrade.reason, where + ": a safer set, not Max DPS kept");
+				assertTrue(tanky.modeTrade.dmgCutPct > 0, where + ": the card shows the damage cut");
+			}
+		}
+		assertTrue(cut >= 1, "a real trade on some moon");
 	}
 
 	@Test
-	@DisplayName("Balanced: Blood Moon's melee card takes less damage per DPS than on Max DPS")
-	void balancedCutsBloodMoonsDamagePerDps() {
-		StyleResult max = card(MAX_DPS, 0, CombatStyle.MELEE);
-		StyleResult balanced = card(BALANCED, 0, CombatStyle.MELEE);
-		double rMax = dtps(max) / dps(max);
-		double rBalanced = dtps(balanced) / dps(balanced);
-		assertTrue(rBalanced < rMax - 1e-6, "DTPS/DPS " + rBalanced + " vs Max DPS " + rMax);
-		assertNotNull(balanced.modeTrade);
-		assertNull(balanced.modeTrade.reason, "a safer set, not Max DPS kept");
+	@DisplayName("Balanced: no moon's melee card takes more damage per DPS than on Max DPS; a card that keeps the Max DPS set says why")
+	void balancedNeverWorsePerDps() {
+		// On this bank the dragonfire shield's -32% DPS buys ~1% damage, so
+		// Balanced rightly keeps every Max DPS set (Tanky takes the shield).
+		for (int j = 0; j < moons.size(); j++) {
+			StyleResult max = card(MAX_DPS, j, CombatStyle.MELEE);
+			StyleResult balanced = card(BALANCED, j, CombatStyle.MELEE);
+			double rMax = dtps(max) / dps(max);
+			double rBalanced = dtps(balanced) / dps(balanced);
+			assertTrue(rBalanced <= rMax + 1e-9, moons.get(j).name + " DTPS/DPS " + rBalanced + " vs Max DPS " + rMax);
+			assertNotNull(balanced.modeTrade);
+			if (ids(balanced).equals(ids(max))) {
+				assertNotNull(balanced.modeTrade.reason, moons.get(j).name + ": the same set says why");
+			} else {
+				assertNull(balanced.modeTrade.reason, moons.get(j).name + ": a safer set, not Max DPS kept");
+			}
+		}
 	}
 
 	@Test
