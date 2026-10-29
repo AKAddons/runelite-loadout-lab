@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.loadoutlab.engine.*;
 import java.util.*;
 import lombok.*;
+import static com.loadoutlab.data.JsonResources.*;
 
 /** Combat achievement tasks whose restrictions shape a set (combat_achievements.json,
  * ISS-01M5XC7XYMMEN3Q4QC6CGZFVPK): each task's rules as SetRules, by id and by mob.
@@ -25,8 +26,8 @@ public class CombatAchievements {
         public SetRules rulesFor(Collection<MonsterStats> on) {
             if (mobWeapons == null) return rules;
             Set<String> weapons = new HashSet<>();
-            for (MonsterStats m : on) JsonResources.strings(mobWeapons, m.nameLower, weapons);
-            if (weapons.isEmpty()) mobWeapons.keySet().forEach(m -> JsonResources.strings(mobWeapons, m, weapons));
+            for (MonsterStats m : on) strings(mobWeapons, m.nameLower, weapons);
+            if (weapons.isEmpty()) mobWeapons.keySet().forEach(m -> strings(mobWeapons, m, weapons));
             return rules.toBuilder().weapons(weapons).build();
         }
 
@@ -38,7 +39,7 @@ public class CombatAchievements {
     static final Map<Integer, Task> BY_ID = new LinkedHashMap<>();
 
     static {
-        for (JsonElement e : JsonResources.objectOrThrow("combat_achievements.json").getAsJsonArray("tasks")) {
+        for (JsonElement e : objectOrThrow("combat_achievements.json").getAsJsonArray("tasks")) {
             JsonObject t = e.getAsJsonObject();
             List<SetRules.Rule> rules = new ArrayList<>();
             if (t.has("rules")) for (JsonElement r : t.getAsJsonArray("rules")) {
@@ -73,7 +74,7 @@ public class CombatAchievements {
     static Set<String> set(JsonObject t, String key) {
         if (!t.has(key)) return null;
         Set<String> out = new LinkedHashSet<>();
-        JsonResources.strings(t, key, out);
+        strings(t, key, out);
         return out;
     }
 

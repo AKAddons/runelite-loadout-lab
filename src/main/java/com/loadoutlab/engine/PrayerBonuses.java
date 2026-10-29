@@ -5,6 +5,7 @@ import com.loadoutlab.data.*;
 import com.google.gson.*;
 import java.util.*;
 import lombok.*;
+import static com.loadoutlab.engine.CombatStyle.*;
 
 @RequiredArgsConstructor
 @Getter
@@ -130,13 +131,13 @@ public class PrayerBonuses {
             // The fallback's six factors with this style's pair replaced.
             double[] f = {fallback.meleeAccuracy, fallback.meleeStrength, fallback.rangedAccuracy,
                 fallback.rangedStrength, fallback.magicAccuracy, fallback.magicDamagePercent};
-            int at = style == CombatStyle.RANGED ? 2 : style == CombatStyle.MAGIC ? 4 : 0;
+            int at = style == RANGED ? 2 : style == MAGIC ? 4 : 0;
             f[at] = (Double) row[1];
             f[at + 1] = (Double) row[2];
             var result = new PrayerBonuses(f[0], f[1], f[2], f[3], f[4], f[5]);
-            result.meleeName = style == CombatStyle.MELEE ? pick : fallback.meleeName;
-            result.rangedName = style == CombatStyle.RANGED ? pick : fallback.rangedName;
-            result.magicName = style == CombatStyle.MAGIC ? pick : fallback.magicName;
+            result.meleeName = style == MELEE ? pick : fallback.meleeName;
+            result.rangedName = style == RANGED ? pick : fallback.rangedName;
+            result.magicName = style == MAGIC ? pick : fallback.magicName;
             return result;
         }
         return fallback;

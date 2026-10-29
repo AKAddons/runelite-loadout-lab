@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 
 import lombok.Getter;
 import com.loadoutlab.engine.CombatStyle;
+import static com.loadoutlab.data.JsonResources.*;
 
 @Getter
 public class GearItem {
@@ -21,13 +22,13 @@ public class GearItem {
     static final List<String> MELEE_STAFF = new ArrayList<>();
 
     static {
-        JsonObject words = JsonResources.objectOrThrow("gear_words.json");
-        JsonResources.strings(words, "poweredStaff", POWERED);
-        JsonResources.strings(words, "meleeDemonbane", MELEE_DEMONBANE);
-        JsonResources.strings(words, "rangedWeapon", RANGED_WEAPON);
-        JsonResources.strings(words, "magicWeapon", MAGIC_WEAPON);
-        JsonResources.strings(words, "notMelee", NOT_MELEE);
-        JsonResources.strings(words, "meleeStaff", MELEE_STAFF);
+        JsonObject words = objectOrThrow("gear_words.json");
+        strings(words, "poweredStaff", POWERED);
+        strings(words, "meleeDemonbane", MELEE_DEMONBANE);
+        strings(words, "rangedWeapon", RANGED_WEAPON);
+        strings(words, "magicWeapon", MAGIC_WEAPON);
+        strings(words, "notMelee", NOT_MELEE);
+        strings(words, "meleeStaff", MELEE_STAFF);
     }
 
     public final int id;

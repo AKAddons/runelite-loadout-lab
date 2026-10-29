@@ -22,6 +22,10 @@ import static com.loadoutlab.engine.RangedAmmo.*;
 import static com.loadoutlab.optimizer.OptimizerService.OptimizeMode.*;
 import static java.lang.Math.*;
 import java.util.stream.Collectors;
+import static java.util.Collections.*;
+import static com.loadoutlab.data.RequiredGear.*;
+import static com.loadoutlab.engine.LoadoutOptimizer.*;
+import static com.loadoutlab.engine.MaxCapeSims.*;
 
 /**
  * Runs BiS searches off the game threads and caches results.
@@ -299,8 +303,8 @@ public class OptimizerService {
         int id = monster.profileId();
         bestPerStyle(monster, buildContext(rl, boostedLevels, pu,
             requirements, owned, collectionFingerprint, p, ebs, di,
-            Collections.singletonMap(id, pinnedByStyle), Collections.singletonMap(id, pinnedSpell),
-            Collections.singletonMap(id, pinnedSpec), poi), callback);
+            singletonMap(id, pinnedByStyle), singletonMap(id, pinnedSpell),
+            singletonMap(id, pinnedSpec), poi), callback);
     }
 
     /** The single-mob compute on a built context: a synchronous answer when
@@ -410,7 +414,7 @@ public class OptimizerService {
         int id = ctx.specByMob.getOrDefault(mob.profileId(), 0);
         if (id == 0) return null;
         GearItem pinned = ctx.dataset.getGear(id);
-        return pinned != null && SpecialAttack.match(pinned) != null ? Collections.singleton(id) : null;
+        return pinned != null && SpecialAttack.match(pinned) != null ? singleton(id) : null;
     }
 
     /** The style's pins for ONE mob (its own profile's). A weapon pin binds
@@ -859,7 +863,7 @@ public class OptimizerService {
                 || request.isPinned(worn.id)) continue;
             for (GearItem twin : ctx.dataset.getGearItems(slot)) {
                 if (twin.id == worn.id || !ctx.effectiveOwned.atHand(twin.id) || !sameStats(twin, worn)
-                    || !LoadoutOptimizer.eligible(ctx.dataset, request, twin)) continue;
+                    || !eligible(ctx.dataset, request, twin)) continue;
                 Loadout trial = loadout.with(slot, twin);
                 if (risk != null && risk.vetoes(trial, null)) continue;
                 if (request.setRules != null && !request.setRules.holds(trial)) continue;
@@ -1163,7 +1167,7 @@ public class OptimizerService {
         List<Rung> candidates = new ArrayList<>();
         for (GearItem item : ctx.dataset.getGearItems(WEAPON)) {
             if (item.id == carried.id || SpecialAttack.match(item) == null
-                || !LoadoutOptimizer.eligible(ctx.dataset, request, item)) {
+                || !eligible(ctx.dataset, request, item)) {
                 continue;
             }
             SpecPick pick = bestSpec(ctx.dataset, request, main, null, Set.of(item.id), true);
@@ -1241,7 +1245,7 @@ public class OptimizerService {
     static List<GearItem> fightSwaps(ComputeContext ctx, MonsterStats mob, List<DpsResult> best, boolean owned) {
         List<GearItem> out = new ArrayList<>();
         if (best.isEmpty()) return out;
-        for (int id : RequiredGear.swapIds(mob)) {
+        for (int id : swapIds(mob)) {
             GearItem item = ctx.dataset.getGear(id);
             GearItem worn = item == null ? null : best.get(0).loadout.get(item.slot);
             if (item != null && out.isEmpty() && (!owned || ctx.effectiveOwned.owns(id) || dreamsFor(ctx, mob).contains(id)) && (worn == null || worn.id != id)) out.add(item);
@@ -1715,7 +1719,7 @@ public class OptimizerService {
                 GearItem ammo = brought(source, base, AMMO);
                 int sf = specCarried != null && specCarried.id == weapon.id ? 1 : 0;
                 if (seen.add(weapon.id * 2L)) {
-                    out.add(new SwapBundle(style, Collections.singletonList(weapon), max(0, 1 - sf)));
+                    out.add(new SwapBundle(style, singletonList(weapon), max(0, 1 - sf)));
                 }
                 if (ammo != null && seen.add(weapon.id * 2L + 1)) {
                     List<GearItem> items = new ArrayList<>();
@@ -1778,7 +1782,7 @@ public class OptimizerService {
                 ids.add(item.id);
             }
         }
-        Collections.sort(ids);
+        sort(ids);
         String key = mi + "|" + bundlesKey + "|" + ids;
         Double hit = memo.get(key);
         if (hit != null) return hit;
@@ -1795,7 +1799,7 @@ public class OptimizerService {
             for (GearItem item : bundle.items) part.append(item.id).append(',');
             parts.add(part.toString());
         }
-        Collections.sort(parts);
+        sort(parts);
         return String.join(";", parts);
     }
 
@@ -2183,7 +2187,7 @@ public class OptimizerService {
                 Result gameIncoming = incomingFor(mob, sg, ctx);
                 Loadout worn = os == null ? sharedOwned : os.loadout;
                 List<GearItem> bench = sharedOwned == null ? List.of() : inventoryFor(plan.values(), carriedSlots[0], worn);
-                List<GearItem> gameBench = gameSlots[0] == null ? List.of() : gameSlots[2] == null ? Collections.singletonList(gameSlots[0])
+                List<GearItem> gameBench = gameSlots[0] == null ? List.of() : gameSlots[2] == null ? singletonList(gameSlots[0])
                     : Arrays.asList(gameSlots[0], gameSlots[2]);
                 StyleResult sr = verified(new StyleResult(ol, gameShown, spec, gameSpec,
                     w.plan.label, w.plan.gameLabel, incoming, gameIncoming, bench, gameBench, true, true),
@@ -2447,7 +2451,7 @@ public class OptimizerService {
                     }
                 }
                 if (counts.size() < 2) continue;
-                int ci = Collections.max(counts.entrySet(), Map.Entry.comparingByValue()).getKey();
+                int ci = max(counts.entrySet(), Map.Entry.comparingByValue()).getKey();
                 GearItem canonical = ibi.get(ci);
                 for (int j = 0; j < n; j++) {
                     List<DpsResult> best = us.bests.get(j);
@@ -2677,7 +2681,7 @@ public class OptimizerService {
         if (mobs.size() == 1) {
             // The single-mob fast path, the member's own exclusions and sims
             // layered per mob by the context - one request, same semantics.
-            bestPerStyle(mobs.get(0), ctx, map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map), "", "")));
+            bestPerStyle(mobs.get(0), ctx, map -> callback.accept(new RosterResult(mobs, singletonList(map), "", "")));
             return;
         }
         List<MonsterStats> roster = new ArrayList<>(mobs);
@@ -2697,7 +2701,7 @@ public class OptimizerService {
                 perMob = computeStyleAcross(roster, again, ticket);
             }
             return new RosterResult(roster, perMob, book.book, book.reason);
-        }, () -> new RosterResult(roster, new ArrayList<>(Collections.nCopies(roster.size(), Map.<CombatStyle, StyleResult>of())), "", ""),
+        }, () -> new RosterResult(roster, new ArrayList<>(nCopies(roster.size(), Map.<CombatStyle, StyleResult>of())), "", ""),
             "roster compute failed for {}", roster.get(0).name, callback);
     }
 
@@ -2779,7 +2783,7 @@ public class OptimizerService {
         for (Integer id : candidates) {
             SpecPick[] bare = new SpecPick[n];
             for (int j = 0; j < n; j++) {
-                bare[j] = bestSpec(ctx.dataset, reqs.get(j), shown[j], owned, Collections.singleton(id), specPin != null);
+                bare[j] = bestSpec(ctx.dataset, reqs.get(j), shown[j], owned, singleton(id), specPin != null);
             }
             // The switch WITH its offhand is its own option, ranked beside
             // the bare weapon: the seat check keeps whichever pays for its
@@ -2917,7 +2921,7 @@ public class OptimizerService {
         }
         DpsResult base = results.get(0);
         if (request.pinnedFor(RING) != null) return spec;
-        Loadout vl = lightbearerSwap(dataset, base.loadout, Collections.singletonList(request), owned);
+        Loadout vl = lightbearerSwap(dataset, base.loadout, singletonList(request), owned);
         if (vl == null) return spec;
         RiskGuard risk = RiskGuard.of(dataset, request);
         if (risk != null && risk.vetoes(vl, null)) return spec;
@@ -2964,7 +2968,7 @@ public class OptimizerService {
             if (rt != null && !rt.contains(item.id) || stipulated && !item.nameLower.contains(family)) {
                 continue;
             }
-            if (!LoadoutOptimizer.eligible(dataset, request, item)
+            if (!eligible(dataset, request, item)
                 // Sims are pretend-owned EVERYWHERE, including here: the
                 // worn-set machinery honoured dreams but the spec pool
                 // checked raw ownership only, so a simmed spec weapon
@@ -3016,7 +3020,7 @@ public class OptimizerService {
                     for (GearItem shield : dataset.getGearItems(SHIELD)) {
                         StatBlock b = shield.bonuses;
                         if (max(max(b.strength, b.rangedStrength), b.magicDamage) <= 0
-                            || !LoadoutOptimizer.eligible(dataset, request, shield) || !available(owned, request, shield.id)) {
+                            || !eligible(dataset, request, shield) || !available(owned, request, shield.id)) {
                             continue;
                         }
                         DpsResult with = calculator.calculate(br, withSlot(loadout, SHIELD, shield));
@@ -3248,7 +3252,7 @@ public class OptimizerService {
             ctx.p.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
             3, max(0, ctx.p.upgradeBudgetGp)) .withDreamItems(withForcedRequired(ctx, mob, style, dreamsFor(ctx, mob)))
             .withPinnedItems(tool != null ? tool.pins : pinsFor(ctx, style, mob))
-            .withWaivers(ctx.p.kourendElite ? Set.of(RequiredGear.KOUREND_ELITE) : Set.of());
+            .withWaivers(ctx.p.kourendElite ? Set.of(KOUREND_ELITE) : Set.of());
         r = withPrayerPick(r, ctx, style, sl, ctx.unlocks);
         if (tool != null) r = r.withMultiStack(ctx.p.multiStack);
         SpellStats spell = tool != null && tool.spell != null ? tool.spell : spellFor(ctx, mob);
@@ -3265,7 +3269,7 @@ public class OptimizerService {
     Set<Integer> withForcedRequired(ComputeContext ctx, MonsterStats mob, CombatStyle style, Set<Integer> dreams) {
         Map<GearSlot, Integer> pins = pinsFor(ctx, style, mob);
         Set<Integer> out = null;
-        for (RequiredGear.Rule rule : RequiredGear.rulesFor(mob, ctx.p.kourendElite ? Set.of(RequiredGear.KOUREND_ELITE) : Set.of())) {
+        for (RequiredGear.Rule rule : rulesFor(mob, ctx.p.kourendElite ? Set.of(KOUREND_ELITE) : Set.of())) {
             if (rule.soft || pins.containsKey(rule.slot)) continue;
             Set<Integer> ids = rule.ids(ctx.dataset);
             if (ids.stream().anyMatch(id -> ctx.effectiveOwned.owns(id) || dreams.contains(id))) continue;
@@ -3299,7 +3303,7 @@ public class OptimizerService {
         // a simmed max cape waives every combo, owned half or not; a maxed or
         // simmed ceiling drops the base capes the combos tie with.
         RequirementProfile req = ctx.requirements.withAllQuests();
-        if (ctx.p.simMaxCape) req = req.waiving(MaxCapeSims.ids(data, id -> true));
+        if (ctx.p.simMaxCape) req = req.waiving(ids(data, id -> true));
         OptimizationRequest r = request(ctx, mob, style, gameLevels, ALL, req, CandidateMode.ALL_STANDARD, 1, 0)
             // The ceiling drinks a super antifire and casts with sunfire runes:
             // its shield slot is for dps (Andrew 2026-10-19: best aligns with
@@ -3307,9 +3311,9 @@ public class OptimizerService {
             .withAntifirePotion(true).withSunfireRunes(true)
             // The true ceiling ignores your exclusions - they shape Yours and
             // the swaps strip (Andrew 2026-10-22: "BiS ignores exclusions").
-            .withExcludedItems(MaxCapeSims.wearable(data, req) ? MaxCapeSims.bases(data) : Set.of())
+            .withExcludedItems(wearable(data, req) ? bases(data) : Set.of())
             // The ceiling is a finished account: no Karuulm boots needed.
-            .withWaivers(Set.of(RequiredGear.KOUREND_ELITE));
+            .withWaivers(Set.of(KOUREND_ELITE));
         if (tool != null) {
             r = r.withPinnedItems(tool.gamePins).withMultiStack(ctx.p.multiStack);
             if (tool.spell != null) r = r.withSpell(tool.spell);

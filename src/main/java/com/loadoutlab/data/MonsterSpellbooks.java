@@ -17,7 +17,7 @@ public class MonsterSpellbooks {
     static {
         JsonObject root = JsonResources.object( "monster_spellbooks.json");
         if (root != null && root.has("byNameContains")) {
-            for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("byNameContains").entrySet()) {
+            for (var e : root.getAsJsonObject("byNameContains").entrySet()) {
                 JsonObject node = e.getValue().getAsJsonObject();
                 BY_NAME.put(Names.lower(e.getKey()), new String[]{
                     node.get("book").getAsString(), node.get("reason").getAsString(),

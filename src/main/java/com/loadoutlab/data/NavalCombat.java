@@ -70,7 +70,7 @@ public class NavalCombat {
         for (JsonElement e : root.getAsJsonArray("navalMonsters")) NAVAL.add(Names.lower(e.getAsString()));
         strings(root, "keels", KEELS);
         strings(root, "legacyWoodKeels", LEGACY_WOOD_KEELS);
-        for (Map.Entry<String, JsonElement> row : root.getAsJsonObject("keelMaxHits").entrySet()) {
+        for (var row : root.getAsJsonObject("keelMaxHits").entrySet()) {
             KEEL_MAX_HITS.put(Names.lower(row.getKey()), ints(row.getValue().getAsJsonArray()));
         }
     }

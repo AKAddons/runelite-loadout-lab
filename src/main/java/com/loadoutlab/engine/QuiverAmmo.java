@@ -1,6 +1,8 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.*;
+import static com.loadoutlab.engine.RangedAmmo.*;
+import static com.loadoutlab.data.GearSlot.*;
 
 /**
  * Dizana's quiver carries the arrows, so the ammo SLOT is free for a
@@ -21,17 +23,17 @@ public class QuiverAmmo {
      * all variants hold ammunition), or Dizana's max cape, which keeps the
      * blessed quiver's perks (wiki; ISS-01M5T53FBMHVMJTDPS5ZW4WS50). */
     public static boolean wearsQuiver(Loadout loadout) {
-        GearItem cape = loadout.get(GearSlot.CAPE);
+        GearItem cape = loadout.get(CAPE);
         return cape != null && (cape.nameLower.contains("dizana's quiver") || cape.nameLower.contains("dizana's max cape"));
     }
 
     /** The quiver only holds arrows and bolts - a ballista's javelins and
      * a blowpipe's darts stay where they are. */
     public static boolean relocatable(Loadout loadout) {
-        GearItem ammo = loadout.get(GearSlot.AMMO);
+        GearItem ammo = loadout.get(AMMO);
         GearItem weapon = loadout.getWeapon();
-        return wearsQuiver(loadout) && ammo != null && weapon != null && RangedAmmo.usesArrowsOrBolts(weapon)
-            && RangedAmmo.strengthApplies(ammo, weapon);
+        return wearsQuiver(loadout) && ammo != null && weapon != null && usesArrowsOrBolts(weapon)
+            && strengthApplies(ammo, weapon);
     }
 
     /** The quiver's OWN conditional bonus (official model, verified
@@ -40,15 +42,15 @@ public class QuiverAmmo {
      * and +1 ranged strength on top of everything - our chain counted
      * only the stored arrows' stats and ran every quiver set low). */
     static boolean quiverBonusApplies(Loadout loadout) {
-        GearItem cape = loadout.get(GearSlot.CAPE);
+        GearItem cape = loadout.get(CAPE);
         if (cape == null) return false;
         String name = cape.nameLower;
         boolean charged = name.contains("blessed dizana's quiver") || name.contains("dizana's max cape")
             || (name.contains("dizana's quiver") && "charged".equals(cape.versionLower));
         if (!charged) return false;
         GearItem weapon = loadout.getWeapon();
-        GearItem ammo = loadout.quiverAmmo != null ? loadout.quiverAmmo : loadout.get(GearSlot.AMMO);
-        return weapon != null && ammo != null && RangedAmmo.usesArrowsOrBolts(weapon) && RangedAmmo.strengthApplies(ammo, weapon);
+        GearItem ammo = loadout.quiverAmmo != null ? loadout.quiverAmmo : loadout.get(AMMO);
+        return weapon != null && ammo != null && usesArrowsOrBolts(weapon) && strengthApplies(ammo, weapon);
     }
 
     /** The quiver-carried ammo's ranged strength - added beside

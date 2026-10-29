@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import net.runelite.client.config.ConfigManager;
 import com.loadoutlab.model.CommandEngine;
+import static com.loadoutlab.data.MonsterStats.*;
 
 /**
  * Per-monster user profiles: the preferences the optimizer cannot infer,
@@ -44,10 +45,10 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
      * display name for filter items (names captured at add time - id
      * resolution later needs the client thread). */
     Stored stored(int monsterId) {
-        return profiles.computeIfAbsent(MonsterStats.profileIdOf(monsterId), id -> new Stored());
+        return profiles.computeIfAbsent(profileIdOf(monsterId), id -> new Stored());
     }
 
-    Stored get(int monsterId) { return profiles.get(MonsterStats.profileIdOf(monsterId)); }
+    Stored get(int monsterId) { return profiles.get(profileIdOf(monsterId)); }
 
     static class Stored {
         Map<String, Map<String, Integer>> pins;
@@ -112,9 +113,9 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
             // 2026-10-14 every write keyed the lensed card's raw id) fold
             // into the real monster's profile; its own entry wins.
             stored.forEach((id, profile) -> {
-                if (id < MonsterStats.SYNTHETIC_ID_BASE) profiles.put(id, profile);
+                if (id < SYNTHETIC_ID_BASE) profiles.put(id, profile);
             });
-            stored.forEach((id, profile) -> profiles.putIfAbsent(MonsterStats.profileIdOf(id), profile));
+            stored.forEach((id, profile) -> profiles.putIfAbsent(profileIdOf(id), profile));
         }
     }
 

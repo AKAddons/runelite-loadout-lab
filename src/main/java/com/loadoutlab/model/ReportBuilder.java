@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import com.loadoutlab.optimizer.OptimizerService.StyleResult;
 import com.loadoutlab.engine.PvpRisk.Assessment;
+import static java.lang.String.*;
 
 /**
  * The copy-report for the hosted view, built CORE-SIDE at page
@@ -36,7 +37,7 @@ class ReportBuilder {
                 appendParams(sb, state, counts, lunarCamp);
                 if (thralls != null) {
                     sb.append("  Thralls: ").append(thralls.get("tier"))
-                        .append(String.format(" (dps shown includes it: %.2f)%n", num(thralls.get("dps"))));
+                        .append(format(" (dps shown includes it: %.2f)%n", num(thralls.get("dps"))));
                 }
                 if (groupBook != null && !groupBook.isEmpty()) {
                     sb.append("  Group spellbook: ").append(groupBook)
@@ -50,7 +51,7 @@ class ReportBuilder {
             // Each sea mob's own cannon dps (the row's fold, 2026-09-03).
             Object byMob = ship == null ? null : ship.get("byMob");
             double cannonDps = byMob instanceof List && i < ((List<?>) byMob).size() ? num(((List<?>) byMob).get(i)) : 0;
-            if (cannonDps > 0) sb.append(String.format("  Cannons vs this mob: +%.2f dps%n", cannonDps));
+            if (cannonDps > 0) sb.append(format("  Cannons vs this mob: +%.2f dps%n", cannonDps));
             Map<CombatStyle, StyleResult> results = perMob.get(i);
             // The kit contract (field report 2026-08-14, the Sire: "a
             // multi-mob result needs to return 1 set of gear and the
@@ -72,7 +73,7 @@ class ReportBuilder {
                         String.valueOf(style).toLowerCase());
                 }
                 if (!result.ownedKitBacked && result.owned != null && !result.owned.isEmpty()) {
-                    others.append(others.length() == 0 ? "" : " ") .append(style).append(String.format(" %.2f;",
+                    others.append(others.length() == 0 ? "" : " ") .append(style).append(format(" %.2f;",
                             result.owned.get(0).dps));
                 }
             }
@@ -155,7 +156,7 @@ class ReportBuilder {
         int afMode = (int) num(params.get("antifireMode"));
         Object lock = params.get("spellbookLock");
         // The PvP world and the risk cap segments only when out there.
-        sb.append(String.format("Viewing: %s / %s\nParameters:\n  On task: %s; Wilderness: %s%s; Spec weapon: %s;"
+        sb.append(format("Viewing: %s / %s\nParameters:\n  On task: %s; Wilderness: %s%s; Spec weapon: %s;"
                 + " Antifire: %s; Sunfire runes: %s\n  Inventory: %s\n  Death charge: %s; Invocation: %s;"
                 + " Spellbook lock: %s; Upgrade budget: %s%s\n",
             tab.isEmpty() ? "auto" : tab, Boolean.TRUE.equals(params.get("viewingBis")) ? "BiS" : "Yours",
@@ -171,7 +172,7 @@ class ReportBuilder {
         if (stats != null) sb.append(stats);
         List<String> tasks = new ArrayList<>();
         for (CombatAchievements.Task t : state.caPicks()) tasks.add(t.getName());
-        if (!tasks.isEmpty()) sb.append("  Combat achievements: ").append(String.join(", ", tasks)).append('\n');
+        if (!tasks.isEmpty()) sb.append("  Combat achievements: ").append(join(", ", tasks)).append('\n');
         String req = String.valueOf(params.getOrDefault("requirements", ""));
         if (!req.isEmpty()) sb.append("  Requirements: ").append(req.replace(";", ", ")).append('\n');
         if (counts != null) {
@@ -192,10 +193,10 @@ class ReportBuilder {
         double specAdded = bis ? result.gameSpecDpsAdded : result.specDpsAdded;
         GearItem specWeapon = bis ? result.gameSpecWeapon : result.specWeapon;
         if (specWeapon != null && specAdded > 0.0005) {
-            sb.append(String.format("%s: %.2f dps as shown = %.2f set + %.2f spec%n",
+            sb.append(format("%s: %.2f dps as shown = %.2f set + %.2f spec%n",
                 caption, shown.dps + specAdded, shown.dps, specAdded));
         } else {
-            sb.append(String.format("%s: %.2f dps%n", caption, shown.dps));
+            sb.append(format("%s: %.2f dps%n", caption, shown.dps));
         }
         sb.append(" ");
         for (GearSlot slot : GearSlot.values()) {
@@ -210,7 +211,7 @@ class ReportBuilder {
         if (boost != null) sb.append("  Assumes: ").append(boost).append('\n');
         if (shown.getSpellName() != null) sb.append("  Spell: ").append(shown.getSpellName()).append('\n');
         if (specWeapon != null) {
-            sb.append(String.format("  Spec: %s (adds ~%.2f dps)%n", specWeapon.label(), specAdded));
+            sb.append(format("  Spec: %s (adds ~%.2f dps)%n", specWeapon.label(), specAdded));
         }
         if (keptSlots >= 0) {
             // What this answer costs you on a death out there - the same
@@ -265,7 +266,7 @@ class ReportBuilder {
             int max = (int) num(in.get("maxHit"));
             sb.append("  Ship: ").append(in.get("keel")).append(" keel - ");
             sb.append(max <= 0 ? "this monster cannot hit the boat"
-                : String.format("damage taken ~%.2f/tick, max %d per hit (always-hit ceiling)", num(in.get("dtps")), max));
+                : format("damage taken ~%.2f/tick, max %d per hit (always-hit ceiling)", num(in.get("dtps")), max));
             sb.append('\n');
         }
         boolean manned = "cannon".equals(ship.get("station"));
@@ -288,17 +289,17 @@ class ReportBuilder {
                 if (cannon.get("blocked") != null) {
                     sb.append("blocked: ").append(cannon.get("blocked"));
                 } else {
-                    sb.append(String.format("%.2f dps", num(cannon.get("dps"))));
+                    sb.append(format("%.2f dps", num(cannon.get("dps"))));
                 }
             }
-            sb.append(String.format(" (total %.2f%s)%n", num(ship.get("dps")),
+            sb.append(format(" (total %.2f%s)%n", num(ship.get("dps")),
                 Boolean.TRUE.equals(ship.get("estimated")) ? ", crew formula wiki-flagged stale" : ""));
         }
     }
 
     static String gp(long value) {
-        if (value >= 1_000_000) return String.format("%.1fm", value / 1_000_000.0);
-        if (value >= 1_000) return String.format("%.0fk", value / 1_000.0);
+        if (value >= 1_000_000) return format("%.1fm", value / 1_000_000.0);
+        if (value >= 1_000) return format("%.0fk", value / 1_000.0);
         return Long.toString(value);
     }
 

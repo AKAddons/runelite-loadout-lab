@@ -4,6 +4,7 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.*;
 import java.util.*;
 import net.runelite.api.*;
+import static net.runelite.api.Skill.*;
 
 public class RequirementProfile {
     public static final RequirementProfile MAXED = new RequirementProfile(maxedLevels(), allQuests());
@@ -40,13 +41,13 @@ public class RequirementProfile {
     public RequirementProfile withLevels(PlayerLevels simmed) {
         Map<Skill, Integer> next = new EnumMap<>(Skill.class);
         next.putAll(levels);
-        next.put(Skill.ATTACK, simmed.attack);
-        next.put(Skill.STRENGTH, simmed.strength);
-        next.put(Skill.DEFENCE, simmed.defence);
-        next.put(Skill.RANGED, simmed.ranged);
-        next.put(Skill.MAGIC, simmed.magic);
-        next.put(Skill.PRAYER, simmed.prayer);
-        next.put(Skill.HITPOINTS, simmed.hitpoints);
+        next.put(ATTACK, simmed.attack);
+        next.put(STRENGTH, simmed.strength);
+        next.put(DEFENCE, simmed.defence);
+        next.put(RANGED, simmed.ranged);
+        next.put(MAGIC, simmed.magic);
+        next.put(PRAYER, simmed.prayer);
+        next.put(HITPOINTS, simmed.hitpoints);
         return new RequirementProfile(next, completedQuests, waived);
     }
 
@@ -81,7 +82,7 @@ public class RequirementProfile {
     static Map<Skill, Integer> maxedLevels() {
         var result = new EnumMap<Skill, Integer>(Skill.class);
         for (Skill skill : Skill.values()) {
-            if (skill != Skill.OVERALL) result.put(skill, 99);
+            if (skill != OVERALL) result.put(skill, 99);
         }
         return result;
     }

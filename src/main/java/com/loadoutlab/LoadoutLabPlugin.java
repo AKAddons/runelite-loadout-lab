@@ -43,6 +43,7 @@ import static com.loadoutlab.collection.StoragesApi.*;
 import static javax.swing.SwingUtilities.*;
 import static net.runelite.api.gameval.VarbitID.*;
 import com.loadoutlab.optimizer.BoostSelector;
+import static com.loadoutlab.engine.PlayerLevels.*;
 
 /**
  * Loadout Lab - best-in-slot from the gear YOU own.
@@ -416,8 +417,8 @@ import com.loadoutlab.optimizer.BoostSelector;
                 // monster thumbnails are config-gated (Connections).
                 var wikiCalc = new WikiCalcLink(okHttpClient, gson);
                 commandEngine.setWikiCalcOpener((mob, shown, dartId, assumes, ot, wildy) ->
-                    wikiCalc.open(mob, shown, dartId, assumes, realLevels != null ? realLevels : PlayerLevels.MAXED,
-                        boostedLevels != null ? boostedLevels : PlayerLevels.MAXED, ot, wildy));
+                    wikiCalc.open(mob, shown, dartId, assumes, realLevels != null ? realLevels : MAXED,
+                        boostedLevels != null ? boostedLevels : MAXED, ot, wildy));
                 // Detect (classic resolveDefaultAntifire): only for a
                 // fire-breathing selection, best owned tier wins.
                 commandEngine.setAntifireResolver(mobs -> mobs.stream().noneMatch(DragonfireRules::breathesFire) ? 0
@@ -1210,7 +1211,7 @@ import com.loadoutlab.optimizer.BoostSelector;
     volatile boolean setupsReady;
 
     void detectSetups() {
-        Map data = JsonResources.map("setups", new ArrayList<String>());
+        Map data = JsonResources.map("setups", new ArrayList<>());
         if (pluginEnabled("Inventory Setups")) eventBus.post(new PluginMessage("inventory-setups", "get-setups", data));
         setupsReady = data.get("version") instanceof Integer && (Integer) data.get("version") >= 2;
     }
@@ -1416,13 +1417,13 @@ import com.loadoutlab.optimizer.BoostSelector;
             if (client.getGameState() == GameState.LOGGED_IN) snapshotProfileIfNeeded();
             if (config.useDwmsData()) requestDwmsStorages();
             RequirementProfile known = requirementProfile != null ? requirementProfile : RequirementProfile.MAXED;
-            PlayerLevels mine = realLevels != null ? realLevels : PlayerLevels.MAXED;
+            PlayerLevels mine = realLevels != null ? realLevels : MAXED;
             // The stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY): simmed levels stand
             // in for yours everywhere - the maths, the live boosts (not stacked
             // on a sim), and the gear you can wear.
             boolean simmed = p != null && p.simLevels != null;
             real = simmed ? mine.overridden(p.simLevels) : mine;
-            live = simmed ? real : boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
+            live = simmed ? real : boostedLevels != null ? boostedLevels : MAXED;
             RequirementProfile gear = simmed ? known.withLevels(real) : known;
             profile = p != null && p.simMaxCape ? gear.waiving(MaxCapeSims.ids(data, LoadoutLabPlugin.this::ownsOrSimmed)) : gear;
             pushPanelCastState(live);
@@ -1570,8 +1571,8 @@ import com.loadoutlab.optimizer.BoostSelector;
         Set<String> quests = Arrays.stream(Quest.values()).filter(quest -> quest.getState(client) == QuestState.FINISHED)
             .map(Enum::name).collect(Collectors.toSet());
         requirementProfile = new RequirementProfile(real, quests);
-        realLevels = PlayerLevels.from(real);
-        boostedLevels = PlayerLevels.from(boosted);
+        realLevels = from(real);
+        boostedLevels = from(boosted);
         if (commandEngine != null) {
             commandEngine.setLevels(realLevels); // the stat sim's boxes default to these
         }

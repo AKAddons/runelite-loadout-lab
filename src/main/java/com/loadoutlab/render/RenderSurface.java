@@ -22,6 +22,7 @@ import javax.swing.event.DocumentListener;
 import java.util.regex.Pattern;
 import java.awt.image.BufferedImage;
 import java.awt.datatransfer.StringSelection;
+import static java.awt.BorderLayout.*;
 
 /**
  * The renderer handed to Core by reference (one-surface ruling): Core
@@ -551,8 +552,8 @@ public class RenderSurface {
             JPanel cell = panel(new BorderLayout(3, 0));
             JLabel name = small(SIM_NAMES[i], LIGHT);
             name.setPreferredSize(new Dimension(labelWidth, name.getPreferredSize().height));
-            cell.add(name, BorderLayout.WEST);
-            cell.add(boxes[i], BorderLayout.CENTER);
+            cell.add(name, WEST);
+            cell.add(boxes[i], CENTER);
             grid.add(cell);
         }
         cb.setOpaque(false);
@@ -578,8 +579,8 @@ public class RenderSurface {
         foot.add(max);
         foot.add(ml);
         statsRow.removeAll();
-        statsRow.add(grid, BorderLayout.NORTH);
-        statsRow.add(foot, BorderLayout.CENTER);
+        statsRow.add(grid, NORTH);
+        statsRow.add(foot, CENTER);
         statsRow.setVisible(statsOpen);
         return pill(statsLabel(simmed, cape), on, on,
             (on ? "Simmed " + levels + (cape ? " + max cape. " : ". ") : "") + text("chip.stats.tip"), () -> {
@@ -736,7 +737,7 @@ public class RenderSurface {
             sb.setBorder(new RoundedBorder(new Color(0x504E46), 3, 4));
             search.setOpaque(false);
             search.setBorder(createEmptyBorder(2, 4, 2, 2));
-            sb.add(search, BorderLayout.CENTER);
+            sb.add(search, CENTER);
             JPanel st = clear(new FlowLayout(FlowLayout.RIGHT, 2, 0));
             st.add(cs);
             for (JButton arrow : new JButton[]{undoButton, redoButton}) {
@@ -745,13 +746,13 @@ public class RenderSurface {
                 arrow.setForeground(CHIP_OFF);
                 st.add(arrow);
             }
-            sb.add(st, BorderLayout.EAST);
+            sb.add(st, EAST);
             JPanel sr = darker(new BorderLayout(4, 0));
-            sr.add(sb, BorderLayout.CENTER);
-            sa.add(sr, BorderLayout.NORTH);
+            sr.add(sb, CENTER);
+            sa.add(sr, NORTH);
             matchesBox = column(DARKER_GRAY_COLOR);
             matchesBox.setVisible(false);
-            sa.add(matchesBox, BorderLayout.CENTER);
+            sa.add(matchesBox, CENTER);
             top.add(sa);
             rosterArea = darker(new BorderLayout());
             rosterArea.setBorder(createEmptyBorder(4, 0, 2, 0));
@@ -769,7 +770,7 @@ public class RenderSurface {
             reqRow = panel(new BorderLayout());
             reqRow.setBorder(createEmptyBorder(2, 6, 4, 6));
             top.add(reqRow);
-            root.add(top, BorderLayout.NORTH);
+            root.add(top, NORTH);
             JPanel ra = column(DARK_GRAY_COLOR);
             cardArea = column(DARK_GRAY_COLOR);
             ra.add(cardArea);
@@ -779,20 +780,20 @@ public class RenderSurface {
             loader = new AsciiLoader();
             JPanel lr = panel(new FlowLayout(FlowLayout.CENTER, 0, 4));
             lr.add(loader);
-            waitingSlot.add(lr, BorderLayout.CENTER);
+            waitingSlot.add(lr, CENTER);
             JLabel computing = label("Computing...", CHIP_OFF);
             computing.setHorizontalAlignment(SwingConstants.CENTER);
-            waitingSlot.add(computing, BorderLayout.SOUTH);
+            waitingSlot.add(computing, SOUTH);
             waitingSlot.setVisible(false);
             ra.add(waitingSlot);
-            root.add(ra, BorderLayout.CENTER);
+            root.add(ra, CENTER);
             // Footer actions (the classic position): below the results.
             footerRow = panel(new WrapLayout(FlowLayout.CENTER, 4, 2));
             pathRow = panel(new FlowLayout(FlowLayout.CENTER, 4, 2));
             JPanel south = panel(new BorderLayout());
-            south.add(pathRow, BorderLayout.NORTH);
-            south.add(footerRow, BorderLayout.CENTER);
-            root.add(south, BorderLayout.SOUTH);
+            south.add(pathRow, NORTH);
+            south.add(footerRow, CENTER);
+            root.add(south, SOUTH);
         }
         repaint();
         return root;
@@ -1014,7 +1015,7 @@ public class RenderSurface {
             // size - every value reachable, not four presets.
             JPanel ib = panel(new BorderLayout(4, 0));
             JLabel il = label("Inv " + swaps, LIGHT);
-            ib.add(il, BorderLayout.WEST);
+            ib.add(il, WEST);
             JSlider invSlider = new JSlider(0, 16, Math.max(0, Math.min(16, swaps)));
             invSlider.setPreferredSize(new Dimension(88, 18));
             invSlider.setBackground(DARK_GRAY_COLOR);
@@ -1028,10 +1029,10 @@ public class RenderSurface {
                     commands.set("maxSwaps", invSlider.getValue());
                 }
             });
-            ib.add(invSlider, BorderLayout.CENTER);
+            ib.add(invSlider, CENTER);
             ib.setBorder(createEmptyBorder(2, 4, 2, 4));
             invRow.removeAll();
-            invRow.add(ib, BorderLayout.CENTER);
+            invRow.add(ib, CENTER);
             int bg = id(params, "upgradeBudgetGp");
             chipRow.add(valueChip( bg > 0 ? "Budget " + Gp.format(bg) : "Budget", bg > 0,
                 text("chip.budget.tip"), Gp.format(bg), text -> commands.set("upgradeBudgetGp", Gp.parse(text))));
@@ -1082,8 +1083,8 @@ public class RenderSurface {
             });
             reqChips.add(plus[0]);
             reqRow.removeAll();
-            reqRow.add(reqChips, BorderLayout.NORTH);
-            reqRow.add(editor, BorderLayout.CENTER);
+            reqRow.add(reqChips, NORTH);
+            reqRow.add(editor, CENTER);
             reqRow.setVisible(true);
             if (wildyRiskGate.getAsBoolean() && (p > 0 || aw && (ae || flag(params, "inWilderness")))) {
                 int rg = id(params, "riskBudgetGp");
@@ -1161,7 +1162,7 @@ public class RenderSurface {
         if (rosterArea != null) {
             rosterArea.removeAll();
             JPanel roster = cards.renderRoster(page);
-            if (roster != null) rosterArea.add(roster, BorderLayout.CENTER);
+            if (roster != null) rosterArea.add(roster, CENTER);
             rosterArea.setVisible(roster != null);
         }
         cardArea.removeAll();

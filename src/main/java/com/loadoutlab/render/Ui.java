@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.ActionListener;
+import static java.lang.String.*;
 
 /**
  * The shared UI kit (merge-back dedupe): the handful of Swing recipes
@@ -244,10 +245,10 @@ class Ui {
         // One row template (ledger.line: label, right-aligned value, note cell).
         String row = text("ledger.line");
         var sum = new StringBuilder("<table cellpadding='1' cellspacing='0'>");
-        sum.append(String.format(row, "set", String.format("%.3f", set), "<font color='#969696'>&nbsp;&nbsp;" + setNote + "</font>"));
-        if (showSpec) sum.append(String.format(row, "+ spec", String.format("%.2f", specDps), ""));
-        if (thrallsDps > 0) sum.append(String.format(row, "+ thralls", String.format("%.2f", thrallsDps), ""));
-        return sum.append(String.format(row, "<b>= shown here</b>",
-            "<b>" + String.format("%.2f", set + specDps + thrallsDps) + "</b>", "")).append("</table>").toString();
+        sum.append(format(row, "set", format("%.3f", set), "<font color='#969696'>&nbsp;&nbsp;" + setNote + "</font>"));
+        if (showSpec) sum.append(format(row, "+ spec", format("%.2f", specDps), ""));
+        if (thrallsDps > 0) sum.append(format(row, "+ thralls", format("%.2f", thrallsDps), ""));
+        return sum.append(format(row, "<b>= shown here</b>",
+            "<b>" + format("%.2f", set + specDps + thrallsDps) + "</b>", "")).append("</table>").toString();
     }
 }

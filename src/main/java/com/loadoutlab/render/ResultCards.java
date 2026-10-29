@@ -24,6 +24,8 @@ import static net.runelite.client.ui.ColorScheme.*;
 import javax.swing.plaf.basic.BasicLabelUI;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import static java.awt.BorderLayout.*;
+import static java.lang.String.*;
 
 /**
  * The first rich renderer over the render-model: per mob, per style,
@@ -261,8 +263,8 @@ public class ResultCards {
         // 2026-08-15): set + spec (in the tab facts) + thralls, and a
         // sea row's cannons (Andrew 2026-09-03).
         double ride = thrallsFor(bestStyle != null ? bs : shown, td2) + num(mob, "shipDps");
-        String dps = bestStyle != null ? String.format("%.2f", bd + (bd > 0 ? ride : 0)) : shown == null ? "-"
-            : String.format("%.2f%s", num(shown, "dps") + ride, tabOnly ? "*" : "");
+        String dps = bestStyle != null ? format("%.2f", bd + (bd > 0 ? ride : 0)) : shown == null ? "-"
+            : format("%.2f%s", num(shown, "dps") + ride, tabOnly ? "*" : "");
 
         String rs = bestStyle;
         var row = new JPanel(new BorderLayout(4, 0));
@@ -329,11 +331,11 @@ public class ResultCards {
         }
         if (st != null) {
             JPanel ns = clear(new BorderLayout(4, 0));
-            ns.add(label, BorderLayout.CENTER);
-            ns.add(st, BorderLayout.EAST);
-            row.add(ns, BorderLayout.CENTER);
+            ns.add(label, CENTER);
+            ns.add(st, EAST);
+            row.add(ns, CENTER);
         } else {
-            row.add(label, BorderLayout.CENTER);
+            row.add(label, CENTER);
         }
 
         // The aligned right block: [icon dps] x - the icon rides right,
@@ -350,7 +352,7 @@ public class ResultCards {
 
         JLabel dl2 = small(dps, selected ? Color.WHITE : new Color(0xAAAAAA));
         id2.add(dl2);
-        columns.add(id2, BorderLayout.CENTER);
+        columns.add(id2, CENTER);
 
         JLabel remove = xLabel("Remove " + name + " from this result", () -> commands.send("remove-mob", Map.of("index", index)));
         remove.setHorizontalAlignment(SwingConstants.CENTER);
@@ -376,8 +378,8 @@ public class ResultCards {
         };
         row.addMouseListener(reorder);
         remove.addMouseListener(reorder);
-        columns.add(remove, BorderLayout.EAST);
-        row.add(columns, BorderLayout.EAST);
+        columns.add(remove, EAST);
+        row.add(columns, EAST);
         return row;
     }
 
@@ -449,14 +451,14 @@ public class ResultCards {
             // (field screenshot 2026-08-21: 'Duke Sucellus (Awa... lvl 1').
             JPanel tr = darker(new BorderLayout(8, 0));
             title.setMinimumSize(new Dimension(20, 18));
-            tr.add(title, BorderLayout.CENTER);
+            tr.add(title, CENTER);
             JPanel hpSeat = clear(new FlowLayout(FlowLayout.LEFT, 4, 2));
             if (nt != null) hpSeat.add(nt);
             if (mobHp > 0) {
                 // hp rides the header, muted (field ask 2026-08-21).
                 hpSeat.add(small(mobHp + "hp", DIM));
             }
-            tr.add(hpSeat, BorderLayout.EAST);
+            tr.add(hpSeat, EAST);
             card.add(tr);
         } else {
             card.add(left(title));
@@ -575,12 +577,12 @@ public class ResultCards {
             } else {
                 seatSprite(icon, id(styleNode, "styleSprite"), 16);
             }
-            JLabel dl2 = label(hs ? String.format("%.2f", td) : "-", isSelected ? Color.WHITE : MID);
+            JLabel dl2 = label(hs ? format("%.2f", td) : "-", isSelected ? Color.WHITE : MID);
             dl2.setFont(dl2.getFont().deriveFont(Font.BOLD, 12f));
             dl2.setHorizontalAlignment(SwingConstants.CENTER);
-            tc.add(icon, BorderLayout.WEST);
-            tc.add(dl2, BorderLayout.CENTER);
-            tipText(tc, cap(style) + (hs ? String.format(" - %.2f DPS", td) : " - no set"));
+            tc.add(icon, WEST);
+            tc.add(dl2, CENTER);
+            tipText(tc, cap(style) + (hs ? format(" - %.2f DPS", td) : " - no set"));
             onClick(tc, () -> {
                 // Instant feedback, reconciled by the arriving page.
                 tc.setBorder(new RoundedBorder(ACCENT, 1, 2));
@@ -623,16 +625,16 @@ public class ResultCards {
         JPanel sides = darker(new FlowLayout(FlowLayout.CENTER, 6, 0));
         sides.add(viewSide("Yours", !bis, "Your best owned set", () -> commands.set("viewingBis", false)));
         sides.add(viewSide("BiS", bis, "The game-wide best set at your levels", () -> commands.set("viewingBis", true)));
-        vr.add(sides, BorderLayout.WEST);
+        vr.add(sides, WEST);
         Map yoursNode = map(node, "yours");
         Map bisNode = map(node, "bis");
         if (yoursNode != null && bisNode != null) {
             double mine = num(node, "tabDps");
             double ceiling = num(node, "bisTabDps");
             if (ceiling > 0) {
-                JLabel gap = small(String.format("%.0f%% of BiS", min(100.0, 100.0 * mine / ceiling)), MID);
+                JLabel gap = small(format("%.0f%% of BiS", min(100.0, 100.0 * mine / ceiling)), MID);
                 tipText(gap, text("gap.tip"));
-                vr.add(gap, BorderLayout.EAST);
+                vr.add(gap, EAST);
             }
         }
         card.add(vr);
@@ -832,11 +834,11 @@ public class ResultCards {
     }
 
     static String ledgerRow(String key, String value, String note, String color) {
-        return String.format(text("ledger.row"), color, key, value, note);
+        return format(text("ledger.row"), color, key, value, note);
     }
 
     /** A dps figure to two places, locale-proof (the ledger is read by tests). */
-    static String two(double value) { return String.format(Locale.ROOT, "%.2f", value); }
+    static String two(double value) { return format(Locale.ROOT, "%.2f", value); }
 
     JPanel shipBreakdown(Map ship, Map shownSide) {
         boolean full = breakdownShown.getAsBoolean();
@@ -1071,7 +1073,7 @@ public class ResultCards {
         if (swapOn) {
             required = "lunar";
             reason = db == null || "lunar".equalsIgnoreCase(db) ? "Lunar home for Vengeance"
-                : String.format(text("book.swaphome"), db.toUpperCase());
+                : format(text("book.swaphome"), db.toUpperCase());
         }
         String live = str(pageWide, "liveSpellbook");
         boolean ob = required != null && live != null && !live.isEmpty() && !live.equalsIgnoreCase(required);
@@ -1087,7 +1089,7 @@ public class ResultCards {
         // neutral read as a recommendation - a powered staff like the
         // Shadow needs no book at all).
         String bt = required == null ? text("book.none")
-            : String.format(text("book.wants"), required.toUpperCase(), reason, ob ? "NOT " : "");
+            : format(text("book.wants"), required.toUpperCase(), reason, ob ? "NOT " : "");
         // The swap+Vengeance option rides the plate, the way prayers and
         // boosts ride their icons (field ask 2026-08-22). Supplies only:
         // it changes which runes the trip carries, never the dps.
@@ -1200,7 +1202,7 @@ public class ResultCards {
             () -> commands.set("spellbookSwap", false)));
         boolean needsSwap = !any && !"lunar".equalsIgnoreCase(db);
         books.add(pickCell(menu, cachedSprite(bookSprite("lunar")), needsSwap
-                ? String.format(text("book.swapinto"), direct.toUpperCase()) : text("book.lunar"), swapOn, 30,
+                ? format(text("book.swapinto"), direct.toUpperCase()) : text("book.lunar"), swapOn, 30,
             () -> commands.set("spellbookSwap", true)));
         menu.add(books);
         show(menu, anchor);
@@ -1257,7 +1259,7 @@ public class ResultCards {
     /** A stat line led by its game-sprite icon (async, 14px). */
     /** The ship damage line, sized for the stat column. */
     static String shipDamageText(double dtps, int km) {
-        return km == 0 ? "no damage" : String.format(Locale.ROOT, "~%.1f max %d", dtps, km);
+        return km == 0 ? "no damage" : format(Locale.ROOT, "~%.1f max %d", dtps, km);
     }
 
     /** The damage-taken line and its tooltip. Coverage decides the text
@@ -1270,14 +1272,14 @@ public class ResultCards {
             return new String[]{"DTPS: ?", why == null || why.isEmpty() ? "No estimate for this monster's attacks" : why};
         }
         double dps = num(incoming, "dps");
-        String tip = String.format(text("dtps.tip"), str(incoming, "protectPrayer") == null
+        String tip = format(text("dtps.tip"), str(incoming, "protectPrayer") == null
             ? "No protection prayer helps" : "Pray " + str(incoming, "protectPrayer"), dps, num(incoming, "unprayedDps"));
         if (!"partial".equals(coverage)) {
-            return new String[]{String.format("~%.1f", dps), tip};
+            return new String[]{format("~%.1f", dps), tip};
         }
         List<String> missing = new ArrayList<>();
         for (Object style : list2(incoming, "unmodeled")) missing.add(String.valueOf(style));
-        return new String[]{String.format("~%.1f*", dps), tip + ". Not counted: " + String.join(", ", missing)};
+        return new String[]{format("~%.1f*", dps), tip + ". Not counted: " + join(", ", missing)};
     }
 
     /**
@@ -1348,8 +1350,8 @@ public class ResultCards {
         tipText(title, group ? text("ladder.group.tip") : text("ladder.solo.tip"));
         JPanel legend = clear(new BorderLayout());
         legend.add(small(page > 0 ? "steps " + (stepsShown(ladder) + (page - 1) * PAGE + 1) + " up" : "your gear",
-            LADDER_DOWN), BorderLayout.WEST);
-        legend.add(small("upgrades", LADDER_UP), BorderLayout.EAST);
+            LADDER_DOWN), WEST);
+        legend.add(small("upgrades", LADDER_UP), EAST);
         legend.setMaximumSize(new Dimension(row.getPreferredSize().width, legend.getPreferredSize().height));
         for (JComponent part : new JComponent[]{title, row, legend}) {
             part.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -1380,7 +1382,7 @@ public class ResultCards {
         for (Map option : all) {
             String name = str(option, "name");
             boolean owned = flag(option, "owned");
-            var item = new JMenuItem(String.format("%s - %.2f DPS (%s)%s", name,
+            var item = new JMenuItem(format("%s - %.2f DPS (%s)%s", name,
                 num(option, "dps"), str(option, "delta"), owned ? " - yours" : ""));
             if (!owned) {
                 int id = id(option, "id");
@@ -1500,7 +1502,7 @@ public class ResultCards {
         JPanel bars = clear(new BorderLayout());
         JPanel bottom = clear(new FlowLayout(FlowLayout.CENTER, 0, 0));
         bottom.add(bar);
-        bars.add(bottom, BorderLayout.SOUTH);
+        bars.add(bottom, SOUTH);
         bars.setPreferredSize(new Dimension(LADDER_COLUMN, 2 * LADDER_BAR_MID + 1));
         bars.setBorder(createMatteBorder(0, 0, 1, 0, LADDER_BASELINE));
 
@@ -1538,7 +1540,7 @@ public class ResultCards {
                 // explicit pin stays in the menu for forcing it here.
                 boolean spec = "spec".equals(slot);
                 item(menu, spec ? "Pin as spec for this mob" : "Pin for this mob",
-                    String.format(text("ladder.pin.tip"), name, slot), () -> commands.send("ladder-try", tryArgs));
+                    format(text("ladder.pin.tip"), name, slot), () -> commands.send("ladder-try", tryArgs));
                 tipText(cell, tip + " - yours. Right-click to pin it here");
             } else {
                 // A click sims it for this mob, nothing more (Andrew
@@ -1556,9 +1558,9 @@ public class ResultCards {
                 if (nerAvailable) {
                     item(menu, text("ladder.ner"), "Open " + name + " in Not Enough Runes",
                         () -> commands.send("ner-open", Map.of("itemId", id)));
-                    tipText(cell, String.format(text("ladder.sim.ner"), tip, group ? "group" : "mob"));
+                    tipText(cell, format(text("ladder.sim.ner"), tip, group ? "group" : "mob"));
                 } else {
-                    tipText(cell, String.format(text("ladder.sim.noner"), tip, group ? "group" : "mob"));
+                    tipText(cell, format(text("ladder.sim.noner"), tip, group ? "group" : "mob"));
                 }
             }
             // Hide a step you never want suggested (Andrew 2026-10-22:
@@ -1568,10 +1570,10 @@ public class ResultCards {
             // everywhere only: "this mob" would be one member of many.
             if (menu.getComponentCount() > 0) menu.addSeparator();
             if (!group) {
-                item(menu, "Hide for this mob", String.format(text("ladder.hide.mob"), name),
+                item(menu, "Hide for this mob", format(text("ladder.hide.mob"), name),
                     () -> commands.send("exclude-for-mob", Map.of("itemId", id, "scope", "ALL", "label", name)));
             }
-            item(menu, "Hide for all mobs", String.format(text("ladder.hide.all"), name), () -> commands.send("toggle-exclusion", sa));
+            item(menu, "Hide for all mobs", format(text("ladder.hide.all"), name), () -> commands.send("toggle-exclusion", sa));
             cell.setComponentPopupMenu(menu);
         }
 
@@ -1826,7 +1828,7 @@ public class ResultCards {
         String name = cap(style);
         double factor = num(node, "multiFactor");
         if (factor > 0) {
-            name += factor == rint(factor) ? String.format(" x%d", (int) factor) : String.format(" x%.2f", factor);
+            name += factor == rint(factor) ? format(" x%d", (int) factor) : format(" x%.2f", factor);
         }
         var label = new JLabel(name);
         label.setFont(label.getFont().deriveFont(Font.BOLD, label.getFont().getSize() - 1f));
@@ -1922,7 +1924,7 @@ public class ResultCards {
             // characters (designer pass 2026-09-02: "~1.0 (max 5, Rune)"
             // clipped); the keel lives in the tooltip and the click menu.
             JLabel sl = statIconLine( shipDamageText(num(si, "dtps"), km), km == 0
-                    ? String.format(text("ship.nohit"), kn) : String.format(text("ship.hit"), kn, km), TEXT, -1);
+                    ? format(text("ship.nohit"), kn) : format(text("ship.hit"), kn, km), TEXT, -1);
             sl.setForeground(SEA);
             Icon sail = sailingIconSmall();
             if (sail != null) {
@@ -2014,7 +2016,7 @@ public class ResultCards {
             // 2026-08-15: the compact lines were cut off and unreadable)
             // - a proper equipment-stats table, offensive and defensive
             // for every stat.
-            String fb2 = String.format(text("stats.table"), id(off, "stab"), id(off, "slash"), id(off, "crush"),
+            String fb2 = format(text("stats.table"), id(off, "stab"), id(off, "slash"), id(off, "crush"),
                 id(off, "magic"), id(off, "ranged"), id(def, "stab"), id(def, "slash"), id(def, "crush"),
                 id(def, "magic"), id(def, "ranged"), id(stats, "strength"), id(stats, "rangedStrength"),
                 id(stats, "magicDamage"), id(stats, "prayer"));
@@ -2225,7 +2227,7 @@ public class ResultCards {
             // A left click opens (or closes) this slot's ladder strip under
             // the grid; right click keeps its menu.
             boolean open = slot.equals(ladderSlotOpen());
-            tipText(cell, cell.getToolTipText().replace("</html>", String.format(text("cell.swaps"), (open ? "hide" : "show"))));
+            tipText(cell, cell.getToolTipText().replace("</html>", format(text("cell.swaps"), (open ? "hide" : "show"))));
             onLeftClick(cell, () -> commands.set("ladderSlot", open ? "" : slot));
         }
         if (spec && cell.getComponentPopupMenu() != null) {
@@ -2301,7 +2303,7 @@ public class ResultCards {
 
     static JPanel left(JComponent inner) {
         JPanel row = darker(new BorderLayout());
-        row.add(inner, BorderLayout.WEST);
+        row.add(inner, WEST);
         return row;
     }
 

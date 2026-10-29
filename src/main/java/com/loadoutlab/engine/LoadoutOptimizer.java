@@ -17,6 +17,10 @@ import static com.loadoutlab.engine.UntradeableDeathCosts.*;
 import java.util.function.Predicate;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
+import static com.loadoutlab.engine.VampyreRules.*;
+import static java.util.Comparator.*;
+import static com.loadoutlab.engine.DpsCalculator.*;
+import static java.lang.Math.*;
 
 public class LoadoutOptimizer {
     static final int SLOT_LIMIT = 10;
@@ -104,7 +108,7 @@ public class LoadoutOptimizer {
             before.retainAll(gods);
             List<GearItem> options = keep(data.gearItems, item ->
                 godsOf(item).contains(god) && item.slot != WEAPON && legalProtection(data, request, item));
-            options.sort(Comparator.comparingLong(GearItem::getPriceOrZero));
+            options.sort(comparingLong(GearItem::getPriceOrZero));
             for (GearItem item : options) {
                 GearSlot slot = item.slot;
                 GearItem weapon = current.loadout.getWeapon();
@@ -297,11 +301,11 @@ public class LoadoutOptimizer {
         // book analogs) so the owned version represents its clones and
         // the try cap is spent on genuinely different items.
         options = dedupe(options, request);
-        options.sort(Comparator.comparingLong(LoadoutOptimizer::utilityScore).reversed());
+        options.sort(comparingLong(LoadoutOptimizer::utilityScore).reversed());
         int tried = 0;
         for (GearItem item : options) {
             // Swap accounting: the replaced item's spend comes back.
-            int cost = (int) Math.min(Integer.MAX_VALUE, (long) current.purchaseCost - budgetCost(request, worn)
+            int cost = (int) min(Integer.MAX_VALUE, (long) current.purchaseCost - budgetCost(request, worn)
                     + budgetCost(request, item));
             if (!withinBudget(request, cost)) continue;
             // Slot legality (field report 2026-08-15: the Eclipse Moon BiS
@@ -319,7 +323,7 @@ public class LoadoutOptimizer {
             if (request.setRules != null && !request.setRules.holds(trial)) continue;
             if (++tried > 12) break;
             DpsResult candidate = bestSpellResult(request, trial, pass.spells);
-            if (candidate == null || candidate.dps < Math.min(floor, current.dps) - 1e-9) continue;
+            if (candidate == null || candidate.dps < min(floor, current.dps) - 1e-9) continue;
             // A dps-NEUTRAL utility swap must not displace gear that is
             // stronger for this style (field report 2026-08-12: Virtus
             // robe top, +2 prayer, replaced Ancestral robe top on Vorkath
@@ -539,8 +543,8 @@ public class LoadoutOptimizer {
      * - and the purchase cost. The maps are per-result overrides (empty
      * when the run has none). */
     static Comparator<DpsResult> ranking(OptimizationRequest request, Map<DpsResult, Double> weighted, Map<DpsResult, Long> risk) {
-        return Comparator.comparingDouble((DpsResult r) -> weighted.getOrDefault(r, r.dps)).reversed()
-            .thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed()) .thenComparingLong(r -> risk.getOrDefault(r, 0L))
+        return comparingDouble((DpsResult r) -> weighted.getOrDefault(r, r.dps)).reversed()
+            .thenComparing(comparingLong(DpsResult::getAttackRoll).reversed()) .thenComparingLong(r -> risk.getOrDefault(r, 0L))
             .thenComparingLong(r -> -setDamageBonus(request, r.loadout)) .thenComparingLong(r -> -setUtility(r.loadout))
             .thenComparingLong(r -> -setCrossStyleDamage(r.loadout)) .thenComparingInt(DpsResult::getPurchaseCost);
     }
@@ -631,8 +635,8 @@ public class LoadoutOptimizer {
                 BossIncomingOverrides.overridesFor(request.monster),
                 request.getLevels().defence, request.getLevels().magic, request.antifireTier) : null;
         RiskGuard risk = RiskGuard.of(data, request);
-        GearItem e2 = data.getGear(VampyreRules.EFARITAY);
-        boolean seedRing = VampyreRules.tier(request.monster) == 2 && pools.slotCandidates.get(RING).contains(e2);
+        GearItem e2 = data.getGear(EFARITAY);
+        boolean seedRing = tier(request.monster) == 2 && pools.slotCandidates.get(RING).contains(e2);
         for (GearItem weapon : weapons) {
             // Dragonfire without a potion: the shield slot is spoken for,
             // so two-handed weapons cannot provide protection.
@@ -687,7 +691,7 @@ public class LoadoutOptimizer {
                     for (GearItem item : candidates) {
                         // Saturating: a "max" budget plus a full endgame set
                         // can push an int sum past overflow.
-                        int cost = (int) Math.min((long) state.cost + budgetCost(request, item), Integer.MAX_VALUE);
+                        int cost = (int) min((long) state.cost + budgetCost(request, item), Integer.MAX_VALUE);
                         if (!withinBudget(request, cost)) continue;
                         var gear = new EnumMap<GearSlot, GearItem>(state.gear);
                         if (item != null) gear.put(slot, item);
@@ -719,7 +723,7 @@ public class LoadoutOptimizer {
                 // HERE: reordering the beam cut changes which partials survive
                 // pruning (tried - it broke "lifting the dragonfire constraint
                 // never costs dps"). Utility decides at the RESULTS sort only.
-                next.sort(Comparator.comparingDouble(SearchState::getScore).reversed()
+                next.sort(comparingDouble(SearchState::getScore).reversed()
                     .thenComparingLong(SearchState::getRiskGp) .thenComparingInt(SearchState::getCost));
                 states = cutBeam(next, request.isRiskConstrained());
                 if (states.isEmpty()) break;
@@ -911,14 +915,14 @@ public class LoadoutOptimizer {
         int[] best = new int[pe ? 16 : 4];
         Arrays.fill(best, -1);
         for (SpellStats spell : spells) {
-            if (!DpsCalculator.isPlainElemental(spell)) {
+            if (!isPlainElemental(spell)) {
                 kept.add(spell);
                 continue;
             }
             boolean match = spell.element.equals(weakness);
-            int cell = (match ? 2 : 0) + (DpsCalculator.twinflameDoubles(spell) ? 1 : 0)
+            int cell = (match ? 2 : 0) + (twinflameDoubles(spell) ? 1 : 0)
                 + (pe ? 4 * ELEMENTS.indexOf(spell.element) : 0);
-            int effective = DpsCalculator.elementalSpellMax(spell, magicLevel);
+            int effective = elementalSpellMax(spell, magicLevel);
             if (effective > best[cell]) {
                 kept.add(spell);
                 best[cell] = effective;
@@ -941,7 +945,7 @@ public class LoadoutOptimizer {
         for (SpellStats spell : data.spells) {
             if (request.getLevels().magic >= spell.magicLevel) spells.add(spell);
         }
-        spells.sort(Comparator.comparingInt(SpellStats::getMaxHit).reversed());
+        spells.sort(comparingInt(SpellStats::getMaxHit).reversed());
         return spells.isEmpty() ? data.spells : spells;
     }
 
@@ -955,7 +959,7 @@ public class LoadoutOptimizer {
                 if (seen.add(signature)) merged.add(result);
             }
         }
-        merged.sort(Comparator.comparingDouble(DpsResult::getDps).reversed() .thenComparingLong(r -> -setUtility(r.loadout))
+        merged.sort(comparingDouble(DpsResult::getDps).reversed() .thenComparingLong(r -> -setUtility(r.loadout))
             .thenComparingLong(r -> -setCrossStyleDamage(r.loadout)) .thenComparingInt(DpsResult::getPurchaseCost));
         return limit(merged, request);
     }
@@ -987,7 +991,7 @@ public class LoadoutOptimizer {
         // vampyrebane weapon (the sunspear hits uncapped there; silver ones
         // cap at 10, and every other weapon needs the ring, which the beam
         // seeds - immune lines just score nothing).
-        int tier = VampyreRules.tier(request.monster);
+        int tier = tier(request.monster);
         List<GearItem> protectives = new ArrayList<>();
         List<GearItem> rows = new ArrayList<>();
         for (GearItem item : data.getGearItems(slot)) {
@@ -1008,14 +1012,14 @@ public class LoadoutOptimizer {
                 || !weaponCanEverWork(request.monster, request.style, item))) {
                 continue;
             }
-            boolean hurts = tier == 2 && slot == WEAPON && VampyreRules.bane(2, request.style, item);
+            boolean hurts = tier == 2 && slot == WEAPON && bane(2, request.style, item);
             // A charged tome scores like an empty shield (0% damage) and the
             // three share one stat key, so without this rescue the pool keeps
             // at most one and the spell-matched one is luck (rakaykhan1512,
             // Discord 2026-10-18: the tome of water lost to the ward).
             boolean protective = needProtectiveShield && isProtectiveShield(item) || slot == SHIELD && request.style == MAGIC
                     && item.nameLower.startsWith("tome of ") && "charged".equals(item.versionLower)
-                || hurts || slot == RING && tier > 0 && item.id == VampyreRules.EFARITAY || keepInPool(request.monster, item);
+                || hurts || slot == RING && tier > 0 && item.id == EFARITAY || keepInPool(request.monster, item);
             boolean ri = rk != null && rk.contains(item.id);
             // Defense-weighted runs must SEE pure-defence gear - ring of
             // suffering, guardian boots, tank shields score zero offence and
@@ -1037,7 +1041,7 @@ public class LoadoutOptimizer {
             rows.add(item);
         }
 
-        rows.sort(Comparator.comparingDouble((GearItem item) -> candidateScore(request, item, a2)).reversed().thenComparingInt(GearItem::getPriceOrZero));
+        rows.sort(comparingDouble((GearItem item) -> candidateScore(request, item, a2)).reversed().thenComparingInt(GearItem::getPriceOrZero));
         rows = dedupe(rows, request);
         if (rows.size() > limit) {
             List<GearItem> cut = new ArrayList<>(rows.subList(0, limit));
@@ -1056,8 +1060,8 @@ public class LoadoutOptimizer {
             // genuinely trade damage for safety.
             if (request.defenseWeight > 0 && slot != WEAPON) {
                 List<GearItem> defensive = new ArrayList<>(rows.subList(limit, rows.size()));
-                defensive.sort(Comparator.comparingLong(LoadoutOptimizer::utilityScore).reversed());
-                for (GearItem item : defensive.subList(0, Math.min(8, defensive.size()))) {
+                defensive.sort(comparingLong(LoadoutOptimizer::utilityScore).reversed());
+                for (GearItem item : defensive.subList(0, min(8, defensive.size()))) {
                     if (utilityScore(item) > 0) cut.add(item);
                 }
             }
@@ -1088,8 +1092,8 @@ public class LoadoutOptimizer {
         // the genuinely cheap line still starved (field follow-up
         // 2026-07-18: KBD magic offered ancient staff while the compliant
         // dragon hunter wand + cheap-robes line was beam-pruned).
-        rest.sort(Comparator.comparingLong(SearchState::getPotentialRiskGp));
-        kept.addAll(rest.subList(0, Math.min(RISK_RESERVE, rest.size())));
+        rest.sort(comparingLong(SearchState::getPotentialRiskGp));
+        kept.addAll(rest.subList(0, min(RISK_RESERVE, rest.size())));
         return kept;
     }
 
@@ -1126,8 +1130,8 @@ public class LoadoutOptimizer {
     static double candidateScore(OptimizationRequest request, GearItem item, boolean a2) {
         double score = item.roughScore(request.style);
         if (a2) {
-            score = Math.max(score, item.offensive.ranged + item.bonuses.strength * 2.5
-                + Math.max(0, item.bonuses.prayer) * 0.25);
+            score = max(score, item.offensive.ranged + item.bonuses.strength * 2.5
+                + max(0, item.bonuses.prayer) * 0.25);
         }
         if (slayerTaskHeadCandidate(request, item)) score += 10_000.0;
         String name = label(item);
@@ -1229,8 +1233,8 @@ public class LoadoutOptimizer {
                     double min = 0, max = 0;
                     for (GearItem item : pool) {
                         double v = SetRules.of(item, rules.get(r).getStat());
-                        min = Math.min(min, v);
-                        max = Math.max(max, v);
+                        min = min(min, v);
+                        max = max(max, v);
                     }
                     lo[r][k] = lo[r][k + 1] + min;
                     hi[r][k] = hi[r][k + 1] + max;

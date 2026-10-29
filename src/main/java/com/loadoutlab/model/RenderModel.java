@@ -8,6 +8,8 @@ import com.loadoutlab.engine.IncomingDpsCalculator.*;
 import com.loadoutlab.optimizer.OptimizerService.*;
 import com.loadoutlab.engine.PvpRisk.Assessment;
 import static com.loadoutlab.data.AssumeIcons.*;
+import static java.lang.String.*;
+import static com.loadoutlab.engine.MultiTool.*;
 
 /**
  * The generic render-model of ADR-0008: everything a UI needs to draw,
@@ -128,8 +130,8 @@ public class RenderModel {
                 node.put("multiKind", tool.kind);
                 // The two ranged tools wear their own item icon on the strip
                 // (Andrew 2026-10-19); the barrage keeps the magic sprite.
-                node.put("styleItem", tool == MultiTool.CHINS ? MultiTool.CHIN_IDS[0] : tool == MultiTool.VENATOR ? MultiTool.VENATOR_BOW
-                    : tool == MultiTool.HALLOWFELL ? MultiTool.HALLOWFELL_SWORD : 0);
+                node.put("styleItem", tool == CHINS ? CHIN_IDS[0] : tool == VENATOR ? VENATOR_BOW
+                    : tool == HALLOWFELL ? HALLOWFELL_SWORD : 0);
                 out.put(tool.key, node);
             }
         }
@@ -162,11 +164,11 @@ public class RenderModel {
         boolean own = ladder.basePerMob != null && mob != null && mob < ladder.basePerMob.length;
         double base = own ? ladder.basePerMob[mob] : ladder.baseDps;
         Map node = map("base", ladder.mode == OptimizeMode.TANKY
-            ? String.format("%.2f taken/s", ladder.baseDtps) : String.format("%.2f DPS", base));
-        if (own) node.put("groupBase", String.format("group %.2f DPS", ladder.baseDps));
+            ? format("%.2f taken/s", ladder.baseDtps) : format("%.2f DPS", base));
+        if (own) node.put("groupBase", format("group %.2f DPS", ladder.baseDps));
         // Balanced weighs both, so it shows both (Andrew 2026-10-22: "show
         // in the ladder view both the dps gain and the dtps change").
-        if (ladder.mode == OptimizeMode.BALANCED) node.put("base2", String.format("%.2f taken/s", ladder.baseDtps));
+        if (ladder.mode == OptimizeMode.BALANCED) node.put("base2", format("%.2f taken/s", ladder.baseDtps));
         Integer at = own ? mob : null;
         node.putAll(map("group", ladder.group, "up", rungs(ladder, ladder.up, at), "down", rungs(ladder, ladder.down, at)));
         // The steps past the strip, for its "more" pages (ISS-01M5QD7PNMCMNRZD92RPRMHWRP).
@@ -178,7 +180,7 @@ public class RenderModel {
             for (Rung rung : ladder.all) {
                 double dps = at != null && rung.perMob != null ? rung.perMob[at] : rung.dps;
                 all.add(map("id", rung.item.id, "name", rung.item.name, "owned", rung.owned,
-                    "dps", dps, "delta", String.format("%+.2f DPS", dps - base)));
+                    "dps", dps, "delta", format("%+.2f DPS", dps - base)));
             }
             node.put("all", all);
         }
@@ -216,10 +218,10 @@ public class RenderModel {
             double base = own ? ladder.basePerMob[mob] : ladder.baseDps;
             Map node = map("id", rung.item.id, "name", rung.item.name,
                 "owned", rung.owned, "price", rung.item.getPriceOrZero(),
-                "delta", own ? String.format("%+.2f DPS", dps - base) : ladderDelta(ladder, rung));
-            if (own) node.put("groupDelta", String.format("group %+.2f DPS", rung.dps - ladder.baseDps));
+                "delta", own ? format("%+.2f DPS", dps - base) : ladderDelta(ladder, rung));
+            if (own) node.put("groupDelta", format("group %+.2f DPS", rung.dps - ladder.baseDps));
             if (ladder.mode == OptimizeMode.BALANCED) {
-                node.put("delta2", String.format("%+.2f taken/s", rung.dtps - ladder.baseDtps));
+                node.put("delta2", format("%+.2f taken/s", rung.dtps - ladder.baseDtps));
             }
             node.put("gain", ladderGain(ladder, rung));
             // Same result as the worn item - ranked by its better stats.
@@ -238,9 +240,9 @@ public class RenderModel {
     static String ladderDelta(Ladder ladder, Rung rung) {
         switch (ladder.mode) {
             case TANKY:
-                return String.format("%+.2f taken/s", rung.dtps - ladder.baseDtps);
+                return format("%+.2f taken/s", rung.dtps - ladder.baseDtps);
             default:
-                return String.format("%+.2f DPS", rung.dps - ladder.baseDps);
+                return format("%+.2f DPS", rung.dps - ladder.baseDps);
         }
     }
 
@@ -308,7 +310,7 @@ public class RenderModel {
         // the Inventory row's "wear through the dungeon" tooltip.
         Map protection = new LinkedHashMap<>();
         for (GearItem item : bis ? result.gameProtection : result.protection) {
-            protection.put(String.valueOf(item.id), String.join(", ", GwdProtection.godsOf(item)));
+            protection.put(String.valueOf(item.id), join(", ", GwdProtection.godsOf(item)));
         }
         GearItem rw = shown.loadout.getWeapon();
         GearItem rs = shown.loadout.get(GearSlot.SHIELD);

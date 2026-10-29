@@ -3,6 +3,8 @@ package com.loadoutlab.data;
 import com.google.gson.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import static com.loadoutlab.data.JsonResources.*;
+import static com.loadoutlab.data.Names.*;
 
 /**
  * Curated monster groups (M-3): a group is the ROSTER of distinct mob
@@ -44,10 +46,10 @@ public class MonsterGroups {
     public static List<MonsterGroup> load(LoadoutData data) {
         List<MonsterGroup> groups = new ArrayList<>();
         try {
-            for (JsonElement element : JsonResources.array(RESOURCE)) {
+            for (JsonElement element : array(RESOURCE)) {
                 JsonObject row = element.getAsJsonObject();
                 String name = row.get("name").getAsString();
-                String note = JsonResources.string(row, "note");
+                String note = string(row, "note");
                 List<MonsterStats> mobs = new ArrayList<>();
                 for (JsonElement m : row.getAsJsonArray("members")) {
                     JsonObject member = m.getAsJsonObject();
@@ -64,10 +66,10 @@ public class MonsterGroups {
                         JsonElement immuneTo = member.get("immuneTo");
                         if (immuneTo.isJsonArray()) {
                             for (JsonElement e : immuneTo.getAsJsonArray()) {
-                                styles.add(Names.lower(e.getAsString()));
+                                styles.add(lower(e.getAsString()));
                             }
                         } else {
-                            styles.add(Names.lower(immuneTo.getAsString()));
+                            styles.add(lower(immuneTo.getAsString()));
                         }
                         int mask = 0;
                         List<String> attributes = new ArrayList<>();
@@ -81,7 +83,7 @@ public class MonsterGroups {
                             mask |= styleBit(style);
                             attributes.add("immune_" + style);
                             if (joined.length() > 0) joined.append(" + ");
-                            joined.append(Names.cap(style));
+                            joined.append(cap(style));
                         }
                         String label = member.has("label") ? member.get("label").getAsString() : joined + " immune";
                         resolved = resolved.immuneVariant(
@@ -90,7 +92,7 @@ public class MonsterGroups {
                         // A phase that loses an attribute; id bit 8.
                         List<String> removed = new ArrayList<>();
                         for (JsonElement e : member.getAsJsonArray("without")) {
-                            removed.add(Names.lower(e.getAsString()));
+                            removed.add(lower(e.getAsString()));
                         }
                         resolved = resolved.withoutAttributes( MonsterStats.SYNTHETIC_ID_BASE + resolved.id * 10 + 8,
                             member.get("label").getAsString(), removed);
@@ -102,7 +104,7 @@ public class MonsterGroups {
                     // fight that decides the raid) and a spec weapon family.
                     List<String> extra = new ArrayList<>();
                     if (member.has("weight")) extra.add("weight:" + member.get("weight").getAsInt());
-                    if (member.has("spec")) extra.add("spec:" + Names.lower(member.get("spec").getAsString()));
+                    if (member.has("spec")) extra.add("spec:" + lower(member.get("spec").getAsString()));
                     // A spec-only member (the Warden's Core, ISS-01M5QEFMBSZXAHV84ZXF1YZHWY):
                     // its main weapon has no say in the kit; its spec hits still count.
                     if (member.has("specOnly") && member.get("specOnly").getAsBoolean()) extra.add("spec_only");
@@ -111,12 +113,12 @@ public class MonsterGroups {
                 }
                 List<String> aliases = new ArrayList<>();
                 if (row.has("aliases")) {
-                    for (JsonElement a : row.getAsJsonArray("aliases")) aliases.add(Names.lower(a.getAsString()));
+                    for (JsonElement a : row.getAsJsonArray("aliases")) aliases.add(lower(a.getAsString()));
                 }
                 if (!mobs.isEmpty()) {
                     groups.add(new MonsterGroup(name, note, mobs,
-                        aliases, JsonResources.integer(row, "inventory", 0),
-                        JsonResources.bool(row, "comingSoon", false), JsonResources.bool(row, "raid", false)));
+                        aliases, integer(row, "inventory", 0),
+                        bool(row, "comingSoon", false), bool(row, "raid", false)));
                 }
             }
         } catch (Exception e) {
@@ -145,10 +147,10 @@ public class MonsterGroups {
 
     /** Name-contains search over the groups, hits in curated order. */
     public static List<MonsterGroup> search(List<MonsterGroup> groups, String query, int limit) {
-        String text = query == null ? "" : Names.lower(query.trim());
+        String text = query == null ? "" : lower(query.trim());
         if (text.length() < 2) return new ArrayList<>();
         // Player vocabulary ("jad", "zuk", "dks") reaches the group through its aliases.
-        return groups.stream().filter(group -> Names.lower(group.name).contains(text)
+        return groups.stream().filter(group -> lower(group.name).contains(text)
             || group.aliases.stream().anyMatch(alias -> alias.contains(text) || text.contains(alias)))
             .limit(limit).collect(Collectors.toList());
     }

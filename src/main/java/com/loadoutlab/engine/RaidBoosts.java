@@ -3,6 +3,7 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.*;
 import java.util.*;
 import com.google.gson.JsonObject;
+import static com.loadoutlab.data.JsonResources.*;
 
 /**
  * Raids SUPPLY their own boosts (field spec 2026-07-18): Chambers of
@@ -19,11 +20,11 @@ public class RaidBoosts {
     static final Set<String> ARCHIVE = new HashSet<>();
 
     static {
-        JsonObject root = JsonResources.object("raid_boosts.json");
-        JsonResources.strings(root, "xeric", XERIC);
-        JsonResources.strings(root, "amascut", AMASCUT);
-        JsonResources.strings(root, "blood", BLOOD);
-        JsonResources.strings(root, "archive", ARCHIVE);
+        JsonObject root = object("raid_boosts.json");
+        strings(root, "xeric", XERIC);
+        strings(root, "amascut", AMASCUT);
+        strings(root, "blood", BLOOD);
+        strings(root, "archive", ARCHIVE);
     }
 
 
