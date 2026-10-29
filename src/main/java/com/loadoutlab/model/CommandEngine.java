@@ -1522,7 +1522,7 @@ public class CommandEngine {
     IntConsumer nerOpen = id -> { };
 
     public void setNerLink(BooleanSupplier available, IntConsumer open) {
-        this.nerAvailable = available;
+        nerAvailable = available;
         nerOpen = open;
         state.setParam("nerAvailable", available.getAsBoolean());
     }
@@ -1540,7 +1540,7 @@ public class CommandEngine {
     Consumer<Map> setupSave = a -> { };
 
     public void setSetupLink(BooleanSupplier available, Consumer<Map> save) {
-        this.setupsAvailable = available;
+        setupsAvailable = available;
         setupSave = save;
         state.setParam("setupsAvailable", available.getAsBoolean());
     }

@@ -2140,8 +2140,8 @@ public class OptimizerService {
         }
         for (CombatStyle style : concreteValues()) {
             StyleWork w = works.get(style);
-            final List<OptimizationRequest> ownedReqs = w.ownedReqs;
-            final List<OptimizationRequest> gameReqs = w.gameReqs;
+            List<OptimizationRequest> ownedReqs = w.ownedReqs;
+            List<OptimizationRequest> gameReqs = w.gameReqs;
             List<List<DpsResult>> ob2 = obs.get(style);
             List<List<DpsResult>> gb2 = gbs.get(style);
             SharedSide ownedSide = sharedSideFor(calc, ctx, mobs, ownedReqs, ob2, ctx.effectiveOwned,

@@ -119,21 +119,21 @@ public class GearItem {
         this.defensive = defensive == null ? StatBlock.ZERO : defensive;
         this.bonuses = bonuses == null ? StatBlock.ZERO : bonuses;
         this.requirements = requirements == null ? GearRequirements.NONE : requirements;
-        this.nameLower = Names.lower(this.name);
+        nameLower = Names.lower(this.name);
         versionLower = Names.lower(this.version);
-        this.categoryLower = Names.lower(this.category);
+        categoryLower = Names.lower(this.category);
         labelLower = Names.lower(label());
         nameVersionLower = (this.name + " " + this.version).toLowerCase(Locale.ROOT);
         // Precomputed once: the optimizer asks this on every trial, and the
         // name-fragment chain was the single hottest call in the profile.
         // DpsCalculator.isPoweredStaff stays the API - it delegates here.
-        this.poweredStaff = categoryLower.contains("powered staff") || POWERED.stream().anyMatch(nameLower::contains);
+        poweredStaff = categoryLower.contains("powered staff") || POWERED.stream().anyMatch(nameLower::contains);
         // The demonbane weapon class (wiki), one vocabulary for everyone:
         // MonsterMechanics (the Sire's vents), TormentedDemonRules, and the
         // optimizer's demon pool bump all ask this in hot loops - same
         // precompute rationale as poweredStaff. Holy water is not gear.
-        this.meleeDemonbane = MELEE_DEMONBANE.stream().anyMatch(nameLower::contains);
-        this.demonbane = meleeDemonbane || nameLower.startsWith("scorching bow") || nameLower.startsWith("purging staff");
+        meleeDemonbane = MELEE_DEMONBANE.stream().anyMatch(nameLower::contains);
+        demonbane = meleeDemonbane || nameLower.startsWith("scorching bow") || nameLower.startsWith("purging staff");
     }
 
     /** This item as a tradeable at a price: a charged weapon priced as the
