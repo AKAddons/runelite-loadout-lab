@@ -541,7 +541,7 @@ public class DpsCalculator {
             expected += f2;
         }
         String pn = sn.isEmpty() && isPoweredStaff(loadout) && loadout.getWeapon() != null ? loadout.getWeapon().name : "";
-        String attackType = sn.isEmpty() ? pn.isEmpty() ? "magic" : "magic: " + pn : "magic: " + sn;
+        String attackType = sn.isEmpty() ? pn.isEmpty() ? "magic" : "magic: " + pn : er.spell.attack;
         return new DpsResult(loadout, expected / (speed * SECONDS_PER_TICK), accuracy, expected, mh, speed, attackType, attackRoll, defenceRoll, loadout.cost, sn);
     }
 
@@ -614,7 +614,7 @@ public class DpsCalculator {
             counted("chaos gauntlets", "+3 max hit on bolt spells");
             bonus += 3;
         }
-        String amulet = wearing(loadout, "elemental amulet") ? "elemental amulet" : "amulet of " + element;
+        String amulet = wearing(loadout, "elemental amulet") ? "elemental amulet" : spell.amulet;
         if (wearing(loadout, amulet)) {
             counted(amulet, "+2 max hit");
             bonus += 2;
@@ -766,7 +766,9 @@ public class DpsCalculator {
         SpellStats spell = request.spell;
         if (spell == null || !spell.element.equals(request.monster.weaknessElement)) return value;
         int severity = request.monster.weaknessSeverity;
-        counted("elemental weakness", "+" + severity + label);
+        // The label only when collecting: the optimizer's beam (collection
+        // off) built and dropped two strings per weak-monster magic trial.
+        if (collectCounted) counted("elemental weakness", "+" + severity + label);
         return value + multiply(base, severity, 100);
     }
 
@@ -893,10 +895,12 @@ public class DpsCalculator {
         return true;
     }
 
-    /** Any of the alternatives worn; active = "Inactive" versions never count. */
+    /** Any of the alternatives worn; active = "Inactive" versions never count.
+     * Indexed: the lists are of two kinds (List.of and ArrayList), so the
+     * for-each iterator escaped and was 13% of a roster's allocation. */
     static boolean wearsAny(Loadout loadout, List<String> names, boolean active) {
-        for (String name : names) {
-            if (loadout.wears(name, active)) return true;
+        for (int i = 0; i < names.size(); i++) {
+            if (loadout.wears(names.get(i), active)) return true;
         }
         return false;
     }
@@ -1038,8 +1042,10 @@ public class DpsCalculator {
     static boolean tomeMatches(OptimizationRequest request, Loadout loadout) {
         GearItem shield = loadout.get(SHIELD);
         SpellStats spell = request.spell;
+        // "charged" first: the name test builds a string, once per magic trial
+        // with any shield before.
         return shield != null && spell != null && spell.element != null && "standard".equalsIgnoreCase(spell.spellbook)
-            && shield.nameLower.equals("tome of " + spell.element) && "charged".equals(shield.versionLower);
+            && "charged".equals(shield.versionLower) && shield.nameLower.equals("tome of " + spell.element);
     }
 
     /** The twisted bow's magic-level scaling, counted on the card. */
