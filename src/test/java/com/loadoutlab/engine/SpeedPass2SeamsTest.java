@@ -61,6 +61,29 @@ class SpeedPass2SeamsTest {
 	}
 
 	@Test
+	@DisplayName("one calculator meeting a hundred monsters in turn answers each exactly as a fresh one does")
+	void ruleCutsAcrossManyMonsters() {
+		Loadout lance = wielding(weapon("dragon hunter lance", null));
+		DpsCalculator shared = new DpsCalculator();
+		int met = 0;
+		for (MonsterStats mob : data.monsters) {
+			if (met == 100) break;
+			OptimizationRequest request = new OptimizationRequest(mob, CombatStyle.MELEE, PlayerLevels.MAXED,
+				PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, false, false, OwnedItems.EMPTY,
+				RequirementProfile.MAXED, 10);
+			DpsResult fresh = new DpsCalculator().calculate(request, lance);
+			DpsResult reused = shared.calculate(request, lance);
+			if (fresh == null) {
+				assertNull(reused, mob.name);
+				continue;
+			}
+			met++;
+			assertEquals(fresh.dps, reused.dps, 1e-12, mob.name);
+		}
+		assertEquals(100, met);
+	}
+
+	@Test
 	@DisplayName("a spell carries its attack label and amulet marker, built once, and a magic result uses them")
 	void spellStringsBuiltOnce() {
 		SpellStats surge = new SpellStats("Fire Surge", 24, 95, "standard", "fire");
