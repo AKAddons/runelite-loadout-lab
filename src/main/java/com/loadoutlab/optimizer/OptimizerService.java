@@ -641,10 +641,10 @@ public class OptimizerService {
                 ? seat(arbitrateLightbearer(ctx.dataset, ownedRequest, ob, ctx.effectiveOwned, specPin), ss) : null;
             SpecPick gameSpec = gss >= 1 && ctx.p.specWeapon
                 ? seat(arbitrateLightbearer(ctx.dataset, gr, gb, null, specPin), gss) : null;
-            // The defensive story of the shown set: what the boss does
-            // back to you, at your REAL levels (protection prayer up).
-            Result incoming = incomingFor(monster, ob.isEmpty() ? null : ob.get(0).loadout, ctx);
-            Result gameIncoming = incomingFor(monster, gb.isEmpty() ? null : gb.get(0).loadout, ctx);
+            // The defensive story of the shown set: what the boss does back
+            // to you, at your REAL levels under the style's prayer (protection up).
+            Result incoming = incomingFor(monster, ob.isEmpty() ? null : ob.get(0).loadout, ctx, style);
+            Result gameIncoming = incomingFor(monster, gb.isEmpty() ? null : gb.get(0).loadout, ctx, style);
             List<GearItem> bench = specBenchOf(spec, ob);
             bench.addAll(protection);
             bench.addAll(swaps);
@@ -745,7 +745,7 @@ public class OptimizerService {
         List<DpsResult> ob, MonsterStats monster, long ticket) {
         OptimizeMode mode = ctx.mode;
         DpsResult md2 = ob.get(0);
-        Result base = incomingFor(monster, md2.loadout, ctx);
+        Result base = incomingFor(monster, md2.loadout, ctx, ownedRequest.style);
         if (IncomingDpsCalculator.NONE.equals(base.coverage)) return new ModeTrade(mode, 0, 0, "no damage data");
         if (IncomingDpsCalculator.PARTIAL.equals(base.coverage)) {
             return new ModeTrade(mode, 0, 0, "partial damage data");
@@ -774,7 +774,7 @@ public class OptimizerService {
         DpsResult picked = md2;
         var pr = new Rung(null, d0, i0, false, null);
         for (DpsResult candidate : frontier) {
-            var rung = new Rung(null, candidate.dps, incomingFor(monster, candidate.loadout, ctx).totalDps, false, null);
+            var rung = new Rung(null, candidate.dps, incomingFor(monster, candidate.loadout, ctx, ownedRequest.style).totalDps, false, null);
             if (compareRungs(mode, rung, pr) > 0) {
                 picked = candidate;
                 pr = rung;
@@ -791,7 +791,7 @@ public class OptimizerService {
     Map<GearSlot, Ladder> ladderFor(ComputeContext ctx, OptimizationRequest request, DpsResult shown, MonsterStats monster) {
         Map<GearSlot, Ladder> ladders = new EnumMap<>(GearSlot.class);
         boolean scoresDamage = ctx.mode != MAX_DPS;
-        double baseDtps = incomingFor(monster, shown.loadout, ctx).totalDps;
+        double baseDtps = incomingFor(monster, shown.loadout, ctx, request.style).totalDps;
         Set<Integer> dreams = dreamsFor(ctx, monster);
         for (GearSlot slot : GearSlot.values()) {
             if (shown.loadout.get(slot) == null) continue;
@@ -800,7 +800,7 @@ public class OptimizerService {
             boolean weapon = slot == WEAPON;
             for (DpsResult swap : optimizer.slotSwaps(ctx.dataset, request, shown, slot)) {
                 GearItem item = swap.loadout.get(slot);
-                double dtps = scoresDamage ? incomingFor(monster, swap.loadout, ctx).totalDps : baseDtps;
+                double dtps = scoresDamage ? incomingFor(monster, swap.loadout, ctx, request.style).totalDps : baseDtps;
                 var rung = new Rung(item, swap.dps, dtps, ctx.effectiveOwned.owns(item.id) || dreams.contains(item.id),
                     weapon ? brought(swap.loadout, shown.loadout, AMMO) : null);
                 rung.offhand = weapon ? brought(swap.loadout, shown.loadout, SHIELD) : null;
@@ -1239,19 +1239,19 @@ public class OptimizerService {
         List<DpsResult> best, List<String> gods, MonsterStats monster, boolean defensive) {
         if (gods.isEmpty() || best.isEmpty()) return new ArrayList<>();
         DpsResult worn = optimizer.wearGodItems(ctx.dataset, request, best.get(0), gods);
-        if (!defensive || incomingFor(monster, worn.loadout, ctx).totalDps
-            <= incomingFor(monster, best.get(0).loadout, ctx).totalDps + EPS) {
+        if (!defensive || incomingFor(monster, worn.loadout, ctx, request.style).totalDps
+            <= incomingFor(monster, best.get(0).loadout, ctx, request.style).totalDps + EPS) {
             best.set(0, worn);
         }
         return new ArrayList<>(optimizer.carriedGodItems(ctx.dataset, request, best.get(0).loadout, gods));
     }
 
-    /** What the boss does back to you in this worn set, at REAL levels
-     * (protection prayer up) - null loadout answers null. Twin owned/game
-     * call sites in both compute paths share it. */
-    static Result incomingFor(MonsterStats mob, Loadout worn, ComputeContext ctx) {
-        return worn == null ? null
-            : IncomingDpsCalculator.calculate(mob, worn, ctx.real.defence, ctx.real.magic, ctx.p.antifireTier);
+    /** What the boss does back to you in this worn set, at REAL levels under
+     * the style's prayer (protection up) - null loadout answers null. Twin
+     * owned/game call sites in both compute paths share it. */
+    static Result incomingFor(MonsterStats mob, Loadout worn, ComputeContext ctx, CombatStyle style) {
+        int[] dm = defending(style, prayerLabelFor(ctx, style, ctx.real, ctx.unlocks), ctx.real.defence, ctx.real.magic);
+        return worn == null ? null : IncomingDpsCalculator.calculate(mob, worn, dm[0], dm[1], ctx.p.antifireTier);
     }
 
     /** The fight's swap gear beside the set: on Yours the first one you own or sim,
@@ -2200,8 +2200,8 @@ public class OptimizerService {
                 if (os != null) ol.add(os);
                 SpecPick spec = specs[j];
                 SpecPick gameSpec = gameSpecs[j];
-                Result incoming = incomingFor(mob, sharedOwned, ctx);
-                Result gameIncoming = incomingFor(mob, sg, ctx);
+                Result incoming = incomingFor(mob, sharedOwned, ctx, style);
+                Result gameIncoming = incomingFor(mob, sg, ctx, style);
                 Loadout worn = os == null ? sharedOwned : os.loadout;
                 List<GearItem> bench = sharedOwned == null ? List.of() : inventoryFor(plan.values(), carriedSlots[0], worn);
                 List<GearItem> gameBench = gameSlots[0] == null ? List.of() : gameSlots[2] == null ? singletonList(gameSlots[0])
@@ -2410,7 +2410,7 @@ public class OptimizerService {
         if (r == null) return null;
         r = r.withPurchaseCost(unownedValue(r.loadout, ctx.effectiveOwned));
         SpecPick sp = v.specs != null ? v.specs[j] : null;
-        return new Half(r, sp != null ? sp : pickFor(sides.get(s), j, v.specCarried), incomingFor(mob, r.loadout, ctx),
+        return new Half(r, sp != null ? sp : pickFor(sides.get(s), j, v.specCarried), incomingFor(mob, r.loadout, ctx, s),
             inventoryFor(v.plan.values(), v.specCarried, r.loadout));
     }
 

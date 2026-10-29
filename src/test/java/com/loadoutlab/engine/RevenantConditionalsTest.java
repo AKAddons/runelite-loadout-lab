@@ -134,9 +134,9 @@ class RevenantConditionalsTest {
 		Loadout without = worn(byName("bracelet of ethereum", "uncharged"));
 
 		IncomingDpsCalculator.Result blocked =
-			IncomingDpsCalculator.calculate(revDemon, with, 99, 99);
+			IncomingDpsCalculator.calculate(revDemon, with, 99, 99, 0);
 		IncomingDpsCalculator.Result normal =
-			IncomingDpsCalculator.calculate(revDemon, without, 99, 99);
+			IncomingDpsCalculator.calculate(revDemon, without, 99, 99, 0);
 
 		assertEquals(0.0, blocked.totalDps);
 		assertEquals(0.0, blocked.unprayedDps);

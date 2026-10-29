@@ -57,7 +57,7 @@ public class BossIncomingOverridesTest {
 	public void overrideReplacesTheDerivedMaxHitWithGraardorsScripted35Ranged() {
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("General Graardor", Arrays.asList("Crush", "Ranged")),
-			armour(200, 200, 200, 0, 150), 99, 99);
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertTrue(result.fullyModeled);
 		Assert.assertNotNull(result.overrideNote);
 		Assert.assertEquals(35, threat(result, "ranged").maxHit);
@@ -76,7 +76,7 @@ public class BossIncomingOverridesTest {
 		// whose damage pierces prayer entirely (field report 2026-07-17).
 		IncomingDpsCalculator.Result tanky = IncomingDpsCalculator.calculate(
 			named("Kraken", Arrays.asList("Typeless Magic")),
-			armour(0, 0, 0, 400, 0), 99, 99);
+			armour(0, 0, 0, 400, 0), 99, 99, 0);
 		Assert.assertTrue(tanky.fullyModeled);
 		Assert.assertNull(tanky.protectPrayer);
 		Assert.assertTrue(tanky.unprayedDps > 0);
@@ -85,7 +85,7 @@ public class BossIncomingOverridesTest {
 		// The accuracy roll is real: magic defence lowers the number.
 		IncomingDpsCalculator.Result naked = IncomingDpsCalculator.calculate(
 			named("Kraken", Arrays.asList("Typeless Magic")),
-			armour(0, 0, 0, 0, 0), 99, 99);
+			armour(0, 0, 0, 0, 0), 99, 99, 0);
 		Assert.assertTrue(tanky.totalDps < naked.totalDps);
 	}
 
@@ -96,7 +96,7 @@ public class BossIncomingOverridesTest {
 		// the per-threat identity sum and stay strictly positive.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("Corporeal Beast", Arrays.asList("Crush", "Magic")),
-			armour(200, 200, 200, 0, 150), 99, 99);
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
 		IncomingDpsCalculator.StyleThreat magic = threat(result, "magic");
 		Assert.assertEquals(65, magic.maxHit);
 		double identity = 0;
@@ -112,7 +112,7 @@ public class BossIncomingOverridesTest {
 	public void rotationSharesWeightEachStylesContributionToTheTotal() {
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("General Graardor", Arrays.asList("Crush", "Ranged")),
-			armour(200, 200, 200, 0, 150), 99, 99);
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
 		IncomingDpsCalculator.StyleThreat crush = threat(result, "crush");
 		IncomingDpsCalculator.StyleThreat ranged = threat(result, "ranged");
 		Assert.assertEquals(0.667, crush.share, 1e-9);
@@ -129,7 +129,7 @@ public class BossIncomingOverridesTest {
 		// against any armour, contributing at its share regardless of prayer.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("King Black Dragon", Arrays.asList("Stab", "Dragonfire")),
-			armour(200, 200, 200, 0, 150), 99, 99);
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertTrue(result.fullyModeled);
 		Assert.assertEquals("Protect from Melee", result.protectPrayer);
 		IncomingDpsCalculator.StyleThreat fire = threat(result, "typeless");
@@ -143,7 +143,7 @@ public class BossIncomingOverridesTest {
 	public void monstersWithoutAnOverrideKeepTheUniformV1Model() {
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("Test Boss", Arrays.asList("Crush", "Ranged")),
-			armour(200, 200, 200, 0, 150), 99, 99);
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertNull(result.overrideNote);
 		// v1 derives the ranged max hit (58) from the stat sheet.
 		Assert.assertEquals(58, threat(result, "ranged").maxHit);
@@ -157,7 +157,7 @@ public class BossIncomingOverridesTest {
 		// protect prayer; the bare name stays as the whole-fight fallback.
 		IncomingDpsCalculator.Result serp = IncomingDpsCalculator.calculate(
 			versioned("Zulrah", "Serpentine", Arrays.asList("Ranged")),
-			armour(0, 0, 0, 0, 0), 99, 99);
+			armour(0, 0, 0, 0, 0), 99, 99, 0);
 		Assert.assertEquals("Protect from Missiles", serp.protectPrayer);
 		Assert.assertEquals(0.0, serp.totalDps, 1e-9);
 
@@ -171,16 +171,16 @@ public class BossIncomingOverridesTest {
 				Arrays.asList("Magic", "Ranged")),
 			java.util.Collections.emptyList(), false, "", 0);
 		IncomingDpsCalculator.Result tanzRangedTank = IncomingDpsCalculator.calculate(
-			tanzanite, armour(0, 0, 0, 0, 400), 99, 99);
+			tanzanite, armour(0, 0, 0, 0, 400), 99, 99, 0);
 		Assert.assertEquals("Protect from Magic", tanzRangedTank.protectPrayer);
 		Assert.assertTrue("the unprayed half still lands", tanzRangedTank.totalDps > 0);
 		IncomingDpsCalculator.Result tanzMageTank = IncomingDpsCalculator.calculate(
-			tanzanite, armour(0, 0, 0, 400, 0), 99, 99);
+			tanzanite, armour(0, 0, 0, 400, 0), 99, 99, 0);
 		Assert.assertEquals("Protect from Missiles", tanzMageTank.protectPrayer);
 
 		IncomingDpsCalculator.Result magma = IncomingDpsCalculator.calculate(
 			versioned("Zulrah", "Magma", Arrays.asList("Typeless")),
-			armour(0, 0, 0, 0, 0), 99, 99);
+			armour(0, 0, 0, 0, 0), 99, 99, 0);
 		Assert.assertNull("no prayer helps the tail slam", magma.protectPrayer);
 		// Avoidable (field report: 'all of his attacks are dodgeable') -
 		// the standard play takes zero; the tooltip keeps the undodged
@@ -195,7 +195,7 @@ public class BossIncomingOverridesTest {
 		// The versionless fallback still answers (whole-fight mix).
 		Assert.assertNotNull(IncomingDpsCalculator.calculate(
 			named("Zulrah", Arrays.asList("Ranged", "Magic")),
-			armour(0, 0, 0, 0, 0), 99, 99).protectPrayer);
+			armour(0, 0, 0, 0, 0), 99, 99, 0).protectPrayer);
 	}
 
 	/** The style whitelist BossIncomingOverrides.parse() used to enforce at
@@ -262,7 +262,7 @@ public class BossIncomingOverridesTest {
 		// no prayer recommendation, and praying changes nothing.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("Vet'ion", Arrays.asList("Slash", "Magic")),
-			armour(200, 200, 200, 0, 150), 99, 99);
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
 		Assert.assertNull(result.protectPrayer);
 		Assert.assertEquals(result.unprayedDps, result.totalDps, 1e-9);
 		Assert.assertTrue(result.totalDps > 0);
@@ -278,7 +278,7 @@ public class BossIncomingOverridesTest {
 		// Heavy melee armour + zero magic defence: the magic saving must
 		// dominate, so Protect from Magic gets prayed and the pierce shows.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
-			corp, tankMeleeArmour(), 99, 99);
+			corp, tankMeleeArmour(), 99, 99, 0);
 		Assert.assertEquals("Protect from Magic", result.protectPrayer);
 		Assert.assertTrue(result.totalDps > 0);
 		Assert.assertTrue(result.totalDps < result.unprayedDps);
@@ -302,7 +302,7 @@ public class BossIncomingOverridesTest {
 		LoadoutData data = new DataService().load();
 		MonsterStats callisto = data.searchMonsters("callisto", 1).get(0);
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
-			callisto, new Loadout(java.util.Map.of()), 99, 99);
+			callisto, new Loadout(java.util.Map.of()), 99, 99, 0);
 		Assert.assertEquals("Protect from Magic", result.protectPrayer);
 	}
 

@@ -72,7 +72,7 @@ class CalibratedBossesTest {
 	}
 
 	private static IncomingDpsCalculator.Result incoming(Object[] mob) {
-		return IncomingDpsCalculator.calculate(find(mob), new Loadout(Map.of()), 99, 99);
+		return IncomingDpsCalculator.calculate(find(mob), new Loadout(Map.of()), 99, 99, 0);
 	}
 
 	@Test

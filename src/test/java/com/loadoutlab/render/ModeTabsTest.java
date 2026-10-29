@@ -105,4 +105,16 @@ class ModeTabsTest {
 		new java.io.File("build/render-shots").mkdirs();
 		javax.imageio.ImageIO.write(image, "png", new java.io.File("build/render-shots/mode-tabs.png"));
 	}
+
+	@Test
+	@DisplayName("a group's page shows no mode tabs, its shared set never runs Balanced or Tanky; one mob and an empty page keep them")
+	void groupsHideTheTabs() {
+		// ISS-01M6415D54NSM6HGTEAP6SDRCJ, KendyyOP 2026-10-28: "Moons giving
+		// the same gear for all 3 options DPS, balanced and tanky".
+		Map<String, Object> mob = Map.of("styles", Map.of());
+		assertFalse(RenderSurface.modesRun(Map.of("entries", List.of(Map.of("mobs", List.of(mob, mob, mob))))),
+			"the Moons of Peril");
+		assertTrue(RenderSurface.modesRun(Map.of("entries", List.of(Map.of("mobs", List.of(mob))))), "Blood Moon alone");
+		assertTrue(RenderSurface.modesRun(Map.of("entries", List.of())), "no result yet");
+	}
 }

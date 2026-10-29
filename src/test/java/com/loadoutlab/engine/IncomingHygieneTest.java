@@ -44,7 +44,7 @@ class IncomingHygieneTest {
 	}
 
 	private static IncomingDpsCalculator.Result hit(MonsterStats mob) {
-		return IncomingDpsCalculator.calculate(mob, armour(100), 90, 90);
+		return IncomingDpsCalculator.calculate(mob, armour(100), 90, 90, 0);
 	}
 
 	@Test

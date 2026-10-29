@@ -631,9 +631,7 @@ public class LoadoutOptimizer {
         }
         // The monster-side incoming constants for a defense-weighted beam,
         // hoisted once per optimize (call-scoped, worker-thread confined).
-        Prepared incoming = request.defenseWeight > 0 ? new IncomingDpsCalculator.Prepared(request.monster,
-                BossIncomingOverrides.overridesFor(request.monster),
-                request.getLevels().defence, request.getLevels().magic, request.antifireTier) : null;
+        Prepared incoming = request.defenseWeight > 0 ? Prepared.of(request) : null;
         RiskGuard risk = RiskGuard.of(data, request);
         GearItem e2 = data.getGear(EFARITAY);
         boolean seedRing = tier(request.monster) == 2 && pools.slotCandidates.get(RING).contains(e2);
