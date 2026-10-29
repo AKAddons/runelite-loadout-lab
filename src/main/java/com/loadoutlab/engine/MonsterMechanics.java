@@ -15,15 +15,20 @@ import static com.loadoutlab.engine.CombatStyle.*;
 public class MonsterMechanics {
     static final JsonObject ROOT = JsonResources.gz("/com/loadoutlab/data/npc_mechanics.json.gz").getAsJsonObject();
 
-    /** One of the file's id lists (resolved once, below: the immunity
-     * checks sit on the beam's path, so the reads stay plain set lookups). */
-    static Set<Integer> ids(String key) {
-        Set<Integer> ids = new HashSet<>();
-        JsonResources.ints(ROOT, key, ids);
+    /** A file id list as a bitset: a Set<Integer> read boxed per trial. */
+    static final class Ids {
+        final BitSet bits = new BitSet();
+
+        boolean contains(int id) { return id >= 0 && bits.get(id); }
+    }
+
+    static Ids ids(String key) {
+        Ids ids = new Ids();
+        for (var id : ROOT.getAsJsonArray(key)) ids.bits.set(id.getAsInt());
         return ids;
     }
 
-    static final Set<Integer> IMMUNE_MAGIC = ids("immuneMagic"), IMMUNE_RANGED = ids("immuneRanged"),
+    static final Ids IMMUNE_MAGIC = ids("immuneMagic"), IMMUNE_RANGED = ids("immuneRanged"),
         IMMUNE_MELEE = ids("immuneMelee"), IMMUNE_ANCIENTS = ids("immuneAncients"), SALAMANDER_ONLY_MELEE = ids("immuneNonSalamanderMelee"),
         MAGIC_DEFENCE_BY_DEF_LEVEL = ids("usesDefenceLevelForMagic"), ZULRAH = ids("zulrah"), VESPULA = ids("vespula"),
         GUARDIANS = ids("guardians"), TEKTON = ids("tekton"), ICE_DEMON = ids("iceDemon"),

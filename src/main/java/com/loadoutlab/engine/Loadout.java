@@ -12,13 +12,10 @@ public class Loadout {
     public final StatBlock defensive;
     public final StatBlock bonuses;
     public final int cost;
-    /** All worn item names, lowercased and newline-joined - so the engine's
-     * name-fragment checks ("salve amulet", "void knight top"...) are one
-     * substring scan instead of an 11-slot map iteration per marker. Item
-     * names never contain a newline, so a needle cannot straddle two names. */
-    final String namesLower;
-    /** namesLower minus "Inactive"-version items (uncharged crystal). */
-    final String activeNamesLower;
+    /** The worn items (a null is an empty slot): the name-fragment checks
+     * scan these, so a trial builds no joined name string (that was 27% of
+     * the optimizer's allocation). */
+    final GearItem[] worn;
 
     public Loadout(Map<GearSlot, GearItem> gear) { this(copyOf(gear), true); }
 
@@ -47,25 +44,18 @@ public class Loadout {
         int[] def = new int[9];
         int[] bon = new int[9];
         int totalCost = 0;
-        var names = new StringBuilder(160);
-        var activeNames = new StringBuilder(160);
         for (GearItem item : this.gear.values()) {
             if (item == null) continue;
             add(off, item.offensive);
             add(def, item.defensive);
             add(bon, item.bonuses);
             totalCost += item.getPriceOrZero();
-            names.append(item.nameLower).append('\n');
-            if (!"inactive".equals(item.versionLower)) {
-                activeNames.append(item.nameLower).append('\n');
-            }
         }
         offensive = block(off);
         defensive = block(def);
         bonuses = block(bon);
         cost = totalCost;
-        this.namesLower = names.toString();
-        this.activeNamesLower = activeNames.toString();
+        worn = gear.values().toArray(new GearItem[0]);
     }
 
     static void add(int[] acc, StatBlock block) {
@@ -134,9 +124,13 @@ public class Loadout {
 
     public Map<GearSlot, GearItem> getGear() { return Collections.unmodifiableMap(gear); }
 
-    /** Lowercased worn item names, newline-joined (see field doc). */
-    String namesLower() { return namesLower; }
-
-    /** namesLower() without "Inactive"-version items. */
-    String activeNamesLower() { return activeNamesLower; }
+    /** A worn item's name holds the lower-case marker; active = "Inactive"
+     * versions (uncharged crystal) never match. */
+    boolean wears(String marker, boolean active) {
+        int bit = GearItem.markerBit(marker);
+        for (GearItem item : worn) {
+            if (item != null && item.nameHas(bit) && !(active && "inactive".equals(item.versionLower))) return true;
+        }
+        return false;
+    }
 }

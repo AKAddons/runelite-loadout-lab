@@ -177,7 +177,8 @@ public class MonsterStats {
      * scaling or the drain would be valued at invocation 0. */
     public MonsterStats withDefence(int newDefence) { return copy(id, version, attributes, Math.max(0, newDefence)); }
 
-    public boolean hasAttribute(String attribute) { return attributesLower.contains(Names.key(attribute)); }
+    /** The attribute is lower-case where it is written (code and data). */
+    public boolean hasAttribute(String attribute) { return attributesLower.contains(attribute); }
 
     /** True when this variant's version label starts with the prefix - the
      * phase gate the mechanics rules share ("Phase 1..."). */

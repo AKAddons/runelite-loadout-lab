@@ -3,6 +3,7 @@ package com.loadoutlab.data;
 
 import com.google.gson.JsonObject;
 import java.util.*;
+import java.util.concurrent.*;
 
 import lombok.Getter;
 import com.loadoutlab.engine.CombatStyle;
@@ -58,6 +59,40 @@ public class GearItem {
     public final boolean demonbane;
     /** Kilograms, from the corpus (negative for weight-reducing gear); set once at load. */
     public double weight;
+
+    /** Name markers by bit, assigned on first sight. marks = [markers
+     * covered, bits...], rebuilt when asked a newer one: a bit test beat the
+     * per-set substring scans (29% of a search's CPU). */
+    static final Map<String, Integer> MARKERS = new ConcurrentHashMap<>();
+    static final List<String> MARKER_LIST = new CopyOnWriteArrayList<>();
+    volatile int[] marks = {0};
+
+    public static int markerBit(String marker) {
+        Integer bit = MARKERS.get(marker);
+        return bit != null ? bit : newMarker(marker);
+    }
+
+    static synchronized int newMarker(String marker) {
+        assert marker.equals(Names.lower(marker)) : marker;
+        return MARKERS.computeIfAbsent(marker, k -> {
+            MARKER_LIST.add(k);
+            return MARKER_LIST.size() - 1;
+        });
+    }
+
+    public boolean nameHas(int bit) {
+        int[] m = marks;
+        if (m[0] <= bit) marks = m = marks();
+        return (m[1 + (bit >> 5)] >>> bit & 1) != 0;
+    }
+
+    int[] marks() {
+        int n = MARKER_LIST.size();
+        int[] m = new int[2 + n / 32];
+        m[0] = n;
+        for (int i = 0; i < n; i++) if (nameLower.contains(MARKER_LIST.get(i))) m[1 + (i >> 5)] |= 1 << i;
+        return m;
+    }
 
     public GearItem( int id, String name, String version, GearSlot slot, String category, int speed, boolean twoHanded,
         boolean standardGear, boolean tradeable, boolean members, Integer estimatedPrice, StatBlock offensive,

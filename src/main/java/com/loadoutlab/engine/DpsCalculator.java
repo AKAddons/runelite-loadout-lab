@@ -481,8 +481,7 @@ public class DpsCalculator {
         // mystic sibling grant the SAME +10 accuracy / +100 magic damage
         // on standard casts as the twinflame (they had nothing until
         // 2026-08-22); only the twinflame also splits its hit.
-        boolean smokeStaff = wearing(loadout, "twinflame") || wearing(loadout, "smoke battlestaff")
-            || wearing(loadout, "mystic smoke staff");
+        boolean smokeStaff = wearsAny(loadout, SMOKE_STAVES, false);
         boolean t4 = smokeStaff && ts2 != null && "standard".equalsIgnoreCase(ts2.spellbook);
         if (t4) {
             // The damage half rides the magic-damage POOL (additive,
@@ -786,8 +785,7 @@ public class DpsCalculator {
         sunfireMinHit = 0;
         int md = loadout.bonuses.magicDamage;
         if (wearing(loadout, "tumeken")) md = min(1000, md * (inToa(request) ? 4 : 3));
-        if ((wearing(loadout, "twinflame") || wearing(loadout, "smoke battlestaff")
-            || wearing(loadout, "mystic smoke staff")) && request.spell != null
+        if (wearsAny(loadout, SMOKE_STAVES, false) && request.spell != null
             && "standard".equalsIgnoreCase(request.spell.spellbook)) {
             md += 100;
         }
@@ -831,9 +829,11 @@ public class DpsCalculator {
         return (int) demonbaneSpell(request, loadout, mh, 25, 50, "damage");
     }
 
-    static boolean wearing(Loadout loadout, String marker) {
-        return loadout.namesLower().contains(Names.key(marker));
-    }
+    static final List<String> SMOKE_STAVES = List.of("twinflame", "smoke battlestaff", "mystic smoke staff");
+
+    /** Any worn item's name holds the marker. Markers are lower-case where
+     * they are written (code and data), so no per-call lower-casing. */
+    static boolean wearing(Loadout loadout, String marker) { return loadout.wears(marker, false); }
 
     /** Revenants: the avarice and wilderness-weapon conditionals key off
      * them (wiki calc: monster name starts with "Revenant").
@@ -892,7 +892,7 @@ public class DpsCalculator {
     /** Any of the alternatives worn; active = "Inactive" versions never count. */
     static boolean wearsAny(Loadout loadout, List<String> names, boolean active) {
         for (String name : names) {
-            if (active ? wearingActive(loadout, name) : wearing(loadout, name)) return true;
+            if (loadout.wears(name, active)) return true;
         }
         return false;
     }
@@ -901,7 +901,7 @@ public class DpsCalculator {
     static int setWeight(Loadout loadout, Map<String, Integer> weights, boolean active) {
         int total = 0;
         for (var piece : weights.entrySet()) {
-            if (active ? wearingActive(loadout, piece.getKey()) : wearing(loadout, piece.getKey())) {
+            if (loadout.wears(piece.getKey(), active)) {
                 total += piece.getValue();
             }
         }
@@ -1185,14 +1185,6 @@ public class DpsCalculator {
         long defenceRoll = npcDefenceRoll(request.monster, "stab", loadout.getWeapon());
         double meleeAccuracy = normalAccuracy(meleeRoll, defenceRoll);
         return chance * normalExpectedHit(meleeAccuracy, meleeMax);
-    }
-
-    /** wearing(), but "Inactive" versions (uncharged crystal) never match -
-     * the crystal bow and armour (accuracy x(20+n)/20, damage x(40+n)/40;
-     * helm 1, legs 2, body 3: full set +30% accuracy, +15% damage) share
-     * their item names with the inactive pieces and differ only by version. */
-    static boolean wearingActive(Loadout loadout, String marker) {
-        return loadout.activeNamesLower().contains(Names.lower(marker));
     }
 
     static int applyFlatArmour(OptimizationRequest request, int hit) {

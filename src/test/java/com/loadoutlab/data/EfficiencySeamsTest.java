@@ -29,10 +29,12 @@ class EfficiencySeamsTest {
 	}
 
 	@Test
-	@DisplayName("Names.key lower-cases once and hands back the same string after")
-	void keyMemoised() {
-		String first = Names.key("Elite Void Top");
-		assertEquals("elite void top", first);
-		assertSame(first, Names.key("Elite Void Top"));
+	@DisplayName("gear name markers are bits: a lower-case marker matches by name fragment, any other trips the -ea guard")
+	void nameMarkersAreBits() {
+		GearItem salve = data.gearItems.stream().filter(g -> g.nameLower.equals("salve amulet(ei)")).findFirst().get();
+		assertTrue(salve.nameHas(GearItem.markerBit("salve amulet")));
+		assertTrue(salve.nameHas(GearItem.markerBit("salve amulet(ei)")));
+		assertFalse(salve.nameHas(GearItem.markerBit("salve amulet(i)")));
+		assertThrows(AssertionError.class, () -> GearItem.markerBit("Salve amulet"));
 	}
 }
