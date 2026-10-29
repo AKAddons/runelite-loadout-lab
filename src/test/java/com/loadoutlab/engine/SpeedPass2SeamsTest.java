@@ -14,10 +14,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Lever 5 and the active mask (ISS-01M62X98ZMFKDE48JJ7KFT1FQ4, Andrew 2026-10-28:
- * "and go ahead and execute lever 5"): a calculator cuts each rule list to the
- * rules its monster's gate allows, once per monster, and a set keeps its active
- * marker mask like its plain one.
+ * Lever 5 (ISS-01M62X98ZMFKDE48JJ7KFT1FQ4, Andrew 2026-10-28: "and go ahead
+ * and execute lever 5"): a calculator cuts each rule list to the rules its
+ * monster's gate allows, once per monster. The active-mask half measured no
+ * faster and was dropped.
  */
 class SpeedPass2SeamsTest {
 	private static LoadoutData data;
@@ -59,13 +59,12 @@ class SpeedPass2SeamsTest {
 	}
 
 	@Test
-	@DisplayName("a set keeps its active mask: an inactive Bow of Faerdhinen is worn but never active, asked twice")
-	void activeMaskIsKept() {
+	@DisplayName("an inactive Bow of Faerdhinen is worn but never active, asked twice each way")
+	void inactiveBowIsWornNotActive() {
 		Loadout bow = wielding(weapon("bow of faerdhinen", "inactive"));
 		for (int ask = 0; ask < 2; ask++) {
 			assertTrue(bow.wears("bow of faerdhinen", false), "worn");
 			assertFalse(bow.wears("bow of faerdhinen", true), "not active");
 		}
-		assertNotNull(bow.activeMarks, "the active mask is built once and kept");
 	}
 }

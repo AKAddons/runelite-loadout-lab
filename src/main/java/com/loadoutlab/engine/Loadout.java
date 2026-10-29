@@ -16,9 +16,8 @@ public class Loadout {
      * scan these, so a trial builds no joined name string (that was 27% of
      * the optimizer's allocation). */
     final GearItem[] worn;
-    /** GearItem.marks of the worn items, built on the first check, and its
-     * active twin (uncharged crystal excluded) likewise. */
-    volatile int[] marks, activeMarks;
+    /** GearItem.marks of the worn items, built on the first check. */
+    volatile int[] marks;
 
     public Loadout(Map<GearSlot, GearItem> gear) { this(copyOf(gear), true); }
 
@@ -131,11 +130,8 @@ public class Loadout {
      * versions (uncharged crystal) never match. */
     boolean wears(String marker, boolean active) {
         int bit = GearItem.markerBit(marker);
-        int[] m = active ? activeMarks : marks;
-        if (m == null || m[0] <= bit) {
-            m = GearItem.marks(worn, active);
-            if (active) activeMarks = m; else marks = m;
-        }
+        int[] m = active ? GearItem.marks(worn, true) : marks;
+        if (m == null || m[0] <= bit) marks = m = GearItem.marks(worn, false);
         return (m[1 + (bit >> 5)] >>> bit & 1) != 0;
     }
 }
