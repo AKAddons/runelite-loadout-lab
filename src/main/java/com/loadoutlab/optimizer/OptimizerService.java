@@ -690,6 +690,10 @@ public class OptimizerService {
     Map<CombatStyle, StyleResult> computeAllStyles( MonsterStats monster, ComputeContext ctx, long ticket) {
         ctx.ticket = ticket;
         String bk = baseKeyFor(monster, ctx);
+        // The styles' owned and BiS optimizes side by side on the pool, a
+        // roster's pass A for one mob; the cards below read them back from
+        // the optimize cache (a style already on the card cache is a hit).
+        if (passA(List.of(monster), ctx, ticket) == null) return null;
             Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
             for (CombatStyle style : concreteValues()) {
                 if (requestSeq.get() != ticket) return null; // superseded mid-flight - abandon between styles
@@ -2044,19 +2048,11 @@ public class OptimizerService {
         return best;
     }
 
-    /** Per style: optimise each mob independently, choose ONE shared owned
-     * set and ONE shared game set by average dps, then rebuild every mob's
-     * StyleResult around the shared sets (that mob's own dps/incoming/spec).
-     * Returns null if the request was superseded mid-compute. */
-    List<Map<CombatStyle, StyleResult>> computeStyleAcross( List<MonsterStats> mobs, ComputeContext ctx, long ticket) {
+    /** Every style's plan, member requests and optimizes (pass A), the
+     * optimizes cached; null when superseded or stopped. A single mob
+     * runs it too, so its cards read their six optimizes back. */
+    Map<CombatStyle, StyleWork> passA(List<MonsterStats> mobs, ComputeContext ctx, long ticket) {
         int n = mobs.size();
-        List<Map<CombatStyle, StyleResult>> perMob = new ArrayList<>();
-        for (int j = 0; j < n; j++) perMob.add(new EnumMap<>(CombatStyle.class));
-        var calc = new DpsCalculator();
-        // Per-style state the cross-style kit passes reuse after the loop -
-        // one pass for the Yours side, one for the BiS side.
-        Map<CombatStyle, SharedSide> ownedSides = new EnumMap<>(CombatStyle.class);
-        Map<CombatStyle, SharedSide> gameSides = new EnumMap<>(CombatStyle.class);
         Map<CombatStyle, StyleWork> works = new EnumMap<>(CombatStyle.class);
         // PASS A (field fix 2026-07-17: the load-time wall was the 2x3xN
         // independent optimize() calls, not the kit search): build every
@@ -2115,7 +2111,24 @@ public class OptimizerService {
             // is shut down on plugin stop, so just abandon the computation.
             return null;
         }
-        if (requestSeq.get() != ticket) return null;
+        return requestSeq.get() != ticket ? null : works;
+    }
+
+    /** Per style: optimise each mob independently, choose ONE shared owned
+     * set and ONE shared game set by average dps, then rebuild every mob's
+     * StyleResult around the shared sets (that mob's own dps/incoming/spec).
+     * Returns null if the request was superseded mid-compute. */
+    List<Map<CombatStyle, StyleResult>> computeStyleAcross( List<MonsterStats> mobs, ComputeContext ctx, long ticket) {
+        int n = mobs.size();
+        List<Map<CombatStyle, StyleResult>> perMob = new ArrayList<>();
+        for (int j = 0; j < n; j++) perMob.add(new EnumMap<>(CombatStyle.class));
+        var calc = new DpsCalculator();
+        // Per-style state the cross-style kit passes reuse after the loop -
+        // one pass for the Yours side, one for the BiS side.
+        Map<CombatStyle, SharedSide> ownedSides = new EnumMap<>(CombatStyle.class);
+        Map<CombatStyle, SharedSide> gameSides = new EnumMap<>(CombatStyle.class);
+        Map<CombatStyle, StyleWork> works = passA(mobs, ctx, ticket);
+        if (works == null) return null;
         // Each side's free bests, every style together: a style's shared kit
         // answers to the members fought with it (styleUseWeights).
         Map<CombatStyle, List<List<DpsResult>>> obs = new EnumMap<>(CombatStyle.class);
