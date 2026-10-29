@@ -46,7 +46,7 @@ class StatIcons {
 
         SizedIcon(String bakedName, int size) {
             this.size = size;
-            this.image = baked("stat-" + bakedName + "-" + size + ".png", size);
+            image = baked("stat-" + bakedName + "-" + size + ".png", size);
         }
 
         public int getIconWidth() { return size; }

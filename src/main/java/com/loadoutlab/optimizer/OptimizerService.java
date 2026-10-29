@@ -217,7 +217,7 @@ public class OptimizerService {
             this.spec = spec == null ? null : spec.spec;
             specWeapon = spec == null ? null : spec.weapon;
             specExpectedDamage = spec == null ? 0 : spec.expectedDamage;
-            this.specDpsAdded = spec == null ? 0 : spec.dpsAdded;
+            specDpsAdded = spec == null ? 0 : spec.dpsAdded;
             this.gameSpec = gameSpec == null ? null : gameSpec.spec;
             gameSpecWeapon = gameSpec == null ? null : gameSpec.weapon;
             gameSpecExpectedDamage = gameSpec == null ? 0 : gameSpec.expectedDamage;

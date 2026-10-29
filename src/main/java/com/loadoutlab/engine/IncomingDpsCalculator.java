@@ -158,32 +158,32 @@ public class IncomingDpsCalculator {
         }
 
         Prepared(MonsterStats monster, BossOverride override, int defenceLevel, int ml, int antifireTier) {
-            this.revenant = monster.isRevenantMonster();
+            revenant = monster.isRevenantMonster();
             this.antifireTier = antifireTier;
             int fire = -1;
             Map<String, int[]> fl = null;
             this.defenceLevel = defenceLevel;
-            this.magicEffective = magicEffectiveLevel(defenceLevel, ml);
+            magicEffective = magicEffectiveLevel(defenceLevel, ml);
             MonsterOffence off = monster.offence;
-            this.overridden = override != null;
+            overridden = override != null;
             int st = off.speedTicks;
             List<String> styles = off.styles;
             List<Attack> attacks = overridden ? override.attacks : null;
             int n = overridden ? attacks.size() : styles.size();
-            this.kinds = new int[n];
-            this.attackRolls = new int[n];
-            this.maxHits = new int[n];
-            this.speeds = new int[n];
-            this.live = new boolean[n];
-            this.labels = new String[n];
-            this.prayerOf = new String[n];
+            kinds = new int[n];
+            attackRolls = new int[n];
+            maxHits = new int[n];
+            speeds = new int[n];
+            live = new boolean[n];
+            labels = new String[n];
+            prayerOf = new String[n];
             if (!overridden) {
-                this.priced = live;
-                this.prayable = new boolean[n];
+                priced = live;
+                prayable = new boolean[n];
                 // Only modeled attacks share the cadence: an unmodeled style is
                 // named on the card, never a 0-damage slice that dilutes the rest.
                 int modeled = modeledCount(styles, off);
-                this.share = modeled == 0 ? 0 : 1.0 / modeled;
+                share = modeled == 0 ? 0 : 1.0 / modeled;
                 boolean single = singleFamily(styles);
                 for (int i = 0; i < n; i++) {
                     int kind = kindOf(styles.get(i));
@@ -197,27 +197,27 @@ public class IncomingDpsCalculator {
                     labels[i] = shown(styles.get(i));
                     prayerOf[i] = protectPrayerFor(styles.get(i));
                 }
-                this.note = null;
-                this.shares = null;
-                this.prayerFactors = null;
-                this.avoidable = null;
-                this.hits = null;
-                this.flicked = null;
-                this.leaks = null;
-                this.prayerIndex = null;
-                this.prayerNames = null;
+                note = null;
+                shares = null;
+                prayerFactors = null;
+                avoidable = null;
+                hits = null;
+                flicked = null;
+                leaks = null;
+                prayerIndex = null;
+                prayerNames = null;
             } else {
-                this.shares = new double[n];
-                this.prayerFactors = new double[n];
-                this.prayerIndex = new int[n];
-                this.priced = new boolean[n];
-                this.avoidable = new boolean[n];
-                this.hits = new int[n];
-                this.flicked = new boolean[n];
-                this.leaks = new double[n];
-                this.prayable = null;
-                this.share = 0;
-                this.note = override.note;
+                shares = new double[n];
+                prayerFactors = new double[n];
+                prayerIndex = new int[n];
+                priced = new boolean[n];
+                avoidable = new boolean[n];
+                hits = new int[n];
+                flicked = new boolean[n];
+                leaks = new double[n];
+                prayable = null;
+                share = 0;
+                note = override.note;
                 // Distinct prayers in first-occurrence order.
                 List<String> prayers = new ArrayList<>();
                 for (int i = 0; i < n; i++) {
@@ -255,10 +255,10 @@ public class IncomingDpsCalculator {
                     }
                     prayerIndex[i] = index;
                 }
-                this.prayerNames = prayers.toArray(new String[0]);
+                prayerNames = prayers.toArray(new String[0]);
             }
-            this.dragonfire = fire;
-            this.layers = fl;
+            dragonfire = fire;
+            layers = fl;
         }
 
         /** The dragonfire's {max without, max with Protect from Magic} for this

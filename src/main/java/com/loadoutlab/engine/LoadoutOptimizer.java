@@ -777,7 +777,7 @@ public class LoadoutOptimizer {
         SpellContext(OptimizationRequest request, List<SpellStats> spells) {
             this.spells = spells;
             boolean magic = request.style == MAGIC && request.isAutoSpell();
-            this.spellRequests = new OptimizationRequest[magic ? spells.size() : 0];
+            spellRequests = new OptimizationRequest[magic ? spells.size() : 0];
             for (int i = 0; i < spellRequests.length; i++) spellRequests[i] = request.withSpell(spells.get(i));
         }
 
@@ -1433,17 +1433,17 @@ public class LoadoutOptimizer {
             // spell they lift: collapsed, the pool kept air and lost fire
             // (field 2026-09-27). Their name keeps them apart.
             String name = item.nameLower;
-            this.category = item.category + (name.equals("elemental amulet")
+            category = item.category + (name.equals("elemental amulet")
                 || name.startsWith("amulet of ") && ELEMENTS.contains(name.substring(10)) ? name : "");
-            this.twoHanded = item.twoHanded;
-            this.stats = new int[]{
+            twoHanded = item.twoHanded;
+            stats = new int[]{
                 item.speed, item.offensive.stab, item.offensive.slash,
                 item.offensive.crush, item.offensive.magic, item.offensive.ranged,
                 item.bonuses.strength, item.bonuses.rangedStrength,
                 item.bonuses.magicDamage, item.bonuses.prayer, item.defensive.stab,
                 item.defensive.slash, item.defensive.crush, item.defensive.magic,
                 item.defensive.ranged, };
-            this.hash = (category.hashCode() * 31 + (twoHanded ? 1 : 0)) * 31 + Arrays.hashCode(stats);
+            hash = (category.hashCode() * 31 + (twoHanded ? 1 : 0)) * 31 + Arrays.hashCode(stats);
         }
 
         public boolean equals(Object other) {
