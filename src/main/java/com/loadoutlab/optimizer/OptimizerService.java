@@ -2060,7 +2060,7 @@ public class OptimizerService {
         // the pool - no per-style straggler waves, owned and game as
         // separate tasks. Each task owns its optimizer (its DpsCalculator
         // is stateful); distinct array slots + invokeAll's join publish.
-        List<Callable<Void>> ot = new ArrayList<>();
+        List<Callable<Object>> ot = new ArrayList<>();
         for (CombatStyle style : concreteValues()) {
             // Mob-independent plan - MUST mirror computeAllStyles (levels,
             // boost and labels depend on style + owned + real, not the mob).
@@ -2083,14 +2083,8 @@ public class OptimizerService {
             for (int j = 0; j < n; j++) {
                 int index = j;
                 MonsterStats mob = mobs.get(index);
-                ot.add(() -> {
-                    w.ownedArr[index] = optimizeCached(mob, style, false, ctx, w.ownedReqs.get(index), ticket);
-                    return null;
-                });
-                ot.add(() -> {
-                    w.gameArr[index] = optimizeCached(mob, style, true, ctx, w.gameReqs.get(index), ticket);
-                    return null;
-                });
+                ot.add(() -> w.ownedArr[index] = optimizeCached(mob, style, false, ctx, w.ownedReqs.get(index), ticket));
+                ot.add(() -> w.gameArr[index] = optimizeCached(mob, style, true, ctx, w.gameReqs.get(index), ticket));
             }
         }
         try {
@@ -2099,7 +2093,7 @@ public class OptimizerService {
             // renders as "-" with no trace (field bug 2026-08-05: the
             // Sire roster's ranged and magic buttons dashed while every
             // member answered fine alone).
-            for (Future<Void> f : rosterPool.invokeAll(ot)) {
+            for (Future<Object> f : rosterPool.invokeAll(ot)) {
                 try {
                     f.get();
                 } catch (ExecutionException e) { log.warn("roster optimize task failed", e.getCause()); }
