@@ -174,13 +174,14 @@ public class OptimizerService {
         public final String boostLabel;
         /** The ceiling assumption for game best ("Rigour + Ranging potion"). */
         public final String gameBoostLabel;
-        /** What the boss does back to you in the shown owned set (nullable). */
-        public final Result incoming;
+        /** What the boss does back to you in the shown owned set (nullable);
+         * a group's mode re-wear resets it (modeCard). */
+        public Result incoming;
         /** Same, in the game-best set - the BiS side's DTPS (nullable). */
         public final Result gameIncoming;
         /** The INVENTORY vs this mob on the Yours side: the trip plan's
          * items not currently worn (spec weapon first). */
-        public final List<GearItem> bench;
+        public List<GearItem> bench;
         /** Same, for the BiS side's kit. */
         public final List<GearItem> gameBench;
         /** True when the Yours half is something the CARRIED KIT can
@@ -311,7 +312,6 @@ public class OptimizerService {
      * every style is cached, else one worker job. A one-mob roster takes
      * this road too, its member's own exclusions and sims on the context. */
     void bestPerStyle(MonsterStats monster, ComputeContext ctx, Consumer<Map<CombatStyle, StyleResult>> callback) {
-        ctx.mode = OptimizeMode.valueOf(ctx.p.optimizeMode);
         ctx.gwdAncient = ctx.p.gwdAncient;
         String bk = baseKeyFor(monster, ctx);
         Map<CombatStyle, StyleResult> ac = new EnumMap<>(CombatStyle.class);
@@ -596,7 +596,7 @@ public class OptimizerService {
             // describes the set the card shows. Style cards only - a
             // Multi tool's pinned weapon is its own question.
             ModeTrade modeTrade = tool != null || ctx.mode == MAX_DPS || ob.isEmpty()
-                ? null : applyMode(ctx, ownedRequest, ob, monster, ctx.ticket);
+                ? null : applyMode(ctx, ownedRequest, ob, monster, ctx.ticket, optimizer);
             // The swaps strips, and the set made to wear its own owned upgrades
             // first (ISS-01M5PKSQBAP823XNC13QBW8830, Andrew 2026-10-24: "if it
             // is SIM IT AS THE MAIN SET"): the search's beam can miss a set one
@@ -739,10 +739,11 @@ public class OptimizerService {
      * defence frontier, pick the mode's point, swap it into ownedBest[0],
      * and say what it cost. Only where the damage-taken model covers the
      * monster (full or curated) - a partial number would steer the pick by
-     * the attacks it leaves out.
+     * the attacks it leaves out. A group's sweep task passes its own
+     * optimizer (the shared one's calculator is stateful).
      */
     ModeTrade applyMode(ComputeContext ctx, OptimizationRequest ownedRequest,
-        List<DpsResult> ob, MonsterStats monster, long ticket) {
+        List<DpsResult> ob, MonsterStats monster, long ticket, LoadoutOptimizer opt) {
         OptimizeMode mode = ctx.mode;
         DpsResult md2 = ob.get(0);
         Result base = incomingFor(monster, md2.loadout, ctx, ownedRequest.style);
@@ -762,10 +763,10 @@ public class OptimizerService {
                 return null; // superseded mid-sweep
             }
             OptimizationRequest weighted = ownedRequest.withDefenseWeight(alpha * d0 / i0);
-            if (pools == null) pools = optimizer.preparePools(ctx.dataset, weighted);
-            List<DpsResult> out = optimizer.optimize(ctx.dataset, weighted, pools);
+            if (pools == null) pools = opt.preparePools(ctx.dataset, weighted);
+            List<DpsResult> out = opt.optimize(ctx.dataset, weighted, pools);
             if (!out.isEmpty()) {
-                polish(optimizer, ctx.dataset, weighted, out);
+                polish(opt, ctx.dataset, weighted, out);
                 frontier.add(out.get(0));
             }
         }
@@ -774,15 +775,24 @@ public class OptimizerService {
         DpsResult picked = md2;
         var pr = new Rung(null, d0, i0, false, null);
         for (DpsResult candidate : frontier) {
-            var rung = new Rung(null, candidate.dps, incomingFor(monster, candidate.loadout, ctx, ownedRequest.style).totalDps, false, null);
+            var rung = rungOf(ctx, monster, ownedRequest.style, candidate);
             if (compareRungs(mode, rung, pr) > 0) {
                 picked = candidate;
                 pr = rung;
             }
         }
-        if (picked == md2) return new ModeTrade(mode, 0, 0, "no safer set");
+        if (picked == md2) return new ModeTrade(mode, 0, 0, NO_SAFER);
         ob.set(0, picked);
         return new ModeTrade(mode, (int) round((1 - picked.dps / d0) * 100), (int) round((1 - pr.dtps / i0) * 100), null);
+    }
+
+    /** applyMode's verdict when the sweep finds nothing safer. The data
+     * verdicts before it also stop a group member's re-wear; this one does not. */
+    static final String NO_SAFER = "no safer set";
+
+    /** A set scored for the mode's ranking: its DPS and its damage taken. */
+    static Rung rungOf(ComputeContext ctx, MonsterStats mob, CombatStyle style, DpsResult r) {
+        return new Rung(null, r.dps, incomingFor(mob, r.loadout, ctx, style).totalDps, false, null);
     }
 
     /** Every worn slot's ladder for the shown Yours set: each swap scored by
@@ -1289,6 +1299,9 @@ public class OptimizerService {
         Map<Integer, SpellStats> spellByMob, Map<Integer, Integer> specByMob, Set<Integer> poi) {
         var ctx = new ComputeContext();
         ctx.p = p;
+        // Here, not on the single-mob road only: a group runs the modes too
+        // (ISS-01M64GNB852CBYVVWE29A9HJK4), its raid book recompute as well.
+        ctx.mode = OptimizeMode.valueOf(p.optimizeMode);
         ctx.maxSwaps = max(0, p.maxSwaps);
         ctx.pinsByMob = pinsByMob == null ? Map.of() : pinsByMob;
         ctx.spellByMob = spellByMob == null ? Map.of() : spellByMob;
@@ -2087,32 +2100,70 @@ public class OptimizerService {
                 ot.add(() -> w.gameArr[index] = optimizeCached(mob, style, true, ctx, w.gameReqs.get(index), ticket));
             }
         }
+        return fanOut(ot, ticket) ? works : null;
+    }
+
+    /** One flat fan-out over the roster pool; false when superseded or stopped. */
+    boolean fanOut(List<Callable<Object>> tasks, long ticket) {
         try {
             // Check every future: a task that THROWS otherwise vanishes
             // silently, its array slot stays null, and the whole style
             // renders as "-" with no trace (field bug 2026-08-05: the
             // Sire roster's ranged and magic buttons dashed while every
             // member answered fine alone).
-            for (Future<Object> f : rosterPool.invokeAll(ot)) {
+            for (Future<Object> f : rosterPool.invokeAll(tasks)) {
                 try {
                     f.get();
-                } catch (ExecutionException e) { log.warn("roster optimize task failed", e.getCause()); }
+                } catch (ExecutionException e) { log.warn("roster task failed", e.getCause()); }
             }
         } catch (InterruptedException e) {
             // Cancellation of a superseded search is cooperative, via requestSeq
             // (checked immediately below) - not thread interruption. This runs on
             // our own daemon optimizer worker, interrupted only when the executor
             // is shut down on plugin stop, so just abandon the computation.
-            return null;
+            return false;
         }
-        return requestSeq.get() != ticket ? null : works;
+        return requestSeq.get() == ticket;
+    }
+
+    /** Each member's sweep under a defensive mode, every style at once on the
+     * pool (ISS-01M64GNB852CBYVVWE29A9HJK4, Andrew 2026-10-29: "Mode picks
+     * feed the kit"): applyMode's pick replaces the member's best before the
+     * kit is built, and its verdict waits for the card's trade. */
+    boolean sweep(List<MonsterStats> mobs, ComputeContext ctx, long ticket, Map<CombatStyle, StyleWork> works) {
+        List<Callable<Object>> st = new ArrayList<>();
+        for (StyleWork w : works.values()) {
+            for (int j = 0; j < mobs.size(); j++) {
+                int index = j;
+                List<DpsResult> ob = w.ownedArr[j];
+                if (ob == null || ob.isEmpty()) continue;
+                st.add(() -> {
+                    w.trades[index] = applyMode(ctx, w.ownedReqs.get(index), ob, mobs.get(index), ticket, new LoadoutOptimizer());
+                    return w.picks[index] = ob.get(0);
+                });
+            }
+        }
+        return fanOut(st, ticket);
+    }
+
+    /** A group's cards. Under Balanced or Tanky they are built twice
+     * (ISS-01M64GNB852CBYVVWE29A9HJK4): Max DPS first, each mode card's trade
+     * reads against it, as a single search's reads its own max-DPS set. Pass
+     * A's optimizes are cache hits the second time. */
+    List<Map<CombatStyle, StyleResult>> computeStyleAcross(List<MonsterStats> mobs, ComputeContext ctx, long ticket) {
+        List<Map<CombatStyle, StyleResult>> max = ctx.mode == MAX_DPS ? null : styleAcross(mobs, ctx, ticket, null);
+        return ctx.mode != MAX_DPS && max == null ? null : styleAcross(mobs, ctx, ticket, max);
     }
 
     /** Per style: optimise each mob independently, choose ONE shared owned
      * set and ONE shared game set by average dps, then rebuild every mob's
      * StyleResult around the shared sets (that mob's own dps/incoming/spec).
-     * Returns null if the request was superseded mid-compute. */
-    List<Map<CombatStyle, StyleResult>> computeStyleAcross( List<MonsterStats> mobs, ComputeContext ctx, long ticket) {
+     * With max (the group's Max DPS cards) the mode's sweep feeds the kit
+     * and each member re-wears by the mode; without it under a mode this IS
+     * that Max DPS answer, and skips the swap strips nobody sees. Returns
+     * null if the request was superseded mid-compute. */
+    List<Map<CombatStyle, StyleResult>> styleAcross(List<MonsterStats> mobs, ComputeContext ctx, long ticket,
+        List<Map<CombatStyle, StyleResult>> max) {
         int n = mobs.size();
         List<Map<CombatStyle, StyleResult>> perMob = new ArrayList<>();
         for (int j = 0; j < n; j++) perMob.add(new EnumMap<>(CombatStyle.class));
@@ -2122,7 +2173,7 @@ public class OptimizerService {
         Map<CombatStyle, SharedSide> ownedSides = new EnumMap<>(CombatStyle.class);
         Map<CombatStyle, SharedSide> gameSides = new EnumMap<>(CombatStyle.class);
         Map<CombatStyle, StyleWork> works = passA(mobs, ctx, ticket);
-        if (works == null) return null;
+        if (works == null || max != null && !sweep(mobs, ctx, ticket, works)) return null;
         // Each side's free bests, every style together: a style's shared kit
         // answers to the members fought with it (styleUseWeights).
         Map<CombatStyle, List<List<DpsResult>>> obs = new EnumMap<>(CombatStyle.class);
@@ -2217,7 +2268,7 @@ public class OptimizerService {
         // style-immune phase (TD shields) with a genuine style switch. Yours
         // only: BiS is each style's free game-wide best, never a swap kit
         // (ISS-01M60YKX8YAMV6QQX3XCYGJDBF, Andrew 2026-10-28: "Free BiS per style").
-        KitView ov = ctx.maxSwaps >= 1 && ownedSides.size() >= 2 ? kitPass(calc, mobs, ctx, ticket, ownedSides) : null;
+        KitView ov = ctx.maxSwaps >= 1 && ownedSides.size() >= 2 ? kitPass(calc, mobs, ctx, ticket, ownedSides, max != null) : null;
         if (requestSeq.get() != ticket) return null;
         if (ov != null) {
             // Merge the kit views over the phase-1 tabs: each side that has
@@ -2254,6 +2305,16 @@ public class OptimizerService {
                 }
             }
         }
+        if (max == null && ctx.mode != MAX_DPS) return perMob;
+        for (int j = 0; max != null && j < n; j++) {
+            for (CombatStyle s : concreteValues()) {
+                StyleResult sr = perMob.get(j).get(s);
+                StyleResult b = max.get(j).get(s);
+                if (sr != null && !sr.owned.isEmpty() && b != null && !b.owned.isEmpty()) {
+                    modeCard(calc, ctx, mobs.get(j), s, works.get(s), j, sr, b);
+                }
+            }
+        }
         // The group's swaps: one strip per style, on every member's card,
         // built from what the cards wear after the kit merge.
         for (var entry : ownedSides.entrySet()) {
@@ -2266,9 +2327,80 @@ public class OptimizerService {
         return perMob;
     }
 
+    /** A group card under the defensive mode (ISS-01M64GNB852CBYVVWE29A9HJK4):
+     * the member wears its mode-best combination of what the trip carries for
+     * it (unless its sweep had no damage to rank by), then its trade reads
+     * against its card in the group's Max DPS answer b - kept Max DPS, with
+     * the sweep's reason, when the set is the same. */
+    void modeCard(DpsCalculator calc, ComputeContext ctx, MonsterStats mob, CombatStyle s, StyleWork w, int j,
+        StyleResult sr, StyleResult b) {
+        OptimizationRequest req = w.ownedReqs.get(j);
+        ModeTrade sweep = w.trades[j];
+        DpsResult shown = sr.owned.get(0);
+        if (sweep != null && (sweep.reason == null || NO_SAFER.equals(sweep.reason))) {
+            DpsResult worn = modeWear(calc, ctx, req, mob, shown, sr.bench, w.picks[j]);
+            if (worn != shown) {
+                worn = postPass(ctx, req, worn);
+                sr.bench = rebench(sr.bench, shown.loadout, worn.loadout);
+                sr.owned.set(0, worn);
+                sr.incoming = incomingFor(mob, worn.loadout, ctx, s);
+                verified(sr, ctx.dataset, req, w.gameReqs.get(j));
+                shown = worn;
+            }
+        }
+        DpsResult base = b.owned.get(0);
+        double bd = b.incoming == null ? 0 : b.incoming.totalDps;
+        sr.modeTrade = shown.loadout.ids().equals(base.loadout.ids())
+            ? new ModeTrade(ctx.mode, 0, 0, sweep != null && sweep.reason != null ? sweep.reason : "no safer set carried")
+            : new ModeTrade(ctx.mode, (int) round((1 - shown.dps / base.dps) * 100),
+                bd <= 0 || sr.incoming == null ? 0 : (int) round((1 - sr.incoming.totalDps / bd) * 100), null);
+    }
+
+    /** The member's mode-best combination of the shown set and what it
+     * carries: bestWorn's greedy wear ranked by the mode (compareRungs), or
+     * its own sweep pick when the shown set and the carried items cover it
+     * and it ranks higher. Shown itself when nothing ranks higher. */
+    DpsResult modeWear(DpsCalculator calc, ComputeContext ctx, OptimizationRequest req, MonsterStats mob,
+        DpsResult shown, List<GearItem> carried, DpsResult pick) {
+        DpsResult worn = shown;
+        Rung wr = rungOf(ctx, mob, req.style, worn);
+        Set<Integer> applied = new HashSet<>();
+        while (true) {
+            DpsResult next = null;
+            GearItem step = null;
+            Rung nr = wr;
+            for (GearItem swap : carried) {
+                Loadout trial = applied.contains(swap.id) ? null : withSwap(worn.loadout, swap);
+                DpsResult r = trial == null ? null : calcRespecting(calc, req, trial);
+                Rung rr = r == null ? null : rungOf(ctx, mob, req.style, r);
+                if (rr != null && compareRungs(ctx.mode, rr, nr) > 0) {
+                    next = r;
+                    step = swap;
+                    nr = rr;
+                }
+            }
+            if (next == null) break;
+            worn = next;
+            wr = nr;
+            applied.add(step.id);
+        }
+        DpsResult cover = pick == null ? null : coverableBest(singletonList(pick), shown.loadout, carried);
+        return cover != null && compareRungs(ctx.mode, rungOf(ctx, mob, req.style, cover), wr) > 0 ? cover : worn;
+    }
+
+    /** The bench after a re-wear: what was worn or carried, minus the new
+     * set (a carried spec weapon stays first). */
+    static List<GearItem> rebench(List<GearItem> bench, Loadout was, Loadout now) {
+        var all = new LinkedHashMap<Integer, GearItem>();
+        pack(all, bench);
+        pack(all, was.items());
+        return inventoryFor(all.values(), null, now);
+    }
+
     /** One style's roster state: pass A's plan and member requests and the
      * fanned-out optimize answers (one array slot per task), then the
-     * shared-spec picks the kit merge reads back. */
+     * shared-spec picks the kit merge reads back, and under a defensive mode
+     * each member's sweep verdict and pick. */
     static class StyleWork {
         StylePlan plan;
         final List<OptimizationRequest> ownedReqs = new ArrayList<>();
@@ -2277,10 +2409,14 @@ public class OptimizerService {
         final List<DpsResult>[] gameArr;
         SpecPick[] specs;
         SpecPick[] gameSpecs;
+        final ModeTrade[] trades;
+        final DpsResult[] picks;
 
         StyleWork(int n) {
             ownedArr = new List[n];
             gameArr = new List[n];
+            trades = new ModeTrade[n];
+            picks = new DpsResult[n];
         }
     }
 
@@ -2445,7 +2581,7 @@ public class OptimizerService {
      * Returns null only when superseded mid-compute.
      */
     KitView kitPass(DpsCalculator calc, List<MonsterStats> mobs,
-        ComputeContext ctx, long ticket, Map<CombatStyle, SharedSide> sides) {
+        ComputeContext ctx, long ticket, Map<CombatStyle, SharedSide> sides, boolean defensive) {
         int n = mobs.size();
         // SLOT UNIFICATION (field insight 2026-07-18: a tribrid answer
         // should not pay one carried slot per near-identical variant):
@@ -2454,7 +2590,11 @@ public class OptimizerService {
         // converge onto shared pieces, the diffs shrink, and the
         // significant breakpoints arrive with far fewer items - the
         // mage/tribrid answers assemble early instead of fragmenting.
-        for (SharedSide us : sides.values()) {
+        // Under a defensive mode a variant must not raise the member's
+        // damage taken either (protect()'s rule), or the sweep's pick
+        // would unify away before the kit sees it (ISS-01M64GNB852CBYVVWE29A9HJK4).
+        for (var e : sides.entrySet()) {
+            SharedSide us = e.getValue();
             List<OptimizationRequest> unifyReqs = us.reqs;
             for (GearSlot slot : GearSlot.values()) {
                 Map<Integer, Integer> counts = new HashMap<>();
@@ -2489,7 +2629,9 @@ public class OptimizerService {
                         ul2 = withSlot(ul2, SHIELD, null);
                     }
                     DpsResult unified = calcRespecting(calc, unifyReqs.get(j), ul2);
-                    if (unified != null && unified.dps >= best.get(0).dps * 0.995) best.set(0, unified);
+                    if (unified != null && unified.dps >= best.get(0).dps * 0.995 && (!defensive
+                        || incomingFor(mobs.get(j), ul2, ctx, e.getKey()).totalDps
+                            <= incomingFor(mobs.get(j), best.get(0).loadout, ctx, e.getKey()).totalDps + EPS)) best.set(0, unified);
                 }
             }
         }

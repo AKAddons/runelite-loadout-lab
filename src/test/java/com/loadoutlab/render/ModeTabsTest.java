@@ -107,14 +107,20 @@ class ModeTabsTest {
 	}
 
 	@Test
-	@DisplayName("a group's page shows no mode tabs, its shared set never runs Balanced or Tanky; one mob and an empty page keep them")
-	void groupsHideTheTabs() {
-		// ISS-01M6415D54NSM6HGTEAP6SDRCJ, KendyyOP 2026-10-28: "Moons giving
-		// the same gear for all 3 options DPS, balanced and tanky".
-		Map<String, Object> mob = Map.of("styles", Map.of());
-		assertFalse(RenderSurface.modesRun(Map.of("entries", List.of(Map.of("mobs", List.of(mob, mob, mob))))),
-			"the Moons of Peril");
-		assertTrue(RenderSurface.modesRun(Map.of("entries", List.of(Map.of("mobs", List.of(mob))))), "Blood Moon alone");
-		assertTrue(RenderSurface.modesRun(Map.of("entries", List.of())), "no result yet");
+	@DisplayName("the trade line signs a gain: on a group's kit a member can gain DPS or take more damage")
+	void tradeLineSignsAGain() {
+		// ISS-01M64GNB852CBYVVWE29A9HJK4: a group's card reads its trade
+		// against the group's Max DPS card, not its own best set.
+		Map<String, Object> trade = new java.util.HashMap<>();
+		trade.put("mode", "TANKY");
+		trade.put("dpsLossPct", -3);
+		trade.put("dmgCutPct", -5);
+		assertEquals("Tanky: +3% DPS, +5% damage taken", ResultCards.modeLine(trade));
+		trade.put("mode", "BALANCED");
+		trade.put("dpsLossPct", 4);
+		trade.put("dmgCutPct", 12);
+		assertEquals("Balanced: -4% DPS, -12% damage taken", ResultCards.modeLine(trade));
+		assertEquals("+3", ResultCards.cut(-3));
+		assertEquals("-0", ResultCards.cut(0), "no change reads as no cut, as before");
 	}
 }

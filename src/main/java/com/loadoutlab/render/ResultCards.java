@@ -1630,7 +1630,13 @@ public class ResultCards {
         String mode = "TANKY".equals(str(trade, "mode")) ? "Tanky" : "Balanced";
         String reason = str(trade, "reason");
         if (reason != null) return mode + ": kept Max DPS (" + reason + ")";
-        return mode + ": -" + id(trade, "dpsLossPct") + "% DPS, -" + id(trade, "dmgCutPct") + "% damage taken";
+        return mode + ": " + cut(id(trade, "dpsLossPct")) + "% DPS, " + cut(id(trade, "dmgCutPct")) + "% damage taken";
+    }
+
+    /** A cut in whole percents as the card says it: a loss "-", a gain "+"
+     * (on a group's kit a member can gain, ISS-01M64GNB852CBYVVWE29A9HJK4). */
+    static String cut(int pct) {
+        return (pct < 0 ? "+" : "-") + abs(pct);
     }
 
     JLabel statIconLine(String text, String tooltip, Color color, int spriteId) {
@@ -1953,7 +1959,7 @@ public class ResultCards {
             if (trade != null) {
                 String mode = "TANKY".equals(str(trade, "mode")) ? "Tanky" : "Bal.";
                 sc.add(statIconLine(str(trade, "reason") != null ? mode + " =max"
-                        : mode + " -" + id(trade, "dpsLossPct") + "%", modeLine(trade), new Color(0x9FD39F), -1));
+                        : mode + " " + cut(id(trade, "dpsLossPct")) + "%", modeLine(trade), new Color(0x9FD39F), -1));
             }
         }
         Map stats = map(card, "stats");

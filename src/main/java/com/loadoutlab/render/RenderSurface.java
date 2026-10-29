@@ -602,12 +602,6 @@ public class RenderSurface {
         return pill(label, selected, label + (selected ? " on" : " off"), () -> commands.set(key, !selected));
     }
 
-    /** False on a group's page: its shared set never runs Balanced or Tanky
-     * (ISS-01M6415D54NSM6HGTEAP6SDRCJ), so it shows no mode tabs. */
-    static boolean modesRun(Map page) {
-        return list(page, "entries").stream().allMatch(entry -> list(entry, "mobs").size() < 2);
-    }
-
     /** True when any mob on the page passes the test. */
     static boolean anyMob(Map page, Predicate<Map> test) {
         for (Map entry : list(page, "entries")) {
@@ -907,9 +901,10 @@ public class RenderSurface {
             // Defensive modes (ISS-01M5G5CZC9SK46499FACRSJ8ZT), for every
             // player since 2026-10-22 (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6). Its own
             // centered row above the chips (Andrew 2026-10-21: "more centered
-            // in screen and distinguished from the chips").
+            // in screen and distinguished from the chips"). A group's page
+            // too: its members run the modes (ISS-01M64GNB852CBYVVWE29A9HJK4).
             modeRow.add(modeTabs(str(params, "optimizeMode"), commands));
-            modeRow.setVisible(modesRun(page));
+            modeRow.setVisible(true);
             // Arceuus casts blocked (Cure Me camps Lunar; a fight book elsewhere
             // with no swap - the Sire): the chips do nothing and hide, like on
             // a boat (Andrew 2026-09-09: "it should disable it").
