@@ -197,7 +197,7 @@ public class DpsCalculator {
             int magic = request.getLevels().magic;
             int flat = magic >= 13 ? 12 : magic >= 9 ? 11 : magic >= 5 ? 10 : 9;
             // The one item Salarin honours (wiki): the elemental amulet's +2.
-            if (wearing(loadout, "elemental amulet")) {
+            if (wearing(loadout, M_ELEMENTAL_AMULET)) {
                 flat += 2;
                 counted("elemental amulet", "+2 max hit - the one item Salarin honours");
             }
@@ -279,7 +279,7 @@ public class DpsCalculator {
         PrayerBonuses prayers = request.prayers;
         int effectiveAttack = effectiveLevel(levels.attack, prayers.meleeAccuracy, attackStance);
         int effectiveStrength = effectiveLevel(levels.strength, prayers.meleeStrength, strengthStance);
-        if (wearing(loadout, "soulreaper axe")) {
+        if (wearing(loadout, M_SOULREAPER_AXE)) {
             // Soul stacks (wiki): +6% of the boosted strength level per
             // stack, added flat AFTER the prayer factor ("does not stack
             // multiplicatively with prayers"), strength only. Stacks build
@@ -293,7 +293,7 @@ public class DpsCalculator {
         // INSIDE the Tombs; outside it is the base partisan's +58 / +45
         // (wiki; official calc; Kendyy and Micah, Discord 2026-09-29: the
         // "black keris" won cards it had no business on).
-        boolean dulled = wearing(loadout, "keris partisan of amascut") && !inToa(request);
+        boolean dulled = wearing(loadout, M_KERIS_PARTISAN_OF_AMASCUT) && !inToa(request);
         long attackRoll = attackRoll(effectiveAttack,
             loadout.offensive.getAttackBonus(attackType) - (dulled && attackType.equals("stab") ? 50 : 0));
         long baseAttackRoll = attackRoll;
@@ -309,7 +309,7 @@ public class DpsCalculator {
         // PLAYER_ACCURACY_FANG_TOA; TRIPLEKILLTRENT 2026-10-18: the outside
         // formula ran the fang 17-24% under the calc at invocation 300).
         double normal = normalAccuracy(attackRoll, defenceRoll);
-        boolean fang = wearing(loadout, "osmumten's fang") && "stab".equals(attackType);
+        boolean fang = wearing(loadout, M_OSMUMTEN_S_FANG) && "stab".equals(attackType);
         double accuracy = !fang ? normal : inToa(request) ? 1 - (1 - normal) * (1 - normal) : fangAccuracy(attackRoll, defenceRoll);
         int minHit = 0;
         if (fang) {
@@ -332,7 +332,7 @@ public class DpsCalculator {
         mh = applyFlatArmour(request, mh);
         double expected = expectedHitWithFlatArmour(accuracy, minHit, rm, fa);
         double[] dist = roll(accuracy, minHit, rm, fa);
-        boolean chained = wearing(loadout, "dual macuahuitl");
+        boolean chained = wearing(loadout, M_DUAL_MACUAHUITL);
         String melee = name(loadout.getWeapon());
         if (chained || Set.of("sulphur blades", "glacial temotli", "earthbound tecpatl", "torag's hammers").contains(melee)) {
             // Two hits on the halved max, armour on each hitsplat's own
@@ -347,7 +347,7 @@ public class DpsCalculator {
             double[] first = roll(accuracy, 0, fr, fa), second = roll(accuracy, 0, secondRaw, fa);
             dist = chained ? HitDist.chained(first, accuracy, second) : HitDist.plus(first, second);
         }
-        if (wearing(loadout, "scythe of vitur")) {
+        if (wearing(loadout, M_SCYTHE_OF_VITUR)) {
             if (request.monster.size >= 2) {
                 expected += expectedHitWithFlatArmour(accuracy, 0, rm / 2, fa);
                 dist = HitDist.plus(dist, roll(accuracy, 0, rm / 2, fa));
@@ -360,14 +360,14 @@ public class DpsCalculator {
         // Keris partisan of the sun (official calc): inside the Tombs it rolls
         // accuracy x5/4 below a quarter of the target's hitpoints - the last
         // quarter of the kill goes at the boosted rate (ISS-01M5WV8S2V5HEVEZN4716KV5YD).
-        if (expected > 0 && inToa(request) && wearing(loadout, "keris partisan of the sun")) {
+        if (expected > 0 && inToa(request) && wearing(loadout, M_KERIS_PARTISAN_OF_THE_SUN)) {
             counted("keris partisan of the sun", "+25% accuracy below 25% hitpoints");
             double boosted = expectedHitWithFlatArmour(normalAccuracy(attackRoll * 5 / 4, defenceRoll), minHit, rm, fa);
             expected = 1 / (0.75 / expected + 0.25 / boosted);
             distApprox = true;
         }
         // Every keris (official calc): one hit in 51 deals triple damage to a kalphite.
-        if (wearing(loadout, "keris") && request.monster.hasAttribute("kalphite")) {
+        if (wearing(loadout, M_KERIS) && request.monster.hasAttribute("kalphite")) {
             counted("keris vs kalphites", "1/51 triple hit");
             expected = expected * 53 / 51;
             dist = HitDist.mix(dist, 1 / 51.0, HitDist.mapped(dist, 1 - accuracy, d -> 3 * d));
@@ -437,7 +437,7 @@ public class DpsCalculator {
         }
 
         long attackRoll = attackRoll(ea, loadout.offensive.ranged + QuiverAmmo.accuracy(loadout));
-        boolean a2 = wearing(loadout, "eclipse atlatl");
+        boolean a2 = wearing(loadout, M_ECLIPSE_ATLATL);
         if (a2) {
             // Official calc: the atlatl swaps the DAMAGE side to melee -
             // Strength level (ranged prayer factors and void still apply)
@@ -521,14 +521,14 @@ public class DpsCalculator {
         // effective level hot - invisible at 99% acc saturation, +0.5%
         // acc against real defence).
         int ea = (int) floor(levels.magic * prayers.magicAccuracy) + (isPoweredStaff(loadout) ? 2 : 0) + 9;
-        boolean mv = wearing(loadout, "void mage helm") && isWearingVoidRobes(loadout);
+        boolean mv = wearing(loadout, M_VOID_MAGE_HELM) && isWearingVoidRobes(loadout);
         if (mv) {
             counted("void set", "+45% accuracy");
             ea = (int) floor(ea * 1.45);
         }
 
         int mab = loadout.offensive.magic;
-        if (wearing(loadout, "tumeken")) {
+        if (wearing(loadout, M_TUMEKEN)) {
             // The shadow triples the magic attack bonus of ALL equipment,
             // quadruples it inside the Tombs of Amascut (wiki) - and the
             // magic damage with it, in the damage path.
@@ -560,7 +560,7 @@ public class DpsCalculator {
             // applyMagicDamageBonuses) exactly like theirs - a separate
             // multiplier here floors differently (verified 2026-08-21,
             // vector twinflame-firegiant: 44 vs their 42 max).
-            counted(wearing(loadout, "twinflame") ? "twinflame staff" : "smoke staff", "+10% accuracy and damage on standard spells");
+            counted(wearing(loadout, M_TWINFLAME) ? "twinflame staff" : "smoke staff", "+10% accuracy and damage on standard spells");
             attackRoll = (long) floor(attackRoll * 1.10);
         }
         // The official calc applies flat armour to melee and ranged ONLY
@@ -570,7 +570,7 @@ public class DpsCalculator {
         long defenceRoll = npcDefenceRoll(er.monster, "magic", loadout.getWeapon());
         double accuracy = normalAccuracy(attackRoll, defenceRoll);
         GearItem mw = loadout.getWeapon();
-        if (wearing(loadout, "confliction gauntlets") && (mw == null || !mw.twoHanded)) {
+        if (wearing(loadout, M_CONFLICTION_GAUNTLETS) && (mw == null || !mw.twoHanded)) {
             // A second accuracy roll when casting one-handed (field
             // report 2026-08-22: a Zulrah magic BiS wearing them read
             // -0.56% with every other component identical).
@@ -584,7 +584,7 @@ public class DpsCalculator {
         // ISS-01M5PHE6WD81W8542RW71EXSHC - the phantom second hit had an
         // Earth Wave off a smoke staff reading ~28% high, and the strip
         // calling an owned smoke staff an upgrade over the Purging staff).
-        if (t4 && wearing(loadout, "twinflame") && twinflameDoubles(ts2)) {
+        if (t4 && wearing(loadout, M_TWINFLAME) && twinflameDoubles(ts2)) {
             // Their exact model (verified 2026-08-21, vector
             // twinflame-firegiant): the second splat rolls NOTHING of its
             // own - it is trunc(0.4 x the first hit's roll), truncated
@@ -596,7 +596,7 @@ public class DpsCalculator {
             expected += accuracy * ((double) ts / (mh - sunfireMinHit + 1));
             dist = HitDist.mapped(dist, 1 - accuracy, d -> d + d * 2 / 5);
         }
-        if (wearing(loadout, "sanguinesti")) {
+        if (wearing(loadout, M_SANGUINESTI)) {
             // The staff's passive (official PlayerVsNPCCalc): a fifth of
             // LANDED hits carry +8 flat - entirely unmodelled here until
             // 2026-08-22, the other half of the sang-goblin gap.
@@ -626,7 +626,7 @@ public class DpsCalculator {
         if (spell != null && !ps) {
             if ("Magic Dart".equals(spell.name)) {
                 int base = ml / 10 + 10;
-                return wearing(loadout, "slayer's staff (e)") ? ml / 6 + 13 : base;
+                return wearing(loadout, M_SLAYER_S_STAFF_E) ? ml / 6 + 13 : base;
             }
             return elementalSpellMax(spell, ml) + flatSpellBonus(loadout, spell);
         }
@@ -680,11 +680,11 @@ public class DpsCalculator {
         String element = spell.element;
         if (element.isEmpty()) return 0;
         int bonus = 0;
-        if ("Bolt".equals(spell.nameSecondWord) && wearing(loadout, "chaos gauntlets")) {
+        if ("Bolt".equals(spell.nameSecondWord) && wearing(loadout, M_CHAOS_GAUNTLETS)) {
             counted("chaos gauntlets", "+3 max hit on bolt spells");
             bonus += 3;
         }
-        String amulet = wearing(loadout, "elemental amulet") ? "elemental amulet" : spell.amulet;
+        String amulet = wearing(loadout, M_ELEMENTAL_AMULET) ? "elemental amulet" : spell.amulet;
         if (wearing(loadout, amulet)) {
             counted(amulet, "+2 max hit");
             bonus += 2;
@@ -797,9 +797,9 @@ public class DpsCalculator {
             }
             value = multiply(value, den + pieces, den);
         }
-        value = salveOrSlayer(request, loadout, value, what, RANGED, damage && wearing(loadout, "eclipse atlatl"));
+        value = salveOrSlayer(request, loadout, value, what, RANGED, damage && wearing(loadout, M_ECLIPSE_ATLATL));
         value = applyRules(request, loadout, value, 0, damage ? RANGED_DAMAGE_POST : RANGED_ACCURACY_POST);
-        if (wearing(loadout, "twisted bow")) return floorDiv(value * tbowScaling(request, !damage, what), 100);
+        if (wearing(loadout, M_TWISTED_BOW)) return floorDiv(value * tbowScaling(request, !damage, what), 100);
         return value;
     }
 
@@ -845,14 +845,14 @@ public class DpsCalculator {
             || !request.spell.name.contains("Demonbane")) {
             return value;
         }
-        return demonbane(request, value, wearing(loadout, "purging staff") ? purging : plain, what, "demonbane spell (Mark of Darkness)");
+        return demonbane(request, value, wearing(loadout, M_PURGING_STAFF) ? purging : plain, what, "demonbane spell (Mark of Darkness)");
     }
 
     int applyMagicDamageBonuses(OptimizationRequest request, Loadout loadout, int mh) {
         int bmh = mh;
         sunfireMinHit = 0;
         int md = loadout.bonuses.magicDamage;
-        if (wearing(loadout, "tumeken")) md = min(1000, md * (inToa(request) ? 4 : 3));
+        if (wearing(loadout, M_TUMEKEN)) md = min(1000, md * (inToa(request) ? 4 : 3));
         if (wearsAny(loadout, SMOKE_STAVES, false) && request.spell != null
             && "standard".equalsIgnoreCase(request.spell.spellbook)) {
             md += 100;
@@ -865,13 +865,13 @@ public class DpsCalculator {
         boolean undead = request.monster.hasAttribute("undead");
         GearItem head = isSlayerTaskEligible(request) ? slayerHead(loadout, true) : null;
         boolean shb = false;
-        if (isRevenant(request) && wearing(loadout, "amulet of avarice")) {
+        if (isRevenant(request) && wearing(loadout, M_AMULET_OF_AVARICE)) {
             counted("amulet of avarice", "+20% damage");
             md += 200;
-        } else if (undead && wearing(loadout, "salve amulet(ei)")) {
+        } else if (undead && wearing(loadout, M_SALVE_AMULET_EI)) {
             counted("salve amulet(ei)", "+20% damage");
             md += 200;
-        } else if (undead && wearing(loadout, "salve amulet(i)")) {
+        } else if (undead && wearing(loadout, M_SALVE_AMULET_I)) {
             counted("salve amulet(i)", "+15% damage");
             md += 150;
         } else if (head != null) {
@@ -895,11 +895,25 @@ public class DpsCalculator {
         return (int) demonbaneSpell(request, loadout, mh, 25, 50, "damage");
     }
 
-    static final List<String> SMOKE_STAVES = List.of("twinflame", "smoke battlestaff", "mystic smoke staff");
+    static final int[] SMOKE_STAVES = bits(List.of("twinflame", "smoke battlestaff", "mystic smoke staff"));
 
     // Any worn item's name holds the marker. Markers are lower-case where
     // they are written (code and data), so no per-call lower-casing.
     static boolean wearing(Loadout loadout, String marker) { return loadout.wears(marker, false); }
+
+    static boolean wearing(Loadout loadout, int bit) { return loadout.wears(bit, false); }
+
+    // Every literal marker's bit, resolved once (the per-check map lookup
+    // was a quarter of a raid search, 2026-10-30).
+    static int bit(String marker) { return GearItem.markerBit(marker); }
+
+    static int[] bits(List<String> markers) {
+        int[] out = new int[markers.size()];
+        for (int i = 0; i < out.length; i++) out[i] = bit(markers.get(i));
+        return out;
+    }
+
+    static final int M_AMULET_OF_AVARICE = bit("amulet of avarice"), M_BLACK_MASK = bit("black mask"), M_CHAOS_GAUNTLETS = bit("chaos gauntlets"), M_CONFLICTION_GAUNTLETS = bit("confliction gauntlets"), M_DUAL_MACUAHUITL = bit("dual macuahuitl"), M_ECLIPSE_ATLATL = bit("eclipse atlatl"), M_ELEMENTAL_AMULET = bit("elemental amulet"), M_KERIS = bit("keris"), M_KERIS_PARTISAN_OF_AMASCUT = bit("keris partisan of amascut"), M_KERIS_PARTISAN_OF_THE_SUN = bit("keris partisan of the sun"), M_OSMUMTEN_S_FANG = bit("osmumten's fang"), M_PURGING_STAFF = bit("purging staff"), M_SALVE_AMULET = bit("salve amulet"), M_SALVE_AMULET_E = bit("salve amulet (e)"), M_SALVE_AMULET_EI = bit("salve amulet(ei)"), M_SALVE_AMULET_I = bit("salve amulet(i)"), M_SANGUINESTI = bit("sanguinesti"), M_SCYTHE_OF_VITUR = bit("scythe of vitur"), M_SLAYER_S_STAFF_E = bit("slayer's staff (e)"), M_SOULREAPER_AXE = bit("soulreaper axe"), M_TUMEKEN = bit("tumeken"), M_TWINFLAME = bit("twinflame"), M_TWISTED_BOW = bit("twisted bow"), M_VOID_KNIGHT_GLOVES = bit("void knight gloves"), M_VOID_MAGE_HELM = bit("void mage helm"), M_VOID_MELEE_HELM = bit("void melee helm"), M_VOID_RANGER_HELM = bit("void ranger helm");
 
     // Revenants: the avarice and wilderness-weapon conditionals key off
     // them (wiki calc: monster name starts with "Revenant").
@@ -928,7 +942,7 @@ public class DpsCalculator {
     // effect needs, the alternatives one role accepts, and the piece
     // weights of the scaling sets.
     static final JsonObject SETS = objectOrThrow("gear_sets.json");
-    static final List<String> BLOOD_MOON = set("all", "bloodMoon"), ECLIPSE_MOON = set("all", "eclipseMoon"),
+    static final int[] BLOOD_MOON = set("all", "bloodMoon"), ECLIPSE_MOON = set("all", "eclipseMoon"),
         BLUE_MOON = set("all", "blueMoon"), VERAC = set("all", "verac"), ELITE_VOID = set("all", "eliteVoid"),
         CRYSTAL_BOW = set("any", "crystalBow"), VOID_TOP = set("any", "voidTop"), VOID_ROBE = set("any", "voidRobe");
     static final Map<String, Integer> CRYSTAL = new LinkedHashMap<>();
@@ -939,16 +953,16 @@ public class DpsCalculator {
         stringIntMap(SETS.getAsJsonObject("weights"), "inquisitor", INQUISITOR);
     }
 
-    static List<String> set(String group, String key) {
+    static int[] set(String group, String key) {
         List<String> names = new ArrayList<>();
         strings(SETS.getAsJsonObject(group), key, names);
-        return names;
+        return bits(names);
     }
 
     // Every piece worn (the list order is the check's short-circuit order).
-    static boolean wearsAll(Loadout loadout, List<String> pieces) {
-        for (String piece : pieces) {
-            if (!wearing(loadout, piece)) return false;
+    static boolean wearsAll(Loadout loadout, int[] pieces) {
+        for (int piece : pieces) {
+            if (!loadout.wears(piece, false)) return false;
         }
         return true;
     }
@@ -956,9 +970,9 @@ public class DpsCalculator {
     // Any of the alternatives worn; active = "Inactive" versions never count.
     // Indexed: the lists are of two kinds (List.of and ArrayList), so the
     // for-each iterator escaped and was 13% of a roster's allocation.
-    static boolean wearsAny(Loadout loadout, List<String> names, boolean active) {
-        for (int i = 0; i < names.size(); i++) {
-            if (loadout.wears(names.get(i), active)) return true;
+    static boolean wearsAny(Loadout loadout, int[] bits, boolean active) {
+        for (int bit : bits) {
+            if (loadout.wears(bit, active)) return true;
         }
         return false;
     }
@@ -981,9 +995,9 @@ public class DpsCalculator {
         final String source;
         final String label;
         final String[] rev;
-        final List<String> any;
-        final List<String> anySet;
-        final List<String> allSet;
+        final int[] any;
+        final int[] anySet;
+        final int[] allSet;
         final int num;
         final int den;
         final int demonbane;
@@ -996,7 +1010,7 @@ public class DpsCalculator {
             source = r.source;
             label = r.label;
             rev = r.rev == null ? null : r.rev.toArray(new String[0]);
-            any = r.any;
+            any = r.any == null ? null : bits(r.any);
             anySet = r.anySet == null ? null : set("any", r.anySet);
             allSet = r.allSet == null ? null : set("all", r.allSet);
             num = r.num;
@@ -1074,15 +1088,15 @@ public class DpsCalculator {
     }
 
     static boolean isWearingMeleeVoid(Loadout loadout) {
-        return wearing(loadout, "void melee helm") && isWearingVoidRobes(loadout);
+        return wearing(loadout, M_VOID_MELEE_HELM) && isWearingVoidRobes(loadout);
     }
 
     static boolean isWearingRangedVoid(Loadout loadout) {
-        return wearing(loadout, "void ranger helm") && isWearingVoidRobes(loadout);
+        return wearing(loadout, M_VOID_RANGER_HELM) && isWearingVoidRobes(loadout);
     }
 
     static boolean isWearingVoidRobes(Loadout loadout) {
-        return wearsAny(loadout, VOID_TOP, false) && wearsAny(loadout, VOID_ROBE, false) && wearing(loadout, "void knight gloves");
+        return wearsAny(loadout, VOID_TOP, false) && wearsAny(loadout, VOID_ROBE, false) && wearing(loadout, M_VOID_KNIGHT_GLOVES);
     }
 
     // A charged elemental tome worn with a standard-spellbook spell of its
@@ -1142,24 +1156,24 @@ public class DpsCalculator {
     // bare black mask at the melee 7/6 - an imbued head keeps 23/20.
     long salveOrSlayer(OptimizationRequest request, Loadout loadout, long value, String what, CombatStyle style, boolean a2) {
         boolean melee = style == MELEE;
-        if (isRevenant(request) && wearing(loadout, "amulet of avarice")) return step(value, "amulet of avarice", what, Factor.PLUS_20);
+        if (isRevenant(request) && wearing(loadout, M_AMULET_OF_AVARICE)) return step(value, "amulet of avarice", what, Factor.PLUS_20);
         if (request.monster.hasAttribute("undead")) {
-            if (wearing(loadout, "salve amulet(ei)")) {
+            if (wearing(loadout, M_SALVE_AMULET_EI)) {
                 // Named WITHOUT a space, unlike "salve amulet (e)" - a contains
                 // match on the (e) string misses it and demotes it a tier.
                 return step(value, "salve amulet(ei)", what, Factor.PLUS_20);
             }
-            if ((melee || a2) && wearing(loadout, "salve amulet (e)")) {
+            if ((melee || a2) && wearing(loadout, M_SALVE_AMULET_E)) {
                 // The unimbued (e) is a melee-only 20%; ranged and magic fall to salve(i).
                 return step(value, "salve amulet (e)", what, Factor.PLUS_20);
             }
-            if (!melee && wearing(loadout, "salve amulet(i)")) return step(value, "salve amulet(i)", what, style == MAGIC ? Factor.PLUS_15 : Factor.PLUS_16_7);
-            if ((melee || a2) && wearing(loadout, "salve amulet")) return step(value, "salve amulet", what, Factor.PLUS_16_7);
+            if (!melee && wearing(loadout, M_SALVE_AMULET_I)) return step(value, "salve amulet(i)", what, style == MAGIC ? Factor.PLUS_15 : Factor.PLUS_16_7);
+            if ((melee || a2) && wearing(loadout, M_SALVE_AMULET)) return step(value, "salve amulet", what, Factor.PLUS_16_7);
         }
         if (isSlayerTaskEligible(request)) {
             GearItem head = slayerHead(loadout, !melee);
             if (head != null) return step(value, head.nameLower, what, melee ? Factor.PLUS_16_7 : Factor.PLUS_15);
-            if (a2 && wearing(loadout, "black mask")) return step(value, "black mask", what, Factor.PLUS_16_7);
+            if (a2 && wearing(loadout, M_BLACK_MASK)) return step(value, "black mask", what, Factor.PLUS_16_7);
         }
         return value;
     }

@@ -2,7 +2,10 @@ package com.loadoutlab.profile;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
+import com.loadoutlab.data.MonsterGroups;
 import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.engine.ComputeParams;
+import java.util.List;
 import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.Arrays;
@@ -26,21 +29,47 @@ public final class QueryBenchmark {
 	private static final int PASSES = 3;
 
 	private static String[] MONSTERS = {"general graardor", "zulrah", "callisto"};
+	// The group matrix (ISS-01M65NK1MVKG23513RC89CJRS1, Andrew 2026-10-30:
+	// "raid searches seem to be taking a while"; "balanced/tanky seem to
+	// still take quite a while"): the Moons under every mode, the raids at
+	// Max DPS, one timed pass each after the warmup above.
+	private static final String[][] GROUPS = {{"Moons of Peril", "MAX_DPS"}, {"Moons of Peril", "BALANCED"}, {"Moons of Peril", "TANKY"},
+		{"Tombs of Amascut", "MAX_DPS"}, {"Chambers of Xeric", "MAX_DPS"}, {"Theatre of Blood (Entry)", "MAX_DPS"}};
 
 	private QueryBenchmark() {
 	}
 
 	public static void main(String[] args) throws Exception {
-		// Optional: --only <monster substring> narrows the matrix (profiling).
+		// Optional: --only <monster substring> narrows the matrix (profiling);
+		// --group <group substring> runs that group's cells alone, each
+		// three times after one warmup, no single-monster passes.
+		String onlyGroup = null;
 		for (int i = 0; i + 1 < args.length; i++) {
 			if ("--only".equals(args[i])) {
 				MONSTERS = new String[]{args[i + 1]};
+			}
+			if ("--group".equals(args[i])) {
+				onlyGroup = args[i + 1];
 			}
 		}
 		LoadoutData data = new DataService().load();
 		PlayerProfile profile = FixtureBank.profile(data);
 		OptimizerService service = new OptimizerService(data);
 		int[] fingerprint = {1};
+		if (onlyGroup != null) {
+			try {
+				for (String[] cell : GROUPS) {
+					if (!cell[0].contains(onlyGroup)) continue;
+					runGroup(service, data, profile, cell[0], cell[1], fingerprint);
+					long[] times = new long[3];
+					for (int pass = 0; pass < 3; pass++) times[pass] = runGroup(service, data, profile, cell[0], cell[1], fingerprint);
+					System.out.println(String.format(Locale.ROOT, "%-25s %-9s %s", cell[0], cell[1], Arrays.toString(times)));
+				}
+			} finally {
+				service.shutdown();
+			}
+			return;
+		}
 		try {
 			// Warmup: one untimed full pass so the JIT sees every path.
 			for (String monster : MONSTERS) {
@@ -77,6 +106,11 @@ public final class QueryBenchmark {
 				"%-18s %-5s %9d  %s",
 				"rev demon+salvepin", "lr3",
 				sorted[PASSES / 2], Arrays.toString(times)));
+			System.out.println("group                     mode       ms");
+			for (String[] cell : GROUPS) {
+				long ms = runGroup(service, data, profile, cell[0], cell[1], fingerprint);
+				System.out.println(String.format(Locale.ROOT, "%-25s %-9s %7d", cell[0], cell[1], ms));
+			}
 		} finally {
 			service.shutdown();
 		}
@@ -124,6 +158,26 @@ public final class QueryBenchmark {
 			(Map<CombatStyle, OptimizerService.StyleResult> results) -> done.countDown());
 		if (!done.await(600, TimeUnit.SECONDS)) {
 			throw new IllegalStateException("benchmark cell timed out: pinned salve");
+		}
+		return (System.nanoTime() - start) / 1_000_000L;
+	}
+
+	// One group search on the fixture account, maxSwaps 3, under a mode.
+	private static long runGroup(OptimizerService service, LoadoutData data, PlayerProfile profile,
+		String group, String mode, int[] fingerprint) throws Exception {
+		List<MonsterStats> mobs = MonsterGroups.load(data).stream().filter(g -> group.equals(g.getName()))
+			.findFirst().orElseThrow(() -> new IllegalStateException(group)).getMobs();
+		ComputeParams p = new ComputeParams();
+		p.maxSwaps = 3;
+		p.optimizeMode = mode;
+		CountDownLatch done = new CountDownLatch(1);
+		long start = System.nanoTime();
+		service.bestPerStyleAcross(mobs, profile.realLevels, profile.boostedLevels, profile.prayerUnlocks, profile.requirements,
+			profile.ownedItems(), fingerprint[0]++, p, Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(),
+			Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptySet(),
+			r -> done.countDown());
+		if (!done.await(1200, TimeUnit.SECONDS)) {
+			throw new IllegalStateException("benchmark cell timed out: " + group + " " + mode);
 		}
 		return (System.nanoTime() - start) / 1_000_000L;
 	}
