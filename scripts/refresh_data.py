@@ -59,6 +59,9 @@ MONSTER_STAT_OVERRIDES = {
     ("Vardorvis", "Post-quest"): {"def": 215},
     ("Vardorvis", "Awakened"): {"def": 215},
     ("Vardorvis", "Quest"): {"def": 215},
+    # Bork's flat armour is a range on the wiki ("8-14 (Base), 0 (Stunned)")
+    # that the cdn reads as 0; the middle of the base range (2026-10-30).
+    ("Bork", ""): {"defensive": {"flat_armour": 11}},
 }
 
 
@@ -70,7 +73,12 @@ def apply_monster_overrides(monsters):
         if row is None:
             print("  WARN override miss: %s [%s]" % (name, version))
             continue
-        row.setdefault("skills", {}).update(fields)
+        defensive = fields.get("defensive")
+        skills = {k: v for k, v in fields.items() if k != "defensive"}
+        if skills:
+            row.setdefault("skills", {}).update(skills)
+        if defensive:
+            row.setdefault("defensive", {}).update(defensive)
         applied += 1
     print("monster stat overrides applied: %d/%d" % (applied, len(MONSTER_STAT_OVERRIDES)))
     return monsters
@@ -188,8 +196,13 @@ def carry_intake(name, fresh):
         return fresh
     with gzip.open(path, "rt", encoding="utf-8") as f:
         old = json.load(f)
+    # By id, and by name + version: the cdn may land a row under another id
+    # than the intake's (Ocellus Phase 1 came as 16673 against the intake's
+    # 16674, the Archive Guardian as 16659 against 16660 - 2026-10-30).
     have = {row["id"] for row in fresh}
-    kept = [row for row in old if row.get("source") == "wiki_intake" and row["id"] not in have]
+    have_names = {(row["name"].lower(), (row.get("version") or "").lower()) for row in fresh}
+    kept = [row for row in old if row.get("source") == "wiki_intake" and row["id"] not in have
+            and (row["name"].lower(), (row.get("version") or "").lower()) not in have_names]
     for row in kept:
         print("  carried (wiki_intake, not in the cdn yet): %s [%s] id=%d" % (row["name"], row.get("version", ""), row["id"]))
     return fresh + kept

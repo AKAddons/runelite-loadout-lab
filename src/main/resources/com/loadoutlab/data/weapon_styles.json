@@ -152,6 +152,18 @@
    "strengthStance": 1
   }
  ],
+ "Extending Chain Mace": [
+  {
+   "attackStance": 3,
+   "attackType": "crush",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
  "Flail": [
   {
    "attackStance": 3,

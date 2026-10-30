@@ -176,7 +176,9 @@ public class IncomingDpsCalculator {
             MonsterOffence off = monster.offence;
             overridden = override != null;
             int st = off.speedTicks;
-            List<String> styles = off.styles;
+            // An unpriced boss (the wiki lists its styles but no max hits) has
+            // no attacks here either, as calculate() answers 0 with the reason.
+            List<String> styles = BossIncomingOverrides.unpricedReason(monster) != null ? List.of() : off.styles;
             List<Attack> attacks = overridden ? override.attacks : null;
             int n = overridden ? attacks.size() : styles.size();
             kinds = new int[n];

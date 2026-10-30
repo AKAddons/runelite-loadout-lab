@@ -1260,6 +1260,16 @@
   "costGp": 0,
   "note": "consumable ammo; per-unit value negligible"
  },
+ "imbued ancient cape": {
+  "category": 2,
+  "costGp": 96000,
+  "note": "Perdu repair fee (wiki, 2026-10; Pete Kayer's Challenges)"
+ },
+ "imbued ancient max cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "Perdu repair fee (wiki, 2026-10)"
+ },
  "imbued guthix cape": {
   "category": 2,
   "costGp": 96000,

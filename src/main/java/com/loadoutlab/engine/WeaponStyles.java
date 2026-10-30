@@ -16,10 +16,9 @@ import lombok.*;
 // controlled = +1 both. Defensive is omitted - it adds no offence, so it
 // can never be the best-DPS pick.
 // <p>The table itself lives in weapon_styles.json (hub token cap: data goes
-// in resources, not source). It is GENERATED from the old hardcoded table by
-// scripts/extract_weapon_styles.py, which asserts 24 categories, 56 style
-// entries and the 9-entry fallback row - regenerate with that script, never
-// by hand.
+// in resources, not source): 25 wiki weapon categories plus the "*" fallback
+// row; a new category (the Obligator's Extending Chain Mace, 2026-10-30) is
+// added by hand from the wiki's Module:CombatStyles.
 public class WeaponStyles {
     // One selectable style: the attack type plus its stance bonuses.
     @RequiredArgsConstructor
