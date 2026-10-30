@@ -92,17 +92,6 @@ public class JsonResources {
         return out;
     }
 
-    // A JSON array of string arrays as String[][].
-    public static String[][] rows(JsonArray array) {
-        String[][] out = new String[array.size()][];
-        for (int i = 0; i < out.length; i++) {
-            JsonArray row = array.get(i).getAsJsonArray();
-            out[i] = new String[row.size()];
-            for (int j = 0; j < out[i].length; j++) out[i][j] = row.get(j).getAsString();
-        }
-        return out;
-    }
-
     // Copy the {"name": "text"} object at root[key] into the map.
     public static void stringMap(JsonObject root, String key, Map<String, String> into) {
         entries(root, key, (k, v) -> into.put(k, v.getAsString()));
@@ -111,11 +100,6 @@ public class JsonResources {
     // Copy the {"name": int} object at root[key] into the map.
     public static void stringIntMap(JsonObject root, String key, Map<String, Integer> into) {
         entries(root, key, (k, v) -> into.put(k, v.getAsInt()));
-    }
-
-    // Copy the {"id": int} object at root[key] into the map.
-    public static void intMap(JsonObject root, String key, Map<Integer, Integer> into) {
-        entries(root, key, (k, v) -> into.put(Integer.parseInt(k), v.getAsInt()));
     }
 
     // Each member of the object at root[key]; nothing when absent.

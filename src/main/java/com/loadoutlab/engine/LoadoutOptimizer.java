@@ -17,6 +17,8 @@ import static com.loadoutlab.engine.UntradeableDeathCosts.*;
 import java.util.function.Predicate;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 import static com.loadoutlab.engine.VampyreRules.*;
 import static java.util.Comparator.*;
 import static com.loadoutlab.engine.DpsCalculator.*;
@@ -1235,32 +1237,22 @@ public class LoadoutOptimizer {
     static final Map<String, List<Map<String, Integer>>> SHORTLIST_BOOSTS = new HashMap<>();
 
     static {
-        JsonObject root = JsonResources.object("shortlist_boosts.json");
-        for (String key : root.keySet()) {
-            if (!key.startsWith("_")) {
-                List<Map<String, Integer>> blocks = new ArrayList<>();
-                for (JsonElement b : root.getAsJsonArray(key)) {
-                    Map<String, Integer> block = new LinkedHashMap<>();
-                    b.getAsJsonObject().entrySet().forEach(e -> block.put(e.getKey(), e.getValue().getAsInt()));
-                    blocks.add(block);
-                }
-                SHORTLIST_BOOSTS.put(key, blocks);
-            }
-        }
+        table("shortlist_boosts.json", new TypeToken<List<Map<String, Integer>>>() { }.getType(), SHORTLIST_BOOSTS);
+    }
+
+    // A resource of name -> table, its underscore keys (comments) skipped.
+    static <T> void table(String resource, Type type, Map<String, T> into) {
+        Map<String, JsonElement> root = JsonResources.read(resource, new TypeToken<Map<String, JsonElement>>() { }.getType());
+        root.forEach((key, value) -> {
+            if (!key.startsWith("_")) into.put(key, JsonResources.gson().fromJson(value, type));
+        });
     }
 
     // Spell -> the weapons that cast it (spell_staves.json).
     static final Map<String, List<String>> SPELL_STAVES = new HashMap<>();
 
     static {
-        JsonObject root = JsonResources.object("spell_staves.json");
-        for (String key : root.keySet()) {
-            if (!key.startsWith("_")) {
-                List<String> names = new ArrayList<>();
-                JsonResources.strings(root, key, names);
-                SPELL_STAVES.put(key, names);
-            }
-        }
+        table("spell_staves.json", new TypeToken<List<String>>() { }.getType(), SPELL_STAVES);
     }
 
     static boolean spellAllowed(OptimizationRequest request, Loadout loadout, SpellStats spell) {

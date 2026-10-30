@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.List;
 import javax.swing.*;
 import net.runelite.client.game.*;
-import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import com.loadoutlab.data.*;
 import com.loadoutlab.ui.MonsterIcons;
 import java.awt.event.*;
@@ -2118,10 +2118,10 @@ public class ResultCards {
     static final Map<String, Color> SOURCE_COLORS = new LinkedHashMap<>();
 
     static {
-        JsonObject colours = JsonResources.objectOrThrow("source_colours.json");
-        for (String source : colours.keySet()) {
-            if (!source.startsWith("_")) SOURCE_COLORS.put(source, new Color(Integer.parseInt(colours.get(source).getAsString(), 16)));
-        }
+        Map<String, String> colours = JsonResources.read("source_colours.json", new TypeToken<Map<String, String>>() { }.getType());
+        colours.forEach((source, hex) -> {
+            if (!source.startsWith("_")) SOURCE_COLORS.put(source, new Color(Integer.parseInt(hex, 16)));
+        });
     }
 
     static Color sourceColor(String source) {

@@ -10,15 +10,24 @@ import java.util.*;
 public class MultiMobs {
     static final Map<String, List<String>> LOCATIONS = new HashMap<>();
 
+    static class Root {
+        List<Mob> mobs = List.of();
+    }
+
+    static class Mob {
+        String name, version;
+        List<Loc> locations = List.of();
+    }
+
+    static class Loc {
+        String location;
+    }
+
     static {
-        JsonObject root = JsonResources.objectOrThrow("/com/loadoutlab/data/multi_mobs.json");
-        for (JsonElement e : root.getAsJsonArray("mobs")) {
-            JsonObject mob = e.getAsJsonObject();
+        for (Mob mob : JsonResources.read("multi_mobs.json", Root.class).mobs) {
             List<String> locations = new ArrayList<>();
-            for (JsonElement l : mob.getAsJsonArray("locations")) {
-                locations.add(l.getAsJsonObject().get("location").getAsString());
-            }
-            LOCATIONS.put(key(mob.get("name").getAsString(), mob.get("version").getAsString()), locations);
+            for (Loc l : mob.locations) locations.add(l.location);
+            LOCATIONS.put(key(mob.name, mob.version), locations);
         }
     }
 

@@ -75,10 +75,14 @@ public class DpsCalculator {
     static final Map<String, Integer> STAFF_OFFSET = new LinkedHashMap<>();
     static final Map<String, Integer> STAFF_FIXED = new LinkedHashMap<>();
 
+    static class Staves {
+        Map<String, Integer> offset = Map.of(), fixed = Map.of();
+    }
+
     static {
-        JsonObject root = object("powered_staves.json");
-        stringIntMap(root, "offset", STAFF_OFFSET);
-        stringIntMap(root, "fixed", STAFF_FIXED);
+        Staves root = read("powered_staves.json", Staves.class);
+        STAFF_OFFSET.putAll(root.offset);
+        STAFF_FIXED.putAll(root.fixed);
     }
 
     public DpsResult calculate(OptimizationRequest request, Loadout loadout) {

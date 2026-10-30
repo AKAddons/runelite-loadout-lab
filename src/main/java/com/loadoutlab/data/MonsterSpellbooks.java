@@ -12,16 +12,17 @@ public class MonsterSpellbooks {
     // name-fragment -> [book, reason]
     static final Map<String, String[]> BY_NAME = new LinkedHashMap<>();
 
+    static class Root {
+        Map<String, Node> byNameContains = Map.of();
+    }
+
+    static class Node {
+        String book, reason, spell;
+    }
+
     static {
-        JsonObject root = JsonResources.object( "monster_spellbooks.json");
-        if (root != null && root.has("byNameContains")) {
-            for (var e : root.getAsJsonObject("byNameContains").entrySet()) {
-                JsonObject node = e.getValue().getAsJsonObject();
-                BY_NAME.put(Names.lower(e.getKey()), new String[]{
-                    node.get("book").getAsString(), node.get("reason").getAsString(),
-                    node.has("spell") ? node.get("spell").getAsString() : null});
-            }
-        }
+        JsonResources.read("monster_spellbooks.json", Root.class).byNameContains
+            .forEach((name, node) -> BY_NAME.put(Names.lower(name), new String[]{node.book, node.reason, node.spell}));
     }
 
 

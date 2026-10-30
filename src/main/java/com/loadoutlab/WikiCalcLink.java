@@ -32,12 +32,18 @@ public class WikiCalcLink {
     static final Map<String, Integer> PRAYER_IDS = new LinkedHashMap<>();
     static final Map<String, int[]> POTION_IDS = new LinkedHashMap<>();
 
+    static class Ids {
+        Map<String, Integer> prayerIds = Map.of();
+        Map<String, int[]> potionIds = Map.of();
+    }
+
     static {
-        JsonObject root = object("wiki_calc_ids.json");
-        stringIntMap(root, "prayerIds", PRAYER_IDS);
-        JsonObject potions = root == null ? null : root.getAsJsonObject("potionIds");
-        for (String label : potions == null ? Set.<String>of() : potions.keySet()) {
-            POTION_IDS.put(label, ints(potions.getAsJsonArray(label)));
+        try {
+            Ids ids = read("wiki_calc_ids.json", Ids.class);
+            PRAYER_IDS.putAll(ids.prayerIds);
+            POTION_IDS.putAll(ids.potionIds);
+        } catch (RuntimeException ex) {
+            log.warn("wiki calc ids unavailable", ex);
         }
     }
 

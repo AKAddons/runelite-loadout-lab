@@ -17,17 +17,15 @@ public class SpellRunes {
     public static final int SUNFIRE_RUNE = 28929;
     static final Map<String, Map<String, Integer>> BY_SPELL = new LinkedHashMap<>();
 
+    static class Root {
+        Map<String, Integer> runeItems = Map.of();
+        Map<String, Map<String, Integer>> bySpell = Map.of();
+    }
+
     static {
-        JsonObject root = object("spell_runes.json");
-        if (root != null) {
-            stringIntMap(root, "runeItems", RUNE_ITEMS);
-            JsonObject bySpell = root.getAsJsonObject("bySpell");
-            for (String spell : bySpell == null ? Set.<String>of() : bySpell.keySet()) {
-                Map<String, Integer> runes = new LinkedHashMap<>();
-                stringIntMap(bySpell, spell, runes);
-                BY_SPELL.put(spell, runes);
-            }
-        }
+        Root root = read("spell_runes.json", Root.class);
+        RUNE_ITEMS.putAll(root.runeItems);
+        BY_SPELL.putAll(root.bySpell);
     }
 
 
@@ -110,10 +108,14 @@ public class SpellRunes {
     // The combo staves and the Kodai wand: [name fragment, elements covered...].
     static final String[][] STAVES;
 
+    static class Combos {
+        String[][] combos, staves;
+    }
+
     static {
-        JsonObject root = objectOrThrow("combo_runes.json");
-        COMBOS = rows(root.getAsJsonArray("combos"));
-        STAVES = rows(root.getAsJsonArray("staves"));
+        Combos root = read("combo_runes.json", Combos.class);
+        COMBOS = root.combos;
+        STAVES = root.staves;
     }
 
     // The combination-rune item ids - the ownership detection behind

@@ -19,22 +19,22 @@ public class RangedAmmo {
     static final Map<Integer, Set<Integer>> PAIRS = new HashMap<>();
     static final Set<Integer> DORGESHUUN_EXTRA_BOLTS = new HashSet<>();
 
+    static class Root {
+        Map<Integer, Integer> arrowTierByWeapon = Map.of(), boltTierByWeapon = Map.of(), arrowTierByAmmo = Map.of(), boltTierByAmmo = Map.of();
+        Set<Integer> javelinAmmo = Set.of(), javelinWeapons = Set.of(), dorgeshuunExtraBolts = Set.of();
+        Map<Integer, Set<Integer>> pairs = Map.of();
+    }
+
     static {
-        JsonObject root = object("ranged_ammo.json");
-        intMap(root, "arrowTierByWeapon", ARROW_TIER_BY_WEAPON);
-        intMap(root, "boltTierByWeapon", BOLT_TIER_BY_WEAPON);
-        intMap(root, "arrowTierByAmmo", ARROW_TIER_BY_AMMO);
-        intMap(root, "boltTierByAmmo", BOLT_TIER_BY_AMMO);
-        ints(root, "javelinAmmo", JAVELIN_AMMO);
-        ints(root, "javelinWeapons", JAVELIN_WEAPONS);
-        ints(root, "dorgeshuunExtraBolts", DORGESHUUN_EXTRA_BOLTS);
-        if (root != null) {
-            for (var e : root.getAsJsonObject("pairs").entrySet()) {
-                Set<Integer> ammo = new HashSet<>();
-                for (JsonElement a : e.getValue().getAsJsonArray()) ammo.add(a.getAsInt());
-                PAIRS.put(Integer.parseInt(e.getKey()), ammo);
-            }
-        }
+        Root root = read("ranged_ammo.json", Root.class);
+        ARROW_TIER_BY_WEAPON.putAll(root.arrowTierByWeapon);
+        BOLT_TIER_BY_WEAPON.putAll(root.boltTierByWeapon);
+        ARROW_TIER_BY_AMMO.putAll(root.arrowTierByAmmo);
+        BOLT_TIER_BY_AMMO.putAll(root.boltTierByAmmo);
+        JAVELIN_AMMO.addAll(root.javelinAmmo);
+        JAVELIN_WEAPONS.addAll(root.javelinWeapons);
+        DORGESHUUN_EXTRA_BOLTS.addAll(root.dorgeshuunExtraBolts);
+        PAIRS.putAll(root.pairs);
     }
 
 

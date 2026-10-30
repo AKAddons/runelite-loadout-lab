@@ -307,11 +307,15 @@ public class CommandEngine {
     static final Map<String, String> INVERSE = new HashMap<>();
     static final Map<String, String> VERB = new HashMap<>();
 
+    static class Labels {
+        Map<String, String> labels = Map.of(), inverse = Map.of(), verbs = Map.of();
+    }
+
     static {
-        JsonObject labels = JsonResources.objectOrThrow("param_labels.json");
-        JsonResources.stringMap(labels, "labels", PARAM_LABELS);
-        JsonResources.stringMap(labels, "inverse", INVERSE);
-        JsonResources.stringMap(labels, "verbs", VERB);
+        Labels labels = JsonResources.read("param_labels.json", Labels.class);
+        PARAM_LABELS.putAll(labels.labels);
+        INVERSE.putAll(labels.inverse);
+        VERB.putAll(labels.verbs);
     }
 
     // Handle one contract command; returns false for an unknown or
