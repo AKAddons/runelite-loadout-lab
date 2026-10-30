@@ -358,8 +358,11 @@ import static com.loadoutlab.engine.PlayerLevels.*;
                     // the settings promise. Both were hardcoded and
                     // ignored the config outright (audit 2026-08-22).
                     boolean detectThralls = config.defaultThralls() == AssumeDefault.DETECT;
-                    seeds.put("thralls", detectThralls && members && ExtraDps.thrallDps(magic) > 0
-                        && ownsCanonical(ExtraDps.BOOK_OF_THE_DEAD));
+                    boolean reach = ExtraDps.thrallDps(magic) > 0, book = ownsCanonical(ExtraDps.BOOK_OF_THE_DEAD);
+                    seeds.put("thralls", detectThralls && members && reach && book);
+                    // Why the seed is off - the chip's hover (ISS-01M66SMW3WR8JHTW6FQQC7MAP6).
+                    seeds.put("thrallsWhy", !detectThralls ? "off in the plugin settings (Thralls: None)" : !members ? "members only"
+                        : !reach ? "Magic 38 needed for a thrall" : !book ? "Book of the Dead not seen in your bank" : null);
                     // Death Charge: Arceuus, Magic 90, A Kingdom Divided, and
                     // a blood + death + soul rune per cast - seed it only for
                     // a player who can actually cast it (wiki-verified).

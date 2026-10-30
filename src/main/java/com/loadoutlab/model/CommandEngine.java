@@ -220,6 +220,23 @@ public class CommandEngine {
     // config and the live levels.
     @Setter
     volatile Supplier<Map> assumptionSeeder;
+    // Params the player set since the selection: a re-seed never overrides
+    // them (ISS-01M66SMW3WR8JHTW6FQQC7MAP6). The seeds that follow the owned
+    // scan re-seed when the ledger settles; the seeder's reason the thralls
+    // seed is off rides beside them as "thrallsWhy" - the chip's hover.
+    final Set<String> touched = new HashSet<>();
+    static final List<String> RESEEDED = List.of("thralls", "deathCharge");
+    volatile String thrallsWhy;
+
+    // Apply the seeder's map: every key, or only the owned-scan keys, never
+    // one the player set since the selection.
+    void seed(Map seeds, List<String> only) {
+        Object why = seeds.get("thrallsWhy");
+        thrallsWhy = why == null ? null : String.valueOf(why);
+        seeds.forEach((k, v) -> {
+            if ((only == null || only.contains(k)) && !touched.contains(k)) state.setParam((String) k, v);
+        });
+    }
 
     // Classic Detect: the best owned antifire tier (0/1/2) for a
     // fire-breathing selection - supplied by the plugin (owned scan).
@@ -472,6 +489,7 @@ public class CommandEngine {
             case "set-param": {
                 String key = strArg(args, "param", null);
                 if (key == null) return false;
+                touched.add(key);
                 Object next = args.get("value");
                 Object prev = state.paramsNode().get(key);
                 boolean unchanged = Objects.equals(prev, next);
@@ -871,7 +889,13 @@ public class CommandEngine {
                 return true;
             }
             case "refresh": {
-                // The ledger's background refresh - silent by contract.
+                // The ledger's background refresh - silent by contract. The
+                // owned-scan seeds follow it (Elling 2026-10-30: ToA on the
+                // Warden's book because the Book of the Dead landed after the
+                // selection): thralls and Death Charge re-seed, unless the
+                // player set the chip since the selection.
+                Supplier<Map> seeder = assumptionSeeder;
+                if (seeder != null) seed(seeder.get(), RESEEDED);
                 recompute(true);
                 return true;
             }
@@ -1466,6 +1490,7 @@ public class CommandEngine {
                 entry.put("thralls", tn);
             }
         }
+        if (tn == null && !membersFlag("thralls") && thrallsWhy != null) entry.put("thrallsWhy", thrallsWhy);
         Map page = withHistory(page(List.of(entry)));
         page.put("spells", new ArrayList<>(spellbooks.keySet()));
         decorate(page);
@@ -1626,8 +1651,9 @@ public class CommandEngine {
             List<String> gg = selected.size() == 1 ? GwdProtection.godsFor(selected.get(0), false) : List.of();
             state.setParam("maxSwaps", groupPick != null && groupPick.getInventory() > 0 ? groupPick.getInventory()
                     : !gg.isEmpty() ? 2 + gg.size() : selected.size() > 1 ? 4 : 1 + swaps(selected.get(0)).size());
+            touched.clear();
             Supplier<Map> seeder = assumptionSeeder;
-            if (seeder != null) seeder.get().forEach((k, v) -> state.setParam((String) k, v));
+            if (seeder != null) seed(seeder.get(), null);
             recompute();
             return true;
         }, () -> {

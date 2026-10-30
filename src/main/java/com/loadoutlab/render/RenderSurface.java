@@ -952,7 +952,13 @@ public class RenderSurface {
                     chipRow.add(disabledPill(entry[0], "Stands down: " + standDown + " - thralls are cast from Arceuus"));
                     continue;
                 }
-                chipRow.add(paramChip(entry[0], entry[1], flag(params, entry[1])));
+                boolean on = flag(params, entry[1]);
+                // Off, the thralls chip says why the seed left it off
+                // (ISS-01M66SMW3WR8JHTW6FQQC7MAP6).
+                List<Map> es = list(page, "entries");
+                String why = on || es.isEmpty() || !"thralls".equals(entry[1]) ? null : str(es.get(0), "thrallsWhy");
+                chipRow.add(pill(entry[0], on, entry[0] + (on ? " on" : " off") + (why == null ? "" : " - " + why),
+                    () -> commands.set(entry[1], !on)));
             }
             // F2P: shown on a non-members world so it can be turned OFF to
             // preview members gear (field report 2026-08-25 - the merge-back
