@@ -793,10 +793,12 @@
 				"label": "Out of reach"
 			},
 			{
-				"name": "Fire elemental (Royal Titans)"
+				"name": "Fire elemental (Royal Titans)",
+				"trip": false
 			},
 			{
-				"name": "Ice elemental (Royal Titans)"
+				"name": "Ice elemental (Royal Titans)",
+				"trip": false
 			}
 		],
 		"aliases": [

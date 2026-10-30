@@ -184,10 +184,21 @@ public class ResultCards {
                 box.add(lensRow(mobs.get(i), tab, bis, i, mobs.size(), i == shownLens, rosterThralls));
                 if (i < mobs.size() - 1) box.add(Box.createVerticalStrut(2));
             }
-            if (addMob != null) {
-                JPanel ar = clear(new FlowLayout(FlowLayout.LEFT, 0, 2));
-                ar.add(addMob);
-                if (reload != null) ar.add(reload);
+            // The trip's combined kill time rides the +Mob row, right-justified
+            // (Andrew 2026-10-30: "next to the +mob/reload button").
+            Map trip = map(entry, bis ? "bisTripKillTime" : "tripKillTime");
+            if (addMob != null || trip != null) {
+                JPanel ar = clear(new BorderLayout());
+                JPanel buttons = clear(new FlowLayout(FlowLayout.LEFT, 0, 2));
+                if (addMob != null) buttons.add(addMob);
+                if (reload != null) buttons.add(reload);
+                ar.add(buttons, WEST);
+                if (trip != null) {
+                    String[] tl = tripLine(trip);
+                    JLabel t = statLine(tl[0], tl[1], TEXT);
+                    t.setBorder(createEmptyBorder(0, 0, 0, 6));
+                    ar.add(t, EAST);
+                }
                 box.add(Box.createVerticalStrut(2));
                 box.add(ar);
             }
@@ -210,7 +221,6 @@ public class ResultCards {
             double td2 = num(map(entry, "thralls"), "dps");
             List<Map> mobs = list(entry, "mobs");
             rosterView = mobs.size() > 1;
-            trip = map(entry, bis ? "bisTripKillTime" : "tripKillTime");
             if (mobs.isEmpty()) continue;
             int shownLens = min(max(lens, 0), mobs.size() - 1);
             Map shown = mobs.get(shownLens);
@@ -400,8 +410,6 @@ public class ResultCards {
     }
 
     boolean rosterView;
-    // The group's combined kill time for the card being rendered; null on a single mob.
-    Map trip;
     static final Color PIN_BADGE = new Color(0xD2B464);
 
     // Whether the mob's pins (slot + id) hold this item in this slot.
@@ -1591,34 +1599,36 @@ public class ResultCards {
 
     // The hover behind a kill time (Andrew 2026-10-29: "Median: XX:XX / 90%
     // of runs fall between: XX:XX - XX:XX (P05-P95)"), Perfect and the notes.
-    static String hover(String head, Map kill) {
+    static String hover(String head, Map kill, String tail) {
         double heal = num(kill, "healDps");
         String notes = (flag(kill, "approximate") ? "<br>Band approximate: this hit model has no per-attack form" : "")
-            + (heal > 0 ? format("<br>Heals ~%.1f/s off this set", heal) : "");
+            + (heal > 0 ? format("<br>Heals ~%.1f/s off this set", heal) : "") + tail;
         if (Double.isInfinite(num(kill, "p50"))) return tip(head, "This set cannot outpace the heal, so it never kills", notes);
-        return tip(head, format("Median %s<br>90%% of runs fall between %s and %s (P05-P95)<br>Perfect %s",
+        return tip(head, format("Median %s<br>Usually %s-%s<br>Perfect %s",
             mmss(num(kill, "p50")), mmss(num(kill, "p05")), mmss(num(kill, "p95")), mmss(num(kill, "perfect"))), notes);
     }
 
     // The card's Kill line (ISS-01M6415DTE84ZZ45C4YD3MZRBJ: "P50 is what is
     // displayed, the other stuff is shown when hovered").
-    static String[] killLine(Map kill) { return new String[]{about(num(kill, "p50")), hover("", kill)}; }
+    static String[] killLine(Map kill) { return new String[]{about(num(kill, "p50")), hover("", kill, "")}; }
 
-    // A group member's line ("list individual and group kill times in the
-    // card consecutively"), the name cut to the column.
-    static String[] memberLine(Map member) {
-        String name = str(member, "name").replaceFirst(" - lvl \\d+$", "");
-        int space = name.indexOf(' ');
-        String word = name.length() > 8 && space > 0 ? name.substring(0, space) : name;
-        return new String[]{word + " " + about(num(member, "p50")), hover(name + "<br>", member)};
+    // "~X damage per kill" for the DTPS hover (Andrew 2026-10-30: "estimate
+    // damage taken for kill"): the DTPS over the median kill time.
+    static String perKill(Map kill, double dtps) {
+        double p50 = kill == null ? 0 : num(kill, "p50");
+        return p50 > 0 && !Double.isInfinite(p50) ? format(". ~%.0f damage per kill", dtps * p50) : "";
     }
 
     // A group's Trip line ("TTK for moons of peril, barrows should be the
-    // combined kill time of all 3 bosses").
+    // combined kill time of all 3 bosses"), each counted member on hover.
     static String[] tripLine(Map trip) {
         String never = str(trip, "never");
         if (never != null) return new String[]{"Trip never", never + " never dies in the set shown, so the trip never ends"};
-        return new String[]{"Trip " + about(num(trip, "p50")), hover("The whole trip<br>", trip)};
+        List<String> members = new ArrayList<>();
+        for (Map member : list(trip, "members")) members.add(str(member, "name") + " " + mmss(num(member, "p50")));
+        double damage = num(trip, "damage");
+        return new String[]{"Trip " + about(num(trip, "p50")), hover("", trip, "<br>" + join(", ", members)
+            + (damage > 0 ? format("<br>~%.0f damage per trip", damage) : ""))};
     }
 
     JLabel statIconLine(String text, String tooltip, Color color, int spriteId) {
@@ -1889,6 +1899,7 @@ public class ResultCards {
         center.add(gearGrid(card, bis, mob, td2));
         JPanel sc = column(CARD);
         Map incoming = map(card, "incoming");
+        Map kill = map(card, "killTime");
         Map si = map(ship, "incoming");
         int mh = id(card, "maxHit");
         sc.add(paintedStatLine("" + mh, "Max hit " + mh, TEXT, new StatIcons.SizedIcon("hitsplat", 12)));
@@ -1928,7 +1939,7 @@ public class ResultCards {
             String[] line = dtpsLine(incoming);
             // The protect prayer's own sprite IS the pray call (classic).
             int protectSprite = "none".equals(str(incoming, "coverage")) ? -1 : id(incoming, "protectSprite");
-            sc.add(statIconLine(line[0], line[1], TEXT, protectSprite));
+            sc.add(statIconLine(line[0], line[1] + perKill(kill, num(incoming, "dps")), TEXT, protectSprite));
             // The defensive mode's DPS cost, terse for the ~12-character
             // column; the full trade rides the tooltip.
             Map trade = map(card, "modeTrade");
@@ -1939,17 +1950,9 @@ public class ResultCards {
             }
         }
         // How long the kill takes (ISS-01M6415DTE84ZZ45C4YD3MZRBJ): the median
-        // on the line, the band on hover; a group lists every member, then
-        // the trip (Andrew 2026-10-29: "in the output card itself").
-        Map kill = map(card, "killTime");
-        if (trip != null) {
-            for (Map member : list(trip, "members")) {
-                String[] ml = memberLine(member);
-                sc.add(statLine(ml[0], ml[1], TEXT));
-            }
-            String[] tl = tripLine(trip);
-            sc.add(statLine(tl[0], tl[1], TEXT));
-        } else if (kill != null) {
+        // on the line, the band on hover (Andrew 2026-10-29: "in the output
+        // card itself"; a group's trip rides the mob list's +Mob row).
+        if (kill != null) {
             String[] kl = killLine(kill);
             sc.add(statLine("Kill " + kl[0], kl[1], TEXT));
         }

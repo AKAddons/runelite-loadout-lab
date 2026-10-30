@@ -106,26 +106,44 @@ public class RenderModel {
         List<KillTime> times = new ArrayList<>();
         List<Object> members = new ArrayList<>();
         String never = null;
-        for (int i = 0; i < mobs.size(); i++) {
-            KillTime k = killOf(perMob.get(i), mobs.get(i).hitpoints, bis);
-            if (k == null) continue;
+        double damage = 0;
+        for (int i : tripMembers(mobs)) {
+            StyleResult r = bestOf(perMob.get(i), bis);
+            if (r == null) continue;
+            KillTime k = killTime(r, shown(r, bis), mobs.get(i).hitpoints, bis);
             times.add(k);
             Map member = killNode(k, 0);
             member.put("name", mobs.get(i).label());
             members.add(member);
+            Result in = bis ? r.gameIncoming : r.incoming;
+            if (in != null && !Double.isInfinite(k.p50)) damage += in.totalDps * k.p50;
             if (never == null && Double.isInfinite(k.p50)) never = mobs.get(i).label();
         }
         if (times.size() < 2) return null;
         Map node = killNode(KillTime.sum(times), 0);
         node.put("members", members);
+        node.put("damage", damage);
         if (never != null) node.put("never", never);
         return node;
     }
 
-    // The member's kill time in the set its row recommends: its kit-backed
-    // card with the most net DPS plus spec, or null when no style answers.
-    static KillTime killOf(Map<CombatStyle, StyleResult> results, int hp, boolean bis) {
-        KillTime best = null;
+    // The members the trip kills: each monster once, its first listed version
+    // (Andrew 2026-10-30: the Titans' near and out-of-reach versions clear
+    // one hp bar, "anything with duplicated mobs"), and no add marked
+    // "trip": false.
+    static List<Integer> tripMembers(List<MonsterStats> mobs) {
+        List<Integer> out = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (int i = 0; i < mobs.size(); i++) {
+            if (!mobs.get(i).hasAttribute("no_trip") && seen.add(mobs.get(i).name)) out.add(i);
+        }
+        return out;
+    }
+
+    // The set a member's row recommends: its kit-backed style with the most
+    // net DPS plus spec, or null when no style answers.
+    static StyleResult bestOf(Map<CombatStyle, StyleResult> results, boolean bis) {
+        StyleResult best = null;
         double bd = -1;
         for (StyleResult r : results.values()) {
             DpsResult shown = r == null ? null : shown(r, bis);
@@ -133,7 +151,7 @@ public class RenderModel {
             double d = shown.net + (bis ? r.gameSpecDpsAdded : r.specDpsAdded);
             if (d > bd) {
                 bd = d;
-                best = killTime(r, shown, hp, bis);
+                best = r;
             }
         }
         return best;
