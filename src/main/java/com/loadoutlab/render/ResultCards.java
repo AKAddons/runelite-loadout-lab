@@ -1605,7 +1605,8 @@ public class ResultCards {
     static String hover(String head, Map kill, String tail) {
         double heal = num(kill, "healDps");
         String notes = (flag(kill, "approximate") ? "<br>Band approximate: this hit model has no per-attack form" : "")
-            + (heal > 0 ? format("<br>Heals ~%.1f/s off this set", heal) : "") + tail;
+            + (heal > 0 ? format("<br>Heals ~%.1f/s off this set", heal) : "")
+            + (kill.containsKey("uptime") && num(kill, "uptime") < 1 ? format("<br>Boss hittable ~%.0f%% of the fight (special phases)", num(kill, "uptime") * 100) : "") + tail;
         if (Double.isInfinite(num(kill, "p50"))) return tip(head, "This set cannot outpace the heal, so it never kills", notes);
         return tip(head, format("Median %s<br>Usually %s-%s<br>Perfect %s",
             mmss(num(kill, "p50")), mmss(num(kill, "p05")), mmss(num(kill, "p95")), mmss(num(kill, "perfect"))), notes);

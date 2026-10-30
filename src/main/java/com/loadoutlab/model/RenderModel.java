@@ -72,6 +72,7 @@ public class RenderModel {
             Map node = mob(mobs.get(i));
             MOB.set(i);
             HP.set(mobs.get(i).hitpoints);
+            MOB_STATS.set(mobs.get(i));
             try {
                 node.put("styles", styles(perMob.get(i), rks, owned, simmed));
                 Map multi = multi(perMob.get(i), rks, owned, simmed);
@@ -79,6 +80,7 @@ public class RenderModel {
             } finally {
                 MOB.remove();
                 HP.remove();
+                MOB_STATS.remove();
             }
             mn.add(node);
         }
@@ -97,6 +99,7 @@ public class RenderModel {
     // and its hitpoints, for the card's kill time.
     static final ThreadLocal<Integer> MOB = new ThreadLocal<>();
     static final ThreadLocal<Integer> HP = new ThreadLocal<>();
+    static final ThreadLocal<MonsterStats> MOB_STATS = new ThreadLocal<>();
 
     // The trip's kill time (Andrew 2026-10-29: "TTK for moons of peril,
     // barrows should be the combined kill time of all 3 bosses"): each
@@ -110,7 +113,7 @@ public class RenderModel {
         for (int i : tripMembers(mobs)) {
             StyleResult r = bestOf(perMob.get(i), bis);
             if (r == null) continue;
-            KillTime k = killTime(r, shown(r, bis), mobs.get(i).hitpoints, bis);
+            KillTime k = killTime(r, shown(r, bis), mobs.get(i).hitpoints, bis).stretched(BossIncomingOverrides.uptime(mobs.get(i)));
             times.add(k);
             Map member = killNode(k, 0);
             member.put("name", mobs.get(i).label());
@@ -167,12 +170,15 @@ public class RenderModel {
     static KillTime killTime(StyleResult r, DpsResult shown, int hp, boolean bis) {
         double[] dist = bis ? r.gameHitDist : r.hitDist;
         double spec = bis ? r.gameSpecDpsAdded : r.specDpsAdded;
-        return dist != null ? KillTime.table(hp, dist, shown.attackSpeed * 0.6, shown.dps, healOf(r, bis), spec, false)
+        KillTime k = dist != null ? KillTime.table(hp, dist, shown.attackSpeed * 0.6, shown.dps, healOf(r, bis), spec, false)
             : KillTime.table(hp, shown.accuracy, shown.maxHit, shown.attackSpeed, shown.dps, healOf(r, bis), spec);
+        // The boss's own downtime (its special phases) stretches the kill.
+        MonsterStats mob = MOB_STATS.get();
+        return mob == null ? k : k.stretched(BossIncomingOverrides.uptime(mob));
     }
 
     static Map killNode(KillTime k, double heal) {
-        return map("p05", k.p05, "p50", k.p50, "p95", k.p95, "perfect", k.perfect, "approximate", k.approximate, "healDps", heal);
+        return map("p05", k.p05, "p50", k.p50, "p95", k.p95, "perfect", k.perfect, "approximate", k.approximate, "healDps", heal, "uptime", k.uptime);
     }
 
     static Map mob(MonsterStats mob) {

@@ -416,7 +416,7 @@ public class RenderSurface {
     // following you.
     // "prayer>=12" -> "Prayer >= 12" (ASCII: the chips render in the client's font).
     static String reqLabel(String part) {
-        var m = Pattern.compile("([a-z_]+)(>=|<=|>|<)(.*)").matcher(part);
+        var m = Pattern.compile("([a-z_:]+)(>=|<=|>|<)(.*)").matcher(part);
         int i = m.matches() ? Arrays.asList(REQ_KEYS).indexOf(m.group(1)) : -1;
         return i < 0 ? part : REQ_NAMES[i] + " " + m.group(2) + " " + m.group(3);
     }
@@ -490,6 +490,19 @@ public class RenderSurface {
         c.anchor = GridBagConstraints.CENTER;
         c.fill = GridBagConstraints.NONE;
         row.add(add, c);
+        // Quad protection in one click (Andrew 2026-10-30: "quad protection
+        // is a good one to add in addition").
+        JLabel quad = small("All four gods", ACCENT);
+        tipText(quad, "Saradomin, Zamorak, Bandos and Armadyl items worn at once (the God Wars Dungeon)");
+        onClick(quad, () -> {
+            List<String> next = reqParts();
+            for (String god : new String[]{"saradomin", "zamorak", "bandos", "armadyl"}) {
+                if (!next.contains("god:" + god + ">=1")) next.add("god:" + god + ">=1");
+            }
+            setRequirements(next);
+        });
+        c.gridy = 2;
+        row.add(quad, c);
         return row;
     }
 

@@ -36,6 +36,7 @@
   "note": "Wiki: melee (35) only partially blocked by Protect from Melee - modeled as unblockable 18; magic 50 and ranged 17 prayable; no frequency - uniform.; melee TRUE max 35, Protect from Melee halves it (factor 0.5)"
  },
  "blood moon": {
+    "uptime": 0.4615,
   "attacks": [
    {
     "heal": {

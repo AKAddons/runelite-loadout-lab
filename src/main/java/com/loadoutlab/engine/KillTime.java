@@ -25,6 +25,9 @@ public final class KillTime {
     // The kill's mass per 0.6 s tick, the tail folded into the last tick;
     // null when the set never kills. A trip convolves its members'.
     final double[] pmf;
+    // The share of the fight the boss can be hit (special phases off);
+    // 1 where nothing is known (stretched sets it).
+    public final double uptime;
 
     static final double TICK = 0.6;
     // The table stops here: a kill slower than this reads never.
@@ -53,7 +56,7 @@ public final class KillTime {
         double perfect = top <= 0 ? Double.POSITIVE_INFINITY : Math.ceil((double) hp / top) * interval;
         double mean = of(hp, dps, healDps, specDpsAdded);
         double pace = dps <= 0 ? Double.POSITIVE_INFINITY : HitDist.mean(pmf) / dps;
-        if (Double.isInfinite(mean) || Double.isInfinite(pace) || top <= 0) return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null);
+        if (Double.isInfinite(mean) || Double.isInfinite(pace) || top <= 0) return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null, 1);
         double drift = (healDps - specDpsAdded) * pace;
         // Damage in buckets keeps the table small on big-hp bosses.
         int b = 1;
@@ -90,9 +93,20 @@ public final class KillTime {
             alive = next;
             next = swap;
         }
-        if (dead < 0.5) return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null);
+        if (dead < 0.5) return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null, 1);
         out[MAX_TICKS] += 1 - dead;
         return from(out, perfect, approximate);
+    }
+
+    // The same kill with the boss hittable only this share of the fight
+    // (ISS-01M66044MEMWYTDCNPW42KQ42Z, Andrew: "does TTK account for
+    // unhittable time"): every time divides by the share, the tick mass is
+    // re-binned to match, so a trip's convolution stretches too.
+    public KillTime stretched(double share) {
+        if (share >= 1 || share <= 0 || pmf == null) return this;
+        double[] out = new double[MAX_TICKS + 1];
+        for (int t = 0; t < pmf.length; t++) out[(int) Math.min(MAX_TICKS, Math.round(t / share))] += pmf[t];
+        return new KillTime(p05 / share, p50 / share, p95 / share, perfect / share, approximate, out, share);
     }
 
     // Percentiles off a tick pmf; a percentile the table never reaches
@@ -107,7 +121,7 @@ public final class KillTime {
             while (qi < 3 && cum >= q[qi] - 1e-12) out[qi++] = t >= MAX_TICKS ? Double.POSITIVE_INFINITY : t * TICK;
         }
         while (qi < 3) out[qi++] = Double.POSITIVE_INFINITY;
-        return new KillTime(out[0], out[1], out[2], perfect, approximate, pmf);
+        return new KillTime(out[0], out[1], out[2], perfect, approximate, pmf, 1);
     }
 
     // A trip: the members' tables convolved, Perfect the sum of theirs;
@@ -129,7 +143,7 @@ public final class KillTime {
             }
             acc = out;
         }
-        if (acc == null) return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null);
+        if (acc == null) return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null, 1);
         double[] pmf = new double[MAX_TICKS + 1];
         System.arraycopy(acc, 0, pmf, 0, acc.length);
         return from(pmf, perfect, approximate);

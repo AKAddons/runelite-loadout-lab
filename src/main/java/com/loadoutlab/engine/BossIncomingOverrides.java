@@ -36,6 +36,8 @@ public class BossIncomingOverrides {
     public static class BossOverride {
         List<Attack> attacks = List.of();
         String note = "";
+        // The share of the fight the boss can be hit; 1 = always.
+        double uptime = 1;
         transient boolean heals;
     }
 
@@ -73,6 +75,11 @@ public class BossIncomingOverrides {
     }
 
     public static String unpricedReason(MonsterStats monster) { return lookup(UNPRICED, monster); }
+
+    public static double uptime(MonsterStats monster) {
+        BossOverride override = overridesFor(monster);
+        return override == null ? 1 : override.uptime;
+    }
 
     static <T> T lookup(Map<String, T> map, MonsterStats monster) {
         if (monster == null) return null;

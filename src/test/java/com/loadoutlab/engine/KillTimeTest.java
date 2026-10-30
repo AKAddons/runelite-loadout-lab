@@ -102,6 +102,24 @@ class KillTimeTest {
 	}
 
 	@Test
+	@DisplayName("a boss hittable half the fight takes twice as long on every percentile and on Perfect, a trip of such members stretches with them, and a full-uptime boss is untouched")
+	void stretched() {
+		double dps = 0.7 * 20 / 2.4;
+		KillTime a = KillTime.table(500, 0.7, 40, 4, dps, 0, 0);
+		KillTime half = a.stretched(0.5);
+		assertEquals(0.5, half.uptime, 1e-9);
+		assertEquals(a.p05 * 2, half.p05, 1e-9);
+		assertEquals(a.p50 * 2, half.p50, 1e-9);
+		assertEquals(a.p95 * 2, half.p95, 1e-9);
+		assertEquals(a.perfect * 2, half.perfect, 1e-9);
+		assertSame(a, a.stretched(1));
+		KillTime trip = KillTime.sum(List.of(half, KillTime.table(300, 0.7, 40, 4, dps, 0, 0).stretched(0.5)));
+		KillTime plain = KillTime.sum(List.of(a, KillTime.table(300, 0.7, 40, 4, dps, 0, 0)));
+		assertEquals(plain.perfect * 2, trip.perfect, 1e-9);
+		assertEquals(plain.p50 * 2, trip.p50, plain.p50 * 0.05);
+	}
+
+	@Test
 	@DisplayName("a trip is the members' tables convolved: median near the sum of their means, Perfect the sum of theirs, never when one member never dies")
 	void trip() {
 		double dps = 0.7 * 20 / 2.4;
