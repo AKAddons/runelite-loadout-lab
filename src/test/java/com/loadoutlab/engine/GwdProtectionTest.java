@@ -56,15 +56,13 @@ class GwdProtectionTest {
 	@Test
 	@DisplayName("each general's route needs the wiki table's gods; bodyguards share their general's")
 	void routeGods() {
-		assertEquals(List.of("armadyl", "bandos", "zamorak"), GwdProtection.godsFor(mob("general graardor"), false));
-		assertEquals(List.of("armadyl", "bandos", "saradomin", "zamorak"), GwdProtection.godsFor(mob("kree'arra"), false));
-		assertEquals(List.of("armadyl", "saradomin", "zamorak"), GwdProtection.godsFor(mob("commander zilyana"), false));
-		assertEquals(List.of("bandos", "saradomin", "zamorak"), GwdProtection.godsFor(mob("k'ril tsutsaroth"), false));
-		assertEquals(GwdProtection.godsFor(mob("general graardor"), false),
-			GwdProtection.godsFor(mob("sergeant strongstack"), false));
-		assertEquals(List.of("armadyl", "bandos", "zamorak", "zaros"),
-			GwdProtection.godsFor(mob("general graardor"), true), "the Ancient chip adds Zaros");
-		assertTrue(GwdProtection.godsFor(mob("vorkath"), true).isEmpty(), "nowhere near GWD");
+		assertEquals(List.of("armadyl", "bandos", "zamorak"), GwdProtection.godsFor(mob("general graardor")));
+		assertEquals(List.of("armadyl", "bandos", "saradomin", "zamorak"), GwdProtection.godsFor(mob("kree'arra")));
+		assertEquals(List.of("armadyl", "saradomin", "zamorak"), GwdProtection.godsFor(mob("commander zilyana")));
+		assertEquals(List.of("bandos", "saradomin", "zamorak"), GwdProtection.godsFor(mob("k'ril tsutsaroth")));
+		assertEquals(GwdProtection.godsFor(mob("general graardor")),
+			GwdProtection.godsFor(mob("sergeant strongstack")));
+		assertTrue(GwdProtection.godsFor(mob("vorkath")).isEmpty(), "nowhere near GWD");
 	}
 
 	@Test
@@ -88,7 +86,7 @@ class GwdProtectionTest {
 			CandidateMode.OWNED_ONLY, true, false, owned, 1);
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		DpsResult plain = optimizer.fillDpsNeutralSlots(data, request, optimizer.optimize(data, request).get(0));
-		List<String> gods = GwdProtection.godsFor(graardor, false);
+		List<String> gods = GwdProtection.godsFor(graardor);
 		DpsResult worn = optimizer.wearGodItems(data, request, plain, gods);
 		assertEquals(plain.getDps(), worn.getDps(), 1e-9, "protection never costs DPS");
 		Set<String> covered = GwdProtection.coveredGods(worn.getLoadout());
@@ -119,7 +117,7 @@ class GwdProtectionTest {
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ComputeParams p = new ComputeParams();
 			p.maxSwaps = 6;
-			p.gwdAncient = true;
+			p.gods = List.of("armadyl", "bandos", "saradomin", "zamorak", "zaros");
 			service.bestPerStyle(kree, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, owned, 1, p, Collections.emptyMap(), Collections.emptySet(),
 				Collections.emptyMap(), null, 0, Collections.<Integer>emptySet(), result -> {
@@ -133,7 +131,7 @@ class GwdProtectionTest {
 				all.addAll(GwdProtection.godsOf(item));
 				assertTrue(ranged.bench.contains(item), "carried protection rides the Inventory");
 			}
-			assertTrue(all.containsAll(GwdProtection.godsFor(kree, true)), "all four + Zaros: " + all);
+			assertTrue(all.containsAll(p.gods), "all four + Zaros: " + all);
 		} finally {
 			service.shutdown();
 		}

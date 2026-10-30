@@ -1,5 +1,6 @@
 package com.loadoutlab.render;
 
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +19,18 @@ class ReqValueTest {
 		assertEquals("1", RenderSurface.reqValue("god:any", ""));
 		assertEquals("", RenderSurface.reqValue("stab", ""));
 		assertEquals("12", RenderSurface.reqValue("prayer", "12"));
+	}
+
+	@Test
+	@DisplayName("a god pick adds its protection chip once, All four gods the four GWD chips, a stat its rule")
+	void withRequirement() {
+		assertEquals(List.of("god:zamorak>=1"), RenderSurface.withRequirement(List.of(), "god:zamorak", ">=", "1"));
+		assertEquals(List.of("god:zamorak>=1"), RenderSurface.withRequirement(List.of("god:zamorak>=1"), "god:zamorak", ">=", "1"));
+		assertEquals(List.of("prayer>=12", "god:saradomin>=1", "god:zamorak>=1", "god:bandos>=1", "god:armadyl>=1"),
+			RenderSurface.withRequirement(List.of("prayer>=12"), "god:all", ">=", "1"));
+		assertEquals(List.of("god:zaros>=1", "stab>=10"), RenderSurface.withRequirement(List.of("god:zaros>=1"), "stab", ">=", "10"));
+		assertEquals("Zamorak protection", RenderSurface.reqLabel("god:zamorak>=1"));
+		assertEquals("Prayer >= 12", RenderSurface.reqLabel("prayer>=12"));
 	}
 
 	@Test

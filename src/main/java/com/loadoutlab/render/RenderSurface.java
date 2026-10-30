@@ -420,13 +420,28 @@ public class RenderSurface {
     static String reqLabel(String part) {
         var m = Pattern.compile("([a-z_:]+)(>=|<=|>|<)(.*)").matcher(part);
         int i = m.matches() ? Arrays.asList(REQ_KEYS).indexOf(m.group(1)) : -1;
-        return i < 0 ? part : REQ_NAMES[i] + " " + m.group(2) + " " + m.group(3);
+        return i < 0 ? part : m.group(1).startsWith("god:") ? REQ_NAMES[i] : REQ_NAMES[i] + " " + m.group(2) + " " + m.group(3);
     }
 
     // A god stat wants ">= 1" nearly always (Andrew 2026-10-30: "99% of
     // cases people want just >= 1"): the box fills with 1 on pick, and an
     // empty box means 1.
     static String reqValue(String key, String typed) { return typed.isEmpty() && key.startsWith("god:") ? "1" : typed; }
+
+    // The four GWD gods, "All four gods" in the picker (Andrew 2026-10-30:
+    // "quad protection"; then "the 'all 4 gods' option is awkward as is").
+    static final String[] GWD_GODS = {"saradomin", "zamorak", "bandos", "armadyl"};
+
+    // The requirement list with one more chip: a god chip is protection
+    // (never twice), "god:all" the four at once, a stat its rule.
+    static List<String> withRequirement(List<String> parts, String key, String op, String v) {
+        List<String> next = new ArrayList<>(parts);
+        for (String god : "god:all".equals(key) ? GWD_GODS : key.startsWith("god:") ? new String[]{key.substring(4)} : new String[0]) {
+            if (!next.contains("god:" + god + ">=1")) next.add("god:" + god + ">=1");
+        }
+        if (!key.startsWith("god:")) next.add(key + op + v);
+        return next;
+    }
 
     // The "+ Requirement" row: a stat, at least / at most, a number, Add.
     List<String> reqParts() {
@@ -476,9 +491,7 @@ public class RenderSurface {
         Runnable send = () -> {
             String v = reqValue(REQ_KEYS[stat.getSelectedIndex()], value.getText().trim());
             if (!v.matches("-?[0-9]+(\\.[0-9]+)?")) return;
-            List<String> next = reqParts();
-            next.add(REQ_KEYS[stat.getSelectedIndex()] + REQ_OPS[op.getSelectedIndex()] + v);
-            setRequirements(next);
+            setRequirements(withRequirement(reqParts(), REQ_KEYS[stat.getSelectedIndex()], REQ_OPS[op.getSelectedIndex()], v));
             value.setText("");
         };
         value.addActionListener(e -> send.run());
@@ -503,17 +516,6 @@ public class RenderSurface {
         c.anchor = GridBagConstraints.CENTER;
         c.fill = GridBagConstraints.NONE;
         row.add(add, c);
-        // Quad protection in one click (Andrew 2026-10-30: "quad protection
-        // is a good one to add in addition").
-        JLabel quad = small("All four gods", ACCENT);
-        tipText(quad, "Saradomin, Zamorak, Bandos and Armadyl items worn at once (the God Wars Dungeon)");
-        onClick(quad, () -> {
-            List<String> next = reqParts();
-            for (String god : new String[]{"saradomin", "zamorak", "bandos", "armadyl"}) if (!next.contains("god:" + god + ">=1")) next.add("god:" + god + ">=1");
-            setRequirements(next);
-        });
-        c.gridy = 2;
-        row.add(quad, c);
         return row;
     }
 
@@ -940,7 +942,6 @@ public class RenderSurface {
             boolean anyTaskOnly = !raid && anyMob(page, m -> flag(m, "taskOnly"));
             boolean anySlayer = !raid && anyMob(page, m -> flag(m, "slayerMonster"));
             boolean aw = anyMob(page, m -> flag(m, "wilderness"));
-            boolean anyGwd = anyMob(page, m -> flag(m, "gwd"));
             // Every mob (and at least one) is a wilderness exclusive.
             boolean ae = anyMob(page, m -> true) && !anyMob(page, m -> !flag(m, "wildernessExclusive"));
             if (anyTaskOnly && !f2pl) {
@@ -980,12 +981,6 @@ public class RenderSurface {
                 chipRow.add(pill("Wildy", true, true, "Wilderness-exclusive - always in", () -> {
                     }));
             } else if (aw) chipRow.add(paramChip("Wildy", "inWilderness", flag(params, "inWilderness")));
-            // GWD (ISS-01M5G9KPDQWBR014Z10F79B29T): the Ancient chip adds a
-            // Zaros item to the protection kit - the Nex respite area's banker.
-            if (anyGwd) {
-                chipRow.add(pill("Ancient", flag(params, "gwdAncient"), text("chip.ancient.tip"),
-                    () -> commands.set("gwdAncient", !flag(params, "gwdAncient"))));
-            }
             // PvP world (Ragnarrok, 2026-10-20): any mob, cycles off / PvP /
             // High Risk. Shown on a PvP world, while on, or when the
             // settings ask for it (planning from a normal world).

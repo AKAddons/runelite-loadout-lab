@@ -1644,8 +1644,12 @@ public class CommandEngine {
             // from supplied-boost coverage missed Theatre of Blood,
             // which has no supplied boost (field report 2026-08-31).
             // GWD (Andrew 2026-10-21: "add more inventory slot default for
-            // GWD"): the spec + every route god carried + the Ancient.
-            List<String> gg = selected.size() == 1 ? GwdProtection.godsFor(selected.get(0), false) : List.of();
+            // GWD"): the spec + every route god carried + one spare. The
+            // route's gods are the chips (ISS-01M67DQ9ATHSQSJA7QGDKAQGPT): the
+            // trip's protection, shown and removable.
+            List<String> gg = new ArrayList<>();
+            for (MonsterStats m : selected) for (String god : GwdProtection.godsFor(m)) if (!gg.contains(god)) gg.add(god);
+            state.setParam("requirements", GwdProtection.chipsFor(gg));
             state.setParam("maxSwaps", groupPick != null && groupPick.getInventory() > 0 ? groupPick.getInventory()
                     : !gg.isEmpty() ? 2 + gg.size() : selected.size() > 1 ? 4 : 1 + swaps(selected.get(0)).size());
             touched.clear();

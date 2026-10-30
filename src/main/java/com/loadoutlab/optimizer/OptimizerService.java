@@ -320,7 +320,6 @@ public class OptimizerService {
     // every style is cached, else one worker job. A one-mob roster takes
     // this road too, its member's own exclusions and sims on the context.
     void bestPerStyle(MonsterStats monster, ComputeContext ctx, Consumer<Map<CombatStyle, StyleResult>> callback) {
-        ctx.gwdAncient = ctx.p.gwdAncient;
         String bk = baseKeyFor(monster, ctx);
         Map<CombatStyle, StyleResult> ac = new EnumMap<>(CombatStyle.class);
         synchronized (cache) {
@@ -405,8 +404,6 @@ public class OptimizerService {
         Map<Integer, Set<Integer>> dreamsByMob = Map.of();
         // The defensive mode (single-mob path only; rosters stay Max DPS).
         OptimizeMode mode = MAX_DPS;
-        // The GWD Ancient chip: Zaros joins the route (the Nex bank).
-        boolean gwdAncient;
         // This compute's request ticket - the mode sweep bails when superseded.
         long ticket;
     }
@@ -634,7 +631,7 @@ public class OptimizerService {
             // GWD protection (ISS-01M5G9KPDQWBR014Z10F79B29T): the route's
             // gods worn when free, the rest carried - and carried protection
             // takes its Inventory slots before the spec weapon does.
-            List<String> gods = tool != null ? List.of() : GwdProtection.godsFor(monster, ctx.gwdAncient);
+            List<String> gods = tool != null ? List.of() : ctx.p.gods;
             List<GearItem> protection = protect(ctx, ownedRequest, ob, gods, monster, ctx.mode != MAX_DPS);
             List<GearItem> gameProtection = protect(ctx, gr, gb, gods, monster, false);
             // The fight's swaps (ISS-01M5VCXYGF51P5NJCDNC1QJZD1): Cerberus' spectral spirit shield for the
@@ -702,7 +699,7 @@ public class OptimizerService {
         // versions share one id, so Far/Nearby/Roaring collided.
         return monster.id + "|" + monster.version + "|" + monster.getToaInvocationLevel() + "|" + ctxKey(ctx)
             + "|" + dreamsFor(ctx, monster).hashCode() + "|" + ctx.maxSwaps
-            + "|" + ctx.specByMob.getOrDefault(monster.profileId(), 0) + "|" + ctx.mode.name() + "|" + ctx.gwdAncient;
+            + "|" + ctx.specByMob.getOrDefault(monster.profileId(), 0) + "|" + ctx.mode.name() + "|" + ctx.p.gods;
     }
 
     Map<CombatStyle, StyleResult> computeAllStyles( MonsterStats monster, ComputeContext ctx, long ticket) {
@@ -925,7 +922,7 @@ public class OptimizerService {
     // is not relevant") - never where the god is the point (a GWD route), and
     // only when the swap passes the request's own rules at no dps cost.
     void preferAtHand(ComputeContext ctx, OptimizationRequest request, List<DpsResult> ob, MonsterStats monster) {
-        if (ctx.effectiveOwned.atHand == null || !GwdProtection.godsFor(monster, ctx.gwdAncient).isEmpty()) return;
+        if (ctx.effectiveOwned.atHand == null || !ctx.p.gods.isEmpty()) return;
         DpsResult shown = ob.get(0);
         Loadout loadout = shown.loadout;
         RiskGuard risk = RiskGuard.of(ctx.dataset, request);

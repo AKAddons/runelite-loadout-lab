@@ -39,8 +39,6 @@ public class PageState {
     // 7928) - Karuulm needs no boots (ISS-01M5JJ0Z4M988DR0M0ZGJHD139).
     // <li>optimizeMode - MAX_DPS / BALANCED / TANKY, every player's since
     // 2026-10-22 (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6; no developer-mode gate).
-    // <li>gwdAncient - the GWD Ancient chip: Zaros joins the protection
-    // route - the Nex bank (ISS-01M5G9KPDQWBR014Z10F79B29T).
     // <li>nerAvailable - Not Enough Runes is enabled - the ladder's "how
     // to get it" link.
     // <li>ladderSlot - the slot whose ladder strip is open on the Yours
@@ -360,7 +358,7 @@ public class PageState {
         // everyone"; ISS-01M5JBYYWHQNTM0CGNYWQBNYX6) - no developer-mode gate.
         p.optimizeMode = str("optimizeMode");
         p.kourendElite = flag("kourendElite");
-        p.gwdAncient = flag("gwdAncient");
+        p.gods = GwdProtection.chips(str("requirements"));
         int[] sims = new int[SIM_KEYS.length];
         boolean simmed = false;
         for (int i = 0; i < sims.length; i++) {

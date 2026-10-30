@@ -29,10 +29,19 @@ public final class ServiceCalls {
 	private ServiceCalls() {
 	}
 
-	private static ComputeParams params(boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
+	// A roster's route gods, as the engine seeds them on a pick.
+	static java.util.List<String> routeOf(java.util.List<MonsterStats> mobs) {
+		java.util.List<String> gods = new java.util.ArrayList<>();
+		for (MonsterStats m : mobs) for (String god : com.loadoutlab.engine.GwdProtection.godsFor(m)) if (!gods.contains(god)) gods.add(god);
+		return gods;
+	}
+
+	private static ComputeParams params(java.util.List<String> gods, boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		int maxTradeables, int riskBudgetGp, boolean antifirePotion, boolean inWilderness,
 		int upgradeBudgetGp, int maxSwaps) {
 		ComputeParams p = new ComputeParams();
+		// The route's gods as a selection seeds them (ISS-01M67DQ9ATHSQSJA7QGDKAQGPT).
+		p.gods = gods;
 		p.f2pOnly = f2pOnly;
 		p.onSlayerTask = onSlayerTask;
 		p.spellbookLock = spellbookLock;
@@ -103,7 +112,7 @@ public final class ServiceCalls {
 			byStyle.put(style, uniform);
 		}
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
-			owned, collectionFingerprint, params(f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
+			owned, collectionFingerprint, params(com.loadoutlab.engine.GwdProtection.godsFor(monster), f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
 				riskBudgetGp, antifirePotion, com.loadoutlab.data.WildernessMonsters.isExclusive(monster),
 				upgradeBudgetGp, 1),
 			byStyle, dreamItems, pinnedByStyle, pinnedSpell, 0,
@@ -135,7 +144,7 @@ public final class ServiceCalls {
 		Set<Integer> protectOnlyItems,
 		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback) {
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
-			owned, collectionFingerprint, params(f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
+			owned, collectionFingerprint, params(com.loadoutlab.engine.GwdProtection.godsFor(monster), f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
 				riskBudgetGp, antifirePotion, inWilderness, upgradeBudgetGp, 1),
 			excludedByStyle, dreamItems, pinnedByStyle, pinnedSpell, 0, protectOnlyItems, callback);
 	}
@@ -166,7 +175,7 @@ public final class ServiceCalls {
 		Set<Integer> protectOnlyItems,
 		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback) {
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
-			owned, collectionFingerprint, params(f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
+			owned, collectionFingerprint, params(com.loadoutlab.engine.GwdProtection.godsFor(monster), f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
 				riskBudgetGp, antifirePotion, inWilderness, upgradeBudgetGp, 1),
 			excludedByStyle, dreamItems, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems, callback);
 	}
@@ -197,7 +206,7 @@ public final class ServiceCalls {
 		Set<Integer> protectOnlyItems,
 		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback) {
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
-			owned, collectionFingerprint, params(f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
+			owned, collectionFingerprint, params(com.loadoutlab.engine.GwdProtection.godsFor(monster), f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
 				riskBudgetGp, antifirePotion, inWilderness, upgradeBudgetGp, maxSwaps),
 			excludedByStyle, dreamItems, pinnedByStyle, pinnedSpell, 0,
 			protectOnlyItems, callback);
@@ -283,7 +292,7 @@ public final class ServiceCalls {
 		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
 		service.bestPerStyleAcross(mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 			RequirementProfile.MAXED, new OwnedItems(owned, true), 1,
-			params(false, false, "", -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false, 0, maxSwaps),
+			params(routeOf(mobs), false, false, "", -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false, 0, maxSwaps),
 			Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), Collections.emptyMap(),
 			pinsByMob, spellByMob, specByMob, Collections.emptySet(),
 			roster -> {
@@ -319,7 +328,7 @@ public final class ServiceCalls {
 		}
 		service.bestPerStyleAcross(mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint,
-			params(f2pOnly, onSlayerTask, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, inWilderness, upgradeBudgetGp, maxSwaps),
+			params(routeOf(mobs), f2pOnly, onSlayerTask, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, inWilderness, upgradeBudgetGp, maxSwaps),
 			excludedByStyle, dreamItems, excludedByMob, Collections.emptyMap(),
 			pinsByMob, spellByMob, Collections.emptyMap(), protectOnlyItems, callback);
 	}

@@ -84,7 +84,7 @@ public class SetRules {
         if (text == null) return out;
         for (String part : text.split(";")) {
             var m = Pattern.compile("\\s*([a-z_:]+)\\s*(>=|<=|>|<)\\s*(-?[0-9.]+)\\s*").matcher(part);
-            if (m.matches() && (STATS.contains(m.group(1)) || m.group(1).startsWith("god:"))) out.add(new Rule(m.group(1), m.group(2), Double.parseDouble(m.group(3))));
+            if (m.matches() && STATS.contains(m.group(1))) out.add(new Rule(m.group(1), m.group(2), Double.parseDouble(m.group(3))));
         }
         return out;
     }
@@ -184,13 +184,6 @@ public class SetRules {
         if (item == null) return 0;
         if (stat.startsWith("has:")) return item.nameLower.startsWith(stat.substring(4)) ? 1 : 0;
         if (stat.startsWith("slot:")) return item.slot.name().equalsIgnoreCase(stat.substring(5)) ? 1 : 0;
-        // "god:<name>" (or god:any): 1 when the item protects from that god in
-        // the God Wars dungeon (Andrew 2026-10-30: "a restriction for each of
-        // the god types ... also an any god item").
-        if (stat.startsWith("god:")) {
-            Set<String> gods = GwdProtection.godsOf(item);
-            return ("god:any".equals(stat) ? !gods.isEmpty() : gods.contains(stat.substring(4))) ? 1 : 0;
-        }
         StatBlock off = item.offensive, def = item.defensive, bon = item.bonuses;
         switch (stat) {
             case "weight": return item.weight;

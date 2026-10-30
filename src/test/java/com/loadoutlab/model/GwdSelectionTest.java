@@ -66,31 +66,17 @@ class GwdSelectionTest {
 	}
 
 	@Test
-	@DisplayName("the Ancient chip param is off by default and reaches the compute")
-	void ancientParam() {
+	@DisplayName("a GWD pick seeds the route's gods as chips - the trip's protection; a chip you add rides to the compute; Zulrah seeds none")
+	void routeChips() {
 		Object[] s = select("general graardor");
 		PageState state = (PageState) s[0];
+		assertEquals("god:armadyl>=1;god:bandos>=1;god:zamorak>=1", state.paramsNode().get("requirements"));
+		assertEquals(List.of("armadyl", "bandos", "zamorak"), state.computeParams().gods);
 		CommandEngine engine = (CommandEngine) s[1];
-		assertEquals(Boolean.FALSE, state.paramsNode().get("gwdAncient"));
-		assertFalse(Boolean.TRUE.equals(engine.state.paramsNode().get("gwdAncient")));
-		engine.execute("set-param", Map.of("param", "gwdAncient", "value", true));
-		assertTrue(Boolean.TRUE.equals(engine.state.paramsNode().get("gwdAncient")));
+		engine.execute("set-param", Map.of("param", "requirements", "value", "god:armadyl>=1;god:bandos>=1;god:zamorak>=1;god:zaros>=1"));
+		assertEquals(List.of("armadyl", "bandos", "zamorak", "zaros"), state.computeParams().gods);
+		assertNull(state.computeParams().setRules, "a god chip is no worn-set rule");
+		assertEquals("", ((PageState) select("zulrah")[0]).paramsNode().get("requirements"));
 	}
 
-	@Test
-	@DisplayName("the page marks GWD monsters so the card can show the Ancient chip")
-	void pageFlag() {
-		Object[] s = select("general graardor");
-		CommandEngine engine = (CommandEngine) s[1];
-		engine.onResults((MonsterStats) s[3], Map.of());
-		try {
-			javax.swing.SwingUtilities.invokeAndWait(() -> {
-			});
-		} catch (Exception ex) {
-			throw new AssertionError(ex);
-		}
-		Map<?, ?> entry = (Map<?, ?>) ((List<?>) ((CaptureLink) s[2]).published.get("entries")).get(0);
-		Map<?, ?> mob = (Map<?, ?>) ((List<?>) entry.get("mobs")).get(0);
-		assertEquals(Boolean.TRUE, mob.get("gwd"));
-	}
 }

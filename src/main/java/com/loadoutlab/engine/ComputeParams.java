@@ -34,9 +34,9 @@ public class ComputeParams implements Cloneable {
     // The defensive mode - MAX_DPS / BALANCED / TANKY; only ever not
     // MAX_DPS in developer mode (ISS-01M5G5CZC9SK46499FACRSJ8ZT).
     public String optimizeMode = "MAX_DPS";
-    // The GWD Ancient chip: Zaros joins the protection route
-    // (ISS-01M5G9KPDQWBR014Z10F79B29T).
-    public boolean gwdAncient;
+    // The god chips: the trip's protection, worn when free, else carried
+    // (ISS-01M67DQ9ATHSQSJA7QGDKAQGPT; the GWD route seeds them).
+    public java.util.List<String> gods = java.util.List.of();
     // The elite Kourend & Kebos diary is done: Karuulm needs no boots
     // (ISS-01M5JJ0Z4M988DR0M0ZGJHD139).
     public boolean kourendElite;

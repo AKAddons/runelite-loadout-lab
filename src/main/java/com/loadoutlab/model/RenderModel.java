@@ -199,7 +199,7 @@ public class RenderModel {
             "taskOnly", SlayerLockedMonsters.isTaskOnly(mob), "fightBook", MonsterSpellbooks.bookFor(mob),
             "fightBookReason", MonsterSpellbooks.reasonFor(mob), "slayerMonster", mob.slayerMonster,
             "multiAble", MultiMobs.isMultiAble(mob), "multiLocations", MultiMobs.locations(mob),
-            "wildernessExclusive", WildernessMonsters.isExclusive(mob), "gwd", GwdProtection.isGwd(mob));
+            "wildernessExclusive", WildernessMonsters.isExclusive(mob));
     }
 
     static Map styles(Map<CombatStyle, StyleResult> results,
