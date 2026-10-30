@@ -217,16 +217,23 @@ public class LoadoutOptimizer {
                     shieldOptions.add(shield);
                 }
             }
-            if (shieldOptions.isEmpty()) {
+            if (shieldOptions.isEmpty() || request.setRules != null) {
                 // Two-handers clear it above; other slots keep the worn one.
+                // Under a task's rules a one-hander may keep it too: the pool
+                // is only the top few by score, and a strict rule can refuse
+                // them all (weight <= 0 lost every one-hander without this).
                 shieldOptions.add(swapped.get(SHIELD));
             }
             DpsResult best = null;
             for (GearItem ammo : ao) {
                 for (GearItem shield : shieldOptions) {
                     // A fresh set per trial (the quiver's carried ammo rides
-                    // each copy).
-                    DpsResult result = bestSpellResult(request, swapped.with(AMMO, ammo).with(SHIELD, shield), pass.spells);
+                    // each copy). A step keeps the task's rules (Andrew
+                    // 2026-10-30: "Yes, filter them"), per trial: a weapon
+                    // whose best shield breaks one comes with one that keeps it.
+                    Loadout trial = swapped.with(AMMO, ammo).with(SHIELD, shield);
+                    if (request.setRules != null && !request.setRules.holds(trial)) continue;
+                    DpsResult result = bestSpellResult(request, trial, pass.spells);
                     if (result != null && (best == null || result.net > best.net)) best = result;
                 }
             }

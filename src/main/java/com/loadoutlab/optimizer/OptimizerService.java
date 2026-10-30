@@ -890,11 +890,10 @@ public class OptimizerService {
     Map<GearSlot, Ladder> adoptOwnedSteps(ComputeContext ctx, OptimizationRequest request,
         List<DpsResult> ob, MonsterStats monster) {
         Map<GearSlot, Ladder> ladders = ladderFor(ctx, request, ob.get(0), monster);
-        // An adopted step obeys the search's own limits: the Wilderness risk
-        // cap and a task's set rules (field report 2026-10-26: a 75k cap
-        // showed a 14.3m set).
+        // An adopted step obeys the Wilderness risk cap (field report
+        // 2026-10-26: a 75k cap showed a 14.3m set). A task's set rules are
+        // kept already: slotSwaps offers no step that breaks them.
         RiskGuard risk = RiskGuard.of(ctx.dataset, request);
-        SetRules rules = request.setRules;
         for (int round = 0; round < 3; round++) {
             Rung best = null;
             for (var entry : ladders.entrySet()) {
@@ -907,7 +906,6 @@ public class OptimizerService {
                 for (Rung rung : ladder.up) {
                     if (rung.owned && rung.set != null && compareRungs(ctx.mode, rung, worn) > 0
                         && (risk == null || !risk.vetoes(rung.set.loadout, null))
-                        && (rules == null || rules.holds(rung.set.loadout))
                         && (best == null || compareRungs(ctx.mode, rung, best) > 0)) {
                         best = rung;
                     }
@@ -1189,10 +1187,13 @@ public class OptimizerService {
             Map<Integer, double[]> sums = new LinkedHashMap<>();
             Map<Integer, double[]> pmd = new HashMap<>();
             Map<Integer, GearItem> items = new HashMap<>();
+            List<Set<Integer>> takeable = new ArrayList<>();
             for (int j = 0; j < n; j++) {
                 if (base[j] == null) continue;
+                Set<Integer> offered = new HashSet<>();
                 for (DpsResult swap : optimizer.slotSwaps(ctx.dataset, side.reqs.get(j), base[j], slot)) {
                     GearItem item = swap.loadout.get(slot);
+                    offered.add(item.id);
                     if (item.id == worn.id) {
                         continue; // the strip's worn item: a member wearing another reads its own card
                     }
@@ -1202,7 +1203,14 @@ public class OptimizerService {
                     // that, the group figure ranks (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW).
                     pmd.computeIfAbsent(item.id, k -> new double[n])[j] = swap.net;
                 }
+                // slotSwaps skips a member's own item: wearing it is no refusal.
+                GearItem own = base[j].loadout.get(slot);
+                if (own != null) offered.add(own.id);
+                if (side.reqs.get(j).setRules != null) takeable.add(offered);
             }
+            // A group step is one swap for everyone: under a task's rules, one
+            // a member cannot take is no step, not a 0 averaged in on its card.
+            for (Set<Integer> offered : takeable) sums.keySet().retainAll(offered);
             List<Rung> candidates = new ArrayList<>();
             for (var entry : sums.entrySet()) {
                 int id = entry.getKey();
