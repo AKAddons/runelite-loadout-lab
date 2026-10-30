@@ -46,6 +46,17 @@ public class RangedAmmo {
         return out;
     }
 
+    // Arrows and bolts come back to an Ava's device (attractor, accumulator,
+    // assembler, their max-cape forms, Dizana's quiver); thrown ammo does not.
+    public static boolean retrievable(GearItem ammo) {
+        return ammo != null && (ARROW_TIER_BY_AMMO.containsKey(ammo.id) || BOLT_TIER_BY_AMMO.containsKey(ammo.id));
+    }
+
+    public static boolean avasDevice(GearItem cape) {
+        String n = cape == null ? "" : cape.nameLower;
+        return n.contains("assembler") || n.contains("accumulator") || n.contains("attractor") || n.contains("dizana's quiver");
+    }
+
     public static boolean compatible(GearItem ammo, GearItem weapon) {
         if (ammo == null) return !weaponUsesProjectileAmmo(weapon);
         if (projectileMatches(ammo, weapon)) return true;

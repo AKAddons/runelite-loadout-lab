@@ -1464,7 +1464,7 @@ public class ResultCards {
         itemManager.getImage(id).addTo(cell);
         boolean owned = worn || flag(rung, "owned");
         String name = str(rung, "name");
-        String change = worn ? "you" : str(rung, "delta");
+        String change = worn ? "you" : str(rung, "delta") + (flag(rung, "spec") ? " with the spec" : "");
         String price = owned ? "" : Gp.formatShort(id(rung, "price"));
         String with = str(rung, "with");
         String second = str(rung, worn ? "base2" : "delta2");

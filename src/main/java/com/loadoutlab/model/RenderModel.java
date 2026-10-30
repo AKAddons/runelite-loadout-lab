@@ -307,6 +307,7 @@ public class RenderModel {
             if (own) node.put("groupDelta", format("group %+.2f DPS", rung.dps - ladder.baseDps));
             if (ladder.mode == OptimizeMode.BALANCED) node.put("delta2", format("%+.2f taken/s", rung.dtps - ladder.baseDtps));
             node.put("gain", ladderGain(ladder, rung));
+            if (ladder.spec) node.put("spec", true);
             // Same result as the worn item - ranked by its better stats.
             node.put("same", Math.abs(dps - base) <= 1e-9 && Math.abs(rung.dtps - ladder.baseDtps) <= 1e-9);
             if (rung.with != null || rung.offhand != null) {

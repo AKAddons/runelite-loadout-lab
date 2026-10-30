@@ -105,6 +105,8 @@ public class OptimizerService {
         // "more" pages (ISS-01M5QD7PNMCMNRZD92RPRMHWRP, Andrew 2026-10-24: "an
         // option to 'show more' on the ladder to see more alternatives").
         public static final int MORE = 10;
+        // Priced with the spec (the ring slot): the hovers say so.
+        public boolean spec;
         // The steps past up/down, closest first - the pages after the strip.
         public List<Rung> upMore = List.of();
         public List<Rung> downMore = List.of();
@@ -234,6 +236,8 @@ public class OptimizerService {
         if (own != null && game != null && !emptyBest(result.owned)) result.beaten = optimizer.beatenSlots(dataset, own, game, result.owned.get(0));
         if (own != null && !emptyBest(result.owned)) result.hitDist = hitDist(dataset, own, result.owned.get(0));
         if (game != null && result.overallBest != null) result.gameHitDist = hitDist(dataset, game, result.overallBest);
+        result.swapNotes = avasNotes(result.bench);
+        result.gameSwapNotes = avasNotes(result.gameBench);
         return result;
     }
 
@@ -665,9 +669,16 @@ public class OptimizerService {
             result.modeTrade = modeTrade;
             result.protection = protection;
             result.gameProtection = gameProtection;
-            result.swapNotes = swapNotes;
-            result.gameSwapNotes = gameSwapNotes;
+            result.swapNotes.putAll(swapNotes);
+            result.gameSwapNotes.putAll(gameSwapNotes);
             if (ladders != null) {
+                if (spec != null && !ob.isEmpty()) {
+                    try {
+                        ringLadderWithSpec(ctx, ownedRequest, ob.get(0), spec, monster, specPin, ladders);
+                    } catch (RuntimeException ex) {
+                        log.warn("ring strip failed for {} {}", monster.name, style, ex);
+                    }
+                }
                 result.ladder = ladders;
                 if (spec != null) {
                     try {
@@ -833,6 +844,40 @@ public class OptimizerService {
             }
         }
         return ladders;
+    }
+
+    // The ring slot's ladder priced WITH the spec (ISS-01M65RVX7GAEXPRYHWW529ZQ19,
+    // Andrew 2026-10-30: "when i sim lightbearer i'm not seeing how it compares
+    // with my ring swaps"): each step's dps is its set plus what the spec adds
+    // with that ring on, less what it adds now, so the stat-less Lightbearer
+    // (doubled regen) stands against the dps rings and a worn Lightbearer's
+    // rivals show what they would cost. Each step hovers "with the spec".
+    void ringLadderWithSpec(ComputeContext ctx, OptimizationRequest request, DpsResult shown, SpecPick spec,
+        MonsterStats monster, Set<Integer> rt, Map<GearSlot, Ladder> ladders) {
+        if (request.pinnedFor(RING) != null || shown.loadout.get(RING) == null) return;
+        boolean scoresDamage = ctx.mode != MAX_DPS;
+        double baseDtps = incomingFor(monster, shown.loadout, ctx, request.style).totalDps;
+        Set<Integer> dreams = dreamsFor(ctx, monster);
+        var base = new Rung(shown.loadout.get(RING), shown.net, baseDtps, true, null);
+        List<DpsResult> steps = new ArrayList<>(optimizer.slotSwaps(ctx.dataset, request, shown, RING));
+        Loadout lb = lightbearerSwap(ctx.dataset, shown.loadout, singletonList(request), ctx.effectiveOwned);
+        DpsResult lbSet = lb == null ? null : new DpsCalculator().calculate(request, lb);
+        if (lbSet != null) steps.add(lbSet);
+        List<Rung> candidates = new ArrayList<>();
+        for (DpsResult swap : steps) {
+            SpecPick sp = bestSpec(ctx.dataset, request, swap, ctx.effectiveOwned, rt, rt != null);
+            GearItem item = swap.loadout.get(RING);
+            double dtps = scoresDamage ? incomingFor(monster, swap.loadout, ctx, request.style).totalDps : baseDtps;
+            var rung = new Rung(item, swap.net + (sp == null ? 0 : sp.dpsAdded) - spec.dpsAdded, dtps,
+                ctx.effectiveOwned.owns(item.id) || dreams.contains(item.id), null);
+            rung.set = swap;
+            candidates.add(rung);
+        }
+        Ladder ladder = rankSteps(ctx.mode, request.style, base, candidates, shown.net, baseDtps);
+        if (ladder != null) {
+            ladder.spec = true;
+            ladders.put(RING, ladder);
+        }
     }
 
     // The solo card's ladders, the set first made to wear its own owned
@@ -1304,6 +1349,15 @@ public class OptimizerService {
             }
         }
         return out;
+    }
+
+    // "retrieves the switch's arrows or bolts" on a carried Ava's device.
+    static Map<Integer, String> avasNotes(List<GearItem> bench) {
+        Map<Integer, String> notes = new HashMap<>();
+        for (GearItem g : bench) {
+            if (RangedAmmo.avasDevice(g)) notes.put(g.id, "retrieves the ranged switch's arrows or bolts");
+        }
+        return notes;
     }
 
     // The best 2-tick-on-rapid ranged weapon (speed 3: darts, knives, the
@@ -1784,7 +1838,13 @@ public class OptimizerService {
                     List<GearItem> items = new ArrayList<>();
                     items.add(weapon);
                     items.add(ammo);
-                    out.add(new SwapBundle(style, items, max(0, 2 - sf)));
+                    // The switch's Ava's device rides with arrows or bolts, so
+                    // the kit never prices it as one more dps swap (Andrew
+                    // 2026-10-30: "the assembler isn't suggested until like 6
+                    // swap items are added").
+                    GearItem cape = source.get(CAPE);
+                    if (RangedAmmo.retrievable(ammo) && RangedAmmo.avasDevice(cape) && !RangedAmmo.avasDevice(base.get(CAPE))) items.add(cape);
+                    out.add(new SwapBundle(style, items, max(0, items.size() - sf)));
                 }
             }
         }
