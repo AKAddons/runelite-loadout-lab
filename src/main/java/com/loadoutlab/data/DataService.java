@@ -40,6 +40,7 @@ public class DataService {
 
     public LoadoutData load() {
         List<GearItem> gear = priceChargedTwins(loadGear());
+        priceComponents(gear);
         List<MonsterStats> monsters = normalizeQuestVersions(loadMonsters());
         List<SpellStats> spells = loadSpells();
         Map<Integer, GearItem> gbi = new HashMap<>();
@@ -97,6 +98,21 @@ public class DataService {
         List<GearItem> out = new ArrayList<>(gear.size());
         for (GearItem item : gear) out.add(priced.getOrDefault(item.id, item));
         return out;
+    }
+
+    // What a task's price rule counts for what has no price of its own (wiki,
+    // Budget_Cutter: "this is not the case for the Slayer helmet or imbued items;
+    // the value of its components will be used instead"): "X (i)" is the cheapest
+    // tradeable X, every slayer helmet the cheapest tradeable Black mask, the one
+    // part worth counting (ISS-01M674YPVT5GFVSAT2PAK8RXS1).
+    static void priceComponents(List<GearItem> gear) {
+        Map<String, Integer> prices = new HashMap<>();
+        for (GearItem item : gear) if (item.tradeable && item.estimatedPrice != null) prices.merge(item.nameLower, item.getPriceOrZero(), Math::min);
+        for (GearItem item : gear) {
+            String name = item.nameLower;
+            String base = name.contains("slayer helmet") ? "black mask" : name.endsWith(" (i)") ? name.substring(0, name.length() - 4) : null;
+            if (base != null) item.componentPrice = prices.getOrDefault(base, 0);
+        }
     }
 
     // A weapon version that cannot attack as it is.

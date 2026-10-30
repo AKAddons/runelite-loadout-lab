@@ -44,7 +44,9 @@ public class Loadout {
         int[] off = new int[9];
         int[] def = new int[9];
         int[] bon = new int[9];
-        int totalCost = 0;
+        // Long, then capped: one capped price plus anything would wrap negative,
+        // which DpsResult shows as free.
+        long totalCost = 0;
         for (GearItem item : this.gear.values()) {
             if (item == null) continue;
             add(off, item.offensive);
@@ -55,7 +57,7 @@ public class Loadout {
         offensive = block(off);
         defensive = block(def);
         bonuses = block(bon);
-        cost = totalCost;
+        cost = (int) Math.min(Integer.MAX_VALUE, totalCost);
         worn = gear.values().toArray(new GearItem[0]);
     }
 

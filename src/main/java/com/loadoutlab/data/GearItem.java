@@ -60,6 +60,9 @@ public class GearItem {
     public final boolean demonbane;
     // Kilograms, from the corpus (negative for weight-reducing gear); set once at load.
     public double weight;
+    // What an imbued item or slayer helmet is made from, for a task's price
+    // rule alone (DataService.priceComponents); 0 = nothing to count.
+    int componentPrice;
 
     // Name markers by bit, assigned on first sight. marks = [markers
     // covered, bits...], rebuilt when asked a newer one: a bit test beat the
@@ -197,4 +200,6 @@ public class GearItem {
     }
 
     public int getPriceOrZero() { return estimatedPrice == null ? 0 : Math.max(0, estimatedPrice); }
+
+    public int getRulePrice() { return Math.max(getPriceOrZero(), componentPrice); }
 }

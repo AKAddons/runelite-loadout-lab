@@ -3066,7 +3066,10 @@ public class OptimizerService {
 
     // The shared Lightbearer machinery: find the ring, prove it available
     // under every request (excluded/requirements/owned-or-dreamed), and wear
-    // it into the set - null when the swap cannot apply. Callers layer their
+    // it into the set - null when the swap cannot apply, or when the set would
+    // break a request's rules: every caller adds this ring after the search
+    // that checked them (ISS-01M674YPVT5GFVSAT2PAK8RXS1, field report 2026-10-28:
+    // "gives gear that is greater than the maximum 2m"). Callers layer their
     // own pin/risk policy on top (the roster skips risk conservatively; the
     // single-mob arbitration prices it).
     static Loadout lightbearerSwap(LoadoutData dataset, Loadout shared, List<OptimizationRequest> reqs, OwnedItems owned) {
@@ -3086,7 +3089,9 @@ public class OptimizerService {
             dreamed |= req.isDream(l2.id);
         }
         if (owned != null && !owned.owns(l2.id) && !dreamed) return null;
-        return shared.with(RING, l2);
+        Loadout swapped = shared.with(RING, l2);
+        for (OptimizationRequest req : reqs) if (req.setRules != null && !req.setRules.holds(swapped)) return null;
+        return swapped;
     }
 
     // The trip time the top-ranked shared-spec option saves on these shown sets.

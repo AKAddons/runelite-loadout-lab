@@ -367,7 +367,7 @@ public class LoadoutOptimizer {
             // accuracy (found 2026-08-09: the roster golden halved at Zulrah
             // when the relocate-then-recoil chain dropped the quiver ammo).
             DpsResult swapped = bestSpellResult(request, result.loadout.with(candidate.slot, candidate), sc);
-            if (swapped != null && (best == null || swapped.net > best.net)) best = swapped.withPurchaseCost(result.purchaseCost + budgetCost(request, candidate));
+            if (swapped != null && (best == null || swapped.net > best.net)) best = swapped.withPurchaseCost((int) min(Integer.MAX_VALUE, (long) result.purchaseCost + budgetCost(request, candidate)));
         }
         return best == null ? result : best;
     }

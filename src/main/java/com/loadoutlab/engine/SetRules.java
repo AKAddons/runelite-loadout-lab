@@ -194,7 +194,7 @@ public class SetRules {
         StatBlock off = item.offensive, def = item.defensive, bon = item.bonuses;
         switch (stat) {
             case "weight": return item.weight;
-            case "price": return item.getPriceOrZero();
+            case "price": return item.getRulePrice();
             case "str": return bon.strength;
             case "ranged_str": return bon.rangedStrength;
             case "magic_str": return bon.magicDamage;
