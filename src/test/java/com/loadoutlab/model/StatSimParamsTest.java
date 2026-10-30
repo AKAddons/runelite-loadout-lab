@@ -2,7 +2,6 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.PlayerLevels;
 import org.junit.jupiter.api.BeforeAll;
@@ -87,22 +86,12 @@ class StatSimParamsTest {
 	}
 
 	@Test
-	@DisplayName("the live levels ride the params node as myLevels, and the report prints the sim only while it is on")
-	void liveLevelsAndTheReport() {
+	@DisplayName("the live levels ride the params node as myLevels")
+	void liveLevels() {
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state, (mob, p, onDone) -> {
 		}, new Link());
 		engine.setLevels(new PlayerLevels(70, 70, 70, 80, 85, 60, 80));
 		assertEquals("70/70/70/80/85/60/80", state.paramsNode().get("myLevels"));
-
-		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
-		String off = ReportBuilder.build("test", state, List.of(demon), List.of(Map.of()), 0,
-			Map.of(), null, null, List.of(), false, List.of(Map.of("id", demon.getId())), "", "");
-		assertFalse(off.contains("Stats:"), off);
-
-		assertTrue(engine.execute("sim-stats", stats(99, 0, 0, 0, 0, 0, 0, true)));
-		String on = ReportBuilder.build("test", state, List.of(demon), List.of(Map.of()), 0,
-			Map.of(), null, null, List.of(), false, List.of(Map.of("id", demon.getId())), "", "");
-		assertTrue(on.contains("Stats: simmed 99/70/70/80/85/60/80 + max cape"), on);
 	}
 }

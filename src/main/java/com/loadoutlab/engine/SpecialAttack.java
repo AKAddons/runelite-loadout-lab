@@ -137,9 +137,7 @@ public class SpecialAttack {
         // max hit" - hitChance and every damage roll collapse to their
         // caps. Without this, the rolls below would halve every spec's
         // value at the one place the game is built around spec dumping.
-        if (style == CombatStyle.MELEE && MonsterMechanics.isWardenCore(monster)) {
-            return coreMaxDamage(base, monster);
-        }
+        if (style == CombatStyle.MELEE && MonsterMechanics.isWardenCore(monster)) return coreMaxDamage(base, monster);
         long attackRoll = base.attackRoll;
         long defenceRoll = base.defenceRoll;
         double hitChance = RollMath.normalAccuracy( (long) (attackRoll * accuracyMultiplier), defenceRoll);
@@ -318,9 +316,7 @@ public class SpecialAttack {
      * off the target's MAGIC level, so it shines exactly where a DWH
      * cannot reach (the wiki's example: Zulrah's 300 Magic). */
     public int drainedDefence(MonsterStats monster, double specExpectedDamage) {
-        if (magicDrainFraction > 0) {
-            return max(0, monster.defence - (int) (monster.magic * magicDrainFraction));
-        }
+        if (magicDrainFraction > 0) return max(0, monster.defence - (int) (monster.magic * magicDrainFraction));
         return drainedDefence(monster.defence, specExpectedDamage);
     }
 

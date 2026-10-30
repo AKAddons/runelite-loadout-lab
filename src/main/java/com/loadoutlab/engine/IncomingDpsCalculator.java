@@ -336,9 +336,7 @@ public class IncomingDpsCalculator {
             int prayer = bestPrayer(dps, row);
             double heal = 0;
             for (int i = 0; i < kinds.length; i++) {
-                if (live[i] && healPerLand[i] > 0) {
-                    heal += land[i] * healPerLand[i] * hits[i] * shares[i] / (speeds[i] * 0.6) * through(i, prayer, row);
-                }
+                if (live[i] && healPerLand[i] > 0) heal += land[i] * healPerLand[i] * hits[i] * shares[i] / (speeds[i] * 0.6) * through(i, prayer, row);
             }
             return heal;
         }
@@ -652,9 +650,7 @@ public class IncomingDpsCalculator {
     public static Result calculate(MonsterStats monster, Loadout loadout, int defenceLevel, int ml, int antifireTier) {
         // Bracelet of ethereum (charged): revenants deal NO damage while it
         // is worn - an absolute rule that outranks every other model.
-        if (monster.isRevenantMonster() && wearsChargedEthereum(loadout)) {
-            return new Result(0, 0, null, List.of(), "Bracelet of ethereum blocks all revenant damage", FULL, List.of());
-        }
+        if (monster.isRevenantMonster() && wearsChargedEthereum(loadout)) return new Result(0, 0, null, List.of(), "Bracelet of ethereum blocks all revenant damage", FULL, List.of());
         // The wiki cannot price it yet: say why instead of a bare "?".
         String unpriced = BossIncomingOverrides.unpricedReason(monster);
         if (unpriced != null) return new Result(0, 0, null, List.of(), unpriced, NONE, List.of());

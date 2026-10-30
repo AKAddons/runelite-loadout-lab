@@ -37,9 +37,7 @@ public enum MultiTool {
         if ("chain".equals(kind)) return stack >= 2 ? RollMath.venatorFactor(maxHit) : 1;
         // Hallowfell (wiki passive): up to two more unique targets, each its
         // own accuracy roll at half the max hit, rounded down.
-        if ("cleave".equals(kind)) {
-            return maxHit <= 0 ? 1 : 1 + Math.min(Math.max(stack - 1, 0), 2) * (double) (maxHit / 2) / maxHit;
-        }
+        if ("cleave".equals(kind)) return maxHit <= 0 ? 1 : 1 + Math.min(Math.max(stack - 1, 0), 2) * (double) (maxHit / 2) / maxHit;
         return Math.max(1, Math.min(stack, AREA_CAP));
     }
 }

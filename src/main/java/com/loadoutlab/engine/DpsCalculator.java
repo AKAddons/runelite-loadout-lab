@@ -127,9 +127,7 @@ public class DpsCalculator {
             // the separating. This is what puts the Scorching bow ahead of
             // a melee demonbane of near-identical per-attack dps.
             int reach = request.style == MELEE ? meleeReachPenaltyTicks(request.monster) : 0;
-            if (reach > 0 && result.dps > 0) {
-                counted("vent spacing", "melee walks between the four vents" + " (+" + reach + " ticks per kill)");
-            }
+            if (reach > 0 && result.dps > 0) counted("vent spacing", "melee walks between the four vents" + " (+" + reach + " ticks per kill)");
             double interval = (result.attackSpeed + reach) * SECONDS_PER_TICK;
             if (isDemonbane(loadout.getWeapon())) {
                 int hp = max(1, request.monster.hitpoints);
@@ -190,9 +188,7 @@ public class DpsCalculator {
                 counted("verac's set", "only the 25% proc lands through the prayer");
                 double exp = 0.25 * normalExpectedHit(1.0, result.maxHit + 1);
                 result = result.withHitModel( exp / (result.attackSpeed * SECONDS_PER_TICK), 0.25, exp, result.maxHit + 1);
-            } else {
-                result = result.withHitModel(0, 0, 0, result.maxHit);
-            }
+            } else result = result.withHitModel(0, 0, 0, result.maxHit);
         }
         if (!counted.isEmpty()) result = result.withCountedBonuses(countedLines());
         return healed(request, loadout, result);
@@ -312,12 +308,8 @@ public class DpsCalculator {
                     * RollMath.expectedHitWithFlatArmour(accuracy, 0, secondRaw, fa);
         }
         if (wearing(loadout, "scythe of vitur")) {
-            if (request.monster.size >= 2) {
-                expected += expectedHitWithFlatArmour(accuracy, 0, rm / 2, fa);
-            }
-            if (request.monster.size >= 3) {
-                expected += expectedHitWithFlatArmour(accuracy, 0, rm / 4, fa);
-            }
+            if (request.monster.size >= 2) expected += expectedHitWithFlatArmour(accuracy, 0, rm / 2, fa);
+            if (request.monster.size >= 3) expected += expectedHitWithFlatArmour(accuracy, 0, rm / 4, fa);
         }
         // Keris partisan of the sun (official calc): inside the Tombs it rolls
         // accuracy x5/4 below a quarter of the target's hitpoints - the last
@@ -434,9 +426,7 @@ public class DpsCalculator {
             counted("seeking arrows", "minimum hit 3");
             expected += accuracy * 5.0 / (rrm + 1);
         }
-        if (bow.startsWith("dark bow") || g && !"uncharged".equals(loadout.getWeapon().versionLower)) {
-            expected *= 2;
-        }
+        if (bow.startsWith("dark bow") || g && !"uncharged".equals(loadout.getWeapon().versionLower)) expected *= 2;
         // Eclipse: all three eclipse moon pieces + the atlatl (broken counts,
         // same as the other moon sets).
         if (wearsAll(loadout, ECLIPSE_MOON) && !request.monster.hasAttribute("burn_immune")) {
@@ -666,9 +656,7 @@ public class DpsCalculator {
         int bonus;
         if ("ranged".equals(attackType)) {
             bonus = monster.defensive.get(rangedDefenceType(weapon));
-        } else {
-            bonus = monster.defensive.get(attackType);
-        }
+        } else bonus = monster.defensive.get(attackType);
         long roll = defenceRoll(level + 9, bonus);
         int invocation = monster.getToaInvocationLevel();
         if (invocation > 0) {
@@ -692,9 +680,7 @@ public class DpsCalculator {
     static int effectiveRangedStrength(Loadout loadout) {
         int rs = loadout.bonuses.rangedStrength;
         GearItem ammo = loadout.get(AMMO);
-        if (ammo != null && ammo.bonuses.rangedStrength > 0 && !RangedAmmo.strengthApplies(ammo, loadout.getWeapon())) {
-            rs -= ammo.bonuses.rangedStrength;
-        }
+        if (ammo != null && ammo.bonuses.rangedStrength > 0 && !RangedAmmo.strengthApplies(ammo, loadout.getWeapon())) rs -= ammo.bonuses.rangedStrength;
         return rs;
     }
 
@@ -773,9 +759,7 @@ public class DpsCalculator {
         roll = weakness(request, roll, br, "% of base accuracy");
         // Only the water tome adds accuracy; fire and earth boost damage alone
         // (the three wiki pages, 2026-10-19; Kendyy's follow-up).
-        if (tomeMatches(request, loadout) && "water".equals(request.spell.element)) {
-            roll = step(roll, loadout.get(SHIELD).nameLower, "accuracy", Factor.PLUS_10);
-        }
+        if (tomeMatches(request, loadout) && "water".equals(request.spell.element)) roll = step(roll, loadout.get(SHIELD).nameLower, "accuracy", Factor.PLUS_10);
         return demonbaneSpell(request, loadout, roll, 40, 80, "accuracy");
     }
 
@@ -851,9 +835,7 @@ public class DpsCalculator {
         }
         // The tome multiplies the whole max hit and roll, weakness included
         // (official calc, vector watersurge-tome-drake 2026-10-18).
-        if (tomeMatches(request, loadout)) {
-            mh = (int) step(mh, loadout.get(SHIELD).nameLower, "damage", Factor.PLUS_10);
-        }
+        if (tomeMatches(request, loadout)) mh = (int) step(mh, loadout.get(SHIELD).nameLower, "damage", Factor.PLUS_10);
         return (int) demonbaneSpell(request, loadout, mh, 25, 50, "damage");
     }
 
@@ -931,9 +913,7 @@ public class DpsCalculator {
     static int setWeight(Loadout loadout, Map<String, Integer> weights, boolean active) {
         int total = 0;
         for (var piece : weights.entrySet()) {
-            if (loadout.wears(piece.getKey(), active)) {
-                total += piece.getValue();
-            }
+            if (loadout.wears(piece.getKey(), active)) total += piece.getValue();
         }
         return total;
     }
@@ -1115,9 +1095,7 @@ public class DpsCalculator {
      */
     long salveOrSlayer(OptimizationRequest request, Loadout loadout, long value, String what, CombatStyle style, boolean a2) {
         boolean melee = style == MELEE;
-        if (isRevenant(request) && wearing(loadout, "amulet of avarice")) {
-            return step(value, "amulet of avarice", what, Factor.PLUS_20);
-        }
+        if (isRevenant(request) && wearing(loadout, "amulet of avarice")) return step(value, "amulet of avarice", what, Factor.PLUS_20);
         if (request.monster.hasAttribute("undead")) {
             if (wearing(loadout, "salve amulet(ei)")) {
                 // Named WITHOUT a space, unlike "salve amulet (e)" - a contains
@@ -1128,18 +1106,12 @@ public class DpsCalculator {
                 // The unimbued (e) is a melee-only 20%; ranged and magic fall to salve(i).
                 return step(value, "salve amulet (e)", what, Factor.PLUS_20);
             }
-            if (!melee && wearing(loadout, "salve amulet(i)")) {
-                return step(value, "salve amulet(i)", what, style == MAGIC ? Factor.PLUS_15 : Factor.PLUS_16_7);
-            }
-            if ((melee || a2) && wearing(loadout, "salve amulet")) {
-                return step(value, "salve amulet", what, Factor.PLUS_16_7);
-            }
+            if (!melee && wearing(loadout, "salve amulet(i)")) return step(value, "salve amulet(i)", what, style == MAGIC ? Factor.PLUS_15 : Factor.PLUS_16_7);
+            if ((melee || a2) && wearing(loadout, "salve amulet")) return step(value, "salve amulet", what, Factor.PLUS_16_7);
         }
         if (isSlayerTaskEligible(request)) {
             GearItem head = slayerHead(loadout, !melee);
-            if (head != null) {
-                return step(value, head.nameLower, what, melee ? Factor.PLUS_16_7 : Factor.PLUS_15);
-            }
+            if (head != null) return step(value, head.nameLower, what, melee ? Factor.PLUS_16_7 : Factor.PLUS_15);
             if (a2 && wearing(loadout, "black mask")) return step(value, "black mask", what, Factor.PLUS_16_7);
         }
         return value;
@@ -1217,9 +1189,7 @@ public class DpsCalculator {
         } else if ("standard".equals(book) && ("Bind".equalsIgnoreCase(sn)
             || "Snare".equalsIgnoreCase(sn) || "Entangle".equalsIgnoreCase(sn))) {
             chance = 0.2;
-        } else {
-            return 0;
-        }
+        } else return 0;
         PlayerLevels levels = request.getLevels();
         int effAttack = effectiveLevel(levels.attack, 1.0, 0);
         long meleeRoll = attackRoll(effAttack, loadout.offensive.getAttackBonus("stab"));

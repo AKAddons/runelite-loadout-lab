@@ -68,9 +68,7 @@ public class MonsterGroups {
                             for (JsonElement e : immuneTo.getAsJsonArray()) {
                                 styles.add(lower(e.getAsString()));
                             }
-                        } else {
-                            styles.add(lower(immuneTo.getAsString()));
-                        }
+                        } else styles.add(lower(immuneTo.getAsString()));
                         int mask = 0;
                         List<String> attributes = new ArrayList<>();
                         if (member.has("prayerImmunity") && member.get("prayerImmunity").getAsBoolean()) {
@@ -96,9 +94,7 @@ public class MonsterGroups {
                         }
                         resolved = resolved.withoutAttributes( MonsterStats.SYNTHETIC_ID_BASE + resolved.id * 10 + 8,
                             member.get("label").getAsString(), removed);
-                    } else if (member.has("label")) {
-                        resolved = resolved.withVersion(member.get("label").getAsString());
-                    }
+                    } else if (member.has("label")) resolved = resolved.withVersion(member.get("label").getAsString());
                     if (member.has("nick")) resolved = resolved.withDisplayName(member.get("nick").getAsString());
                     // Raid stipulations (Andrew 2026-09-10): a kit weight (the
                     // fight that decides the raid) and a spec weapon family.
@@ -112,9 +108,7 @@ public class MonsterGroups {
                     mobs.add(resolved);
                 }
                 List<String> aliases = new ArrayList<>();
-                if (row.has("aliases")) {
-                    for (JsonElement a : row.getAsJsonArray("aliases")) aliases.add(lower(a.getAsString()));
-                }
+                if (row.has("aliases")) for (JsonElement a : row.getAsJsonArray("aliases")) aliases.add(lower(a.getAsString()));
                 if (!mobs.isEmpty()) {
                     groups.add(new MonsterGroup(name, note, mobs,
                         aliases, integer(row, "inventory", 0),

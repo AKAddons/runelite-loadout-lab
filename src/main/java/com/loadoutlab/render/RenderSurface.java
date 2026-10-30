@@ -21,7 +21,6 @@ import net.runelite.api.SpriteID;
 import javax.swing.event.DocumentListener;
 import java.util.regex.Pattern;
 import java.awt.image.BufferedImage;
-import java.awt.datatransfer.StringSelection;
 import static java.awt.BorderLayout.*;
 
 /**
@@ -956,9 +955,7 @@ public class RenderSurface {
             if (aw && ae) {
                 chipRow.add(pill("Wildy", true, true, "Wilderness-exclusive - always in", () -> {
                     }));
-            } else if (aw) {
-                chipRow.add(paramChip("Wildy", "inWilderness", flag(params, "inWilderness")));
-            }
+            } else if (aw) chipRow.add(paramChip("Wildy", "inWilderness", flag(params, "inWilderness")));
             // GWD (ISS-01M5G9KPDQWBR014Z10F79B29T): the Ancient chip adds a
             // Zaros item to the protection kit - the Nex respite area's banker.
             if (anyGwd) {
@@ -1000,9 +997,7 @@ public class RenderSurface {
                             commands.set("multiView", true);
                         } else if (!last) {
                             commands.set("multiStack", 9);
-                        } else {
-                            commands.set("multiView", false);
-                        }
+                        } else commands.set("multiView", false);
                     }));
             }
             if (anyMob(page, m -> flag(m, "invocationScaled"))) {
@@ -1026,9 +1021,7 @@ public class RenderSurface {
                 il.setText("Inv " + invSlider.getValue());
                 // Recompute only when the drag settles, and only on a real
                 // change - a slider fires continuously.
-                if (!invSlider.getValueIsAdjusting() && invSlider.getValue() != swaps) {
-                    commands.set("maxSwaps", invSlider.getValue());
-                }
+                if (!invSlider.getValueIsAdjusting() && invSlider.getValue() != swaps) commands.set("maxSwaps", invSlider.getValue());
             });
             ib.add(invSlider, CENTER);
             ib.setBorder(createEmptyBorder(2, 4, 2, 4));
@@ -1103,15 +1096,11 @@ public class RenderSurface {
                     commands.send("set-param", args);
                 }));
                 // High Risk worlds disable Protect Item (wiki).
-                if (p < 2) {
-                    chipRow.add(paramChip("Protect item", "protectItem", flag(params, "protectItem")));
-                }
+                if (p < 2) chipRow.add(paramChip("Protect item", "protectItem", flag(params, "protectItem")));
             }
             addMobButton = chip("+ Mob", text("chip.addmob.tip"), () -> {
                 String query = JOptionPane.showInputDialog(root, "Add a monster to this result:", "Add mob", JOptionPane.PLAIN_MESSAGE);
-                if (query != null && !query.trim().isEmpty()) {
-                    commands.send("add-mob", Map.of("query", query.trim()));
-                }
+                if (query != null && !query.trim().isEmpty()) commands.send("add-mob", Map.of("query", query.trim()));
             });
             addMobButton.setContentAreaFilled(false);
             addMobButton.setOpaque(false);
@@ -1132,16 +1121,7 @@ public class RenderSurface {
         pathRow.removeAll();
         pathRow.setVisible(flag(page, "pathable"));
         pathRow.add(chip("Path here", "Shortest Path: walk to the nearest spawn", () -> commands.send("path-to")));
-        String rt = str(page, "reportText");
-        if (rt != null) {
-            footerRow.add(chip("Copy report", "Copy the shown result as text", () -> {
-                try {
-                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
-                        new StringSelection(rt), null);
-                } catch (IllegalStateException ex) {
-                    // Clipboard busy - the classic panel guarded the same way.
-                }
-            }));
+        if (!list(page, "entries").isEmpty()) {
             // The exact-setup cross-check (field ask 2026-08-21: it lives
             // with the link-outs, not the bank tools): opens the VIEWED
             // setup - the engine derives tab and side from the view state.

@@ -26,9 +26,7 @@ public class SupplyDefaultsStore extends ScopedMapStore<String, String> {
     public synchronized void setChoice(String category, String choice) {
         if (choice == null || choice.isEmpty() || DETECT_BEST.equals(choice)) {
             items.remove(category);
-        } else {
-            items.put(category, choice);
-        }
+        } else items.put(category, choice);
         save();
     }
 }

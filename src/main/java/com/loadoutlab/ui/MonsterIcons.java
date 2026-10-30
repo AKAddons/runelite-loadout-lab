@@ -82,9 +82,7 @@ public class MonsterIcons {
             } catch (Exception e) { failed.add(lower); }
             List<Runnable> waiters;
             synchronized (waiting) { waiters = waiting.remove(cacheKey); }
-            if (waiters != null && !waiters.isEmpty()) {
-                SwingUtilities.invokeLater(() -> waiters.forEach(Runnable::run));
-            }
+            if (waiters != null && !waiters.isEmpty()) SwingUtilities.invokeLater(() -> waiters.forEach(Runnable::run));
         });
         return null;
     }
@@ -144,9 +142,7 @@ public class MonsterIcons {
                 String bare = key(name, "");
                 String plain = name + ".png";
                 String held = local.get(bare);
-                if (held == null || (image.equalsIgnoreCase(plain) && !held.equalsIgnoreCase(plain))) {
-                    local.put(bare, image);
-                }
+                if (held == null || (image.equalsIgnoreCase(plain) && !held.equalsIgnoreCase(plain))) local.put(bare, image);
             }
         } catch (Exception e) {
             // Fail soft, like every other bundled table: no index means no

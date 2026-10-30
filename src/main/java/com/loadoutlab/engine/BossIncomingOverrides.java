@@ -95,9 +95,7 @@ public class BossIncomingOverrides {
                 for (var why : entry.getValue().getAsJsonObject().entrySet()) {
                     UNPRICED.put(Names.lower(why.getKey()), why.getValue().getAsString());
                 }
-            } else if (!entry.getKey().startsWith("_")) {
-                OVERRIDES.put(Names.lower(entry.getKey()), parse(entry.getValue().getAsJsonObject()));
-            }
+            } else if (!entry.getKey().startsWith("_")) OVERRIDES.put(Names.lower(entry.getKey()), parse(entry.getValue().getAsJsonObject()));
         }
     }
 

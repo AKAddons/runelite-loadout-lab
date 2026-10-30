@@ -37,9 +37,7 @@ class BankLayout {
             Object all = supply.get("ids");
             if (all instanceof List && !((List<?>) all).isEmpty()) {
                 for (Object o : (List<?>) all) ids.add(((Number) o).intValue());
-            } else {
-                ids.add(id(supply, "itemId"));
-            }
+            } else ids.add(id(supply, "itemId"));
         }
         for (Map item : list(mob, "mobFilters")) ids.add(id(item, "id"));
         List<Map> out = new ArrayList<>();

@@ -181,9 +181,7 @@ public class PageState {
                 String mine = operator(value, str("cannon" + (i + 1) + "Material"));
                 params.put(param, mine);
                 String other = "cannon" + (2 - i) + "Operator";
-                if ("you".equals(mine) && "you".equals(params.get(other))) {
-                    params.put(other, raiseCrewToGate("crew1", str("cannon" + (2 - i) + "Material")));
-                }
+                if ("you".equals(mine) && "you".equals(params.get(other))) params.put(other, raiseCrewToGate("crew1", str("cannon" + (2 - i) + "Material")));
                 return true;
             }
             case "shipKeel":
@@ -295,9 +293,7 @@ public class PageState {
         Map<CombatStyle, String> picks = prayer ? prayerPicks : boostPicks;
         if (value == null) {
             picks.remove(style);
-        } else {
-            picks.put(style, value);
-        }
+        } else picks.put(style, value);
     }
 
     /** The picked combat achievement tasks ("161,72"), in pick order. */

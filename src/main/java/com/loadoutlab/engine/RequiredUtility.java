@@ -46,9 +46,7 @@ public class RequiredUtility {
         List<GearItem> result = new ArrayList<>();
         for (var entry : RECOIL_ACCESS.entrySet()) {
             GearItem item = data.getGear(entry.getKey());
-            if (item == null || request.isExcluded(item.id) || !request.requirementProfile.canEquip(item.requirements)) {
-                continue;
-            }
+            if (item == null || request.isExcluded(item.id) || !request.requirementProfile.canEquip(item.requirements)) continue;
             boolean accessible = request.candidateMode == CandidateMode.ALL_STANDARD
                 || request.ownedItems.owns(entry.getKey()) || request.ownedItems.owns(entry.getValue())
                 || request.isDream(entry.getKey());

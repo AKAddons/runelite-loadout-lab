@@ -51,9 +51,6 @@ class GroupSpellbookPageTest {
 			assertEquals(reason, mob.get("fightBookReason"), mob.get("name") + " plate carries the reason");
 		}
 		assertFalse(entry.containsKey("thralls"), "no thrall fold on a standard-book raid");
-		String report = String.valueOf(page.get("reportText"));
-		assertTrue(report.contains("Group spellbook: standard"), report);
-		assertTrue(report.contains(reason), report);
 	}
 
 	@Test

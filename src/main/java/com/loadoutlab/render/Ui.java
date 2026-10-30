@@ -61,9 +61,7 @@ class Ui {
             if (in != null) {
                 for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\n")) {
                     int tab = line.indexOf('\t');
-                    if (tab > 0 && !line.startsWith("#")) {
-                        out.put(line.substring(0, tab), line.substring(tab + 1).trim());
-                    }
+                    if (tab > 0 && !line.startsWith("#")) out.put(line.substring(0, tab), line.substring(tab + 1).trim());
                 }
             }
         } catch (IOException ignored) {

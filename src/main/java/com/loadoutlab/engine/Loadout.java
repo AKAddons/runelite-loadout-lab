@@ -96,9 +96,7 @@ public class Loadout {
         EnumMap<GearSlot, GearItem> copy = copyOf(gear);
         if (item == null) {
             copy.remove(slot);
-        } else {
-            copy.put(slot, item);
-        }
+        } else copy.put(slot, item);
         var out = new Loadout(copy, true);
         out.quiverAmmo = quiverAmmo;
         return out;

@@ -40,9 +40,7 @@ public class DataService {
             QUEST_TERMS.add(terms);
             QUEST_NAMES.add(row.get("quest").getAsString());
         }
-        if (SPELL_LEVELS.isEmpty() || SLAYER_CONTAINS.isEmpty() || SLAYER_STARTS_WITH.isEmpty() || QUEST_TERMS.isEmpty()) {
-            throw new IllegalStateException("Empty table in " + NAME_RULES_RESOURCE);
-        }
+        if (SPELL_LEVELS.isEmpty() || SLAYER_CONTAINS.isEmpty() || SLAYER_STARTS_WITH.isEmpty() || QUEST_TERMS.isEmpty()) throw new IllegalStateException("Empty table in " + NAME_RULES_RESOURCE);
     }
 
     public LoadoutData load() {
@@ -68,9 +66,7 @@ public class DataService {
             if (variant != base) aliases.put(variant, base);
         }
         for (var twin : chargedTwins(gear).entrySet()) {
-            if (!aliases.containsKey(twin.getKey().id)) {
-                aliases.put(twin.getKey().id, aliases.getOrDefault(twin.getValue().id, twin.getValue().id));
-            }
+            if (!aliases.containsKey(twin.getKey().id)) aliases.put(twin.getKey().id, aliases.getOrDefault(twin.getValue().id, twin.getValue().id));
         }
         return aliases;
     }
@@ -80,18 +76,14 @@ public class DataService {
     static Map<GearItem, GearItem> chargedTwins(List<GearItem> gear) {
         Map<String, List<GearItem>> weapons = new HashMap<>();
         for (GearItem item : gear) {
-            if (item.slot == GearSlot.WEAPON) {
-                weapons.computeIfAbsent(item.nameLower, k -> new ArrayList<>()).add(item);
-            }
+            if (item.slot == GearSlot.WEAPON) weapons.computeIfAbsent(item.nameLower, k -> new ArrayList<>()).add(item);
         }
         Map<GearItem, GearItem> twins = new HashMap<>();
         for (List<GearItem> family : weapons.values()) {
             GearItem charged = null;
             for (String want : new String[]{"charged", "active", "normal", "fixed", "regular", ""}) {
                 for (GearItem item : family) {
-                    if (charged == null && !deadVersion(item) && (want.isEmpty() || item.versionLower.equals(want))) {
-                        charged = item;
-                    }
+                    if (charged == null && !deadVersion(item) && (want.isEmpty() || item.versionLower.equals(want))) charged = item;
                 }
             }
             for (GearItem item : family) {
@@ -109,9 +101,7 @@ public class DataService {
         for (var twin : chargedTwins(gear).entrySet()) {
             GearItem dead = twin.getKey();
             GearItem charged = twin.getValue();
-            if (dead.tradeable && dead.estimatedPrice != null && (!charged.tradeable || charged.estimatedPrice == null)) {
-                priced.putIfAbsent(charged.id, charged.priced(dead.estimatedPrice));
-            }
+            if (dead.tradeable && dead.estimatedPrice != null && (!charged.tradeable || charged.estimatedPrice == null)) priced.putIfAbsent(charged.id, charged.priced(dead.estimatedPrice));
         }
         List<GearItem> out = new ArrayList<>(gear.size());
         for (GearItem item : gear) out.add(priced.getOrDefault(item.id, item));
@@ -202,9 +192,7 @@ public class DataService {
             JsonObject skills = object(row, "skills");
             Map<String, Integer> levels = new LinkedHashMap<>();
             for (var entry : skills.entrySet()) {
-                if (!entry.getValue().isJsonNull()) {
-                    levels.put(entry.getKey(), Math.max(1, entry.getValue().getAsInt()));
-                }
+                if (!entry.getValue().isJsonNull()) levels.put(entry.getKey(), Math.max(1, entry.getValue().getAsInt()));
             }
             if (!levels.isEmpty()) result.put(integer(row, "id", 0), levels);
         }
@@ -300,9 +288,7 @@ public class DataService {
             // Emit the HIGHEST-LEVEL spawn of each collapsed group, so the
             // offensive sheet (used for incoming dps) matches the combat
             // level the label displays.
-            if (integer(row, "level", 0) != mlbg.get(groupKey) || !emitted.add(groupKey)) {
-                continue;
-            }
+            if (integer(row, "level", 0) != mlbg.get(groupKey) || !emitted.add(groupKey)) continue;
             boolean distinctVersions = skbn.get(nk).size() > 1;
             JsonObject skills = object(row, "skills");
             JsonObject offensive = object(row, "offensive");
@@ -327,9 +313,7 @@ public class DataService {
             // until it falls below ~980 hitpoints"; field report 2026-08-20:
             // Far recommended a melee set). The corpus carries no attribute
             // for it, so the marker rides here like burn_immune.
-            if ("Maggot King".equals(string(row, "name")) && "Far".equalsIgnoreCase(string(row, "version"))) {
-                attributes.add("immune_melee");
-            }
+            if ("Maggot King".equals(string(row, "name")) && "Far".equalsIgnoreCase(string(row, "version"))) attributes.add("immune_melee");
 
             // The ejected core is a 1x1 target - the wiki row carries the
             // Warden's 5x5 frame, which handed the crystal halberd's sweep a

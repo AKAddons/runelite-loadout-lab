@@ -252,9 +252,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
             client.createMenuEntry(1) .setOption("Search in Loadout Lab") .setTarget(entry.getTarget())
                 .setType(MenuAction.RUNELITE) .onClick(e -> invokeLater(() -> {
                     CommandEngine engine = commandEngine;
-                    if (engine != null && engine.execute("select", Map.of("query", name))) {
-                        clientToolbar.openPanel(navButton);
-                    }
+                    if (engine != null && engine.execute("select", Map.of("query", name))) clientToolbar.openPanel(navButton);
                 }));
             return; // one entry, even when several rows reference the NPC
         }
@@ -337,8 +335,6 @@ import static com.loadoutlab.engine.PlayerLevels.*;
                 // The slot ladder's "how to get it" opens Not Enough Runes.
                 commandEngine.setNerLink(this::nerPresent, this::openNer);
                 commandEngine.setPathLink(this::pathPresent, this::openPath);
-                detectSetups();
-                commandEngine.setSetupLink(() -> setupsReady, this::saveSetup);
                 // Demonic Offering (ISS-01M5TQ977R0MXBMSQ3VBHS29GB): members, 84 Magic, A Kingdom Divided.
                 // The master scroll book (ISS-01M5VDZXT4W4D5DP468R5R7NSW): a scroll owned, but not loose.
                 commandEngine.setInScrollBook(id -> PotionStorage.isScroll(id) && ledger != null
@@ -400,9 +396,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
                                         seeds.put(key, Integer.parseInt(saved));
                                     } catch (NumberFormatException ignored) {
                                     }
-                                } else {
-                                    seeds.put(key, saved);
-                                }
+                                } else seeds.put(key, saved);
                             }
                         }
                     }
@@ -411,7 +405,6 @@ import static com.loadoutlab.engine.PlayerLevels.*;
                 // The chips exist before the first search (idle page).
                 commandEngine.publishIdle();
                 clientThread.invokeLater(() -> commandEngine.setLiveSpellbook(spellbookName( client.getVarbitValue(SPELLBOOK))));
-                commandEngine.setCoreVersion(PluginVersion.VERSION);
                 // The network features (individually reviewable): the
                 // wiki-calc shortlink is strictly CLICK-initiated; the
                 // monster thumbnails are config-gated (Connections).
@@ -482,9 +475,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
                     public void toggleAlwaysFilter(int ii) {
                         if (alwaysFilter.all().containsKey(ii)) {
                             alwaysFilter.remove(ii);
-                        } else {
-                            alwaysFilter.add(ii, itemLabel(ii));
-                        }
+                        } else alwaysFilter.add(ii, itemLabel(ii));
                     }
 
                     public void showInBank(Set<Integer> itemIds) { setBankHighlight(itemIds); }
@@ -844,9 +835,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
             // and the full search re-ran each time) - one recompute, five
             // quiet ticks after the churn stops.
             ledgerRecomputeTicks = 5;
-        } else {
-            tickLedgerDebounce();
-        }
+        } else tickLedgerDebounce();
     }
 
     void tickLedgerDebounce() {
@@ -874,9 +863,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
     static Map<Integer, Integer> itemsOf(ItemContainer container) {
         Map<Integer, Integer> items = new HashMap<>();
         for (Item item : container.getItems()) {
-            if (item.getId() > 0 && item.getQuantity() > 0) {
-                items.merge(item.getId(), item.getQuantity(), Integer::sum);
-            }
+            if (item.getId() > 0 && item.getQuantity() > 0) items.merge(item.getId(), item.getQuantity(), Integer::sum);
         }
         return items;
     }
@@ -998,9 +985,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
         origins.put("STASH", ledger.snapshot(STASH));
         Map<Integer, Integer> cargo = new HashMap<>();
         for (Source hold : Source.values()) {
-            if (hold.name().startsWith("CARGO_HOLD")) {
-                ledger.snapshot(hold).forEach((id, n) -> cargo.merge(id, n, Integer::sum));
-            }
+            if (hold.name().startsWith("CARGO_HOLD")) ledger.snapshot(hold).forEach((id, n) -> cargo.merge(id, n, Integer::sum));
         }
         origins.put("cargo hold", cargo);
         origins.put("potion storage or scroll book", potionStorage);
@@ -1206,28 +1191,6 @@ import static com.loadoutlab.engine.PlayerLevels.*;
 
     boolean pathPresent() { return pluginEnabled("Shortest Path"); }
 
-    /** Inventory Setups with add-setup (ISS-01M5V8P2430MQ61C5QKHHRQR6Z): its get-setups reply
-     * reports API version 2+. Asked once per plugin change. */
-    volatile boolean setupsReady;
-
-    void detectSetups() {
-        Map data = JsonResources.map("setups", new ArrayList<>());
-        if (pluginEnabled("Inventory Setups")) eventBus.post(new PluginMessage("inventory-setups", "get-setups", data));
-        setupsReady = data.get("version") instanceof Integer && (Integer) data.get("version") >= 2;
-    }
-
-    /** The shown card as a new setup in the "Loadout Lab" section, on the client
-     * thread (stackability; the saved name, " (2)" when taken, comes back in data). */
-    void saveSetup(Map a) {
-        clientThread.invokeLater(() -> {
-            var data = SetupExport.payload((String) a.get("setup"), (Map<String, Integer>) a.get("worn"),
-                (List<int[]>) a.get("stacks"), (List<Integer>) a.get("extra"), (Map<Integer, Integer>) a.get("pouch"),
-                id -> itemManager.getItemComposition(id).isStackable());
-            eventBus.post(new PluginMessage("inventory-setups", "add-setup", data));
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Loadout Lab saved " + data.get("setup") + " to Inventory Setups.", null);
-        });
-    }
-
     /** Walk to a mob with Shortest Path (Skretzo/shortest-path: "path" {target:
      * a Collection of its packed points, the nearest walked to; no start =
      * you}), posted on the client thread, where it reads your location. The
@@ -1248,8 +1211,6 @@ import static com.loadoutlab.engine.PlayerLevels.*;
             invokeLater(() -> {
                 engine.setNerLink(this::nerPresent, this::openNer);
                 engine.setPathLink(this::pathPresent, this::openPath);
-                detectSetups();
-                engine.setSetupLink(() -> setupsReady, this::saveSetup);
             });
         }
     }
@@ -1361,9 +1322,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
      * NOTHING (no filter registered yet; field bug 2026-07-21). Forgotten
      * whenever a session starts and whenever the filter clears. */
     void forgetRememberedTab() {
-        if (BANK_TAG.equals(configManager.getConfiguration("banktags", "tab"))) {
-            configManager.setConfiguration("banktags", "tab", "");
-        }
+        if (BANK_TAG.equals(configManager.getConfiguration("banktags", "tab"))) configManager.setConfiguration("banktags", "tab", "");
     }
 
     /** Re-assert the real tab on every bank build while the filter is on.
@@ -1376,9 +1335,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
 
     @Subscribe(priority = -1)
     public void onScriptPreFired(ScriptPreFired event) {
-        if (event.getScriptId() != ScriptID.BANKMAIN_FINISHBUILDING || !BANK_TAG.equals(bankTagsService.getActiveTag())) {
-            return;
-        }
+        if (event.getScriptId() != ScriptID.BANKMAIN_FINISHBUILDING || !BANK_TAG.equals(bankTagsService.getActiveTag())) return;
         if (bankFilter == null) {
             // A remembered-tab ghost: our tag is open with no filter
             // registered - it shows an empty bank (field bug 2026-07-21).
@@ -1390,9 +1347,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
 
     @Subscribe(priority = -0.5f)
     public void onScriptPostFired(ScriptPostFired event) {
-        if (event.getScriptId() == ScriptID.BANKMAIN_BUILD && bankFilter != null && BANK_TAG.equals(bankTagsService.getActiveTag())) {
-            ensureBankTagTab();
-        }
+        if (event.getScriptId() == ScriptID.BANKMAIN_BUILD && bankFilter != null && BANK_TAG.equals(bankTagsService.getActiveTag())) ensureBankTagTab();
     }
 
     /** Roster mirror of compute: same client-thread staging, then

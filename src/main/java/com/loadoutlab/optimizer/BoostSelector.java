@@ -79,9 +79,7 @@ public class BoostSelector {
         // never assumed, so a low-level account sees the numbers it can
         // actually reach today.
         for (String name : LADDERS.getOrDefault(style, new String[0])) {
-            if (!(noHearts && name.endsWith("_HEART")) && ownsAny(owned, ids(name))) {
-                return BoostProfile.valueOf(name);
-            }
+            if (!(noHearts && name.endsWith("_HEART")) && ownsAny(owned, ids(name))) return BoostProfile.valueOf(name);
         }
         return NONE;
     }

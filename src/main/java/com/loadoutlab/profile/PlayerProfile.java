@@ -42,9 +42,7 @@ public class PlayerProfile {
         // Deep-copied on the constructing thread: the export writer runs
         // off-thread while the client keeps mutating the live snapshots.
         var copy = new LinkedHashMap<String, Map<Integer, Integer>>();
-        if (ownedBySource != null) {
-            for (var e : ownedBySource.entrySet()) copy.put(e.getKey(), Map.copyOf(e.getValue()));
-        }
+        if (ownedBySource != null) for (var e : ownedBySource.entrySet()) copy.put(e.getKey(), Map.copyOf(e.getValue()));
         this.ownedBySource = copy;
     }
 

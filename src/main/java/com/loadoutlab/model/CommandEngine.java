@@ -440,9 +440,7 @@ public class CommandEngine {
                     }
                     if (remaining.size() == 1) {
                         state.select(remaining.get(0));
-                    } else {
-                        state.selectRoster(remaining, "Custom roster", false);
-                    }
+                    } else state.selectRoster(remaining, "Custom roster", false);
                     recompute();
                     return true;
                 }, () -> {
@@ -504,12 +502,6 @@ public class CommandEngine {
                 Integer itemId = intArg(args, "itemId");
                 if (itemId == null || !nerAvailable.getAsBoolean()) return false;
                 nerOpen.accept(itemId);
-                return true;
-            }
-            case "save-setup": {
-                // A link out to Inventory Setups - never recorded in history.
-                if (!setupsAvailable.getAsBoolean()) return false;
-                setupSave.accept(args);
                 return true;
             }
             case "path-to": {
@@ -637,9 +629,7 @@ public class CommandEngine {
                     if (!exclusion && !dropped.isEmpty()) {
                         dropped.forEach((mi, pins) -> restorePins(ops, mi, id, pins));
                         dropped.clear();
-                    } else if (!exclusion && mob != null) {
-                        dropped.put(mob.id, dropPinsIfNotYours(ops, mob.id, id));
-                    }
+                    } else if (!exclusion && mob != null) dropped.put(mob.id, dropPinsIfNotYours(ops, mob.id, id));
                     refreshAfterStoreToggle();
                     return true;
                 };
@@ -689,9 +679,7 @@ public class CommandEngine {
                 return tryStep(ops, mob, id, strArg(args, "label", "item"), () -> ops.mobs().pin(mi, "ALL", gs, id), () -> {
                     if (pp != null) {
                         ops.mobs().pin(mi, "ALL", gs, pp);
-                    } else {
-                        ops.mobs().unpin(mi, "ALL", gs);
-                    }
+                    } else ops.mobs().unpin(mi, "ALL", gs);
                 });
             }
             case "clear-mob-list": {
@@ -778,17 +766,13 @@ public class CommandEngine {
                 // one scope otherwise - so the undo puts each pin back.
                 Map<String, Integer> previous = new LinkedHashMap<>();
                 ops.mobs().allPins(mi).forEach((s, slots) -> {
-                    if (slots.containsKey(gs) && (everyScope || s.equals(scope))) {
-                        previous.put(s, slots.get(gs));
-                    }
+                    if (slots.containsKey(gs) && (everyScope || s.equals(scope))) previous.put(s, slots.get(gs));
                 });
                 if (!adding && previous.isEmpty()) return false;
                 return recorded((adding ? "Pin " : "Unpin ") + what + " - " + mn, () -> {
                     if (adding) {
                         ops.mobs().pin(mi, scope, gs, id);
-                    } else {
-                        previous.keySet().forEach(s -> ops.mobs().unpin(mi, s, gs));
-                    }
+                    } else previous.keySet().forEach(s -> ops.mobs().unpin(mi, s, gs));
                 }, () -> {
                     if (previous.isEmpty()) ops.mobs().unpin(mi, scope, gs);
                     previous.forEach((s, prior) -> ops.mobs().pin(mi, s, gs, prior));
@@ -831,9 +815,7 @@ public class CommandEngine {
                 // A cure choice can camp Lunar (Cure Me): the lock rides the compute.
                 if (TripSupplies.ANTIVENOM.equals(category) || TripSupplies.ANTIPOISON.equals(category)) {
                     recompute();
-                } else {
-                    republish();
-                }
+                } else republish();
                 return true;
             }
             case "set-pinned-spell":
@@ -865,9 +847,7 @@ public class CommandEngine {
                         if (id instanceof Number) ii.add(((Number) id).intValue());
                     }
                     ops.showInBank(ii);
-                } else {
-                    ops.showInBank(null);
-                }
+                } else ops.showInBank(null);
                 return true;
             }
             case "bank-filter": {
@@ -885,9 +865,7 @@ public class CommandEngine {
                         positions[i] = slots.get(i) instanceof Number ? ((Number) slots.get(i)).intValue() : -1;
                     }
                     ops.filterBank(ii, positions);
-                } else {
-                    ops.filterBank(null, null);
-                }
+                } else ops.filterBank(null, null);
                 return true;
             }
             case "refresh": {
@@ -943,9 +921,7 @@ public class CommandEngine {
                     Object entries = snapshot.get("entries");
                     if (entries instanceof List) {
                         for (Object en : (List<?>) entries) {
-                            if (en instanceof Map) {
-                                ((Map) en).put("params", state.paramsNode());
-                            }
+                            if (en instanceof Map) ((Map) en).put("params", state.paramsNode());
                         }
                     }
                     link.publishPage(withHistory(snapshot));
@@ -970,9 +946,7 @@ public class CommandEngine {
      * store but not on the "+N" pill (field report 2026-08-27). */
     void refreshAfterStoreToggle() {
         if (state.mob() == null && (state.rosterMobs() == null || rosterCompute == null)) {
-            if (link != null) {
-                link.publishPage(withHistory( page(List.of())));
-            }
+            if (link != null) link.publishPage(withHistory( page(List.of())));
             return;
         }
         recompute();
@@ -1149,6 +1123,7 @@ public class CommandEngine {
 
     boolean cureMe(List<MonsterStats> mobs) { return mobs != null && mobs.stream().anyMatch(this::cureMe); }
 
+
     /** Arceuus casts (thralls, Death Charge) stand down: Cure Me camps Lunar,
      * or the fight book is elsewhere (the Sire's Ancients) with no Spellbook
      * Swap to reach Arceuus (Andrew 2026-09-09). */
@@ -1269,9 +1244,7 @@ public class CommandEngine {
         eachCard(mobNodes, (side, card) -> {
             Object spell = card.get("spell");
             Object book = spell instanceof String ? books.get(spell) : null;
-            if (book instanceof String && !"arceuus".equals(book)) {
-                card.put("arceuusStandDown", spell + " autocasts from the " + book + " book");
-            }
+            if (book instanceof String && !"arceuus".equals(book)) card.put("arceuusStandDown", spell + " autocasts from the " + book + " book");
         });
     }
 
@@ -1335,9 +1308,7 @@ public class CommandEngine {
         boolean assumed = flag("sunfireRunes");
         eachCard(mobNodes, (side, card) -> {
             Object spell = card.get("spell");
-            if ((assumed || "bis".equals(side)) && spell instanceof String && ((String) spell).startsWith("Fire ")) {
-                card.put("runes", withSunfire((List<Map>) card.get("runes")));
-            }
+            if ((assumed || "bis".equals(side)) && spell instanceof String && ((String) spell).startsWith("Fire ")) card.put("runes", withSunfire((List<Map>) card.get("runes")));
         });
     }
 
@@ -1374,9 +1345,7 @@ public class CommandEngine {
         // compute there (Andrew 2026-09-09).
         if (PageState.isViewParam(key) && !("spellbookSwap".equals(key) && fightBookElsewhere())) {
             republish();
-        } else {
-            recompute();
-        }
+        } else recompute();
         return true;
     }
 
@@ -1498,15 +1467,9 @@ public class CommandEngine {
         Map page = withHistory(page(List.of(entry)));
         page.put("spells", new ArrayList<>(spellbooks.keySet()));
         decorate(page);
-        Supplier<Map> countSupplier = counts;
-        page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob, keptSlots,
-            countSupplier == null ? null : countSupplier.get(), tn, shipNode, supplies, cureMe(mobs),
-            (List<Map>) entry.get("mobs"), book, groupBookReason));
         link.publishPage(page);
     }
 
-    @Setter
-    volatile String coreVersion = "dev";
     /** The account's live Magic level - thrall dps scales off it. */
     @Setter
     volatile int magicLevel = 99;
@@ -1532,18 +1495,6 @@ public class CommandEngine {
      * whether it is enabled, and how to walk to a mob. Re-set when plugins change. */
     BooleanSupplier pathAvailable = () -> false;
     Consumer<String> pathOpen = name -> { };
-
-    /** Inventory Setups' add-setup, for the card's Save setup button (ISS-01M5V8P2430MQ61C5QKHHRQR6Z):
-     * whether it is ready (enabled, API version 2+), and how to save. Re-set
-     * when plugins change. */
-    BooleanSupplier setupsAvailable = () -> false;
-    Consumer<Map> setupSave = a -> { };
-
-    public void setSetupLink(BooleanSupplier available, Consumer<Map> save) {
-        setupsAvailable = available;
-        setupSave = save;
-        state.setParam("setupsAvailable", available.getAsBoolean());
-    }
 
     public void setPathLink(BooleanSupplier available, Consumer<String> open) {
         pathAvailable = available;
@@ -1608,9 +1559,7 @@ public class CommandEngine {
         return record(of("vs " + (groupPick != null ? groupPick.getName() : mp.label()), () -> {
             if (groupPick != null) {
                 state.selectRoster(groupPick.getMobs(), groupPick.getName(), groupPick.isRaid());
-            } else {
-                state.select(mp);
-            }
+            } else state.select(mp);
             List<MonsterStats> selected = groupPick != null ? groupPick.getMobs() : List.of(mp);
             seedAntifire(selected);
             seedSunfire();
@@ -1676,18 +1625,14 @@ public class CommandEngine {
             state.setParam("maxSwaps", groupPick != null && groupPick.getInventory() > 0 ? groupPick.getInventory()
                     : !gg.isEmpty() ? 2 + gg.size() : selected.size() > 1 ? 4 : 1 + swaps(selected.get(0)).size());
             Supplier<Map> seeder = assumptionSeeder;
-            if (seeder != null) {
-                seeder.get().forEach((k, v) -> state.setParam((String) k, v));
-            }
+            if (seeder != null) seeder.get().forEach((k, v) -> state.setParam((String) k, v));
             recompute();
             return true;
         }, () -> {
             state.restoreSelection(prev);
             if (hadSelection) {
                 recompute();
-            } else {
-                clearResults();
-            }
+            } else clearResults();
             return true;
         }));
     }
@@ -1753,9 +1698,7 @@ public class CommandEngine {
     static List<Map> optionNodes(List<Option> all, boolean hideCureMe) {
         List<Map> options = new ArrayList<>();
         for (Option option : all) {
-            if (!(hideCureMe && "CURE_ME".equals(option.key))) {
-                options.add(map("key", option.key, "name", option.name));
-            }
+            if (!(hideCureMe && "CURE_ME".equals(option.key))) options.add(map("key", option.key, "name", option.name));
         }
         return options;
     }
@@ -1816,9 +1759,7 @@ public class CommandEngine {
     void refreshAfter(String cmd) {
         if (cmd.endsWith("-filter")) {
             republish();
-        } else {
-            recompute();
-        }
+        } else recompute();
     }
 
     /** Unpins this item on the mob in every scope and slot it holds;
@@ -1967,9 +1908,7 @@ public class CommandEngine {
             if (TripSupplies.PRAYER_RESTORE.equals(category) && tr != null && tr.noPrayerRestore) continue;
             List<Option> fit = fitting(category, mobs, unlocks);
             Option pick = option(category, mode);
-            if (pick == null && mode.startsWith("DETECT") || pick != null && !fit.contains(pick)) {
-                pick = detectBest(fit, owns, pvpDeathTrip());
-            }
+            if (pick == null && mode.startsWith("DETECT") || pick != null && !fit.contains(pick)) pick = detectBest(fit, owns, pvpDeathTrip());
             if (pick == null) continue;
             List<Map> options = optionNodes(fit, ob);
             // A kit names every item and gets a cell each (field 2026-09-08:
@@ -2033,9 +1972,7 @@ public class CommandEngine {
         if (!f2pl && !lc && dc > 0) addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
         // Ward of Arceuus where the drain is demonic (ISS-01M5VCXYGF51P5NJCDNC1QJZD1, Andrew 2026-10-25:
         // "ward of arceuss and the spectral spirit shield ... by default").
-        if (!sm && !lc && arceuusReady.test(73) && ward(stats)) {
-            addUtilityRunes(out, "Ward of Arceuus", "Ward of Arceuus (per cast) - a third less prayer drain");
-        }
+        if (!sm && !lc && arceuusReady.test(73) && ward(stats)) addUtilityRunes(out, "Ward of Arceuus", "Ward of Arceuus (per cast) - a third less prayer drain");
         if (flag("spellbookSwap")) {
             // Supplies only (field ask 2026-08-22): the trip carries the
             // runes to keep Vengeance up. Vengeance does return damage,
@@ -2168,12 +2105,8 @@ public class CommandEngine {
             prayers.put(style.name().toLowerCase(), Arrays.asList( PrayerBonuses.optionsFor(style)));
             List<Map> sb2 = new ArrayList<>();
             for (BoostProfile b : BoostProfile.values()) {
-                if (b == BoostProfile.NONE || b == BoostProfile.LIVE_CURRENT) {
-                    continue;
-                }
-                if (b.boosts(style == CombatStyle.MELEE ? 'a' : style == CombatStyle.RANGED ? 'r' : 'm')) {
-                    sb2.add(map("key", b.name(), "label", b.toString()));
-                }
+                if (b == BoostProfile.NONE || b == BoostProfile.LIVE_CURRENT) continue;
+                if (b.boosts(style == CombatStyle.MELEE ? 'a' : style == CombatStyle.RANGED ? 'r' : 'm')) sb2.add(map("key", b.name(), "label", b.toString()));
             }
             boosts.put(style.name().toLowerCase(), sb2);
         }
@@ -2264,9 +2197,7 @@ public class CommandEngine {
                 String top = bestSharedBall(ct);
                 ab = "No cannonballs banked" + (top == null ? "" : " (up to " + top + ")");
                 ammo = null;
-            } else {
-                ammo = best;
-            }
+            } else ammo = best;
         }
         String op1 = String.valueOf(params.get("cannon1Operator"));
         String op2 = String.valueOf(params.get("cannon2Operator"));
@@ -2284,9 +2215,7 @@ public class CommandEngine {
         if (rr != null && rr.overallBest != null) {
             Loadout worn = rr.overallBest.loadout;
             for (GearSlot slot : GearSlot.values()) {
-                if (slot == GearSlot.WEAPON || slot == GearSlot.SHIELD || slot == GearSlot.AMMO) {
-                    continue;
-                }
+                if (slot == GearSlot.WEAPON || slot == GearSlot.SHIELD || slot == GearSlot.AMMO) continue;
                 GearItem item = worn.get(slot);
                 if (item != null) {
                     wa += item.offensive.ranged;
@@ -2346,9 +2275,7 @@ public class CommandEngine {
             // player + cannon): the max hit is shared, the accuracy is not.
             for (int m = 0; m < mobs.size(); m++) {
                 MonsterStats target = mobs.get(m);
-                if (isNaval(target.name)) {
-                    bm[m] += dps(mh, hitChance(level, acc, target.defence, target.defensive.get("heavy")));
-                }
+                if (isNaval(target.name)) bm[m] += dps(mh, hitChance(level, acc, target.defence, target.defensive.get("heavy")));
             }
             double chance = hitChance(level, acc, lensed.defence, lensed.defensive.get("heavy"));
             double dps = dps(mh, chance);

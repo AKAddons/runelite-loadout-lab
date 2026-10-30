@@ -86,17 +86,13 @@ public class MonsterMechanics {
         // are in range to do so." A sea monster simply has no melee style
         // card - the same shape as Zulrah's rejection. (The salamander
         // scorch curiosity is deliberately unmodeled.)
-        if (style == MELEE && NavalCombat.isNaval(monster.name)) {
-            return true;
-        }
+        if (style == MELEE && NavalCombat.isNaval(monster.name)) return true;
         int id = monster.id;
         GearItem weapon = loadout.getWeapon();
         String category = weapon == null ? "" : weapon.category;
         if (style == MAGIC && IMMUNE_MAGIC.contains(id)) return true;
         // By the real id, so phase variants inherit it (Archive Guardian).
-        if (style == MAGIC && spell != null && "ancient".equals(spell.spellbook) && IMMUNE_ANCIENTS.contains(monster.profileId())) {
-            return true;
-        }
+        if (style == MAGIC && spell != null && "ancient".equals(spell.spellbook) && IMMUNE_ANCIENTS.contains(monster.profileId())) return true;
         // Salarin the twisted (wiki): "can only be damaged by Strike
         // spells, ring of recoil damage, and dynamite(p)". Melee and
         // ranged never land; magic lands only as a Strike cast.
@@ -274,21 +270,15 @@ public class MonsterMechanics {
         // re-shows (the kit pass, shared-set evaluation) call calculate()
         // directly, so the math must agree or a whip line renders a
         // phantom dps against them.
-        if (style == MELEE && RESPIRATORY_SYSTEMS.contains(monster.id) && !ventMeleeLands(weapon)) {
-            return 0.0;
-        }
+        if (style == MELEE && RESPIRATORY_SYSTEMS.contains(monster.id) && !ventMeleeLands(weapon)) return 0.0;
         if ("corporeal beast".equals(name) && !corpbane(style, weaponName, attackType)) return 0.5;
-        if (("kraken".equals(name) || "cave kraken".equals(name)) && style == RANGED) {
-            return 1.0 / 7.0;
-        }
+        if (("kraken".equals(name) || "cave kraken".equals(name)) && style == RANGED) return 1.0 / 7.0;
         if (TEKTON.contains(monster.id) && style == MAGIC) return 0.2;
         if (ICE_DEMON.contains(monster.id)) {
             boolean fire = spell != null && "fire".equals(spell.element);
             if (!fire) return 1.0 / 3.0;
         }
-        if ("slagilith".equals(name) && !"Pickaxe".equals(weapon == null ? "" : weapon.category)) {
-            return 1.0 / 3.0;
-        }
+        if ("slagilith".equals(name) && !"Pickaxe".equals(weapon == null ? "" : weapon.category)) return 1.0 / 3.0;
         if (ZOGRES.contains(name)) {
             if (spell != null && "Crumble Undead".equals(spell.name)) return 0.5;
             // Brutal arrows from a comp ogre bow land in full (reference; ISS-01M5RVDTMR5XG16HM6G2JTF7FF).

@@ -343,9 +343,7 @@ public class ResultCards {
             ns.add(label, CENTER);
             ns.add(st, EAST);
             row.add(ns, CENTER);
-        } else {
-            row.add(label, CENTER);
-        }
+        } else row.add(label, CENTER);
 
         // The aligned right block: [icon dps] x - the icon rides right,
         // snug against its number.
@@ -376,12 +374,8 @@ public class ResultCards {
             void maybeShow(MouseEvent e) {
                 if (!e.isPopupTrigger()) return;
                 var menu = new JPopupMenu();
-                if (index > 0) {
-                    item(menu, "Move up", () -> commands.send("move-mob", Map.of("index", index, "delta", -1)));
-                }
-                if (index < rosterSize - 1) {
-                    item(menu, "Move down", () -> commands.send("move-mob", Map.of("index", index, "delta", 1)));
-                }
+                if (index > 0) item(menu, "Move up", () -> commands.send("move-mob", Map.of("index", index, "delta", -1)));
+                if (index < rosterSize - 1) item(menu, "Move down", () -> commands.send("move-mob", Map.of("index", index, "delta", 1)));
                 if (menu.getComponentCount() > 0) menu.show(e.getComponent(), e.getX(), e.getY());
             }
         };
@@ -469,9 +463,7 @@ public class ResultCards {
             }
             tr.add(hpSeat, EAST);
             card.add(tr);
-        } else {
-            card.add(left(title));
-        }
+        } else card.add(left(title));
         Map styles = map(mob, "styles");
         Map node = map(styles, tab);
         if (node == null) {
@@ -503,9 +495,7 @@ public class ResultCards {
             int shownPrayerSprite = np ? SpriteID.TAB_PRAYER : ps;
             if (prayerImage != null && ps <= 0) {
                 prayerIcon.setIcon(icon(ImageUtil.loadImageResource(ResultCards.class, prayerImage), 18));
-            } else {
-                onSprite(shownPrayerSprite, img -> prayerIcon.setIcon(np ? crossedOut(img, 18) : icon(img, 18)));
-            }
+            } else onSprite(shownPrayerSprite, img -> prayerIcon.setIcon(np ? crossedOut(img, 18) : icon(img, 18)));
             if (!bis) onClick(prayerIcon, () -> show(prayerMenu(tab), prayerIcon));
             hr.add(prayerIcon);
             int boostItem = id(assume, "boostItem");
@@ -583,9 +573,7 @@ public class ResultCards {
             if (styleItem > 0) {
                 AsyncBufferedImage img = itemManager.getImage(styleItem);
                 onImage(img, () -> icon.setIcon(icon(img, 16)));
-            } else {
-                seatSprite(icon, id(styleNode, "styleSprite"), 16);
-            }
+            } else seatSprite(icon, id(styleNode, "styleSprite"), 16);
             JLabel dl2 = label(hs ? format("%.2f", td) : "-", isSelected ? Color.WHITE : MID);
             dl2.setFont(dl2.getFont().deriveFont(Font.BOLD, 12f));
             dl2.setHorizontalAlignment(SwingConstants.CENTER);
@@ -690,9 +678,7 @@ public class ResultCards {
             int ci = id(mob, "castingCape");
             // Once, not twice (Andrew 2026-09-02): the spellbook-cape supply
             // already draws the cape.
-            if (ci > 0 && byCategory(supplies, "spellbookCape") == null && (!runes.isEmpty() || !ur.isEmpty())) {
-                supplyRow.add(smallItemCell(ci, text("supply.cape")));
-            }
+            if (ci > 0 && byCategory(supplies, "spellbookCape") == null && (!runes.isEmpty() || !ur.isEmpty())) supplyRow.add(smallItemCell(ci, text("supply.cape")));
             if (bi > 0) {
                 String text = str(assume, "text");
                 int plus = text.indexOf(" + ");
@@ -753,16 +739,6 @@ public class ResultCards {
             }));
         }
         card.add(centre(bankRow));
-        // Its own row - too wide beside the bank buttons (ISS-01M5VH8H5MBRK0BFA6B8E68Z7T, Andrew
-        // 2026-10-26: "should be on its own line").
-        if (flag(pageParams, "setupsAvailable")) {
-            var save = new JButton("Save setup");
-            save.setMargin(new Insets(1, 6, 1, 6));
-            tipText(save, text("setup.save.tip"));
-            save.addActionListener(e -> commands.send("save-setup", setupArgs(mob, shown, tab, runes, ur, supplies, assume)));
-            card.add(Box.createVerticalStrut(3));
-            card.add(centre(save));
-        }
         String noteText = str(mob, "note");
         boolean hasNote = noteText != null && !noteText.trim().isEmpty();
         var note = new JTextField(noteText, 18);
@@ -994,37 +970,6 @@ public class ResultCards {
      * (ISS-01M5TS5CBHSDS00XQSQYJ19XW8). */
     static JPanel styleStrip() { return darker(new WrapLayout(FlowLayout.CENTER, 2, 2)); }
 
-    /** The card for Inventory Setups (ISS-01M5V8P2430MQ61C5QKHHRQR6Z): worn ids by slot, then the
-     * trip in carry order - spec weapon, swaps, runes at their per-cast count,
-     * the assumed boost, one of each supply; utility items (the spellbook and
-     * teleport capes) apart, as additional filtered items; the runes inside the
-     * rune pouch when the trip carries one (ISS-01M5VC3V5DCEEDGVNMC37VHJ2K). Named "Mob - Style". */
-    static Map setupArgs(Map mob, Map shown, String tab,
-        List<Map> runes, List<Map> ur, List<Map> supplies,
-        Map assume) {
-        var worn = new HashMap<String, Integer>();
-        var gear = map(shown, "gear");
-        if (gear != null) gear.forEach((slot, item) -> worn.put((String) slot, id((Map) item, "id")));
-        var stacks = new ArrayList<int[]>();
-        stacks.add(new int[]{id(map(map(shown, "spec"), "weapon"), "id"), 1});
-        for (Map item : list(shown, "bench")) stacks.add(new int[]{id(item, "id"), 1});
-        var extra = new ArrayList<Integer>();
-        var pouch = new LinkedHashMap<Integer, Integer>();
-        boolean pouched = id(mob, "castingPouch") > 0 && (!runes.isEmpty() || anyRune(ur));
-        if (pouched) stacks.add(new int[]{id(mob, "castingPouch"), 1});
-        for (var row : List.of(runes, ur, supplies)) {
-            for (Map r : row) {
-                int id = id(r, r.containsKey("itemId") ? "itemId" : "id"), n = Math.max(1, id(r, "qty"));
-                if (flag(r, "utility")) extra.add(id);
-                else if (pouched && row != supplies && SpellRunes.isRune(id)) pouch.putIfAbsent(id, n);
-                else stacks.add(new int[]{id, n});
-            }
-        }
-        if (!flag(assume, "boostSupplied")) stacks.add(new int[]{id(assume, "boostItem"), 1});
-        return JsonResources.map("setup", str(mob, "name") + " - " + Names.cap(Names.lower(tab)), "worn", worn, "stacks", stacks,
-            "extra", extra, "pouch", pouch);
-    }
-
     /** Whether the utility rows hold a rune - a seed box or a slayer item alone
      * brings no rune pouch (ISS-01M5VH8H5MBRK0BFA6B8E68Z7T, Andrew 2026-10-26: "the seed box is
      * showing as rune in a rune pouch"). */
@@ -1109,9 +1054,7 @@ public class ResultCards {
             if (swapOn) plate.setBorder(new RoundedBorder(ACCENT, 2, 6));
             String home = db;
             onClick(plate, () -> showBookMenu(plate, home, swapOn));
-        } else {
-            tipText(plate, bt);
-        }
+        } else tipText(plate, bt);
         int sprite = required == null ? SpriteID.TAB_MAGIC : bookSprite(required);
         boolean dim = required == null;
         if (sprite > 0) {
@@ -1239,9 +1182,7 @@ public class ResultCards {
             public void mouseEntered(MouseEvent e) { cell.setBorder(createLineBorder(ACCENT)); }
 
             public void mouseExited(MouseEvent e) {
-                if (!picked) {
-                    cell.setBorder(createLineBorder( DARKER_GRAY_HOVER_COLOR));
-                }
+                if (!picked) cell.setBorder(createLineBorder( DARKER_GRAY_HOVER_COLOR));
             }
         });
         return cell;
@@ -1568,9 +1509,7 @@ public class ResultCards {
                     item(menu, text("ladder.ner"), "Open " + name + " in Not Enough Runes",
                         () -> commands.send("ner-open", Map.of("itemId", id)));
                     tipText(cell, format(text("ladder.sim.ner"), tip, group ? "group" : "mob"));
-                } else {
-                    tipText(cell, format(text("ladder.sim.noner"), tip, group ? "group" : "mob"));
-                }
+                } else tipText(cell, format(text("ladder.sim.noner"), tip, group ? "group" : "mob"));
             }
             // Hide a step you never want suggested (Andrew 2026-10-22:
             // "stop showing this as a swap option (this mob/all mobs)") - an
@@ -1740,9 +1679,7 @@ public class ResultCards {
     /** The async-sprite contract: the paint runs on the EDT once the
      * sprite has loaded (nothing without a sprite manager). */
     void onSprite(int spriteId, Consumer<BufferedImage> paint) {
-        if (spriteManager != null) {
-            spriteManager.getSpriteAsync(spriteId, 0, img -> SwingUtilities.invokeLater(() -> paint.accept(img)));
-        }
+        if (spriteManager != null) spriteManager.getSpriteAsync(spriteId, 0, img -> SwingUtilities.invokeLater(() -> paint.accept(img)));
     }
 
     /** A 24px inventory cell: the item image (quantity overlay when
@@ -1886,9 +1823,7 @@ public class ResultCards {
     static JLabel styleHeader(String style, Map node) {
         String name = cap(style);
         double factor = num(node, "multiFactor");
-        if (factor > 0) {
-            name += factor == rint(factor) ? format(" x%d", (int) factor) : format(" x%.2f", factor);
-        }
+        if (factor > 0) name += factor == rint(factor) ? format(" x%d", (int) factor) : format(" x%.2f", factor);
         var label = new JLabel(name);
         label.setFont(label.getFont().deriveFont(Font.BOLD, label.getFont().getSize() - 1f));
         String boost = str(node, "boostLabel");
@@ -1909,9 +1844,7 @@ public class ResultCards {
             JLabel spellIcon = square(22);
             if (shownSprite > 0) {
                 spellIcon.setIcon(cachedSprite(shownSprite));
-            } else {
-                seatSprite(spellIcon, SpriteID.TAB_MAGIC, 18);
-            }
+            } else seatSprite(spellIcon, SpriteID.TAB_MAGIC, 18);
             String lock = str(pageParams, "spellbookLock");
             String lockText = flag(mob, "cureMe") ? " - lunar book (Cure Me)"
                 : lock == null || lock.isEmpty() ? "" : " - " + lock + " book";
@@ -2023,9 +1956,7 @@ public class ResultCards {
             sc.add(statLine("Kill " + kl[0], kl[1], TEXT));
         }
         Map stats = map(card, "stats");
-        if (stats != null) {
-            sc.add(statIconLine("+" + id(stats, "prayer"), "Prayer bonus", TEXT, SpriteID.SKILL_PRAYER));
-        }
+        if (stats != null) sc.add(statIconLine("+" + id(stats, "prayer"), "Prayer bonus", TEXT, SpriteID.SKILL_PRAYER));
         String atkType = str(card, "attackType");
         if (atkType != null) {
             // "crush (controlled)" -> "Crush", stance in the hover.
@@ -2185,9 +2116,7 @@ public class ResultCards {
     static {
         JsonObject colours = JsonResources.objectOrThrow("source_colours.json");
         for (String source : colours.keySet()) {
-            if (!source.startsWith("_")) {
-                SOURCE_COLORS.put(source, new Color(Integer.parseInt(colours.get(source).getAsString(), 16)));
-            }
+            if (!source.startsWith("_")) SOURCE_COLORS.put(source, new Color(Integer.parseInt(colours.get(source).getAsString(), 16)));
         }
     }
 

@@ -55,9 +55,7 @@ public final class KillTime {
         double interval = Math.max(1, speedTicks) * TICK;
         double perfect = maxHit <= 0 ? Double.POSITIVE_INFINITY : Math.ceil((double) hp / maxHit) * interval;
         double mean = of(hp, dps, healDps, specDpsAdded);
-        if (Double.isInfinite(mean) || accuracy <= 0 || maxHit <= 0) {
-            return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, false, null);
-        }
+        if (Double.isInfinite(mean) || accuracy <= 0 || maxHit <= 0) return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, false, null);
         // One uniform roll per attack deals accuracy x max / 2 on average;
         // a model that deals more (or less) per attack is run at the pace
         // that makes the table's mean the set's own.
@@ -103,9 +101,7 @@ public final class KillTime {
             alive = next;
             next = swap;
         }
-        if (dead < 0.5) {
-            return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null);
-        }
+        if (dead < 0.5) return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null);
         pmf[MAX_TICKS] += 1 - dead;
         return from(pmf, perfect, approximate);
     }
@@ -144,9 +140,7 @@ public final class KillTime {
             }
             acc = out;
         }
-        if (acc == null) {
-            return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null);
-        }
+        if (acc == null) return new KillTime(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, perfect, approximate, null);
         double[] pmf = new double[MAX_TICKS + 1];
         System.arraycopy(acc, 0, pmf, 0, acc.length);
         return from(pmf, perfect, approximate);

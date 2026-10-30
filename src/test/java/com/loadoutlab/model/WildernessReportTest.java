@@ -3,6 +3,7 @@ package com.loadoutlab.model;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * A wilderness answer must say what it costs on death. Field report
  * 2026-08-22 (Artio): the CARD carried the risk line and the copied
  * report never mentioned risk at all, so a wildy answer read as
- * riskless on paper.
+ * riskless on paper. The report went in 0.7.2 (Andrew 2026-10-29); the
+ * card's own risk node keeps the contract.
  */
 class WildernessReportTest {
 	private static LoadoutData data;
@@ -24,7 +26,24 @@ class WildernessReportTest {
 		data = new DataService().load();
 	}
 
-	private static String reportFor(String query) {
+	/** Whether any shown card on the page prices a death. */
+	static boolean priced(Map<?, ?> page) {
+		for (Object e : (List<?>) page.get("entries")) {
+			for (Object m : (List<?>) ((Map<?, ?>) e).get("mobs")) {
+				Object styles = ((Map<?, ?>) m).get("styles");
+				if (!(styles instanceof Map)) continue;
+				for (Object s : ((Map<?, ?>) styles).values()) {
+					for (String side : new String[]{"yours", "bis"}) {
+						Object card = ((Map<?, ?>) s).get(side);
+						if (card instanceof Map && ((Map<?, ?>) card).containsKey("risk")) return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	private static Map<String, Object> pageFor(String query) {
 		CaptureLink link = new CaptureLink();
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
@@ -37,9 +56,7 @@ class WildernessReportTest {
 		engine.onResults(mob, styles(mob));
 		flushEdt();
 		assertNotNull(link.published, "a page published");
-		String report = (String) link.published.get("reportText");
-		assertNotNull(report, "the page carries a report");
-		return report;
+		return link.published;
 	}
 
 	private static Map<com.loadoutlab.engine.CombatStyle,
@@ -91,20 +108,15 @@ class WildernessReportTest {
 	}
 
 	@Test
-	@DisplayName("a wilderness boss report states the per-death risk")
-	void wildernessReportCarriesRisk() {
-		String report = reportFor("artio");
-		assertTrue(report.contains("Risk:"),
-			"the wildy report must price a death:\n" + report);
-		assertTrue(report.contains("Risk cap:"),
-			"the params must show the cap state:\n" + report);
+	@DisplayName("a wilderness boss card states the per-death risk")
+	void wildernessCardCarriesRisk() {
+		assertTrue(priced(pageFor("artio")), "the wildy card must price a death");
 	}
 
 	@Test
-	@DisplayName("a non-wilderness report stays quiet about risk")
-	void tameReportHasNoRiskLine() {
-		String report = reportFor("general graardor");
-		assertFalse(report.contains("Risk:"), "no risk talk outside the wilderness");
+	@DisplayName("a non-wilderness card stays quiet about risk")
+	void tameCardHasNoRiskLine() {
+		assertFalse(priced(pageFor("general graardor")), "no risk talk outside the wilderness");
 	}
 
 	private static final class CaptureLink extends CompanionLink {

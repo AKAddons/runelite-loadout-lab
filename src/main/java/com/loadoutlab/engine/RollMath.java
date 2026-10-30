@@ -11,9 +11,7 @@ public class RollMath {
         double def = defenceRoll;
         if (atk < 0) atk = min(0, atk + 2);
         if (def < 0) def = min(0, def + 2);
-        if (atk >= 0 && def >= 0) {
-            return atk > def ? 1.0 - ((def + 2.0) / (2.0 * (atk + 1.0))) : atk / (2.0 * (def + 1.0));
-        }
+        if (atk >= 0 && def >= 0) return atk > def ? 1.0 - ((def + 2.0) / (2.0 * (atk + 1.0))) : atk / (2.0 * (def + 1.0));
         if (atk >= 0) return 1.0 - 1.0 / ((-def + 1.0) * (atk + 1.0));
         if (def >= 0) return 0.0;
         double swappedAtk = -def;

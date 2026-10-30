@@ -64,9 +64,7 @@ public class SpellRunes {
             }
         }
         for (String element : new String[]{"air", "water", "earth", "fire"}) {
-            if (nameLower.contains(element) && (nameLower.contains("staff") || nameLower.contains("tome"))) {
-                out.add(element);
-            }
+            if (nameLower.contains(element) && (nameLower.contains("staff") || nameLower.contains("tome"))) out.add(element);
         }
         return out;
     }
@@ -102,9 +100,7 @@ public class SpellRunes {
                 swap.put("id", SUNFIRE_RUNE);
                 swap.put("name", "Sunfire rune");
                 out.add(swap);
-            } else {
-                out.add(rune);
-            }
+            } else out.add(rune);
         }
         return out;
     }

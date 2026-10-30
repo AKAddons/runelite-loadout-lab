@@ -286,9 +286,7 @@ public class RenderModel {
                 "owned", rung.owned, "price", rung.item.getPriceOrZero(),
                 "delta", own ? format("%+.2f DPS", dps - base) : ladderDelta(ladder, rung));
             if (own) node.put("groupDelta", format("group %+.2f DPS", rung.dps - ladder.baseDps));
-            if (ladder.mode == OptimizeMode.BALANCED) {
-                node.put("delta2", format("%+.2f taken/s", rung.dtps - ladder.baseDtps));
-            }
+            if (ladder.mode == OptimizeMode.BALANCED) node.put("delta2", format("%+.2f taken/s", rung.dtps - ladder.baseDtps));
             node.put("gain", ladderGain(ladder, rung));
             // Same result as the worn item - ranked by its better stats.
             node.put("same", Math.abs(dps - base) <= 1e-9 && Math.abs(rung.dtps - ladder.baseDtps) <= 1e-9);
@@ -469,9 +467,7 @@ public class RenderModel {
         if (weapon == null) return null;
         Map wn = item(weapon);
         // The spec cell's swaps strip (ISS-01M5HCS725N7XVVBC7CMK6Y43A).
-        if (!bis && result.specLadder != null && wn != null) {
-            wn.put("ladder", ladderNode(result.specLadder));
-        }
+        if (!bis && result.specLadder != null && wn != null) wn.put("ladder", ladderNode(result.specLadder));
         return map("weapon", wn, "dpsAdded", bis ? result.gameSpecDpsAdded : result.specDpsAdded,
             "expectedDamage", bis ? result.gameSpecExpectedDamage : result.specExpectedDamage);
     }
@@ -492,9 +488,7 @@ public class RenderModel {
 
     static List<Object> items(List<GearItem> items) {
         List<Object> nodes = new ArrayList<>();
-        if (items != null) {
-            for (GearItem item : items) nodes.add(item(item));
-        }
+        if (items != null) for (GearItem item : items) nodes.add(item(item));
         return nodes;
     }
 

@@ -208,9 +208,7 @@ public class LoadoutOptimizer {
                 if (compatible(null, item)) ao.add(null);
                 ao.addAll(candidates(data, request, AMMO, SLOT_LIMIT, item));
                 if (ao.isEmpty()) continue;
-            } else {
-                ao.add(base.get(AMMO));
-            }
+            } else ao.add(base.get(AMMO));
             // A one-hander competes as weapon + offhand against the
             // two-handers (Andrew 2026-10-22: "evaluate the weapon + shield as
             // one slot because it competes directly against the 2h options"):
@@ -331,9 +329,7 @@ public class LoadoutOptimizer {
             // truncation). Utility is only free when nothing offensive is
             // given up; a strictly better dps still wins outright.
             boolean neutral = candidate.net <= current.net + 1e-9;
-            if (neutral && worn != null && worn.roughScore(request.style) > item.roughScore(request.style)) {
-                continue;
-            }
+            if (neutral && worn != null && worn.roughScore(request.style) > item.roughScore(request.style)) continue;
             current = candidate.withPurchaseCost(cost);
             break;
         }
@@ -382,9 +378,7 @@ public class LoadoutOptimizer {
             // accuracy (found 2026-08-09: the roster golden halved at Zulrah
             // when the relocate-then-recoil chain dropped the quiver ammo).
             DpsResult swapped = bestSpellResult(request, result.loadout.with(candidate.slot, candidate), sc);
-            if (swapped != null && (best == null || swapped.net > best.net)) {
-                best = swapped.withPurchaseCost(result.purchaseCost + budgetCost(request, candidate));
-            }
+            if (swapped != null && (best == null || swapped.net > best.net)) best = swapped.withPurchaseCost(result.purchaseCost + budgetCost(request, candidate));
         }
         return best == null ? result : best;
     }
@@ -401,9 +395,7 @@ public class LoadoutOptimizer {
         Loadout worn = shown.loadout;
         DpsResult base = bestSpellResult(own, worn, pass.spells);
         for (GearSlot slot : worn.getGear().keySet()) {
-            if (base == null || slot == WEAPON || pass.required.containsKey(slot) || slot == SHIELD && pass.dragonShield) {
-                continue;
-            }
+            if (base == null || slot == WEAPON || pass.required.containsKey(slot) || slot == SHIELD && pass.dragonShield) continue;
             for (GearItem item : candidates(data, game, slot, SLOT_LIMIT, worn.getWeapon())) {
                 DpsResult swapped = bestSpellResult(own, worn.with(slot, item), pass.spells);
                 if (swapped != null && swapped.net > base.net + 1e-6) {
@@ -490,9 +482,7 @@ public class LoadoutOptimizer {
     }
 
     public List<DpsResult> optimize(LoadoutData data, OptimizationRequest request) {
-        if (request.monster == null || request.style == null || request.getLevels() == null) {
-            return List.of();
-        }
+        if (request.monster == null || request.style == null || request.getLevels() == null) return List.of();
         if (request.style == ANY) return optimizeAny(data, request);
         // A task's one style (Mage of the Ruins): every other style has no set.
         SetRules rules = request.setRules;
@@ -585,9 +575,7 @@ public class LoadoutOptimizer {
 
     /** optimize() over prebuilt pools - see preparePools for the contract. */
     public List<DpsResult> optimize(LoadoutData data, OptimizationRequest request, CandidatePools pools) {
-        if (request.monster == null || request.style == null || request.getLevels() == null) {
-            return List.of();
-        }
+        if (request.monster == null || request.style == null || request.getLevels() == null) return List.of();
         List<SpellStats> spells = pools.spells;
         List<GearItem> weapons = pools.weapons;
         // No weapon: manual casting (Trying to fit in: no Vampyrium weapon is a
@@ -625,9 +613,7 @@ public class LoadoutOptimizer {
         Map<GearSlot, Set<Integer>> required = new EnumMap<>(GearSlot.class);
         for (RequiredGear.Rule rule : RequiredGear.rulesFor(request.monster, request.waivers)) {
             Set<Integer> acceptable = rule.ids(data);
-            if (request.pinnedFor(rule.slot) == null && !onlyIds(pools.slotCandidates.get(rule.slot), acceptable).isEmpty()) {
-                required.put(rule.slot, acceptable);
-            }
+            if (request.pinnedFor(rule.slot) == null && !onlyIds(pools.slotCandidates.get(rule.slot), acceptable).isEmpty()) required.put(rule.slot, acceptable);
         }
         // The monster-side incoming constants for a defense-weighted beam,
         // hoisted once per optimize (call-scoped, worker-thread confined).
@@ -822,9 +808,7 @@ public class LoadoutOptimizer {
                 // A PINNED powered staff is the stronger intent: it casts
                 // its built-in (Apathy, Discord 2026-09-06: the sceptre pin
                 // vanished under a pinned spell).
-                if (!isPoweredStaff(loadout.getWeapon()) || !request.isPinned(loadout.getWeapon().id)) {
-                    return null;
-                }
+                if (!isPoweredStaff(loadout.getWeapon()) || !request.isPinned(loadout.getWeapon().id)) return null;
             }
             return calculator.calculate(request, loadout);
         }
@@ -834,9 +818,7 @@ public class LoadoutOptimizer {
         if (!ps) {
             boolean[] allowed = context.allowedFor(request, loadout);
             for (int i = 0; i < allowed.length; i++) {
-                if (allowed[i]) {
-                    best = DpsResult.better(best, calculator.calculate(context.spellRequests[i], loadout));
-                }
+                if (allowed[i]) best = DpsResult.better(best, calculator.calculate(context.spellRequests[i], loadout));
             }
         }
         // No legal spell for this staff/book: no result - a spell-less
@@ -852,22 +834,16 @@ public class LoadoutOptimizer {
         // resurrect a spell the player cannot pay for. The ceiling and the
         // upgrade-budget mode keep every spell - one prices the game, the
         // other already assumes purchases.
-        if (request.candidateMode == OWNED_ONLY) {
-            all = keep(all, spell -> SpellRunes .premiumRunesOwned(spell.name, request.ownedItems));
-        }
+        if (request.candidateMode == OWNED_ONLY) all = keep(all, spell -> SpellRunes .premiumRunesOwned(spell.name, request.ownedItems));
         // Nibblers: locked to the barrages (field decision 2026-08-06) -
         // Ice clears the trio, Blood heals off it; any other autocast is
         // the wrong advice for the mob whose role is being barraged.
-        if (isNibbler(request.monster)) {
-            return keep(all, spell -> "Ice Barrage".equals(spell.name) || "Blood Barrage".equals(spell.name));
-        }
+        if (isNibbler(request.monster)) return keep(all, spell -> "Ice Barrage".equals(spell.name) || "Blood Barrage".equals(spell.name));
         // Salarin: strike casts are the ONLY damage (the same whitelist
         // isImmune enforces), and the elemental prune would drop them as
         // dominated - short-circuit past it.
         if (isSalarin(request.monster)) return keep(all, MonsterMechanics::salarinDamagingSpell);
-        if (!request.spellbookLock.isEmpty()) {
-            all = keep(all, spell -> request.spellbookLock.equalsIgnoreCase(spell.spellbook));
-        }
+        if (!request.spellbookLock.isEmpty()) all = keep(all, spell -> request.spellbookLock.equalsIgnoreCase(spell.spellbook));
         // A task's spell family (You're a wizard: earth spells only).
         if (request.setRules != null) all = keep(all, spell -> request.setRules.allowsSpell(Names.lower(spell.name)));
         return pruneDominatedElementals(all, request);
@@ -971,9 +947,7 @@ public class LoadoutOptimizer {
         // weapon line dies honestly instead of computing nonsense.
         Integer pi = request.pinnedFor(slot);
         GearItem pinned = pi == null ? null : data.getGear(pi);
-        if (pinned != null) {
-            return new ArrayList<>(slot == AMMO && fw != null && !compatible(pinned, fw) ? List.of() : List.of(pinned));
-        }
+        if (pinned != null) return new ArrayList<>(slot == AMMO && fw != null && !compatible(pinned, fw) ? List.of() : List.of(pinned));
         // Dragonfire gear mode: protective shields must reach the pool even
         // though most have zero offensive stats (the score filter and the
         // stat-dedupe would silently drop the anti-dragon shield).
@@ -1139,9 +1113,7 @@ public class LoadoutOptimizer {
             // of glories, so the pool cut dropped them (field report
             // 2026-09-08: simmed chaos gauntlets lost to the bracelet).
             SpellStats spell = request.spell;
-            if (name.contains("chaos gauntlets") && (spell == null || "Bolt".equals(spell.nameSecondWord))) {
-                score += 2_000.0;
-            }
+            if (name.contains("chaos gauntlets") && (spell == null || "Bolt".equals(spell.nameSecondWord))) score += 2_000.0;
             String element = spell == null ? "" : spell.element;
             if (name.equals("elemental amulet") && (spell == null || !element.isEmpty())
                 || name.startsWith("amulet of ") && (spell == null ? ELEMENTS.contains(name.substring(10)) : name.equals("amulet of " + element))) {
@@ -1164,9 +1136,7 @@ public class LoadoutOptimizer {
             // so without a boost the weapon cut prunes the actual answer
             // (pool lesson; field report 2026-08-05). Flag first: this runs
             // inside the pool sort's comparator.
-            if (item.demonbane && isRespiratorySystem(request.monster)) {
-                score += 10_000.0;
-            }
+            if (item.demonbane && isRespiratorySystem(request.monster)) score += 10_000.0;
         }
         // Set pieces whose value lives in the DPS model, not raw stats
         // (shortlist_boosts.json): each block lifts a piece once.
@@ -1178,9 +1148,7 @@ public class LoadoutOptimizer {
         boolean usable = !badVersion(item);
         List<String> keys = new ArrayList<>(List.of("all", request.style.name(),
             usable && request.inWilderness ? "wilderness" : "", usable && isRevenantMonster(request) ? "revenant" : ""));
-        if (request.monster != null) {
-            for (String attribute : request.monster.attributesLower) keys.add("attr:" + attribute);
-        }
+        if (request.monster != null) for (String attribute : request.monster.attributesLower) keys.add("attr:" + attribute);
         for (String key : keys) {
             for (Map<String, Integer> block : SHORTLIST_BOOSTS.getOrDefault(key, List.of())) {
                 for (var e : block.entrySet()) {
@@ -1294,9 +1262,7 @@ public class LoadoutOptimizer {
     }
 
     static boolean slayerTaskHeadCandidate(OptimizationRequest request, GearItem item) {
-        if (!request.onSlayerTask || request.monster == null || !request.monster.slayerMonster || item == null || !item.isSlayerHead()) {
-            return false;
-        }
+        if (!request.onSlayerTask || request.monster == null || !request.monster.slayerMonster || item == null || !item.isSlayerHead()) return false;
         return request.style == MELEE || item.isImbuedSlayerHead();
     }
 
@@ -1336,12 +1302,8 @@ public class LoadoutOptimizer {
         String sn = spell.name;
         String weapon = label(loadout.getWeapon());
         if (isPoweredStaff(loadout.getWeapon())) return false;
-        if (sn.contains("Demonbane") && (request.monster == null || !request.monster.hasAttribute("demon"))) {
-            return false;
-        }
-        if ("Crumble Undead".equals(sn) && (request.monster == null || !request.monster.hasAttribute("undead"))) {
-            return false;
-        }
+        if (sn.contains("Demonbane") && (request.monster == null || !request.monster.hasAttribute("demon"))) return false;
+        if ("Crumble Undead".equals(sn) && (request.monster == null || !request.monster.hasAttribute("undead"))) return false;
         List<String> staves = SPELL_STAVES.get("ancient".equalsIgnoreCase(spell.spellbook) ? "ancient" : sn);
         return staves == null || !weapon.contains("harmonised") && staves.stream().anyMatch(weapon::contains);
     }
@@ -1470,9 +1432,7 @@ public class LoadoutOptimizer {
             // is free damage the model does not price. Without this the
             // tie fell to budgetCost and the CHEAPEST (unpoisoned) tier
             // won every dagger/knife family collapse.
-            if (candidate.poisonTier() != current.poisonTier()) {
-                return candidate.poisonTier() > current.poisonTier();
-            }
+            if (candidate.poisonTier() != current.poisonTier()) return candidate.poisonTier() > current.poisonTier();
         }
         // A Rada's blessing beats the god blessing it stat-ties with: the
         // teleports are the free edge (Muuffin, Discord 2026-10-19 - the

@@ -468,7 +468,6 @@
         "model/PageState.java",
         "model/CommandEngine.java",
         "model/RenderModel.java",
-        "model/ReportBuilder.java",
         "render/ResultCards.java"
       ],
       "tests": [
@@ -645,7 +644,6 @@
         "model/PageState.java",
         "render/ResultCards.java",
         "render/RenderSurface.java",
-        "model/ReportBuilder.java",
         "render/BankLayout.java"
       ],
       "tests": [
@@ -655,7 +653,6 @@
         "model/NavalMarkerTest.java",
         "render/TripLedgerTest.java",
         "model/SeaRowDpsTest.java",
-        "model/ReportShipSectionTest.java",
         "render/BankFilterStacksTest.java"
       ],
       "since": "0.5.0",

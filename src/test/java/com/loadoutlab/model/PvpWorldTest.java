@@ -120,19 +120,16 @@ class PvpWorldTest {
 		}
 		assertNotNull(link.published, "a page published");
 		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
-		return Map.of("entry", entry, "report", String.valueOf(link.published.get("reportText")));
+		return Map.of("entry", entry, "page", link.published);
 	}
 
 	@Test
-	@DisplayName("a PvP-world report prices a death on a non-wilderness boss")
-	void pvpReportCarriesRisk() {
-		String report = (String) graardorEntry(1, Set.of()).get("report");
-		assertTrue(report.contains("Risk:"), "a PvP-world answer must price a death:\n" + report);
-		assertTrue(report.contains("PvP world: yes"), report);
-		assertTrue(report.contains("Risk cap:"), report);
-		String tame = (String) graardorEntry(0, Set.of()).get("report");
-		assertFalse(tame.contains("Risk:"), "off means no risk talk");
-		assertTrue(((String) graardorEntry(2, Set.of()).get("report")).contains("PvP world: High Risk"));
+	@DisplayName("a PvP-world card prices a death on a non-wilderness boss")
+	void pvpCardCarriesRisk() {
+		assertTrue(WildernessReportTest.priced((Map<?, ?>) graardorEntry(1, Set.of()).get("page")),
+			"a PvP-world answer must price a death");
+		assertFalse(WildernessReportTest.priced((Map<?, ?>) graardorEntry(0, Set.of()).get("page")),
+			"off means no risk talk");
 	}
 
 	@Test
