@@ -645,12 +645,15 @@ public class ResultCards {
             JPanel ir = darker(new WrapLayout(FlowLayout.CENTER, 2, 1));
             ir.add(small("Inventory:", null));
             Map protection = map(shown, "protection");
+            Map swapNotes = map(shown, "swapNotes");
             for (Map carried : bench) {
                 // GWD protection is worn on the way in, not swapped mid-fight.
-                Object gods = protection == null ? null : protection.get(String.valueOf(id(carried, "id")));
+                String cid = String.valueOf(id(carried, "id"));
+                Object gods = protection == null ? null : protection.get(cid);
+                Object why = swapNotes == null ? null : swapNotes.get(cid);
                 ir.add(smallItemCell(id(carried, "id"), str(carried, "name") + (gods != null
                         ? " (GWD protection: " + gods + " - wear it through the dungeon)"
-                        : " (" + RequiredGear.swapNote(id(carried, "id")) + ")")));
+                        : " (" + (why != null ? why : RequiredGear.swapNote(id(carried, "id"))) + ")")));
             }
             int pi = id(mob, "castingPouch");
             if (pi > 0 && (!runes.isEmpty() || !ur.isEmpty())) {

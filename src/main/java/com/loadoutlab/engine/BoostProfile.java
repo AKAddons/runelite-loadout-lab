@@ -7,10 +7,13 @@ package com.loadoutlab.engine;
 // term, its factor, and which skills it touches as letters over the alphabet
 // a(ttack) s(trength) d(efence) r(anged) m(agic). Magic potion's flat +4 is
 // encoded as factor 0.0, which makes floor(4 + level * 0.0) exactly 4.
+@lombok.AllArgsConstructor
 public enum BoostProfile {
     NONE("No boosts", 0, 0, ""), LIVE_CURRENT("Current boosted levels", 0, 0, ""),
     // Label deliberately avoids " + " - the assumes chips split on it.
     F2P_COMBAT("Attack & strength potions", 3, 0.10, "as"), SUPER_COMBAT("Super combat", 5, 0.15, "asd"),
+    // The pair a super combat replaces, for a bank with none left (Kendyy, Discord 2026-10-29).
+    SUPER_ATTACK_STRENGTH("Super attack & strength", 5, 0.15, "as"),
     // Divine variants boost identically; they hold the boost at ceiling
     // for 5 minutes instead of decaying, so they are the preferred assumption.
     DIVINE_SUPER_COMBAT("Divine super combat", 5, 0.15, "asd"), RANGING("Ranging potion", 4, 0.10, "r"),
@@ -30,13 +33,6 @@ public enum BoostProfile {
     final double factor;
     // Which skills this profile boosts, as letters from "asdrm".
     final String skills;
-
-    BoostProfile(String label, int flat, double factor, String skills) {
-        this.label = label;
-        this.flat = flat;
-        this.factor = factor;
-        this.skills = skills;
-    }
 
     public PlayerLevels apply(PlayerLevels base, PlayerLevels current) {
         PlayerLevels source = base == null ? PlayerLevels.MAXED : base;

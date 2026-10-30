@@ -1,5 +1,6 @@
 package com.loadoutlab.engine;
 
+import java.util.Arrays;
 import java.util.List;
 
 // How long a set takes to kill (ISS-01M6415DTE84ZZ45C4YD3MZRBJ, Andrew
@@ -10,6 +11,7 @@ import java.util.List;
 // distribution (HitDist; ISS-01M655THWG41VPTM1ZTRA5B3YE), the heal and
 // the spec riding between attacks as expectations. The boss's own hit
 // variance is not in the table (v1). Times in seconds.
+@lombok.AllArgsConstructor
 public final class KillTime {
     // The percentiles ("90% of runs fall between") and the all-max-hits
     // floor; infinite when the set cannot outpace the heal.
@@ -27,15 +29,6 @@ public final class KillTime {
     static final double TICK = 0.6;
     // The table stops here: a kill slower than this reads never.
     static final int MAX_TICKS = 2000;
-
-    KillTime(double p05, double p50, double p95, double perfect, boolean approximate, double[] pmf) {
-        this.p05 = p05;
-        this.p50 = p50;
-        this.p95 = p95;
-        this.perfect = perfect;
-        this.approximate = approximate;
-        this.pmf = pmf;
-    }
 
     // The expected kill time: hp over net dps, infinite at or below 0.
     public static double of(int hp, double dps, double healDps, double specDpsAdded) {
@@ -76,7 +69,7 @@ public final class KillTime {
         double dead = 0;
         int high = 0;
         for (int k = 1; k <= attacks && dead < 0.9995; k++) {
-            java.util.Arrays.fill(next, 0, Math.min(size, high + hit.length + 1), 0);
+            Arrays.fill(next, 0, Math.min(size, high + hit.length + 1), 0);
             for (int s = 0; s <= high; s++) {
                 double p = alive[s];
                 if (p == 0) continue;
@@ -146,6 +139,6 @@ public final class KillTime {
     static double[] trimmed(double[] pmf) {
         int last = pmf.length - 1;
         while (last > 0 && pmf[last] == 0) last--;
-        return java.util.Arrays.copyOf(pmf, last + 1);
+        return Arrays.copyOf(pmf, last + 1);
     }
 }

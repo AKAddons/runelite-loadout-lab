@@ -264,6 +264,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
     }
 
     protected void startUp() {
+        JsonResources.use(gson);
         ledger = new CollectionLedger(configManager, gson);
         exclusions = new IdSetStore(configManager, gson, "excludedItems");
         protectOnly = new IdSetStore(configManager, gson, "protectOnlyItems");

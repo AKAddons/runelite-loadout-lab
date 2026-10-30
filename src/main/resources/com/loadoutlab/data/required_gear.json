@@ -281,6 +281,11 @@
 				{"name": "Slayer's staff", "ids": [4170]}
 			],
 			"note": "autocast Crumble Undead on the zombified spawn (Andrew 2026-10-27)"
+		},
+		{
+			"monsters": ["hespori"],
+			"category": "fastRanged",
+			"note": "a 2-tick ranged weapon on rapid for the sprouts (Elling, Discord 2026-10-30)"
 		}
 	],
 	"ward": ["cerberus"],

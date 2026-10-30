@@ -39,36 +39,50 @@ public class MonsterGroups {
     }
 
 
+    // One curated member as Gson reads it: a plain name, or a synthetic
+    // phase (immuneTo, one style or several; without; a label), with the raid
+    // stipulations beside it.
+    static class Member {
+        String name, version, label, nick, spec;
+        JsonElement immuneTo;
+        List<String> without;
+        boolean prayerImmunity, specOnly;
+        Boolean trip;
+        Integer weight;
+    }
+
+    static class Row {
+        String name, note = "";
+        List<Member> members = List.of();
+        List<String> aliases = List.of();
+        int inventory;
+        boolean comingSoon, raid;
+    }
+
     // Load and resolve every curated group against the dataset.
     public static List<MonsterGroup> load(LoadoutData data) {
         List<MonsterGroup> groups = new ArrayList<>();
         try {
-            for (JsonElement element : array(RESOURCE)) {
-                JsonObject row = element.getAsJsonObject();
-                String name = row.get("name").getAsString();
-                String note = string(row, "note");
+            for (Row row : read(RESOURCE, Row[].class)) {
                 List<MonsterStats> mobs = new ArrayList<>();
-                for (JsonElement m : row.getAsJsonArray("members")) {
-                    JsonObject member = m.getAsJsonObject();
-                    MonsterStats resolved = resolve(data, member.get("name").getAsString(),
-                        member.has("version") ? member.get("version").getAsString() : null);
+                for (Member member : row.members) {
+                    MonsterStats resolved = resolve(data, member.name, member.version);
                     if (resolved == null) continue;
-                    if (member.has("immuneTo")) {
+                    if (member.immuneTo != null) {
                         // A synthetic per-phase variant (TD shields, KQ
                         // forms, Nylocas forms, Warden P2): same sheet, new
                         // id + label, one or SEVERAL immunity attributes.
                         // The id ordinal is the style bitmask (melee 1,
                         // ranged 2, magic 4) so every combo stays distinct.
                         List<String> styles = new ArrayList<>();
-                        JsonElement immuneTo = member.get("immuneTo");
-                        if (immuneTo.isJsonArray()) {
-                            for (JsonElement e : immuneTo.getAsJsonArray()) {
+                        if (member.immuneTo.isJsonArray()) {
+                            for (JsonElement e : member.immuneTo.getAsJsonArray()) {
                                 styles.add(lower(e.getAsString()));
                             }
-                        } else styles.add(lower(immuneTo.getAsString()));
+                        } else styles.add(lower(member.immuneTo.getAsString()));
                         int mask = 0;
                         List<String> attributes = new ArrayList<>();
-                        if (member.has("prayerImmunity") && member.get("prayerImmunity").getAsBoolean()) {
+                        if (member.prayerImmunity) {
                             // The immunity is a protection PRAYER, not a
                             // shield: Verac's set pierces it (KQ forms).
                             attributes.add("prayer_immunity");
@@ -80,38 +94,34 @@ public class MonsterGroups {
                             if (joined.length() > 0) joined.append(" + ");
                             joined.append(cap(style));
                         }
-                        String label = member.has("label") ? member.get("label").getAsString() : joined + " immune";
+                        String label = member.label != null ? member.label : joined + " immune";
                         resolved = resolved.immuneVariant(
                             MonsterStats.SYNTHETIC_ID_BASE + resolved.id * 10 + mask, label, attributes);
-                    } else if (member.has("without")) {
+                    } else if (member.without != null) {
                         // A phase that loses an attribute; id bit 8.
                         List<String> removed = new ArrayList<>();
-                        for (JsonElement e : member.getAsJsonArray("without")) {
-                            removed.add(lower(e.getAsString()));
-                        }
+                        for (String e : member.without) removed.add(lower(e));
                         resolved = resolved.withoutAttributes( MonsterStats.SYNTHETIC_ID_BASE + resolved.id * 10 + 8,
-                            member.get("label").getAsString(), removed);
-                    } else if (member.has("label")) resolved = resolved.withVersion(member.get("label").getAsString());
-                    if (member.has("nick")) resolved = resolved.withDisplayName(member.get("nick").getAsString());
+                            member.label, removed);
+                    } else if (member.label != null) resolved = resolved.withVersion(member.label);
+                    if (member.nick != null) resolved = resolved.withDisplayName(member.nick);
                     // Raid stipulations (Andrew 2026-09-10): a kit weight (the
                     // fight that decides the raid) and a spec weapon family.
                     List<String> extra = new ArrayList<>();
-                    if (member.has("weight")) extra.add("weight:" + member.get("weight").getAsInt());
-                    if (member.has("spec")) extra.add("spec:" + lower(member.get("spec").getAsString()));
+                    if (member.weight != null) extra.add("weight:" + member.weight);
+                    if (member.spec != null) extra.add("spec:" + lower(member.spec));
                     // A spec-only member (the Warden's Core, ISS-01M5QEFMBSZXAHV84ZXF1YZHWY):
                     // its main weapon has no say in the kit; its spec hits still count.
-                    if (member.has("specOnly") && member.get("specOnly").getAsBoolean()) extra.add("spec_only");
+                    if (member.specOnly) extra.add("spec_only");
                     // An add the trip's kill time leaves out (the Titans' elementals; Andrew 2026-10-30).
-                    if (member.has("trip") && !member.get("trip").getAsBoolean()) extra.add("no_trip");
+                    if (Boolean.FALSE.equals(member.trip)) extra.add("no_trip");
                     if (!extra.isEmpty()) resolved = resolved.withAttributes(extra);
                     mobs.add(resolved);
                 }
                 List<String> aliases = new ArrayList<>();
-                if (row.has("aliases")) for (JsonElement a : row.getAsJsonArray("aliases")) aliases.add(lower(a.getAsString()));
+                for (String a : row.aliases) aliases.add(lower(a));
                 if (!mobs.isEmpty()) {
-                    groups.add(new MonsterGroup(name, note, mobs,
-                        aliases, integer(row, "inventory", 0),
-                        bool(row, "comingSoon", false), bool(row, "raid", false)));
+                    groups.add(new MonsterGroup(row.name, row.note, mobs, aliases, row.inventory, row.comingSoon, row.raid));
                 }
             }
         } catch (Exception e) {

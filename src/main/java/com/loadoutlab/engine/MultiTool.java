@@ -6,6 +6,7 @@ package com.loadoutlab.engine;
 // up to nine; the venator bow bounces up to twice, each bounce at
 // two-thirds of the max hit on its own accuracy roll (wiki). The engine
 // prices one target; the card multiplies by the stack.
+@lombok.AllArgsConstructor
 public enum MultiTool {
     BARRAGE("barrage", CombatStyle.MAGIC, "area"), CHINS("chins", CombatStyle.RANGED, "area"),
     VENATOR("venator", CombatStyle.RANGED, "chain"),
@@ -23,12 +24,6 @@ public enum MultiTool {
     public final String key;
     public final CombatStyle style;
     public final String kind;
-
-    MultiTool(String key, CombatStyle style, String kind) {
-        this.key = key;
-        this.style = style;
-        this.kind = kind;
-    }
 
     // The multiplier on a per-target number at a stack of targets.
     public static double factor(String kind, int stack, int maxHit) {

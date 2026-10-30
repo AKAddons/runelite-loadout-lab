@@ -38,6 +38,13 @@ public class BoostProfileSweepTest {
 					boost(source.getDefence(), 5, 0.15),
 					0,
 					0);
+			case SUPER_ATTACK_STRENGTH: // added 2026-10-30: the pair, no Defence
+				return source.withBoosts(
+					boost(source.getAttack(), 5, 0.15),
+					boost(source.getStrength(), 5, 0.15),
+					0,
+					0,
+					0);
 			case RANGING:
 			case DIVINE_RANGING: // added 2026-07-21: same numbers as the base
 			case BASTION: // added 2026-08-21: ranging numbers, defence unmodeled

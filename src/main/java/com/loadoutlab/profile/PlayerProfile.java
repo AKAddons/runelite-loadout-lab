@@ -1,6 +1,5 @@
 package com.loadoutlab.profile;
 
-import com.google.gson.*;
 import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.engine.*;
 import java.util.*;
@@ -37,8 +36,6 @@ public class PlayerProfile {
         this.requirements = requirements == null ? RequirementProfile.MAXED : requirements;
         this.owned = owned == null ? Map.of() : Map.copyOf(owned);
         this.bankScanned = bankScanned;
-        // Deep-copied on the constructing thread: the export writer runs
-        // off-thread while the client keeps mutating the live snapshots.
         var copy = new LinkedHashMap<String, Map<Integer, Integer>>();
         if (ownedBySource != null) for (var e : ownedBySource.entrySet()) copy.put(e.getKey(), Map.copyOf(e.getValue()));
         this.ownedBySource = copy;
@@ -46,88 +43,44 @@ public class PlayerProfile {
 
     public OwnedItems ownedItems() { return new OwnedItems(owned, bankScanned); }
 
+    // The file's shape, Gson both ways: the levels and the prayer unlocks
+    // are their own classes' fields; the requirements write as skills and
+    // quests. Plain maps and sets only (Gson cannot see into Map.of).
+    static class Raw {
+        PlayerLevels realLevels, boostedLevels;
+        PrayerUnlocks prayerUnlocks;
+        Reqs requirements;
+        Map<Integer, Integer> owned;
+        Map<String, Map<Integer, Integer>> ownedBySource;
+        boolean bankScanned;
+    }
+
+    static class Reqs {
+        Map<Skill, Integer> skills = new LinkedHashMap<>();
+        Set<String> quests = new HashSet<>();
+    }
+
     public String toJson() {
-        var root = new JsonObject();
-        root.add("realLevels", levels(realLevels));
-        root.add("boostedLevels", levels(boostedLevels));
-        var prayers = new JsonObject();
-        prayers.addProperty("kingsRansom", prayerUnlocks.piety());
-        prayers.addProperty("rigour", prayerUnlocks.rigour());
-        prayers.addProperty("augury", prayerUnlocks.augury());
-        prayers.addProperty("deadeye", prayerUnlocks.deadeye());
-        prayers.addProperty("mysticVigour", prayerUnlocks.mysticVigour());
-        prayers.addProperty("zeal", prayerUnlocks.zeal());
-        root.add("prayerUnlocks", prayers);
-        var reqSkills = new JsonObject();
-        for (var entry : requirements.getLevels().entrySet()) {
-            reqSkills.addProperty(entry.getKey().name(), entry.getValue());
-        }
-        var reqs = new JsonObject();
-        reqs.add("skills", reqSkills);
-        JsonArray quests = new JsonArray();
-        for (String quest : requirements.getCompletedQuests()) quests.add(quest);
-        reqs.add("quests", quests);
-        root.add("requirements", reqs);
-        root.add("owned", items(owned));
+        var raw = new Raw();
+        raw.realLevels = realLevels;
+        raw.boostedLevels = boostedLevels;
+        raw.prayerUnlocks = prayerUnlocks;
+        raw.requirements = new Reqs();
+        raw.requirements.skills.putAll(requirements.getLevels());
+        raw.requirements.quests.addAll(requirements.getCompletedQuests());
+        raw.owned = new LinkedHashMap<>(owned);
         if (!ownedBySource.isEmpty()) {
-            var bySource = new JsonObject();
-            ownedBySource.forEach((origin, held) -> bySource.add(origin, items(held)));
-            root.add("ownedBySource", bySource);
+            raw.ownedBySource = new LinkedHashMap<>();
+            ownedBySource.forEach((origin, held) -> raw.ownedBySource.put(origin, new LinkedHashMap<>(held)));
         }
-        root.addProperty("bankScanned", bankScanned);
-        return root.toString();
-    }
-
-    // {"itemId": quantity} for an owned map.
-    static JsonObject items(Map<Integer, Integer> items) {
-        var out = new JsonObject();
-        items.forEach((id, n) -> out.addProperty(String.valueOf(id), n));
-        return out;
-    }
-
-    static Map<Integer, Integer> parseItems(JsonObject object) {
-        Map<Integer, Integer> out = new HashMap<>();
-        for (var entry : object.entrySet()) out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
-        return out;
+        raw.bankScanned = bankScanned;
+        return JsonResources.gson().toJson(raw);
     }
 
     public static PlayerProfile fromJson(String json) {
-        JsonObject root = new JsonParser().parse(json).getAsJsonObject();
-        JsonObject prayers = root.getAsJsonObject("prayerUnlocks");
-        var unlocks = new PrayerUnlocks( prayers.get("kingsRansom").getAsBoolean(),
-            prayers.get("rigour").getAsBoolean(), prayers.get("augury").getAsBoolean(),
-            prayers.get("deadeye").getAsBoolean(), prayers.get("mysticVigour").getAsBoolean(),
-            prayers.has("zeal") && prayers.get("zeal").getAsBoolean());
-        JsonObject reqs = root.getAsJsonObject("requirements");
-        Map<Skill, Integer> reqSkills = new HashMap<>();
-        for (var entry : reqs.getAsJsonObject("skills").entrySet()) {
-            reqSkills.put(Skill.valueOf(entry.getKey()), entry.getValue().getAsInt());
-        }
-        Set<String> quests = new HashSet<>();
-        JsonResources.strings(reqs, "quests", quests);
-        // Optional (older exports lack it) - absence means no provenance.
-        Map<String, Map<Integer, Integer>> bySource = null;
-        if (root.has("ownedBySource")) {
-            bySource = new LinkedHashMap<>();
-            for (var origin : root.getAsJsonObject("ownedBySource").entrySet()) {
-                bySource.put(origin.getKey(), parseItems(origin.getValue().getAsJsonObject()));
-            }
-        }
-        return new PlayerProfile( parseLevels(root.getAsJsonObject("realLevels")),
-            parseLevels(root.getAsJsonObject("boostedLevels")), unlocks, new RequirementProfile(reqSkills, quests),
-            parseItems(root.getAsJsonObject("owned")), root.get("bankScanned").getAsBoolean(), bySource);
-    }
-
-    static JsonObject levels(PlayerLevels levels) {
-        var object = new JsonObject();
-        object.addProperty("attack", levels.attack);
-        object.addProperty("strength", levels.strength);
-        object.addProperty("defence", levels.defence);
-        object.addProperty("ranged", levels.ranged);
-        object.addProperty("magic", levels.magic);
-        object.addProperty("prayer", levels.prayer);
-        object.addProperty("hitpoints", levels.hitpoints);
-        return object;
+        Raw raw = JsonResources.gson().fromJson(json, Raw.class);
+        return new PlayerProfile(raw.realLevels, raw.boostedLevels, raw.prayerUnlocks,
+            new RequirementProfile(raw.requirements.skills, raw.requirements.quests), raw.owned, raw.bankScanned, raw.ownedBySource);
     }
 
     // Whether the plugin's cached level/prayer/quest snapshot, taken while
@@ -139,11 +92,5 @@ public class PlayerProfile {
         // a DIFFERENT account replaces it - including a hashless snapshot
         // taken before the login hash arrived.
         return currentAccount == -1 || currentAccount == snapshotAccount;
-    }
-
-    static PlayerLevels parseLevels(JsonObject object) {
-        return new PlayerLevels( object.get("attack").getAsInt(), object.get("strength").getAsInt(),
-            object.get("defence").getAsInt(), object.get("ranged").getAsInt(), object.get("magic").getAsInt(),
-            object.get("prayer").getAsInt(), object.get("hitpoints").getAsInt());
     }
 }

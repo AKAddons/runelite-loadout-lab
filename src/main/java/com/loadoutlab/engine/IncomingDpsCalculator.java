@@ -488,9 +488,9 @@ public class IncomingDpsCalculator {
     }
 
     // The mean of clamp(factor x d, min, max) over a uniform 0..max roll.
-    static double meanHeal(double[] heal, int maxHit) {
+    static double meanHeal(BossIncomingOverrides.Heal heal, int maxHit) {
         double sum = 0;
-        for (int d = 0; d <= maxHit; d++) sum += Math.min(heal[2], Math.max(heal[1], heal[0] * d));
+        for (int d = 0; d <= maxHit; d++) sum += Math.min(heal.max, Math.max(heal.min, heal.factor * d));
         return sum / (maxHit + 1);
     }
 

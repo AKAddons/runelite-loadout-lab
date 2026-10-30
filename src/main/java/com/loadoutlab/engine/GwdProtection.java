@@ -18,20 +18,23 @@ public class GwdProtection {
     // Item name (lower case) -> the gods it protects against.
     static final Map<String, Set<String>> GODS_BY_ITEM = new HashMap<>();
 
+    static class Root {
+        Map<String, Route> routes = Map.of();
+        Map<String, List<String>> items = Map.of();
+    }
+
+    static class Route {
+        List<String> gods = List.of(), monsters = List.of();
+    }
+
     static {
-        JsonObject root = JsonResources.objectOrThrow("gwd_protection.json");
-        for (var route : root.getAsJsonObject("routes").entrySet()) {
-            List<String> gods = new ArrayList<>();
-            JsonResources.strings(route.getValue().getAsJsonObject(), "gods", gods);
-            List<String> monsters = new ArrayList<>();
-            JsonResources.strings(route.getValue().getAsJsonObject(), "monsters", monsters);
-            for (String monster : monsters) ROUTE_BY_MONSTER.put(monster, gods);
+        Root root = JsonResources.read("gwd_protection.json", Root.class);
+        for (Route route : root.routes.values()) {
+            for (String monster : route.monsters) ROUTE_BY_MONSTER.put(monster, route.gods);
         }
-        for (var god : root.getAsJsonObject("items").entrySet()) {
-            for (JsonElement name : god.getValue().getAsJsonArray()) {
-                GODS_BY_ITEM.computeIfAbsent(name.getAsString(), n -> new TreeSet<>()).add(god.getKey());
-            }
-        }
+        root.items.forEach((god, names) -> {
+            for (String name : names) GODS_BY_ITEM.computeIfAbsent(name, n -> new TreeSet<>()).add(god);
+        });
     }
 
 

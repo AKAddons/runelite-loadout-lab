@@ -48,28 +48,28 @@ public class NavalCombat {
     static final boolean CREW_FORMULA_STALE;
     public static final int ATTACK_TICKS;
 
+    // naval_combat.json as Gson reads it; the cannon and ball rows are the
+    // classes themselves (their field names are the file's keys).
+    static class Root {
+        int attackTicks;
+        boolean crewFormulaStale;
+        List<Cannon> cannons = List.of();
+        List<Ball> cannonballs = List.of();
+        List<String> ballTierOrder = List.of(), navalMonsters = List.of(), keels = List.of(), legacyWoodKeels = List.of();
+        Map<String, int[]> keelMaxHits = Map.of();
+    }
+
     static {
-        JsonObject root = object("naval_combat.json");
-        ATTACK_TICKS = root.get("attackTicks").getAsInt();
-        CREW_FORMULA_STALE = root.get("crewFormulaStale").getAsBoolean();
-        for (JsonElement e : root.getAsJsonArray("cannons")) {
-            JsonObject c = e.getAsJsonObject();
-            CANNONS.put(string(c, "tier"), new Cannon(string(c, "tier"), integer(c, "itemId", 0),
-                integer(c, "sailing", 0), integer(c, "ranged", 0), integer(c, "heavyAccuracy", 0),
-                integer(c, "strength", 0), integer(c, "privateering", 0)));
-        }
-        for (JsonElement e : root.getAsJsonArray("cannonballs")) {
-            JsonObject b = e.getAsJsonObject();
-            BALLS.put(string(b, "tier"), new Ball(string(b, "tier"), integer(b, "itemId", 0),
-                integer(b, "accuracy", 0), integer(b, "strength", 0)));
-        }
-        strings(root, "ballTierOrder", BALL_ORDER);
-        for (JsonElement e : root.getAsJsonArray("navalMonsters")) NAVAL.add(Names.lower(e.getAsString()));
-        strings(root, "keels", KEELS);
-        strings(root, "legacyWoodKeels", LEGACY_WOOD_KEELS);
-        for (var row : root.getAsJsonObject("keelMaxHits").entrySet()) {
-            KEEL_MAX_HITS.put(Names.lower(row.getKey()), ints(row.getValue().getAsJsonArray()));
-        }
+        Root root = read("naval_combat.json", Root.class);
+        ATTACK_TICKS = root.attackTicks;
+        CREW_FORMULA_STALE = root.crewFormulaStale;
+        for (Cannon c : root.cannons) CANNONS.put(c.tier, c);
+        for (Ball b : root.cannonballs) BALLS.put(b.tier, b);
+        BALL_ORDER.addAll(root.ballTierOrder);
+        for (String m : root.navalMonsters) NAVAL.add(Names.lower(m));
+        KEELS.addAll(root.keels);
+        LEGACY_WOOD_KEELS.addAll(root.legacyWoodKeels);
+        root.keelMaxHits.forEach((keel, hits) -> KEEL_MAX_HITS.put(Names.lower(keel), hits));
     }
 
 

@@ -71,11 +71,9 @@ public class TripSupplies {
                 List<Option> options = new ArrayList<>();
                 JsonArray arr = root.getAsJsonArray(category);
                 if (arr != null) {
-                    for (JsonElement e : arr) {
-                        JsonObject o = e.getAsJsonObject();
-                        options.add(new Option( string(o, "key"), string(o, "name"), ints(o.getAsJsonArray("ids")),
-                            bool(o, "detect", true), "utility".equals(string(o, "placement")), bool(o, "wildyOnly", false),
-                            words(o, "names"), cells(o), words(o, "monsters"), integer(o, "unlock", 0)));
+                    for (Row o : gson().fromJson(arr, Row[].class)) {
+                        options.add(new Option(o.key, o.name, o.ids, o.detect, "utility".equals(o.placement), o.wildyOnly,
+                            o.names, o.cells, o.monsters, o.unlock));
                     }
                 }
                 CATEGORIES.put(category, options);
@@ -87,18 +85,14 @@ public class TripSupplies {
         }
     }
 
-    static String[] words(JsonObject o, String key) {
-        List<String> out = new ArrayList<>();
-        strings(o, key, out);
-        return out.toArray(new String[0]);
-    }
-
-    static int[][] cells(JsonObject o) {
-        JsonArray rows = o.getAsJsonArray("cells");
-        if (rows == null) return null;
-        int[][] out = new int[rows.size()][];
-        for (int i = 0; i < out.length; i++) out[i] = ints(rows.get(i).getAsJsonArray());
-        return out;
+    // An option row as Gson reads it (trip_supplies.json).
+    static class Row {
+        String key, name = "", placement;
+        int[] ids;
+        boolean detect = true, wildyOnly;
+        String[] names = new String[0], monsters = new String[0];
+        int[][] cells;
+        int unlock;
     }
 
 

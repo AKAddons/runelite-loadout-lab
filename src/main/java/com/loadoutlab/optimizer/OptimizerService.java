@@ -194,6 +194,8 @@ public class OptimizerService {
         public Set<GearSlot> beaten = Set.of();
         // The shown sets' damage per attack (HitDist) for their kill time.
         public double[] hitDist, gameHitDist;
+        // Why a carried swap picked by kind rides (item id -> the rule's note).
+        public Map<Integer, String> swapNotes = Map.of(), gameSwapNotes = Map.of();
         // The Multi card rows (tool key -> per-target result) when the
         // switch is on and the mob is fought in multi; null otherwise.
         public Map<String, StyleResult> multiTools;
@@ -635,8 +637,9 @@ public class OptimizerService {
             List<GearItem> gameProtection = protect(ctx, gr, gb, gods, monster, false);
             // The fight's swaps (ISS-01M5VCXYGF51P5NJCDNC1QJZD1): Cerberus' spectral spirit shield for the
             // summoned souls - carried before the spec weapon takes a slot.
-            List<GearItem> swaps = tool != null ? new ArrayList<>() : fightSwaps(ctx, monster, ob, true);
-            List<GearItem> gs2 = tool != null ? new ArrayList<>() : fightSwaps(ctx, monster, gb, false);
+            Map<Integer, String> swapNotes = new HashMap<>(), gameSwapNotes = new HashMap<>();
+            List<GearItem> swaps = tool != null ? new ArrayList<>() : fightSwaps(ctx, ownedRequest, monster, ob, true, swapNotes);
+            List<GearItem> gs2 = tool != null ? new ArrayList<>() : fightSwaps(ctx, gr, monster, gb, false, gameSwapNotes);
             int ss = ctx.maxSwaps - protection.size() - swaps.size();
             int gss = ctx.maxSwaps - gameProtection.size() - gs2.size();
             // Bench 0 = strictly one worn set: no spec swap is carried.
@@ -662,6 +665,8 @@ public class OptimizerService {
             result.modeTrade = modeTrade;
             result.protection = protection;
             result.gameProtection = gameProtection;
+            result.swapNotes = swapNotes;
+            result.gameSwapNotes = gameSwapNotes;
             if (ladders != null) {
                 result.ladder = ladders;
                 if (spec != null) {
@@ -1280,7 +1285,8 @@ public class OptimizerService {
 
     // The fight's swap gear beside the set: on Yours the first one you own or sim,
     // on the ceiling the first; never one the set already wears.
-    static List<GearItem> fightSwaps(ComputeContext ctx, MonsterStats mob, List<DpsResult> best, boolean owned) {
+    static List<GearItem> fightSwaps(ComputeContext ctx, OptimizationRequest request, MonsterStats mob, List<DpsResult> best,
+        boolean owned, Map<Integer, String> notes) {
         List<GearItem> out = new ArrayList<>();
         if (best.isEmpty()) return out;
         for (int id : swapIds(mob)) {
@@ -1288,7 +1294,37 @@ public class OptimizerService {
             GearItem worn = item == null ? null : best.get(0).loadout.get(item.slot);
             if (item != null && out.isEmpty() && (!owned || ctx.effectiveOwned.owns(id) || dreamsFor(ctx, mob).contains(id)) && (worn == null || worn.id != id)) out.add(item);
         }
+        for (RequiredGear.Carried rule : RequiredGear.swaps(mob)) {
+            if (!"fastRanged".equals(rule.category)) continue;
+            GearItem w = fastRanged(ctx, request, mob, owned);
+            GearItem worn = best.get(0).loadout.getWeapon();
+            if (w != null && (worn == null || worn.id != w.id) && out.stream().noneMatch(g -> g.id == w.id)) {
+                out.add(w);
+                notes.put(w.id, rule.note);
+            }
+        }
         return out;
+    }
+
+    // The best 2-tick-on-rapid ranged weapon (speed 3: darts, knives, the
+    // blowpipe) for a fight's adds (ISS-01M65N6WS5N2V9TQC0MJ03NKY8, Elling:
+    // Hespori's sprouts) - owned (or simmed) on the Yours side, any in the
+    // game for BiS, ranked by its dps against the mob alone.
+    static GearItem fastRanged(ComputeContext ctx, OptimizationRequest request, MonsterStats mob, boolean owned) {
+        OptimizationRequest rr = request.withStyle(RANGED);
+        var calc = new DpsCalculator();
+        GearItem best = null;
+        double bd = 0;
+        for (GearItem w : ctx.dataset.getGearItems(GearSlot.WEAPON)) {
+            if (!w.standardGear || w.speed != 3 || !w.isWeaponFor(RANGED) || !rr.getRequirementProfile().canWear(w)) continue;
+            if (owned && !ctx.effectiveOwned.owns(w.id) && !dreamsFor(ctx, mob).contains(w.id)) continue;
+            DpsResult r = calc.calculate(rr, new Loadout(Map.of(GearSlot.WEAPON, w)));
+            if (r != null && r.dps > bd) {
+                bd = r.dps;
+                best = w;
+            }
+        }
+        return best;
     }
 
     // One side's bench for the single-mob path: the spec weapon when the

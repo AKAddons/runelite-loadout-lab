@@ -74,48 +74,65 @@ public class RequiredGear {
         public final String note;
         final List<String> names;
         final List<int[]> ids;
+        // A swap picked by kind rather than id: "fastRanged" = the best 2-tick
+        // ranged weapon (ISS-01M65N6WS5N2V9TQC0MJ03NKY8, Hespori's sprouts).
+        public final String category;
     }
 
     static final Map<String, List<Carried>> CARRIED_BY_NAME = new HashMap<>();
     static final Map<String, List<Carried>> SWAPS_BY_NAME = new HashMap<>();
     static final Set<String> WARD = new HashSet<>();
 
+    // required_gear.json as Gson reads it: slot rules, the ward list, the
+    // carried finishing items and the fight swaps.
+    static class Root {
+        List<RuleRow> rules = List.of();
+        List<String> ward = List.of();
+        List<CarriedRow> carried = List.of(), swaps = List.of();
+    }
+
+    static class RuleRow {
+        String slot, note = "", waivedBy;
+        List<String> items = List.of(), monsters = List.of();
+        boolean soft;
+    }
+
+    static class CarriedRow {
+        List<String> monsters = List.of();
+        List<ItemRow> items = List.of();
+        String note = "", category;
+    }
+
+    static class ItemRow {
+        String name;
+        int[] ids;
+    }
+
     static {
         // Fail LOUD (the name_rules pattern): a silently empty table would
         // drop every requirement with no visible error.
-        JsonObject root = objectOrThrow("required_gear.json");
-        for (JsonElement e : root.getAsJsonArray("rules")) {
-            JsonObject row = e.getAsJsonObject();
-            List<String> items = new ArrayList<>();
-            strings(row, "items", items);
-            var rule = new Rule( GearSlot.valueOf(string(row, "slot")), string(row, "note"),
-                items, row.has("waivedBy") ? row.get("waivedBy").getAsString() : null,
-                bool(row, "soft", false));
-            for (JsonElement m : row.getAsJsonArray("monsters")) {
-                BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(rule);
-            }
+        Root root = read("required_gear.json", Root.class);
+        for (RuleRow row : root.rules) {
+            var rule = new Rule(GearSlot.valueOf(row.slot), row.note, row.items, row.waivedBy, row.soft);
+            for (String m : row.monsters) BY_NAME.computeIfAbsent(m, k -> new ArrayList<>()).add(rule);
         }
         if (BY_NAME.isEmpty()) throw new IllegalStateException("required_gear.json loaded empty");
-        if (root.has("ward")) strings(root, "ward", WARD);
-        for (String key : new String[]{"carried", "swaps"}) {
-            if (!root.has(key)) continue;
-            for (JsonElement e : root.getAsJsonArray(key)) {
-                JsonObject row = e.getAsJsonObject();
+        WARD.addAll(root.ward);
+        for (var table : List.of(root.carried, root.swaps)) {
+            for (CarriedRow row : table) {
                 List<String> names = new ArrayList<>();
                 List<int[]> ids = new ArrayList<>();
-                for (JsonElement i : row.getAsJsonArray("items")) {
-                    JsonObject item = i.getAsJsonObject();
-                    names.add(string(item, "name"));
-                    ids.add(ints(item.getAsJsonArray("ids")));
+                for (ItemRow item : row.items) {
+                    names.add(item.name);
+                    ids.add(item.ids);
                 }
-                var carried = new Carried(string(row, "note"), names, ids);
-                for (JsonElement m : row.getAsJsonArray("monsters")) {
-                    (key.equals("swaps") ? SWAPS_BY_NAME : CARRIED_BY_NAME).computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(carried);
+                var carried = new Carried(row.note, names, ids, row.category);
+                for (String m : row.monsters) {
+                    (table == root.swaps ? SWAPS_BY_NAME : CARRIED_BY_NAME).computeIfAbsent(m, k -> new ArrayList<>()).add(carried);
                 }
             }
         }
     }
-
 
     // The fight's swap rules (ISS-01M5VCXYGF51P5NJCDNC1QJZD1): Cerberus' spectral spirit shield.
     public static List<Carried> swaps(MonsterStats monster) {

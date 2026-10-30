@@ -398,10 +398,13 @@ public class RenderModel {
         for (GearItem item : bis ? result.gameProtection : result.protection) {
             protection.put(String.valueOf(item.id), join(", ", GwdProtection.godsOf(item)));
         }
+        // A swap picked by kind says why it rides (Hespori's fast ranged weapon).
+        Map swapNotes = new LinkedHashMap<>();
+        (bis ? result.gameSwapNotes : result.swapNotes).forEach((id, why) -> swapNotes.put(String.valueOf(id), why));
         GearItem rw = shown.loadout.getWeapon();
         GearItem rs = shown.loadout.get(GearSlot.SHIELD);
         StatBlock bonuses = shown.loadout.bonuses;
-        card.putAll(map("bench", items(bis ? result.gameBench : result.bench), "protection", protection,
+        card.putAll(map("bench", items(bis ? result.gameBench : result.bench), "protection", protection, "swapNotes", swapNotes,
             "runes", SpellRunes.costFor(shown.getSpellName(), rw == null ? null : rw.nameLower,
                 rs == null ? null : rs.nameLower), "kitBacked", bis ? result.gameKitBacked : result.ownedKitBacked,
             "stats", map("offensive", statBlock(shown.loadout.offensive),

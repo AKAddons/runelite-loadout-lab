@@ -38,44 +38,37 @@ public class CombatAchievements {
 
     static final Map<Integer, Task> BY_ID = new LinkedHashMap<>();
 
-    static {
-        for (JsonElement e : objectOrThrow("combat_achievements.json").getAsJsonArray("tasks")) {
-            JsonObject t = e.getAsJsonObject();
-            List<SetRules.Rule> rules = new ArrayList<>();
-            if (t.has("rules")) for (JsonElement r : t.getAsJsonArray("rules")) {
-                JsonArray a = r.getAsJsonArray();
-                rules.add(new SetRules.Rule(a.get(0).getAsString(), a.get(1).getAsString(), a.get(2).getAsDouble()));
-            }
-            Set<String> styles = set(t, "styles"), spells = set(t, "spells");
-            Set<CombatStyle> allowed = null;
-            if (styles != null) {
-                allowed = EnumSet.noneOf(CombatStyle.class);
-                for (String s : styles) allowed.add(CombatStyle.valueOf(s.toUpperCase(Locale.ROOT)));
-            }
-            SetRules set = SetRules.builder().rules(rules).banned(t.has("banned") ? set(t, "banned") : Set.of())
-                .weapons(set(t, "weapons")).weaponCategories(set(t, "weaponCategories")).demonbaneWeapon(flag(t, "demonbaneWeapon"))
-                .bannedDemonbane(flag(t, "bannedDemonbane")).oneHanded(flag(t, "oneHanded")).unarmed(flag(t, "unarmed"))
-                .noWeaponMagic(flag(t, "noWeaponMagic")).styles(allowed).attackType(text(t, "attackType"))
-                .noPrayerRestore(flag(t, "noPrayerRestore")).spellbook(text(t, "spellbook")).spells(spells == null ? null : List.copyOf(spells))
-                .levelCap(t.has("levelCap") ? t.get("levelCap").getAsInt() : 0).poisonWeapon(flag(t, "poisonWeapon")).f2p(flag(t, "f2p")).build();
-            int id = t.get("id").getAsInt();
-            String version = text(t, "version");
-            BY_ID.put(id, new Task(id, text(t, "name"), text(t, "tier"), text(t, "desc"), set(t, "mobs"), version == null ? "" : version, set,
-                t.getAsJsonObject("mobWeapons")));
-        }
+    // A task row as Gson reads it: absent sets stay null (no restriction).
+    static class Row {
+        int id, levelCap;
+        String name, tier, desc, version, attackType, spellbook;
+        Set<String> mobs, styles, spells, banned, weapons, weaponCategories;
+        List<JsonArray> rules;
+        boolean demonbaneWeapon, bannedDemonbane, oneHanded, unarmed, noWeaponMagic, noPrayerRestore, poisonWeapon, f2p;
+        JsonObject mobWeapons;
     }
 
+    static class Root {
+        List<Row> tasks = List.of();
+    }
 
-    static boolean flag(JsonObject t, String key) { return t.has(key) && t.get(key).getAsBoolean(); }
-
-    static String text(JsonObject t, String key) { return t.has(key) ? t.get(key).getAsString() : null; }
-
-    // The string array at key, or null when absent.
-    static Set<String> set(JsonObject t, String key) {
-        if (!t.has(key)) return null;
-        Set<String> out = new LinkedHashSet<>();
-        strings(t, key, out);
-        return out;
+    static {
+        for (Row t : read("combat_achievements.json", Root.class).tasks) {
+            List<SetRules.Rule> rules = new ArrayList<>();
+            if (t.rules != null) for (JsonArray a : t.rules) rules.add(new SetRules.Rule(a.get(0).getAsString(), a.get(1).getAsString(), a.get(2).getAsDouble()));
+            Set<CombatStyle> allowed = null;
+            if (t.styles != null) {
+                allowed = EnumSet.noneOf(CombatStyle.class);
+                for (String s : t.styles) allowed.add(CombatStyle.valueOf(s.toUpperCase(Locale.ROOT)));
+            }
+            SetRules set = SetRules.builder().rules(rules).banned(t.banned == null ? Set.of() : t.banned)
+                .weapons(t.weapons).weaponCategories(t.weaponCategories).demonbaneWeapon(t.demonbaneWeapon)
+                .bannedDemonbane(t.bannedDemonbane).oneHanded(t.oneHanded).unarmed(t.unarmed)
+                .noWeaponMagic(t.noWeaponMagic).styles(allowed).attackType(t.attackType)
+                .noPrayerRestore(t.noPrayerRestore).spellbook(t.spellbook).spells(t.spells == null ? null : List.copyOf(t.spells))
+                .levelCap(t.levelCap).poisonWeapon(t.poisonWeapon).f2p(t.f2p).build();
+            BY_ID.put(t.id, new Task(t.id, t.name, t.tier, t.desc, t.mobs, t.version == null ? "" : t.version, set, t.mobWeapons));
+        }
     }
 
     public static Task byId(int id) { return BY_ID.get(id); }

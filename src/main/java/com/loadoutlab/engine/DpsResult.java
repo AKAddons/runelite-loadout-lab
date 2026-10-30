@@ -9,6 +9,7 @@ public class DpsResult {
     public final double dps;
     // DPS net of the boss's heal off this set - the dps where nothing
     // heals; what every ranking reads (ISS-01M6415DTE84ZZ45C4YD3MZRBJ).
+    @With
     public final double net;
     public final double accuracy;
     public final double expectedHit;
@@ -23,6 +24,7 @@ public class DpsResult {
     // Conditional bonuses the calculator actually counted for this set
     // (salve, wilderness weapon, crystal set...) - user assurance that
     // the situational math is happening.
+    @With
     public final List<String> countedBonuses;
     // True when the optimizer could not satisfy a dragonfire shield
     // constraint (no protective shield in the pool) and fell back to the
@@ -30,6 +32,7 @@ public class DpsResult {
     @With
     public final boolean antifireAssumed;
     // The damage per attack (HitDist), built for a shown card's kill time only.
+    @With
     public final double[] hitDist;
 
     public DpsResult( Loadout loadout, double dps, double accuracy, double expectedHit, int maxHit, int attackSpeed,
@@ -63,22 +66,6 @@ public class DpsResult {
         this.antifireAssumed = antifireAssumed;
     }
 
-    public DpsResult withCountedBonuses(List<String> bonuses) {
-        return new DpsResult(loadout, dps, net, accuracy, expectedHit, maxHit, attackSpeed,
-            attackType, attackRoll, defenceRoll, purchaseCost, spellName, List.copyOf(bonuses), antifireAssumed, hitDist);
-    }
-
-    // The same set with the boss's heal taken off: net = dps - heal/s.
-    DpsResult withNet(double net) {
-        return new DpsResult(loadout, dps, net, accuracy, expectedHit, maxHit, attackSpeed,
-            attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses, antifireAssumed, hitDist);
-    }
-
-    // With its distribution; itself for null, so trials allocate nothing.
-    DpsResult withHitDist(double[] dist) {
-        return dist == null ? this : new DpsResult(loadout, dps, net, accuracy, expectedHit, maxHit, attackSpeed,
-            attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses, antifireAssumed, dist);
-    }
 
     // The higher-NET-dps of two nullable results; the first wins ties. The
     // one comparison rule for "keep the better candidate" - previously

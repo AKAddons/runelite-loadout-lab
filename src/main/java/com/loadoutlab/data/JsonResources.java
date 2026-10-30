@@ -6,12 +6,38 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.*;
 import java.util.zip.GZIPInputStream;
+import java.lang.reflect.Type;
 
 // Loaders for the bundled JSON data tables (the hub token cap keeps data
 // in resources, not source). All fail SOFT - a malformed table must never
 // take the client down; the table's tests fail loudly on emptiness instead.
 // The one exception is {@link #gz}: the gzipped corpus is not optional.
 public class JsonResources {
+    // The client's Gson, handed over by LoadoutLabPlugin at startup (the hub
+    // bans new Gson()); the test tree registers a GsonSource for its own.
+    public interface GsonSource { Gson gson(); }
+
+    static Gson gson;
+
+    public static void use(Gson g) { gson = g; }
+
+    public static Gson gson() {
+        if (gson == null) for (GsonSource s : ServiceLoader.load(GsonSource.class)) gson = s.gson();
+        if (gson == null) throw new IllegalStateException("no Gson handed to JsonResources");
+        return gson;
+    }
+
+    // A resource (gzipped when it ends in .gz) read straight into a type
+    // (ISS-01M65SN2SAXVSR9EBVB1R831SV, slim 12: Gson fills the row classes).
+    public static <T> T read(String resource, Class<T> type) { return read(resource, (Type) type); }
+
+    public static <T> T read(String resource, Type type) {
+        try (InputStream in = JsonResources.class.getResourceAsStream(resource)) {
+            if (in == null) throw new IllegalStateException("Missing resource " + resource);
+            InputStream src = resource.endsWith(".gz") ? new GZIPInputStream(in) : in;
+            return gson().fromJson(new InputStreamReader(src, StandardCharsets.UTF_8), type);
+        } catch (IOException ex) { throw new IllegalStateException("Could not load " + resource, ex); }
+    }
 
     // The parsed resource, or null when missing/malformed.
     static JsonElement parse(String resource) {
@@ -34,12 +60,6 @@ public class JsonResources {
         JsonObject root = object(resource);
         if (root == null) throw new IllegalStateException("Could not load " + resource);
         return root;
-    }
-
-    // The parsed root array, or an empty one when missing/malformed.
-    public static JsonArray array(String resource) {
-        JsonElement root = parse(resource);
-        return root != null && root.isJsonArray() ? root.getAsJsonArray() : new JsonArray();
     }
 
     // The gzipped JSON resource beside this class, parsed; a missing or
@@ -111,41 +131,5 @@ public class JsonResources {
         Map node = new LinkedHashMap<>();
         for (int i = 0; i < kv.length; i += 2) node.put((String) kv[i], kv[i + 1]);
         return node;
-    }
-
-    // The row accessors every table loader shares: a missing or null field
-    // reads as the fallback, never a NullPointerException.
-
-    public static JsonObject object(JsonObject parent, String key) {
-        JsonElement element = parent.get(key);
-        return element == null || element.isJsonNull() ? new JsonObject() : element.getAsJsonObject();
-    }
-
-    public static JsonArray array(JsonObject parent, String key) {
-        JsonElement element = parent.get(key);
-        return element == null || element.isJsonNull() ? new JsonArray() : element.getAsJsonArray();
-    }
-
-    public static String string(JsonObject object, String key) {
-        JsonElement element = object.get(key);
-        return element == null || element.isJsonNull() ? "" : element.getAsString();
-    }
-
-    public static Integer nullableInteger(JsonObject object, String key) {
-        JsonElement element = object.get(key);
-        return element == null || element.isJsonNull() ? null : element.getAsInt();
-    }
-
-    public static int integer(JsonObject object, String key, int fallback) {
-        JsonElement element = object.get(key);
-        if (element == null || element.isJsonNull()) return fallback;
-        try {
-            return element.getAsInt();
-        } catch (NumberFormatException ex) { return fallback; }
-    }
-
-    public static boolean bool(JsonObject object, String key, boolean fallback) {
-        JsonElement element = object.get(key);
-        return element == null || element.isJsonNull() ? fallback : element.getAsBoolean();
     }
 }

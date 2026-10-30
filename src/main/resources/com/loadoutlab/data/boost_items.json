@@ -1,5 +1,11 @@
 {
 	"_comment": "Boost item ids by BoostProfile name, every dose (gameval; moved out of BoostSelector 2026-10-18 for the hub token cap). Hearts are single ids.",
+	"_ladders_comment": "Each style's ladder, best first: the divine and bastion/battlemage families outrank the plain potions, the hearts lead magic, the super attack + strength pair closes melee (BoostSelector.bestFor walks it to the first owned).",
+	"_ladders": {
+		"MELEE": ["DIVINE_SUPER_COMBAT", "SUPER_COMBAT", "SUPER_ATTACK_STRENGTH"],
+		"RANGED": ["DIVINE_BASTION", "BASTION", "DIVINE_RANGING", "RANGING"],
+		"MAGIC": ["SATURATED_HEART", "IMBUED_HEART", "DIVINE_BATTLEMAGE", "BATTLEMAGE", "DIVINE_MAGIC", "MAGIC"]
+	},
 	"DIVINE_SUPER_COMBAT": [
 		23685,
 		23688,
@@ -23,6 +29,18 @@
 		12697,
 		12699,
 		12701
+	],
+	"SUPER_ATTACK": [
+		2436,
+		145,
+		147,
+		149
+	],
+	"SUPER_STRENGTH": [
+		2440,
+		157,
+		159,
+		161
 	],
 	"RANGING": [
 		2444,

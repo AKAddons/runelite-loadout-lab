@@ -113,18 +113,22 @@ public class MonsterIcons {
         return exact != null ? exact : index.get(key(name, ""));
     }
 
+    // The three corpus columns the index reads.
+    static class Row {
+        String name, image, version;
+    }
+
     // Built once, on the worker thread, from the bundled corpus.
     Map<String, String> index() {
         Map<String, String> local = files;
         if (local != null) return local;
         local = new HashMap<>();
         try {
-            for (JsonElement element : JsonResources.gz("monsters.json.gz").getAsJsonArray()) {
-                JsonObject row = element.getAsJsonObject();
-                String name = JsonResources.string(row, "name");
-                String image = JsonResources.string(row, "image");
+            for (Row row : JsonResources.read("monsters.json.gz", Row[].class)) {
+                String name = row.name == null ? "" : row.name;
+                String image = row.image == null ? "" : row.image;
                 if (name.isEmpty() || image.isEmpty()) continue;
-                local.putIfAbsent(key(name, JsonResources.string(row, "version")), image);
+                local.putIfAbsent(key(name, row.version == null ? "" : row.version), image);
                 // The panel asks with an empty version whenever the corpus
                 // holds one form, and with a normalized label when it holds
                 // several - the bare name backs both. Prefer the plain

@@ -985,32 +985,29 @@ public class DpsCalculator {
         final int demonbane;
         final boolean base;
 
-        Rule(JsonObject row, String what) {
+        Rule(Row r, String what) {
             this.what = what;
-            attr = str(row, "attr");
-            group = str(row, "group");
-            source = str(row, "source");
-            label = str(row, "label");
-            List<String> weapons = names(row, "rev");
-            rev = weapons == null ? null : weapons.toArray(new String[0]);
-            any = names(row, "any");
-            anySet = row.has("anySet") ? set("any", str(row, "anySet")) : null;
-            allSet = row.has("allSet") ? set("all", str(row, "allSet")) : null;
-            num = integer(row, "num", 0);
-            den = integer(row, "den", 0);
-            demonbane = integer(row, "demonbane", 0);
-            base = row.has("base");
+            attr = r.attr;
+            group = r.group;
+            source = r.source;
+            label = r.label;
+            rev = r.rev == null ? null : r.rev.toArray(new String[0]);
+            any = r.any;
+            anySet = r.anySet == null ? null : set("any", r.anySet);
+            allSet = r.allSet == null ? null : set("all", r.allSet);
+            num = r.num;
+            den = r.den;
+            demonbane = r.demonbane;
+            base = r.base != null;
         }
     }
 
-    static String str(JsonObject row, String key) { return row.has(key) ? row.get(key).getAsString() : null; }
-
-    // The string list at row[key], or null when the row has none.
-    static List<String> names(JsonObject row, String key) {
-        if (!row.has(key)) return null;
-        List<String> list = new ArrayList<>();
-        strings(row, key, list);
-        return list;
+    // A conditional_bonuses.json row as Gson reads it; base is a presence flag.
+    static class Row {
+        String attr, group, source, label, anySet, allSet;
+        List<String> rev, any;
+        int num, den, demonbane;
+        JsonElement base;
     }
 
     // One phase's rules ("melee.damage.post"), in file order.
@@ -1018,7 +1015,7 @@ public class DpsCalculator {
         List<Rule> list = new ArrayList<>();
         String what = key.split("\\.")[1];
         for (JsonElement row : BONUSES.getAsJsonArray(key)) {
-            list.add(new Rule(row.getAsJsonObject(), what));
+            list.add(new Rule(JsonResources.gson().fromJson(row, Row.class), what));
         }
         return list;
     }

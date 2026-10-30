@@ -170,4 +170,22 @@ class BoostSelectorTest {
 			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, true),
 			"under a risk cap the heart falls to the divine potion when owned");
 	}
+
+	@Test
+	@DisplayName("with no super combat left, a super attack and a super strength together are the melee rung; one alone assumes nothing; a super combat still wins")
+	void superAttackAndStrength() {
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(145, 1);    // super attack(3)
+		owned.put(2440, 1);   // super strength(4)
+		OwnedItems pair = new OwnedItems(owned, true);
+		assertEquals(BoostProfile.SUPER_ATTACK_STRENGTH, BoostSelector.bestFor(CombatStyle.MELEE, pair, false, false));
+		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MELEE, new OwnedItems(Map.of(2436, 1), true), false, false),
+			"a super attack alone is no rung");
+		owned.put(12699, 1);  // super combat(2)
+		assertEquals(BoostProfile.SUPER_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, new OwnedItems(owned, true), false, false));
+		PlayerLevels boosted = BoostProfile.SUPER_ATTACK_STRENGTH.apply(PlayerLevels.MAXED, null);
+		assertEquals(118, boosted.attack);
+		assertEquals(118, boosted.strength);
+		assertEquals(99, boosted.defence, "the pair leaves Defence alone");
+	}
 }

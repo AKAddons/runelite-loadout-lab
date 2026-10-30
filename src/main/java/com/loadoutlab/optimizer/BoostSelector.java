@@ -60,10 +60,16 @@ public class BoostSelector {
 
     // Each style's ladder, best first (the divine and bastion/battlemage
     // families outrank the plain potions; the hearts lead magic).
-    static final Map<CombatStyle, String[]> LADDERS = Map.of(
-        CombatStyle.MELEE, new String[]{"DIVINE_SUPER_COMBAT", "SUPER_COMBAT"},
-        CombatStyle.RANGED, new String[]{"DIVINE_BASTION", "BASTION", "DIVINE_RANGING", "RANGING"},
-        CombatStyle.MAGIC, new String[]{"SATURATED_HEART", "IMBUED_HEART", "DIVINE_BATTLEMAGE", "BATTLEMAGE", "DIVINE_MAGIC", "MAGIC"});
+    static final Map<CombatStyle, String[]> LADDERS = new EnumMap<>(CombatStyle.class);
+
+    static {
+        JsonObject ladders = JsonResources.objectOrThrow("boost_items.json").getAsJsonObject("_ladders");
+        for (String style : ladders.keySet()) {
+            List<String> names = new ArrayList<>();
+            JsonResources.strings(ladders, style, names);
+            LADDERS.put(CombatStyle.valueOf(style), names.toArray(new String[0]));
+        }
+    }
 
     // The best boost you can actually assume per style, given what you own.
     // Risk-capped wilderness searches never assume a heart (field spec
@@ -75,7 +81,11 @@ public class BoostSelector {
         // never assumed, so a low-level account sees the numbers it can
         // actually reach today.
         for (String name : LADDERS.getOrDefault(style, new String[0])) {
-            if (!(noHearts && name.endsWith("_HEART")) && ownsAny(owned, ids(name))) return BoostProfile.valueOf(name);
+            // Any dose counts; the super attack + strength pair needs one of
+            // each (Kendyy, Discord 2026-10-29: no super combats left).
+            boolean has = "SUPER_ATTACK_STRENGTH".equals(name) ? ownsAny(owned, ids("SUPER_ATTACK")) && ownsAny(owned, ids("SUPER_STRENGTH"))
+                : ownsAny(owned, ids(name));
+            if (!(noHearts && name.endsWith("_HEART")) && has) return BoostProfile.valueOf(name);
         }
         return NONE;
     }

@@ -77,19 +77,21 @@ public class SpecialAttack {
     // prefixes ("magic shortbow (i)") come first in the file.
     static final List<SpecialAttack> REGISTRY = loadRegistry();
 
+    // A special_attacks.json row as Gson reads it.
+    static class Row {
+        List<String> prefixes = List.of();
+        String name, style, kind, note;
+        int cost, multi;
+        double accuracy, damage, drainFraction, drainMagicFraction;
+        boolean drainsByDamage;
+    }
+
     static List<SpecialAttack> loadRegistry() {
         List<SpecialAttack> specs = new ArrayList<>();
         try {
-            for (JsonElement element : JsonResources.array( "special_attacks.json")) {
-                JsonObject row = element.getAsJsonObject();
-                List<String> prefixes = new ArrayList<>();
-                JsonResources.strings(row, "prefixes", prefixes);
-                specs.add(new SpecialAttack(prefixes.toArray(new String[0]), row.get("name").getAsString(),
-                    CombatStyle.valueOf(row.get("style").getAsString()), Kind.valueOf(row.get("kind").getAsString()),
-                    row.get("cost").getAsInt(), row.get("accuracy").getAsDouble(), row.get("damage").getAsDouble(),
-                    row.get("note").getAsString(), row.get("drainFraction").getAsDouble(),
-                    row.get("drainsByDamage").getAsBoolean(), row.has("drainMagicFraction")
-                        ? row.get("drainMagicFraction").getAsDouble() : 0, row.has("multi") ? row.get("multi").getAsInt() : 0));
+            for (Row row : JsonResources.read("special_attacks.json", Row[].class)) {
+                specs.add(new SpecialAttack(row.prefixes.toArray(new String[0]), row.name, CombatStyle.valueOf(row.style), Kind.valueOf(row.kind),
+                    row.cost, row.accuracy, row.damage, row.note, row.drainFraction, row.drainsByDamage, row.drainMagicFraction, row.multi));
             }
         } catch (Exception e) {
             // A malformed table must never take the client down; the spec

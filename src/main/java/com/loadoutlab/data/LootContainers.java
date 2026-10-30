@@ -28,17 +28,22 @@ public class LootContainers {
     static final List<Container> CONTAINERS = new ArrayList<>();
     static Container lootingBag;
 
+    // A container row as Gson reads it (loot_containers.json).
+    static class Row {
+        String name, holds, does = "holds them";
+        int[] ids;
+        Map<String, Double> monsters = Map.of();
+    }
+
+    static class Root {
+        List<Row> containers = List.of();
+        Row lootingBag;
+    }
+
     static {
-        JsonObject root = objectOrThrow("loot_containers.json");
-        for (JsonElement e : root.getAsJsonArray("containers")) {
-            JsonObject row = e.getAsJsonObject();
-            Map<String, Double> perKill = new HashMap<>();
-            row.getAsJsonObject("monsters").entrySet() .forEach(m -> perKill.put(m.getKey(), m.getValue().getAsDouble()));
-            CONTAINERS.add(new Container(string(row, "name"), ints(row.getAsJsonArray("ids")),
-                string(row, "holds"), row.has("does") ? string(row, "does") : "holds them", perKill));
-        }
-        JsonObject bag = root.getAsJsonObject("lootingBag");
-        lootingBag = new Container(string(bag, "name"), ints(bag.getAsJsonArray("ids")), "loot", "", Map.of());
+        Root root = read("loot_containers.json", Root.class);
+        for (Row row : root.containers) CONTAINERS.add(new Container(row.name, row.ids, row.holds, row.does, row.monsters));
+        lootingBag = new Container(root.lootingBag.name, root.lootingBag.ids, "loot", "", Map.of());
         if (CONTAINERS.isEmpty()) throw new IllegalStateException("loot_containers.json loaded empty");
     }
 
