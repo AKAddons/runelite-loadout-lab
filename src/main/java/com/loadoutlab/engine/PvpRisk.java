@@ -82,9 +82,7 @@ public class PvpRisk {
     // item id sits in a worn slot) - it must be counted ONCE.
     static boolean alreadyWorn(Loadout loadout, GearItem spec) {
         if (spec == null) return false;
-        for (GearItem worn : loadout.getGear().values()) {
-            if (worn != null && worn.id == spec.id) return true;
-        }
+        for (GearItem worn : loadout.getGear().values()) if (worn != null && worn.id == spec.id) return true;
         return false;
     }
 
@@ -167,9 +165,7 @@ public class PvpRisk {
     public static boolean risksUnprotected(Loadout loadout, GearItem carriedSpecWeapon,
         int keptSlots, Set<Integer> pinnedIds, Set<Integer> protectOnlyIds) {
         boolean anyProtected = mustProtect(carriedSpecWeapon, pinnedIds, protectOnlyIds);
-        for (GearSlot slot : GearSlot.values()) {
-            anyProtected |= mustProtect(loadout.get(slot), pinnedIds, protectOnlyIds);
-        }
+        for (GearSlot slot : GearSlot.values()) anyProtected |= mustProtect(loadout.get(slot), pinnedIds, protectOnlyIds);
         if (!anyProtected) return false;
         // Pool values in assess()'s pool order: worn slots, then the spec.
         // A worn set is at most 11 items + the carried spec weapon.
@@ -199,9 +195,7 @@ public class PvpRisk {
         for (int i = 0; i < count; i++) {
             if ((frictionAt & (1 << i)) == 0) continue;
             int ahead = 0;
-            for (int j = 0; j < count; j++) {
-                if (values[j] > values[i] || (values[j] == values[i] && j < i)) ahead++;
-            }
+            for (int j = 0; j < count; j++) if (values[j] > values[i] || (values[j] == values[i] && j < i)) ahead++;
             if (ahead >= keep) {
                 return true; // ranks outside the kept slots - lost, rebuild due
             }

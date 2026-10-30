@@ -56,9 +56,7 @@ public class MonsterStats {
         // hasAttribute runs per candidate set in the optimizer's inner loop;
         // lowercase once instead of per query.
         var lower = new HashSet<String>();
-        for (String value : this.attributes) {
-            if (value != null) lower.add(Names.lower(value));
-        }
+        for (String value : this.attributes) if (value != null) lower.add(Names.lower(value));
         this.attributesLower = lower;
         vampyreTier = lower.contains("vampyre3") ? 3 : lower.contains("vampyre2") ? 2 : lower.contains("vampyre1") ? 1 : 0;
         // The revenant/wilderness gates lowercase the name per DPS trial -
@@ -197,9 +195,7 @@ public class MonsterStats {
     // "kreearra" finds Kree'arra.
     public static String normalizeQuery(String text) {
         var sb = new StringBuilder(text.length());
-        for (char c : Names.lower(text).toCharArray()) {
-            if (Character.isLetterOrDigit(c) || c == ' ') sb.append(c);
-        }
+        for (char c : Names.lower(text).toCharArray()) if (Character.isLetterOrDigit(c) || c == ' ') sb.append(c);
         return sb.toString();
     }
 
@@ -215,7 +211,7 @@ public class MonsterStats {
 
     // The same mapping for a bare id (the profile store normalises every
     // read and write through it, so a pin made on a phase card is the
-    // real monster's pin - Apathy, Discord 2026-10-09, Tormented Demons).
+    // real monster's pin - field report 2026-10-09, Tormented Demons).
     public static int profileIdOf(int id) { return id >= SYNTHETIC_ID_BASE ? (id - SYNTHETIC_ID_BASE) / 10 : id; }
 
 

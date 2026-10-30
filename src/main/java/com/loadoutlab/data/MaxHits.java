@@ -87,8 +87,6 @@ public class MaxHits {
         }
         if (value <= 0) return;
         if (!labelled) families[Family.GENERAL.ordinal()] = true;
-        for (int f = 0; f < 4; f++) {
-            if (families[f]) max[f] = Math.max(max[f], value);
-        }
+        for (int f = 0; f < 4; f++) if (families[f]) max[f] = Math.max(max[f], value);
     }
 }

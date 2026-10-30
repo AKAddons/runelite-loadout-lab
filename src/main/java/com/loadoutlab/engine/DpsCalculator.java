@@ -291,7 +291,7 @@ public class DpsCalculator {
 
         // The keris partisan of Amascut is +108 stab / +67 strength only
         // INSIDE the Tombs; outside it is the base partisan's +58 / +45
-        // (wiki; official calc; Kendyy and Micah, Discord 2026-09-29: the
+        // (wiki; official calc; field reports 2026-09-29: the
         // "black keris" won cards it had no business on).
         boolean dulled = wearing(loadout, M_KERIS_PARTISAN_OF_AMASCUT) && !inToa(request);
         long attackRoll = attackRoll(effectiveAttack,
@@ -633,12 +633,8 @@ public class DpsCalculator {
         if (!ps) return 0;
         if (wn.contains("warped sceptre")) return max(1, (8 * ml + 96) / 37);
         if (wn.contains("bone staff")) return max(1, ml / 3 - 5) + 10;
-        for (var e : STAFF_FIXED.entrySet()) {
-            if (wn.contains(e.getKey())) return e.getValue();
-        }
-        for (var e : STAFF_OFFSET.entrySet()) {
-            if (wn.contains(e.getKey())) return max(1, ml / 3 + e.getValue());
-        }
+        for (var e : STAFF_FIXED.entrySet()) if (wn.contains(e.getKey())) return e.getValue();
+        for (var e : STAFF_OFFSET.entrySet()) if (wn.contains(e.getKey())) return max(1, ml / 3 + e.getValue());
         return max(1, ml / 3 + 1);
     }
 
@@ -661,9 +657,7 @@ public class DpsCalculator {
         // plus its step at each Magic level the tier table lists.
         int[] tier = TIERS[row];
         int max = tier[0];
-        for (int i = 2; i < tier.length; i++) {
-            if (ml >= tier[i]) max += tier[1];
-        }
+        for (int i = 2; i < tier.length; i++) if (ml >= tier[i]) max += tier[1];
         return max;
     }
 
@@ -814,7 +808,7 @@ public class DpsCalculator {
         roll = applyRules(request, loadout, roll, br, MAGIC_ACCURACY_POST);
         roll = weakness(request, roll, br, "% of base accuracy");
         // Only the water tome adds accuracy; fire and earth boost damage alone
-        // (the three wiki pages, 2026-10-19; Kendyy's follow-up).
+        // (the three wiki pages, 2026-10-19; a field follow-up).
         if (tomeMatches(request, loadout) && "water".equals(request.spell.element)) roll = step(roll, loadout.get(SHIELD).nameLower, "accuracy", Factor.PLUS_10);
         return demonbaneSpell(request, loadout, roll, 40, 80, "accuracy");
     }
@@ -882,7 +876,7 @@ public class DpsCalculator {
         if (shb) mh = (int) multiply(mh, 23, 20);
         mh = (int) applyRules(request, loadout, mh, bmh, MAGIC_DAMAGE_POST);
         mh = (int) weakness(request, mh, bmh, "% base damage");
-        // Sunfire runes (wiki; Kendyy 2026-10-19): a landed fire spell deals
+        // Sunfire runes (wiki; field report 2026-10-19): a landed fire spell deals
         // at least a tenth of the max hit - the official calc takes the
         // tenth here, after the weakness and BEFORE the tome step.
         if (request.sunfireRunes && request.spell != null && "fire".equals(request.spell.element)) {
@@ -930,9 +924,7 @@ public class DpsCalculator {
         if (!request.inWilderness) return false;
         GearItem weapon = loadout.get(WEAPON);
         if (weapon == null || !"charged".equals(weapon.versionLower)) return false;
-        for (String name : weapons) {
-            if (weapon.nameLower.equals(name)) return true;
-        }
+        for (String name : weapons) if (weapon.nameLower.equals(name)) return true;
         return false;
     }
 
@@ -961,9 +953,7 @@ public class DpsCalculator {
 
     // Every piece worn (the list order is the check's short-circuit order).
     static boolean wearsAll(Loadout loadout, int[] pieces) {
-        for (int piece : pieces) {
-            if (!loadout.wears(piece, false)) return false;
-        }
+        for (int piece : pieces) if (!loadout.wears(piece, false)) return false;
         return true;
     }
 
@@ -971,18 +961,14 @@ public class DpsCalculator {
     // Indexed: the lists are of two kinds (List.of and ArrayList), so the
     // for-each iterator escaped and was 13% of a roster's allocation.
     static boolean wearsAny(Loadout loadout, int[] bits, boolean active) {
-        for (int bit : bits) {
-            if (loadout.wears(bit, active)) return true;
-        }
+        for (int bit : bits) if (loadout.wears(bit, active)) return true;
         return false;
     }
 
     // The summed weight of the set's worn pieces.
     static int setWeight(Loadout loadout, Map<String, Integer> weights, boolean active) {
         int total = 0;
-        for (var piece : weights.entrySet()) {
-            if (loadout.wears(piece.getKey(), active)) total += piece.getValue();
-        }
+        for (var piece : weights.entrySet()) if (loadout.wears(piece.getKey(), active)) total += piece.getValue();
         return total;
     }
 
@@ -1032,9 +1018,7 @@ public class DpsCalculator {
     static List<Rule> rules(String key) {
         List<Rule> list = new ArrayList<>();
         String what = key.split("\\.")[1];
-        for (JsonElement row : BONUSES.getAsJsonArray(key)) {
-            list.add(new Rule(JsonResources.gson().fromJson(row, Row.class), what));
-        }
+        for (JsonElement row : BONUSES.getAsJsonArray(key)) list.add(new Rule(JsonResources.gson().fromJson(row, Row.class), what));
         return list;
     }
 
@@ -1102,7 +1086,7 @@ public class DpsCalculator {
     // A charged elemental tome worn with a standard-spellbook spell of its
     // element: +10% damage against NPCs, and for the water tome +10%
     // accuracy too (wiki, the three tome pages; rakaykhan1512's drakes,
-    // Kendyy's follow-up). Empty tomes, off-element spells and Ancients
+    // a field follow-up). Empty tomes, off-element spells and Ancients
     // get nothing.
     static boolean tomeMatches(OptimizationRequest request, Loadout loadout) {
         GearItem shield = loadout.get(SHIELD);
@@ -1183,9 +1167,7 @@ public class DpsCalculator {
     // names the ACTUAL item (a bare black mask must not be reported as
     // "slayer helmet").
     static GearItem slayerHead(Loadout loadout, boolean imbued) {
-        for (GearItem item : loadout.getGear().values()) {
-            if (item != null && (imbued ? item.isImbuedSlayerHead() : item.isSlayerHead())) return item;
-        }
+        for (GearItem item : loadout.getGear().values()) if (item != null && (imbued ? item.isImbuedSlayerHead() : item.isSlayerHead())) return item;
         return null;
     }
 

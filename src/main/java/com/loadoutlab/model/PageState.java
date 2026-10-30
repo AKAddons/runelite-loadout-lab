@@ -108,9 +108,7 @@ public class PageState {
         }
         // The one default the engine owns (its uncapped sentinel), never the file.
         DEFAULTS.replace("riskBudgetGp", OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
-        for (var e : root.getAsJsonObject("clamps").entrySet()) {
-            CLAMPS.put(e.getKey(), JsonResources.ints(e.getValue().getAsJsonArray()));
-        }
+        for (var e : root.getAsJsonObject("clamps").entrySet()) CLAMPS.put(e.getKey(), JsonResources.ints(e.getValue().getAsJsonArray()));
         JsonResources.strings(root, "snapshotKeys", SNAPSHOT_KEYS);
         JsonResources.strings(root, "viewParams", VIEW_PARAMS);
     }

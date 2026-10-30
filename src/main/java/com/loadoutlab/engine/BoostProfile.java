@@ -12,7 +12,7 @@ public enum BoostProfile {
     NONE("No boosts", 0, 0, ""), LIVE_CURRENT("Current boosted levels", 0, 0, ""),
     // Label deliberately avoids " + " - the assumes chips split on it.
     F2P_COMBAT("Attack & strength potions", 3, 0.10, "as"), SUPER_COMBAT("Super combat", 5, 0.15, "asd"),
-    // The pair a super combat replaces, for a bank with none left (Kendyy, Discord 2026-10-29).
+    // The pair a super combat replaces, for a bank with none left (field report 2026-10-29).
     SUPER_ATTACK_STRENGTH("Super attack & strength", 5, 0.15, "as"),
     // Divine variants boost identically; they hold the boost at ceiling
     // for 5 minutes instead of decaying, so they are the preferred assumption.

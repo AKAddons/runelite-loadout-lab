@@ -21,9 +21,7 @@ class BankLayout {
     static List<Map> tripStacks(Map mob, Map cardAssume,
         List<Map> supplies, List<Map> castRunes, List<Map> utilityRunes) {
         LinkedHashSet<Integer> ids = new LinkedHashSet<>();
-        for (List<Map> runes : List.of(castRunes, utilityRunes)) {
-            for (Map rune : runes) ids.add(id(rune, "id"));
-        }
+        for (List<Map> runes : List.of(castRunes, utilityRunes)) for (Map rune : runes) ids.add(id(rune, "id"));
         boolean casts = !ids.isEmpty();
         for (String key : new String[]{"castingPouch", "castingCape"}) {
             int id = id(mob, key);
@@ -67,9 +65,7 @@ class BankLayout {
         var carried = new LinkedHashSet<Integer>();
         Map quiver = map(card, "quiverAmmo");
         if (quiver != null) carried.add(id(quiver, "id"));
-        for (List<Map> stacks : List.of(list(card, "bench"), list(card, "runes"), extraStacks)) {
-            for (Map item : stacks) carried.add(id(item, "id"));
-        }
+        for (List<Map> stacks : List.of(list(card, "bench"), list(card, "runes"), extraStacks)) for (Map item : stacks) carried.add(id(item, "id"));
         carried.removeAll(ids);
         int k = 0;
         for (int id : carried) {

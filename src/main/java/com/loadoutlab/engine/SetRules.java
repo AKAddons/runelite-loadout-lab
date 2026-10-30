@@ -212,13 +212,9 @@ public class SetRules {
 
     // Every item is allowed and every rule holds on this finished set.
     public boolean holds(Loadout loadout) {
-        for (GearItem item : loadout.getGear().values()) {
-            if (!allows(item)) return false;
-        }
+        for (GearItem item : loadout.getGear().values()) if (!allows(item)) return false;
         if (poisonWeapon && loadout.getWeapon() == null) return false;
-        for (Rule rule : rules) {
-            if (!rule.holds(total(loadout, rule.getStat()))) return false;
-        }
+        for (Rule rule : rules) if (!rule.holds(total(loadout, rule.getStat()))) return false;
         return true;
     }
 }

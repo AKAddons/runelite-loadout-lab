@@ -23,9 +23,7 @@ public class DragonfireRules {
 
     public static boolean breathesFire(MonsterStats monster) {
         if (monster == null) return false;
-        for (String style : monster.offence.styles) {
-            if ("dragonfire".equalsIgnoreCase(style)) return true;
-        }
+        for (String style : monster.offence.styles) if ("dragonfire".equalsIgnoreCase(style)) return true;
         return false;
     }
 

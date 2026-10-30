@@ -35,9 +35,7 @@ public class TormentedDemonRules {
         // both remaining styles.
         if (weapon == null) return false;
         if (weapon.demonbane) return true;
-        for (String abyssal : ABYSSAL) {
-            if (weapon.nameLower.startsWith(abyssal)) return true;
-        }
+        for (String abyssal : ABYSSAL) if (weapon.nameLower.startsWith(abyssal)) return true;
         return false;
     }
 }

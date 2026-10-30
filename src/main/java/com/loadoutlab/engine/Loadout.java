@@ -104,9 +104,7 @@ public class Loadout {
     // The worn items, empty slots skipped.
     public List<GearItem> items() {
         List<GearItem> items = new ArrayList<>(gear.size());
-        for (GearItem item : gear.values()) {
-            if (item != null) items.add(item);
-        }
+        for (GearItem item : gear.values()) if (item != null) items.add(item);
         return items;
     }
 

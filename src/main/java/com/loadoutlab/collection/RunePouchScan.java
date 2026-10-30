@@ -3,7 +3,7 @@ package com.loadoutlab.collection;
 import java.util.*;
 import java.util.function.IntUnaryOperator;
 
-// The rune pouch as a ledger source (Mumblerit, Discord 2026-10-10: runes
+// The rune pouch as a ledger source (field report 2026-10-10: runes
 // moved into the pouch vanished and Fire Wave fell off the magic set).
 // The pouch is not an item container: each slot is a TYPE varbit (a key
 // into the client's RUNEPOUCH_RUNE enum, 0 = empty) and a QUANTITY varbit.

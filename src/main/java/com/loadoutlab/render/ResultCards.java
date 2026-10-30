@@ -62,15 +62,13 @@ public class ResultCards {
     @lombok.Setter
     BooleanSupplier degradableChip = () -> true;
 
-    // The trio's fourth sigil (Mike, Discord 2026-09-07; Andrew 2026-09-08:
+    // The trio's fourth sigil (field report 2026-09-07; Andrew 2026-09-08:
     // the text pill clipped): *N = N degrading items in the shown set,
     // amber when that gear is skipped for this mob.
     JButton degradesButton(Map mob, Map card) {
         int n = 0;
         Map gear = map(card, "gear");
-        for (Object slot : gear == null ? List.of() : gear.values()) {
-            if (slot instanceof Map && flag((Map) slot, "degrades")) n++;
-        }
+        for (Object slot : gear == null ? List.of() : gear.values()) if (slot instanceof Map && flag((Map) slot, "degrades")) n++;
         boolean skip = flag(mob, "skipDegradable");
         if (!degradableChip.getAsBoolean() || (n == 0 && !skip)) return null;
         JButton button = sigilButton("*" + n, skip, skip ? new Color(0xE6B45A) : new Color(0x968C78),
@@ -414,17 +412,13 @@ public class ResultCards {
 
     // Whether the mob's pins (slot + id) hold this item in this slot.
     static boolean pinnedOn(List<Map> pins, String slot, int id) {
-        for (Map pin : pins) {
-            if (slot.equals(str(pin, "slot")) && id(pin, "id") == id) return true;
-        }
+        for (Map pin : pins) if (slot.equals(str(pin, "slot")) && id(pin, "id") == id) return true;
         return false;
     }
 
     // Whether a list of numbers (the mob's required gear) names the id.
     static boolean hasId(List<Object> ids, int id) {
-        for (Object o : ids) {
-            if (o instanceof Number && ((Number) o).intValue() == id) return true;
-        }
+        for (Object o : ids) if (o instanceof Number && ((Number) o).intValue() == id) return true;
         return false;
     }
 
@@ -605,9 +599,7 @@ public class ResultCards {
             // shown" (the classic rule).
             JPanel legend = darker(new FlowLayout(FlowLayout.LEFT, 6, 0));
             legend.add(statLine("Stored:", "Gear that needs a fetch trip", MID));
-            for (var source : present.entrySet()) {
-                legend.add(statLine(source.getKey(), "Fetch from " + source.getKey(), source.getValue()));
-            }
+            for (var source : present.entrySet()) legend.add(statLine(source.getKey(), "Fetch from " + source.getKey(), source.getValue()));
             card.add(Box.createVerticalStrut(4));
             card.add(left(legend));
         }
@@ -675,9 +667,7 @@ public class ResultCards {
             Map<Integer, String> runeNames = new HashMap<>();
             for (Map rune : runes) noteRune(runeNames, rw, rune, "the autocast spell");
             for (Map rune : ur) noteRune(runeNames, rw, rune, str(rune, "why"));
-            for (var rune : rw.entrySet()) {
-                supplyRow.add(smallItemCell(rune.getKey(), runeNames.get(rune.getKey()) + " - " + rune.getValue()));
-            }
+            for (var rune : rw.entrySet()) supplyRow.add(smallItemCell(rune.getKey(), runeNames.get(rune.getKey()) + " - " + rune.getValue()));
             int ci = id(mob, "castingCape");
             // Once, not twice (Andrew 2026-09-02): the spellbook-cape supply
             // already draws the cape.
@@ -721,9 +711,7 @@ public class ResultCards {
             List<Integer> ids = new ArrayList<>();
             Map gm = map(shown, "gear");
             if (gm != null) {
-                for (Object slotItem : gm.values()) {
-                    if (slotItem instanceof Map) ids.add(id((Map) slotItem, "id"));
-                }
+                for (Object slotItem : gm.values()) if (slotItem instanceof Map) ids.add(id((Map) slotItem, "id"));
             }
             Map qi = map(shown, "quiverAmmo");
             if (qi != null) ids.add(id(qi, "id"));
@@ -1095,9 +1083,7 @@ public class ResultCards {
         Map sprites = map(assumeOptions, "prayerSprites");
         Map images = map(assumeOptions, "prayerImages");
         List<String[]> cells = new ArrayList<>();
-        for (Object option : list2(map(assumeOptions, "prayers"), tab)) {
-            cells.add(new String[]{String.valueOf(option), String.valueOf(option)});
-        }
+        for (Object option : list2(map(assumeOptions, "prayers"), tab)) cells.add(new String[]{String.valueOf(option), String.valueOf(option)});
         return pickerMenu(tab, "set-prayer-pick", "prayerPicks", "Detect best", "None (prayerless)", cells, 26, name -> {
                 int sprite = id(sprites, name);
                 String image = str(images, name);
@@ -1113,9 +1099,7 @@ public class ResultCards {
     JPopupMenu boostMenu(String tab) {
         Map potionIds = map(assumeOptions, "boostItems");
         List<String[]> cells = new ArrayList<>();
-        for (Map option : list(map(assumeOptions, "boosts"), tab)) {
-            cells.add(new String[]{str(option, "label"), str(option, "key")});
-        }
+        for (Map option : list(map(assumeOptions, "boosts"), tab)) cells.add(new String[]{str(option, "label"), str(option, "key")});
         return pickerMenu(tab, "set-boost-pick", "boostPicks", "Detect best in bank", "None (unboosted)", cells, 38, label -> {
                 int itemId = id(potionIds, label);
                 return itemId > 0 ? new ImageIcon(itemManager.getImage(itemId)) : null;
@@ -1227,9 +1211,7 @@ public class ResultCards {
         double dps = num(incoming, "dps");
         String tip = format(text("dtps.tip"), str(incoming, "protectPrayer") == null
             ? "No protection prayer helps" : "Pray " + str(incoming, "protectPrayer"), dps, num(incoming, "unprayedDps"));
-        if (!"partial".equals(coverage)) {
-            return new String[]{format("~%.1f", dps), tip};
-        }
+        if (!"partial".equals(coverage)) return new String[]{format("~%.1f", dps), tip};
         List<String> missing = new ArrayList<>();
         for (Object style : list2(incoming, "unmodeled")) missing.add(String.valueOf(style));
         return new String[]{format("~%.1f*", dps), tip + ". Not counted: " + join(", ", missing)};
@@ -1278,9 +1260,7 @@ public class ResultCards {
         if (page > 0) {
             row.add(pager("ladder-back", "<", "Back to the strip", page - 1));
         } else {
-            for (int i = down.size() - 1; i >= 0; i--) {
-                row.add(ladderColumn(down.get(i), slot, mg, LADDER_DOWN, nerAvailable, group));
-            }
+            for (int i = down.size() - 1; i >= 0; i--) row.add(ladderColumn(down.get(i), slot, mg, LADDER_DOWN, nerAvailable, group));
             JPanel wornColumn = ladderColumn(worn, slot, mg, LADDER_WORN, nerAvailable, group);
             // The weapon strip's worn column lists every option on right-click
             // (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW, Andrew 2026-10-24: "id like to see
@@ -1289,9 +1269,7 @@ public class ResultCards {
             if (!all.isEmpty()) wornColumn.setComponentPopupMenu(allWeaponsMenu(all, group));
             row.add(wornColumn);
         }
-        for (Map rung : up) {
-            row.add(ladderColumn(rung, slot, mg, LADDER_UP, nerAvailable, group));
-        }
+        for (Map rung : up) row.add(ladderColumn(rung, slot, mg, LADDER_UP, nerAvailable, group));
         if (page < pages) row.add(pager("ladder-more", ">", "More steps up", page + 1));
 
         JPanel strip = new RoundPanel(LADDER_INSET, 8);
@@ -1606,7 +1584,8 @@ public class ResultCards {
         double heal = num(kill, "healDps");
         String notes = (flag(kill, "approximate") ? "<br>Band approximate: this hit model has no per-attack form" : "")
             + (heal > 0 ? format("<br>Heals ~%.1f/s off this set", heal) : "")
-            + (kill.containsKey("uptime") && num(kill, "uptime") < 1 ? format("<br>Boss hittable ~%.0f%% of the fight (special phases)", num(kill, "uptime") * 100) : "") + tail;
+            + (kill.containsKey("uptime") && num(kill, "uptime") < 1 ? format("<br>Boss hittable ~%.0f%% of the fight (special phases)", num(kill, "uptime") * 100) : "")
+            + (num(kill, "downtime") > 0 ? format("<br>+%s of %s", mmss(num(kill, "downtime")), str(kill, "downtimeNote")) : "") + tail;
         if (Double.isInfinite(num(kill, "p50"))) return tip(head, "This set cannot outpace the heal, so it never kills", notes);
         return tip(head, format("Median %s<br>Usually %s-%s<br>Perfect %s",
             mmss(num(kill, "p50")), mmss(num(kill, "p05")), mmss(num(kill, "p95")), mmss(num(kill, "perfect"))), notes);
@@ -1616,11 +1595,12 @@ public class ResultCards {
     // displayed, the other stuff is shown when hovered").
     static String[] killLine(Map kill) { return new String[]{about(num(kill, "p50")), hover("", kill, "")}; }
 
-    // "~X damage per kill" for the DTPS hover (Andrew 2026-10-30: "estimate
-    // damage taken for kill"): the DTPS over the median kill time.
+    // "~a-b damage taken per kill" for the DTPS hover (Andrew 2026-10-30:
+    // "estimate damage taken for kill"; then "show the P05-P95 instead of
+    // the P50"): the DTPS over the kill's band.
     static String perKill(Map kill, double dtps) {
         double p50 = kill == null ? 0 : num(kill, "p50");
-        return p50 > 0 && !Double.isInfinite(p50) ? format(". ~%.0f damage per kill", dtps * p50) : "";
+        return p50 > 0 && !Double.isInfinite(p50) ? format(". ~%.0f-%.0f damage taken per kill", dtps * num(kill, "p05"), dtps * num(kill, "p95")) : "";
     }
 
     // A group's Trip line ("TTK for moons of peril, barrows should be the
@@ -1630,9 +1610,9 @@ public class ResultCards {
         if (never != null) return new String[]{"Trip never", never + " never dies in the set shown, so the trip never ends"};
         List<String> members = new ArrayList<>();
         for (Map member : list(trip, "members")) members.add(str(member, "name") + " " + mmss(num(member, "p50")));
-        double damage = num(trip, "damage");
+        double damage = num(trip, "damageHigh");
         return new String[]{"Trip " + about(num(trip, "p50")), hover("", trip, "<br>" + join(", ", members)
-            + (damage > 0 ? format("<br>~%.0f damage per trip", damage) : ""))};
+            + (damage > 0 ? format("<br>~%.0f-%.0f damage taken per trip", num(trip, "damageLow"), damage) : ""))};
     }
 
     JLabel statIconLine(String text, String tooltip, Color color, int spriteId) {
@@ -1736,7 +1716,7 @@ public class ResultCards {
             text("fire.detect.tip"), "detect-antifire", i -> commands.set("antifireMode", i));
     }
 
-    // The fire-spell rune assumption (Kendyy, Discord 2026-10-19): sunfire
+    // The fire-spell rune assumption (field report 2026-10-19): sunfire
     // runes give the spell a minimum hit of a tenth of its max. Seeded
     // from ownership at each selection; the ceiling always assumes them.
     JLabel sunfirePlate(boolean bis) {
@@ -1777,9 +1757,7 @@ public class ResultCards {
 
     // The first row of the given category, or null.
     static Map byCategory(List<Map> rows, String category) {
-        for (Map row : rows) {
-            if (category.equals(str(row, "category"))) return row;
-        }
+        for (Map row : rows) if (category.equals(str(row, "category"))) return row;
         return null;
     }
 
@@ -1861,7 +1839,7 @@ public class ResultCards {
                     var menu = new JPopupMenu();
                     menu.add(check("Auto spell (best castable)", !pinned, () -> commands.send("set-pinned-spell", Map.of("name", ""))));
                     menu.addSeparator();
-                    // The spellbook lock (Apathy, Discord 2026-09-06: "use to be
+                    // The spellbook lock (field report 2026-09-06: "use to be
                     // a way to set a specific spellbook"): any book, or one
                     // of the four. A book with no autocast spell (Lunar) leaves
                     // the card to the powered staves.
@@ -2127,9 +2105,7 @@ public class ResultCards {
 
     static Color sourceColor(String source) {
         if (source == null) return null;
-        for (var entry : SOURCE_COLORS.entrySet()) {
-            if (source.startsWith(entry.getKey())) return entry.getValue();
-        }
+        for (var entry : SOURCE_COLORS.entrySet()) if (source.startsWith(entry.getKey())) return entry.getValue();
         return null;
     }
 

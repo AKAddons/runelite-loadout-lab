@@ -115,9 +115,7 @@ public class SpecialAttack {
         if (item == null || item.slot != GearSlot.WEAPON) return null;
         String name = item.nameLower;
         for (SpecialAttack spec : REGISTRY) {
-            for (String prefix : spec.namePrefixes) {
-                if (name.startsWith(prefix)) return spec;
-            }
+            for (String prefix : spec.namePrefixes) if (name.startsWith(prefix)) return spec;
         }
         return null;
     }

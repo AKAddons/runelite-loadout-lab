@@ -109,6 +109,17 @@ public final class KillTime {
         return new KillTime(p05 / share, p50 / share, p95 / share, perfect / share, approximate, out, share);
     }
 
+    // The same kill plus a fixed delay the boss adds (Hespori's flower
+    // rounds, ISS-01M672QT7BP4H2C04C0872H57N): every time plus the delay,
+    // the tick mass shifted, so a trip's convolution carries it too.
+    public KillTime delayed(double seconds) {
+        if (seconds <= 0 || pmf == null) return this;
+        int shift = (int) Math.round(seconds / TICK);
+        double[] out = new double[MAX_TICKS + 1];
+        for (int t = 0; t < pmf.length; t++) out[Math.min(MAX_TICKS, t + shift)] += pmf[t];
+        return new KillTime(p05 + seconds, p50 + seconds, p95 + seconds, perfect + seconds, approximate, out, uptime);
+    }
+
     // Percentiles off a tick pmf; a percentile the table never reaches
     // (the mass folded into the last tick) reads infinite.
     static KillTime from(double[] pmf, double perfect, boolean approximate) {

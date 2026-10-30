@@ -56,9 +56,7 @@ public class DataService {
     Map<Integer, Integer> loadAliases(List<GearItem> gear) {
         Map<Integer, Integer> aliases = read(ALIAS_RESOURCE, new TypeToken<Map<Integer, Integer>>() { }.getType());
         aliases.entrySet().removeIf(e -> e.getKey().intValue() == e.getValue());
-        for (var twin : chargedTwins(gear).entrySet()) {
-            if (!aliases.containsKey(twin.getKey().id)) aliases.put(twin.getKey().id, aliases.getOrDefault(twin.getValue().id, twin.getValue().id));
-        }
+        for (var twin : chargedTwins(gear).entrySet()) if (!aliases.containsKey(twin.getKey().id)) aliases.put(twin.getKey().id, aliases.getOrDefault(twin.getValue().id, twin.getValue().id));
         return aliases;
     }
 
@@ -66,20 +64,14 @@ public class DataService {
     // "charged" one, else active, normal, fixed or regular, else the first.
     static Map<GearItem, GearItem> chargedTwins(List<GearItem> gear) {
         Map<String, List<GearItem>> weapons = new HashMap<>();
-        for (GearItem item : gear) {
-            if (item.slot == GearSlot.WEAPON) weapons.computeIfAbsent(item.nameLower, k -> new ArrayList<>()).add(item);
-        }
+        for (GearItem item : gear) if (item.slot == GearSlot.WEAPON) weapons.computeIfAbsent(item.nameLower, k -> new ArrayList<>()).add(item);
         Map<GearItem, GearItem> twins = new HashMap<>();
         for (List<GearItem> family : weapons.values()) {
             GearItem charged = null;
             for (String want : new String[]{"charged", "active", "normal", "fixed", "regular", ""}) {
-                for (GearItem item : family) {
-                    if (charged == null && !deadVersion(item) && (want.isEmpty() || item.versionLower.equals(want))) charged = item;
-                }
+                for (GearItem item : family) if (charged == null && !deadVersion(item) && (want.isEmpty() || item.versionLower.equals(want))) charged = item;
             }
-            for (GearItem item : family) {
-                if (charged != null && deadVersion(item)) twins.put(item, charged);
-            }
+            for (GearItem item : family) if (charged != null && deadVersion(item)) twins.put(item, charged);
         }
         return twins;
     }
@@ -183,9 +175,7 @@ public class DataService {
         Map<Integer, Map<String, Integer>> result = new HashMap<>();
         for (ReqRow row : read(REQUIREMENTS_RESOURCE, ReqRow[].class)) {
             Map<String, Integer> levels = new LinkedHashMap<>();
-            for (var entry : row.skills.entrySet()) {
-                if (entry.getValue() != null) levels.put(entry.getKey(), Math.max(1, entry.getValue()));
-            }
+            for (var entry : row.skills.entrySet()) if (entry.getValue() != null) levels.put(entry.getKey(), Math.max(1, entry.getValue()));
             if (!levels.isEmpty()) result.put(row.id, levels);
         }
         return result;
@@ -206,9 +196,7 @@ public class DataService {
     // anything containing "quest" to the bottom of a bare-name search.
     static List<MonsterStats> normalizeQuestVersions(List<MonsterStats> monsters) {
         Map<String, List<MonsterStats>> bn = new LinkedHashMap<>();
-        for (MonsterStats monster : monsters) {
-            bn.computeIfAbsent(monster.nameLower, k -> new ArrayList<>()).add(monster);
-        }
+        for (MonsterStats monster : monsters) bn.computeIfAbsent(monster.nameLower, k -> new ArrayList<>()).add(monster);
         List<MonsterStats> out = new ArrayList<>(monsters.size());
         for (List<MonsterStats> group : bn.values()) {
             boolean pairWithPostQuest = group.size() == 2 && group.stream()
@@ -301,9 +289,7 @@ public class DataService {
             if (row.level != mlbg.get(groupKey) || !emitted.add(groupKey)) continue;
             boolean distinctVersions = skbn.get(nk).size() > 1;
             List<String> attributes = new ArrayList<>();
-            if (row.attributes != null) for (String attr : row.attributes) {
-                if (attr != null) attributes.add(attr);
-            }
+            if (row.attributes != null) for (String attr : row.attributes) if (attr != null) attributes.add(attr);
             // Burn immunity rides the attribute list as a synthetic marker
             // (no MonsterStats signature churn): the eclipse/scorching burn
             // class is a NORMAL burn, blocked by Normal or Strong immunity
@@ -345,9 +331,7 @@ public class DataService {
             if (e == null) continue;
             // "Ranged <br/> Typeless" is two styles; stray DEL characters
             // (Araxxor, Dusk) are wiki noise.
-            for (String style : e.replace('\u007f', ' ').split("(?i)<br\\s*/?>")) {
-                if (!style.trim().isEmpty()) styles.add(style.trim());
-            }
+            for (String style : e.replace('\u007f', ' ').split("(?i)<br\\s*/?>")) if (!style.trim().isEmpty()) styles.add(style.trim());
         }
         return styles;
     }

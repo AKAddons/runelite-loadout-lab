@@ -82,7 +82,7 @@ public class BoostSelector {
         // actually reach today.
         for (String name : LADDERS.getOrDefault(style, new String[0])) {
             // Any dose counts; the super attack + strength pair needs one of
-            // each (Kendyy, Discord 2026-10-29: no super combats left).
+            // each (field report 2026-10-29: no super combats left).
             boolean has = "SUPER_ATTACK_STRENGTH".equals(name) ? ownsAny(owned, ids("SUPER_ATTACK")) && ownsAny(owned, ids("SUPER_STRENGTH"))
                 : ownsAny(owned, ids(name));
             if (!(noHearts && name.endsWith("_HEART")) && has) return BoostProfile.valueOf(name);
@@ -105,9 +105,7 @@ public class BoostSelector {
     }
 
     static boolean ownsAny(OwnedItems owned, int[] ids) {
-        for (int id : ids) {
-            if (owned.owns(id)) return true;
-        }
+        for (int id : ids) if (owned.owns(id)) return true;
         return false;
     }
 }

@@ -54,9 +54,7 @@ public class RenderSurface {
         if (raid != null) return raid;
         String name = str(mob, "name");
         if (name != null) {
-            for (var route : MOOD_ROUTES.entrySet()) {
-                if (name.startsWith(route.getKey())) return route.getValue();
-            }
+            for (var route : MOOD_ROUTES.entrySet()) if (name.startsWith(route.getKey())) return route.getValue();
         }
         return null;
     }
@@ -80,11 +78,17 @@ public class RenderSurface {
     // The "PvP world chip" setting: show it on every card.
     BooleanSupplier pvpChipGate = () -> false;
 
-    public void setDisplayGates(BooleanSupplier animation, BooleanSupplier wildyRisk, BooleanSupplier pvpChip) {
+    public void setDisplayGates(BooleanSupplier animation, BooleanSupplier wildyRisk, BooleanSupplier pvpChip, BooleanSupplier hideDoneCa) {
         animationGate = animation;
         wildyRiskGate = wildyRisk;
         pvpChipGate = pvpChip;
+        hideDoneCaGate = hideDoneCa;
     }
+    BooleanSupplier hideDoneCaGate = () -> false;
+
+    // A completed task's chip hides under the setting, unless it is picked
+    // (so it can be dropped) - ISS-01M672BWDBZ9DJ7Y0YTA39RRG8.
+    static boolean showCaChip(boolean done, boolean picked, boolean hideDone) { return !hideDone || !done || picked; }
     JPanel root;
     JPanel matchesBox;
     // The classic search cadence: 150ms debounce, 2+ characters.
@@ -226,9 +230,7 @@ public class RenderSurface {
             if (repaintDebounce == null) {
                 repaintDebounce = once(50, e -> {
                     int burst = pendingRepaints.getAndSet(0);
-                    if (burst > 20) {
-                        log.warn("Loadout Lab UI: {} publishes coalesced into one rebuild" + " - a publish loop upstream?", burst);
-                    }
+                    if (burst > 20) log.warn("Loadout Lab UI: {} publishes coalesced into one rebuild" + " - a publish loop upstream?", burst);
                     repaint();
                 });
             }
@@ -421,6 +423,11 @@ public class RenderSurface {
         return i < 0 ? part : REQ_NAMES[i] + " " + m.group(2) + " " + m.group(3);
     }
 
+    // A god stat wants ">= 1" nearly always (Andrew 2026-10-30: "99% of
+    // cases people want just >= 1"): the box fills with 1 on pick, and an
+    // empty box means 1.
+    static String reqValue(String key, String typed) { return typed.isEmpty() && key.startsWith("god:") ? "1" : typed; }
+
     // The "+ Requirement" row: a stat, at least / at most, a number, Add.
     List<String> reqParts() {
         return reqLive.isEmpty() ? new ArrayList<>() : new ArrayList<>(List.of(reqLive.split(";")));
@@ -460,8 +467,14 @@ public class RenderSurface {
         tipText(op, text("req.op"));
         JTextField value = new JTextField(3);
         tipText(value, text("req.value"));
+        stat.addActionListener(e -> {
+            if (REQ_KEYS[stat.getSelectedIndex()].startsWith("god:")) {
+                op.setSelectedIndex(0);
+                value.setText("1");
+            }
+        });
         Runnable send = () -> {
-            String v = value.getText().trim();
+            String v = reqValue(REQ_KEYS[stat.getSelectedIndex()], value.getText().trim());
             if (!v.matches("-?[0-9]+(\\.[0-9]+)?")) return;
             List<String> next = reqParts();
             next.add(REQ_KEYS[stat.getSelectedIndex()] + REQ_OPS[op.getSelectedIndex()] + v);
@@ -496,9 +509,7 @@ public class RenderSurface {
         tipText(quad, "Saradomin, Zamorak, Bandos and Armadyl items worn at once (the God Wars Dungeon)");
         onClick(quad, () -> {
             List<String> next = reqParts();
-            for (String god : new String[]{"saradomin", "zamorak", "bandos", "armadyl"}) {
-                if (!next.contains("god:" + god + ">=1")) next.add("god:" + god + ">=1");
-            }
+            for (String god : new String[]{"saradomin", "zamorak", "bandos", "armadyl"}) if (!next.contains("god:" + god + ">=1")) next.add("god:" + god + ">=1");
             setRequirements(next);
         });
         c.gridy = 2;
@@ -615,9 +626,7 @@ public class RenderSurface {
     // True when any mob on the page passes the test.
     static boolean anyMob(Map page, Predicate<Map> test) {
         for (Map entry : list(page, "entries")) {
-            for (Map mob : list(entry, "mobs")) {
-                if (test.test(mob)) return true;
-            }
+            for (Map mob : list(entry, "mobs")) if (test.test(mob)) return true;
         }
         return false;
     }
@@ -856,9 +865,7 @@ public class RenderSurface {
 
     // True when any entry of the page carries the flag.
     static boolean anyEntry(Map page, String flag) {
-        for (Map entry : list(page, "entries")) {
-            if (flag(entry, flag)) return true;
-        }
+        for (Map entry : list(page, "entries")) if (flag(entry, flag)) return true;
         return false;
     }
 
@@ -1060,6 +1067,7 @@ public class RenderSurface {
             for (Map t : list(page, "caTasks")) {
                 String tid = String.valueOf(id(t, "id"));
                 boolean on = picks.contains(tid);
+                if (!showCaChip(flag(t, "done"), on, hideDoneCaGate.getAsBoolean())) continue;
                 reqChips.add(pill(str(t, "name"), on, str(t, "tier") + " combat achievement: " + str(t, "desc")
                     + " " + (on ? text("ca.drop") : text("ca.pick")), () -> {
                         List<String> next = new ArrayList<>(picks);
@@ -1182,9 +1190,7 @@ public class RenderSurface {
         root.revalidate();
         root.repaint();
         long rm = (System.nanoTime() - rebuildStart) / 1_000_000;
-        if (rm > 30) {
-            log.debug("perf: UI rebuild took {}ms ({} identical pages skipped since last)", rm, skippedIdentical);
-        }
+        if (rm > 30) log.debug("perf: UI rebuild took {}ms ({} identical pages skipped since last)", rm, skippedIdentical);
         skippedIdentical = 0;
     }
 

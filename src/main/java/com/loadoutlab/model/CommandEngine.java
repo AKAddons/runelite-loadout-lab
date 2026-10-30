@@ -863,9 +863,7 @@ public class CommandEngine {
                 Object ids = arg(args, "ids");
                 if (ids instanceof List) {
                     Set<Integer> ii = new HashSet<>();
-                    for (Object id : (List<?>) ids) {
-                        if (id instanceof Number) ii.add(((Number) id).intValue());
-                    }
+                    for (Object id : (List<?>) ids) if (id instanceof Number) ii.add(((Number) id).intValue());
                     ops.showInBank(ii);
                 } else ops.showInBank(null);
                 return true;
@@ -876,21 +874,17 @@ public class CommandEngine {
                 Object layout = arg(args, "layout");
                 if (ids instanceof List && layout instanceof List) {
                     Set<Integer> ii = new LinkedHashSet<>();
-                    for (Object id : (List<?>) ids) {
-                        if (id instanceof Number) ii.add(((Number) id).intValue());
-                    }
+                    for (Object id : (List<?>) ids) if (id instanceof Number) ii.add(((Number) id).intValue());
                     List<?> slots = (List<?>) layout;
                     int[] positions = new int[slots.size()];
-                    for (int i = 0; i < slots.size(); i++) {
-                        positions[i] = slots.get(i) instanceof Number ? ((Number) slots.get(i)).intValue() : -1;
-                    }
+                    for (int i = 0; i < slots.size(); i++) positions[i] = slots.get(i) instanceof Number ? ((Number) slots.get(i)).intValue() : -1;
                     ops.filterBank(ii, positions);
                 } else ops.filterBank(null, null);
                 return true;
             }
             case "refresh": {
                 // The ledger's background refresh - silent by contract. The
-                // owned-scan seeds follow it (Elling 2026-10-30: ToA on the
+                // owned-scan seeds follow it (field report 2026-10-30: ToA on the
                 // Warden's book because the Book of the Dead landed after the
                 // selection): thralls and Death Charge re-seed, unless the
                 // player set the chip since the selection.
@@ -946,9 +940,7 @@ public class CommandEngine {
                     // must survive the jump) and a fresh history node.
                     Object entries = snapshot.get("entries");
                     if (entries instanceof List) {
-                        for (Object en : (List<?>) entries) {
-                            if (en instanceof Map) ((Map) en).put("params", state.paramsNode());
-                        }
+                        for (Object en : (List<?>) entries) if (en instanceof Map) ((Map) en).put("params", state.paramsNode());
                     }
                     link.publishPage(withHistory(snapshot));
                 } else {
@@ -1181,9 +1173,7 @@ public class CommandEngine {
 
     // Each cleared entry's id and scope (ALL when it carries none).
     static void eachEntry(List<Map> entries, BiConsumer<Integer, String> fn) {
-        for (Map e : entries) {
-            fn.accept(((Number) e.get("id")).intValue(), e.get("scope") instanceof String ? (String) e.get("scope") : "ALL");
-        }
+        for (Map e : entries) fn.accept(((Number) e.get("id")).intValue(), e.get("scope") instanceof String ? (String) e.get("scope") : "ALL");
     }
 
     // A numeric command argument, or null when absent or not a number.
@@ -1216,8 +1206,8 @@ public class CommandEngine {
         if (resolve != null) state.setParam("antifireMode", resolve.apply(selected));
     }
 
-    // Sunfire runes are assumed when the owned scan sees any (Kendyy,
-    // Discord 2026-10-19); the plate's pick holds until the next selection
+    // Sunfire runes are assumed when the owned scan sees any (field report
+    // 2026-10-19); the plate's pick holds until the next selection
     // or Detect best.
     void seedSunfire() {
         IntPredicate owns = ownedCheck;
@@ -1554,6 +1544,11 @@ public class CommandEngine {
         if (cast) addUtilityRunes(out, spell, spell + " (per cast) - in place of the " + Names.lower(item));
     }
 
+    // Which combat achievement tasks the player has done, by the wiki's task
+    // number - the plugin reads the completion varps (ISS-01M672BWDBZ9DJ7Y0YTA39RRG8).
+    @Setter
+    volatile IntPredicate caDone = id -> false;
+
     // The combat achievement tasks of the mobs on the page, for the chips.
     List<Map> caTasks() {
         List<Map> out = new ArrayList<>();
@@ -1563,7 +1558,9 @@ public class CommandEngine {
         for (MonsterStats mob : mobs) {
             for (CombatAchievements.Task t : CombatAchievements.tasksFor(mob)) {
                 if (!seen.add(t.getId())) continue; // a group's members share a task once
-                out.add(new LinkedHashMap<>(Map.of("id", t.getId(), "name", t.getName(), "tier", t.getTier(), "desc", t.getDesc())));
+                Map node = new LinkedHashMap<>(Map.of("id", t.getId(), "name", t.getName(), "tier", t.getTier(), "desc", t.getDesc()));
+                if (caDone.test(t.getId())) node.put("done", true);
+                out.add(node);
             }
         }
         return out;
@@ -1671,9 +1668,7 @@ public class CommandEngine {
         List<Map> options = new ArrayList<>();
         String q = query == null ? "" : query.trim();
         if (q.length() < 2) return options;
-        for (MonsterGroup group : MonsterGroups.search(groups(), q, 3)) {
-            options.add(map("label", group.label(), "group", group.getName()));
-        }
+        for (MonsterGroup group : MonsterGroups.search(groups(), q, 3)) options.add(map("label", group.label(), "group", group.getName()));
         for (MonsterStats m : data.searchMonsters(q, 25)) {
             Map node = map("label", m.label(), "id", m.id);
             if (isNaval(m.name)) node.put("naval", true);
@@ -1725,9 +1720,7 @@ public class CommandEngine {
     // on another book.
     static List<Map> optionNodes(List<Option> all, boolean hideCureMe) {
         List<Map> options = new ArrayList<>();
-        for (Option option : all) {
-            if (!(hideCureMe && "CURE_ME".equals(option.key))) options.add(map("key", option.key, "name", option.name));
-        }
+        for (Option option : all) if (!(hideCureMe && "CURE_ME".equals(option.key))) options.add(map("key", option.key, "name", option.name));
         return options;
     }
 
@@ -1795,9 +1788,7 @@ public class CommandEngine {
     static List<Object[]> dropPinsOf(StoreOps ops, int mi, int itemId) {
         List<Object[]> dropped = new ArrayList<>();
         ops.mobs().allPins(mi).forEach((scope, slots) -> slots.forEach((slot, pinned) -> {
-            if (pinned == itemId) {
-                dropped.add(new Object[]{scope, slot});
-            }
+            if (pinned == itemId) dropped.add(new Object[]{scope, slot});
         }));
         for (Object[] pin : dropped) ops.mobs().unpin(mi, (String) pin[0], (GearSlot) pin[1]);
         return dropped;
@@ -2158,9 +2149,7 @@ public class CommandEngine {
             }
         }
         Map ss = new LinkedHashMap<>();
-        for (SpellStats spell : data.spells) {
-            ss.put(spell.name, spellSprite(spell.name));
-        }
+        for (SpellStats spell : data.spells) ss.put(spell.name, spellSprite(spell.name));
         // Spellbook Swap is 96 Magic (Vengeance 94) - offered when the
         // player can actually reach the level, boosts included.
         Map options = map("prayers", prayers, "boosts", boosts,
@@ -2194,9 +2183,7 @@ public class CommandEngine {
         int count = intParam("cannonCount");
         String ap = String.valueOf(params.get("cannonAmmo"));
         List<String> ct = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            ct.add(String.valueOf( params.get(i == 0 ? "cannon1Material" : "cannon2Material")));
-        }
+        for (int i = 0; i < count; i++) ct.add(String.valueOf( params.get(i == 0 ? "cannon1Material" : "cannon2Material")));
         boolean detect = "detect".equals(ap);
         String ammo = ap;
         String ab = null;
@@ -2215,9 +2202,7 @@ public class CommandEngine {
             // the bank does not hold (the 0.4.1 rule, applied to ammo).
             IntPredicate owns = ownedCheck;
             String best = null;
-            for (Ball ball : balls()) {
-                if (everyone.test(ball.tier) && owns != null && owns.test(ball.itemId)) best = ball.tier;
-            }
+            for (Ball ball : balls()) if (everyone.test(ball.tier) && owns != null && owns.test(ball.itemId)) best = ball.tier;
             if (best == null) {
                 String top = bestSharedBall(ct);
                 ab = "No cannonballs banked" + (top == null ? "" : " (up to " + top + ")");

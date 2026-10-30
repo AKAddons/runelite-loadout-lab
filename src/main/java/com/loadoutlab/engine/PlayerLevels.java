@@ -54,9 +54,7 @@ public class PlayerLevels {
     public PlayerLevels overridden(int[] sims) {
         if (sims == null || sims.length < 7) return this;
         int[] mine = {attack, strength, defence, ranged, magic, prayer, hitpoints};
-        for (int i = 0; i < mine.length; i++) {
-            if (sims[i] > 0) mine[i] = sims[i];
-        }
+        for (int i = 0; i < mine.length; i++) if (sims[i] > 0) mine[i] = sims[i];
         return new PlayerLevels(mine[0], mine[1], mine[2], mine[3], mine[4], mine[5], mine[6]);
     }
 

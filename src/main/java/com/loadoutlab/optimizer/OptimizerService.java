@@ -246,9 +246,7 @@ public class OptimizerService {
     // expected hit.
     static double[] hitDist(LoadoutData data, OptimizationRequest request, DpsResult shown) {
         String spell = shown.getSpellName();
-        if (spell != null) {
-            for (SpellStats s : data.spells) if (s.name.equals(spell)) request = request.withSpell(s);
-        }
+        if (spell != null) for (SpellStats s : data.spells) if (s.name.equals(spell)) request = request.withSpell(s);
         var calc = new DpsCalculator();
         double[] dist = calc.hitDist(request, shown.loadout);
         return dist != null && Math.abs(HitDist.mean(dist) - shown.expectedHit) <= 1e-6 * Math.max(1, shown.expectedHit) ? dist : null;
@@ -1354,14 +1352,12 @@ public class OptimizerService {
     // "retrieves the switch's arrows or bolts" on a carried Ava's device.
     static Map<Integer, String> avasNotes(List<GearItem> bench) {
         Map<Integer, String> notes = new HashMap<>();
-        for (GearItem g : bench) {
-            if (RangedAmmo.avasDevice(g)) notes.put(g.id, "retrieves the ranged switch's arrows or bolts");
-        }
+        for (GearItem g : bench) if (RangedAmmo.avasDevice(g)) notes.put(g.id, "retrieves the ranged switch's arrows or bolts");
         return notes;
     }
 
     // The best 2-tick-on-rapid ranged weapon (speed 3: darts, knives, the
-    // blowpipe) for a fight's adds (ISS-01M65N6WS5N2V9TQC0MJ03NKY8, Elling:
+    // blowpipe) for a fight's adds (ISS-01M65N6WS5N2V9TQC0MJ03NKY8, field report:
     // Hespori's sprouts) - owned (or simmed) on the Yours side, any in the
     // game for BiS, ranked by its dps against the mob alone.
     static GearItem fastRanged(ComputeContext ctx, OptimizationRequest request, MonsterStats mob, boolean owned) {
@@ -1510,9 +1506,7 @@ public class OptimizerService {
         double bestTotal = -1;
         for (String book : who.keySet()) {
             double total = 0;
-            for (int j : demanding) {
-                total += kitWeight(mobs.get(j)) * magicDpsUnder(ctx, mobs, j, perMob.get(j), book);
-            }
+            for (int j : demanding) total += kitWeight(mobs.get(j)) * magicDpsUnder(ctx, mobs, j, perMob.get(j), book);
             if (total > bestTotal) {
                 bestTotal = total;
                 best = book;
@@ -1545,9 +1539,7 @@ public class OptimizerService {
             if (magic != null && magic.getSpellName() != null && !best.equals(bookOf(ctx.dataset, magic.getSpellName()))) recompute = true;
         }
         var others = new StringBuilder();
-        for (String book : who.keySet()) {
-            if (!book.equals(best)) others.append(others.length() == 0 ? " (it carries more of the group's magic than the " : " or ") .append(book);
-        }
+        for (String book : who.keySet()) if (!book.equals(best)) others.append(others.length() == 0 ? " (it carries more of the group's magic than the " : " or ") .append(book);
         if (others.length() > 0) others.append(" book would)");
         return new GroupBook(best, who.get(best) + " wants " + what.get(best) + " - the group runs the " + best
             + " book" + others + edge + "; thralls and Death Charge stand down", recompute);
@@ -1585,16 +1577,12 @@ public class OptimizerService {
 
     // Magic is how this mob gets fought: nothing else owned beats it.
     static boolean usesMagic(Map<CombatStyle, StyleResult> results, DpsResult magic) {
-        for (var entry : results.entrySet()) {
-            if (entry.getKey() != MAGIC && !entry.getValue().owned.isEmpty() && entry.getValue().owned.get(0).net > magic.net) return false;
-        }
+        for (var entry : results.entrySet()) if (entry.getKey() != MAGIC && !entry.getValue().owned.isEmpty() && entry.getValue().owned.get(0).net > magic.net) return false;
         return true;
     }
 
     static String bookOf(LoadoutData dataset, String spell) {
-        for (SpellStats s : dataset.spells) {
-            if (s.name.equals(spell)) return Names.lower(s.spellbook);
-        }
+        for (SpellStats s : dataset.spells) if (s.name.equals(spell)) return Names.lower(s.spellbook);
         return "";
     }
 
@@ -1613,9 +1601,7 @@ public class OptimizerService {
     // overload+, ToA salts), else null.
     static BoostProfile suppliedAcross(List<MonsterStats> mobs) {
         BoostProfile supplied = suppliedBoost(mobs.get(0));
-        for (MonsterStats mob : mobs) {
-            if (suppliedBoost(mob) != supplied) return null;
-        }
+        for (MonsterStats mob : mobs) if (suppliedBoost(mob) != supplied) return null;
         return supplied;
     }
 
@@ -1692,9 +1678,7 @@ public class OptimizerService {
     static int unownedValue(Loadout loadout, OwnedItems owned) {
         if (loadout == null) return 0;
         long total = 0;
-        for (GearItem item : loadout.items()) {
-            if (owned == null || !owned.owns(item.id)) total += item.getPriceOrZero();
-        }
+        for (GearItem item : loadout.items()) if (owned == null || !owned.owns(item.id)) total += item.getPriceOrZero();
         return (int) min(Integer.MAX_VALUE, total);
     }
 
@@ -1752,9 +1736,7 @@ public class OptimizerService {
         List<GearItem> inventory = new ArrayList<>();
         Set<Integer> packed = new HashSet<>();
         if (specCarried != null && !wi.contains(specCarried.id) && packed.add(specCarried.id)) inventory.add(specCarried);
-        for (GearItem item : plan) {
-            if (!wi.contains(item.id) && packed.add(item.id)) inventory.add(item);
-        }
+        for (GearItem item : plan) if (!wi.contains(item.id) && packed.add(item.id)) inventory.add(item);
         return inventory;
     }
 
@@ -1785,9 +1767,7 @@ public class OptimizerService {
         if (emptyBest(fb)) return null;
         Set<Integer> have = base.ids();
         for (GearItem item : carried) have.add(item.id);
-        for (GearItem item : fb.get(0).loadout.items()) {
-            if (!have.contains(item.id)) return null;
-        }
+        for (GearItem item : fb.get(0).loadout.items()) if (!have.contains(item.id)) return null;
         return fb.get(0);
     }
 
@@ -1825,9 +1805,7 @@ public class OptimizerService {
             if (style == primary) continue;
             List<Loadout> sources = new ArrayList<>();
             sources.add(entry.getValue().shared);
-            for (List<DpsResult> best : entry.getValue().bests) {
-                if (!emptyBest(best)) sources.add(best.get(0).loadout);
-            }
+            for (List<DpsResult> best : entry.getValue().bests) if (!emptyBest(best)) sources.add(best.get(0).loadout);
             for (Loadout source : sources) {
                 GearItem weapon = source.getWeapon();
                 if (weapon == null || (base.getWeapon() != null && base.getWeapon().id == weapon.id)) continue;
@@ -1858,9 +1836,7 @@ public class OptimizerService {
     DpsResult kitBest(DpsCalculator calc, Loadout base, CombatStyle primary,
         List<GearItem> singles, List<SwapBundle> bundles, List<GearItem> carried, Map<CombatStyle, SharedSide> sides, int mi) {
         DpsResult best = null;
-        for (CombatStyle s : sides.keySet()) {
-            best = better(best, shownFor(calc, base, primary, singles, bundles, carried, sides, mi, s));
-        }
+        for (CombatStyle s : sides.keySet()) best = better(best, shownFor(calc, base, primary, singles, bundles, carried, sides, mi, s));
         return best;
     }
 
@@ -1930,9 +1906,7 @@ public class OptimizerService {
         List<GearItem> pool = new ArrayList<>(swapCandidates(base, sides.get(primary).bests));
         for (CombatStyle s : sides.keySet()) {
             if (s == primary) continue;
-            for (GearItem item : swapCandidates(base, sides.get(s).bests)) {
-                if (item.slot != WEAPON && pool.stream().noneMatch(i -> i.id == item.id)) pool.add(item);
-            }
+            for (GearItem item : swapCandidates(base, sides.get(s).bests)) if (item.slot != WEAPON && pool.stream().noneMatch(i -> i.id == item.id)) pool.add(item);
         }
         return pool;
     }
@@ -2054,9 +2028,7 @@ public class OptimizerService {
             used += bc;
             current = bestTotal;
             String appliedKey = bundlesKeyOf(kit.bundles);
-            for (int j = 0; j < n; j++) {
-                mobDps[j] = evalMobDps(calc, base, primary, kit.singles, kit.bundles, appliedKey, sides, rbm.get(j), j, memo);
-            }
+            for (int j = 0; j < n; j++) mobDps[j] = evalMobDps(calc, base, primary, kit.singles, kit.bundles, appliedKey, sides, rbm.get(j), j, memo);
         }
         kit.total = current;
         return kit;
@@ -2126,9 +2098,7 @@ public class OptimizerService {
     // nobody's #1 is not considered (heuristic).
     Loadout chooseSharedLoadout(DpsCalculator calc, List<List<DpsResult>> bests, List<OptimizationRequest> reqs, double[] weights) {
         List<Loadout> candidates = new ArrayList<>();
-        for (List<DpsResult> b : bests) {
-            if (!emptyBest(b)) candidates.add(b.get(0).loadout);
-        }
+        for (List<DpsResult> b : bests) if (!emptyBest(b)) candidates.add(b.get(0).loadout);
         Loadout best = null;
         double bs = Double.NEGATIVE_INFINITY;
         for (Loadout loadout : candidates) {
@@ -2316,9 +2286,7 @@ public class OptimizerService {
             // actually wear across the roster - the inventory view shows
             // plan-minus-worn, so displaced pieces no mob uses drop out.
             var plan = new LinkedHashMap<Integer, GearItem>();
-            for (DpsResult shown : ownedSide.shown) {
-                if (shown != null) pack(plan, shown.loadout.items());
-            }
+            for (DpsResult shown : ownedSide.shown) if (shown != null) pack(plan, shown.loadout.items());
             pack(plan, Arrays.asList(carriedSlots[1], carriedSlots[2]));
             for (int j = 0; j < n; j++) {
                 MonsterStats mob = mobs.get(j);
@@ -2539,9 +2507,7 @@ public class OptimizerService {
     // Each mob's result on the shared set (all null without one).
     DpsResult[] shownAcross(DpsCalculator calc, List<OptimizationRequest> reqs, Loadout shared) {
         DpsResult[] shown = new DpsResult[reqs.size()];
-        for (int j = 0; shared != null && j < shown.length; j++) {
-            shown[j] = calcRespecting(calc, reqs.get(j), shared);
-        }
+        for (int j = 0; shared != null && j < shown.length; j++) shown[j] = calcRespecting(calc, reqs.get(j), shared);
         return shown;
     }
 
@@ -2576,9 +2542,7 @@ public class OptimizerService {
 
     // Every non-null item into the plan, once each.
     static void pack(Map<Integer, GearItem> plan, Collection<GearItem> items) {
-        for (GearItem item : items) {
-            if (item != null) plan.putIfAbsent(item.id, item);
-        }
+        for (GearItem item : items) if (item != null) plan.putIfAbsent(item.id, item);
     }
 
     // The style whose free best answers mob j with the most dps (the
@@ -2635,9 +2599,7 @@ public class OptimizerService {
     static SpecPick pickFor(SharedSide side, int j, GearItem carried) {
         if (side == null || carried == null) return null;
         for (SpecPick[] option : side.specOptions) {
-            for (SpecPick pick : option) {
-                if (pick != null && pick.weapon.id == carried.id) return option[j];
-            }
+            for (SpecPick pick : option) if (pick != null && pick.weapon.id == carried.id) return option[j];
         }
         return null;
     }
@@ -2716,7 +2678,7 @@ public class OptimizerService {
         // wears the ammo the mob's caring answer rolls with (the ranged
         // bolts ride in the melee set), and the shared bases follow suit.
         // Only the style that ANSWERS a mob (its best dps) sets the ammo
-        // (Kendyy 2026-10-20: the magic card wore bolts over a blessing
+        // (field report 2026-10-20: the magic card wore bolts over a blessing
         // at Barrows, where ranged answered nobody).
         GearItem rosterAmmo = null;
         GearItem[] nb = new GearItem[n];
@@ -2893,9 +2855,7 @@ public class OptimizerService {
     static List<GearItem> carriedOf(List<GearItem> singles, List<SwapBundle> bundles) {
         List<GearItem> carried = new ArrayList<>(singles);
         for (SwapBundle bundle : bundles) {
-            for (GearItem item : bundle.items) {
-                if (carried.stream().noneMatch(i -> i.id == item.id)) carried.add(item);
-            }
+            for (GearItem item : bundle.items) if (carried.stream().noneMatch(i -> i.id == item.id)) carried.add(item);
         }
         return carried;
     }
@@ -2971,7 +2931,7 @@ public class OptimizerService {
         // next to a chargebow base needs arrows - an extra slot).
         final GearItem ammo;
         // The offhand brought for the switch - a one-handed spec weapon
-        // off a two-handed main (N, Discord 2026-09-26). An extra slot.
+        // off a two-handed main (field report 2026-09-26). An extra slot.
         final GearItem offhand;
         // This pick WITH its best offhand and the numbers that follow;
         // null when none applies. The bare pick is what ranks.
@@ -3022,9 +2982,7 @@ public class OptimizerService {
         List<SpecPick[]> pc = new ArrayList<>();
         for (Integer id : candidates) {
             SpecPick[] bare = new SpecPick[n];
-            for (int j = 0; j < n; j++) {
-                bare[j] = bestSpec(ctx.dataset, reqs.get(j), shown[j], owned, singleton(id), specPin != null);
-            }
+            for (int j = 0; j < n; j++) bare[j] = bestSpec(ctx.dataset, reqs.get(j), shown[j], owned, singleton(id), specPin != null);
             // The switch WITH its offhand is its own option, ranked beside
             // the bare weapon: the seat check keeps whichever pays for its
             // slots. A pinned weapon is the player's explicit choice - it
@@ -3058,9 +3016,7 @@ public class OptimizerService {
     // game-best side: everything standard is available.
     static Loadout lightbearerVariant(LoadoutData dataset, Loadout shared, List<OptimizationRequest> reqs, OwnedItems owned) {
         if (shared == null) return null;
-        for (OptimizationRequest req : reqs) {
-            if (req.pinnedFor(RING) != null || req.isRiskConstrained()) return null;
-        }
+        for (OptimizationRequest req : reqs) if (req.pinnedFor(RING) != null || req.isRiskConstrained()) return null;
         return lightbearerSwap(dataset, shared, reqs, owned);
     }
 
@@ -3098,9 +3054,7 @@ public class OptimizerService {
     // kill with the spec's dpsAdded on top of its shown set's net dps.
     static double tripValue(SpecPick[] picks, double[] weights, DpsResult[] shown, List<MonsterStats> mobs) {
         double score = 0;
-        for (int j = 0; j < weights.length; j++) {
-            if (picks[j] != null && shown[j] != null) score += worth(shown[j].net + picks[j].dpsAdded, weights[j], mobs.get(j)) - worth(shown[j].net, weights[j], mobs.get(j));
-        }
+        for (int j = 0; j < weights.length; j++) if (picks[j] != null && shown[j] != null) score += worth(shown[j].net + picks[j].dpsAdded, weights[j], mobs.get(j)) - worth(shown[j].net, weights[j], mobs.get(j));
         return score;
     }
 
@@ -3108,9 +3062,7 @@ public class OptimizerService {
     // a style side weighs by styleUseWeights, the cross-style kit by hpWeights.
     static double tripValue(SpecPick[] picks, double[] weights) {
         double score = 0;
-        for (int j = 0; j < weights.length; j++) {
-            if (picks[j] != null) score += picks[j].dpsAdded * weights[j];
-        }
+        for (int j = 0; j < weights.length; j++) if (picks[j] != null) score += picks[j].dpsAdded * weights[j];
         return score;
     }
 
@@ -3143,9 +3095,7 @@ public class OptimizerService {
     // The bench slots those carried pieces spend.
     static int slotsOf(GearItem... slots) {
         int spent = 0;
-        for (GearItem slot : slots) {
-            if (slot != null) spent++;
-        }
+        for (GearItem slot : slots) if (slot != null) spent++;
         return spent;
     }
 

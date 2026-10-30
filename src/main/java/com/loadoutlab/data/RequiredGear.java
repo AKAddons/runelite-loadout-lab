@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import static com.loadoutlab.data.JsonResources.*;
 import java.util.function.IntPredicate;
 
-// Mandatory protective slayer gear per monster (grZ field request
+// Mandatory protective slayer gear per monster (field request
 // 2026-08-08: "some tasks where u need to equip something. would be
 // cool if it was autopinned"): a mirror shield vs a basilisk's gaze, a
 // lit bug lantern to harm harpies at all. The optimizer enforces the
@@ -127,9 +127,7 @@ public class RequiredGear {
                     ids.add(item.ids);
                 }
                 var carried = new Carried(row.note, names, ids, row.category);
-                for (String m : row.monsters) {
-                    (table == root.swaps ? SWAPS_BY_NAME : CARRIED_BY_NAME).computeIfAbsent(m, k -> new ArrayList<>()).add(carried);
-                }
+                for (String m : row.monsters) (table == root.swaps ? SWAPS_BY_NAME : CARRIED_BY_NAME).computeIfAbsent(m, k -> new ArrayList<>()).add(carried);
             }
         }
     }
@@ -143,9 +141,7 @@ public class RequiredGear {
     public static List<Integer> swapIds(MonsterStats monster) {
         List<Integer> out = new ArrayList<>();
         for (Carried rule : swaps(monster)) {
-            for (int[] ids : rule.ids) {
-                for (int id : ids) out.add(id);
-            }
+            for (int[] ids : rule.ids) for (int id : ids) out.add(id);
         }
         return out;
     }
@@ -154,9 +150,7 @@ public class RequiredGear {
     public static String swapNote(int id) {
         for (List<Carried> rules : SWAPS_BY_NAME.values()) {
             for (Carried rule : rules) {
-                for (int[] ids : rule.ids) {
-                    for (int i : ids) if (i == id) return rule.note;
-                }
+                for (int[] ids : rule.ids) for (int i : ids) if (i == id) return rule.note;
             }
         }
         return "carried swap";

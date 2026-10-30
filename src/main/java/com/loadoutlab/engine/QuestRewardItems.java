@@ -26,9 +26,7 @@ public class QuestRewardItems {
         // Fail-loud on purpose: a silently empty table would quietly drop
         // every quest reward out of the obtainable-gear pool.
         JsonObject root = JsonResources.objectOrThrow(RESOURCE);
-        for (var entry : root.entrySet()) {
-            QUEST_BY_NAME.put(Names.lower(entry.getKey()), entry.getValue().getAsJsonObject().get("quest").getAsString());
-        }
+        for (var entry : root.entrySet()) QUEST_BY_NAME.put(Names.lower(entry.getKey()), entry.getValue().getAsJsonObject().get("quest").getAsString());
     }
 
 

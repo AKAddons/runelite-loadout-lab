@@ -174,7 +174,9 @@ public class IncomingDpsCalculator {
             this.defenceLevel = defenceLevel;
             magicEffective = magicEffectiveLevel(defenceLevel, ml);
             MonsterOffence off = monster.offence;
-            overridden = override != null;
+            // An entry with no attacks (a downtime or uptime alone) keeps the
+            // corpus styles as the damage model.
+            overridden = override != null && !override.attacks.isEmpty();
             int st = off.speedTicks;
             // An unpriced boss (the wiki lists its styles but no max hits) has
             // no attacks here either, as calculate() answers 0 with the reason.
@@ -304,9 +306,7 @@ public class IncomingDpsCalculator {
         void fillDps(Loadout loadout, double[] dps, boolean[] which, int[] row) {
             double[] land = new double[kinds.length];
             fillLand(loadout, land);
-            for (int i = 0; i < kinds.length; i++) {
-                if (which[i]) dps[i] = land[i] * (maxHit(i, row) / 2.0) * (hits == null ? 1 : hits[i]) / (speeds[i] * 0.6);
-            }
+            for (int i = 0; i < kinds.length; i++) if (which[i]) dps[i] = land[i] * (maxHit(i, row) / 2.0) * (hits == null ? 1 : hits[i]) / (speeds[i] * 0.6);
         }
 
         // Each attack's chance to land against the set.
@@ -331,9 +331,7 @@ public class IncomingDpsCalculator {
             fillDps(loadout, dps, live, row);
             int prayer = bestPrayer(dps, row);
             double heal = 0;
-            for (int i = 0; i < kinds.length; i++) {
-                if (live[i] && healPerLand[i] > 0) heal += land[i] * healPerLand[i] * hits[i] * shares[i] / (speeds[i] * 0.6) * through(i, prayer, row);
-            }
+            for (int i = 0; i < kinds.length; i++) if (live[i] && healPerLand[i] > 0) heal += land[i] * healPerLand[i] * hits[i] * shares[i] / (speeds[i] * 0.6) * through(i, prayer, row);
             return heal;
         }
 
@@ -396,9 +394,7 @@ public class IncomingDpsCalculator {
         // the flicked attacks call for, or null when nothing is flicked.
         String onCue() {
             List<String> prayers = new ArrayList<>();
-            for (int i = 0; i < kinds.length; i++) {
-                if (live[i] && flicked[i] && !prayers.contains(prayerOf[i])) prayers.add(prayerOf[i]);
-            }
+            for (int i = 0; i < kinds.length; i++) if (live[i] && flicked[i] && !prayers.contains(prayerOf[i])) prayers.add(prayerOf[i]);
             return prayers.isEmpty() ? null : String.join(" / ", prayers) + " on cue";
         }
 
@@ -412,15 +408,11 @@ public class IncomingDpsCalculator {
             double total = 0;
             if (!overridden) {
                 int blocked = bestBlockable(dps);
-                for (int i = 0; i < kinds.length; i++) {
-                    if (live[i] && i != blocked) total += dps[i] * share;
-                }
+                for (int i = 0; i < kinds.length; i++) if (live[i] && i != blocked) total += dps[i] * share;
                 return total;
             }
             int prayer = bestPrayer(dps, row);
-            for (int i = 0; i < kinds.length; i++) {
-                if (live[i]) total += dps[i] * shares[i] * through(i, prayer, row);
-            }
+            for (int i = 0; i < kinds.length; i++) if (live[i]) total += dps[i] * shares[i] * through(i, prayer, row);
             return total;
         }
 
@@ -577,9 +569,7 @@ public class IncomingDpsCalculator {
     // Sheet styles the model can price: a known kind at a known speed.
     static int modeledCount(List<String> styles, MonsterOffence off) {
         int modeled = 0;
-        for (String style : styles) {
-            if (kindOf(style) >= 0 && off.speedTicks > 0) modeled++;
-        }
+        for (String style : styles) if (kindOf(style) >= 0 && off.speedTicks > 0) modeled++;
         return modeled;
     }
 
@@ -656,7 +646,7 @@ public class IncomingDpsCalculator {
 
     // The prayer follows the attack's DELIVERY, never its accuracy roll
     // (wiki: Magical melee / Magical ranged / Ranged magic / Ranged melee;
-    // field report 2026-08-08, grZ: a Pyrefiend's magical melee was told
+    // field report 2026-08-08: a Pyrefiend's magical melee was told
     // Protect from Magic - Protect from MELEE blocks it):
     //   magical/magic melee -> Melee (rolls vs magic def, swings melee)
     //   magical ranged      -> Missiles (rolls vs magic def, projectile)

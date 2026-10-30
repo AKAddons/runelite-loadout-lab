@@ -35,6 +35,11 @@
   ],
   "note": "Wiki: melee (35) only partially blocked by Protect from Melee - modeled as unblockable 18; magic 50 and ranged 17 prayable; no frequency - uniform.; melee TRUE max 35, Protect from Melee halves it (factor 0.5)"
  },
+ "hespori": {
+  "downtime": 18,
+  "downtimeNote": "three flower rounds (four buds of 10 hp, one hit of 10+ each with the ranged swap)",
+  "note": "Wiki: the buds open at the start, 66% and 33%, the immunity ends with the last bud - a fixed cost of about 6 s a round with a 2-tick weapon, not an uptime share."
+ },
  "blood moon": {
     "uptime": 0.4615,
   "attacks": [

@@ -59,17 +59,13 @@ public class BlowpipeDarts {
     // The representative (unpoisoned) dart id for a display tier name -
     // lets the panel offer "exclude the loaded darts" on the blowpipe.
     public static Integer baseIdForTierName(String tierName) {
-        for (int tier = 0; tier < TIER_NAMES.length; tier++) {
-            if (TIER_NAMES[tier].equals(tierName)) return TIERS[tier][1];
-        }
+        for (int tier = 0; tier < TIER_NAMES.length; tier++) if (TIER_NAMES[tier].equals(tierName)) return TIERS[tier][1];
         return null;
     }
 
     // Excluding any variant of a dart tier protects the whole tier.
     static boolean tierExcluded(OptimizationRequest request, int tier) {
-        for (int i = 1; i < TIERS[tier].length; i++) {
-            if (request.isExcluded(TIERS[tier][i])) return true;
-        }
+        for (int i = 1; i < TIERS[tier].length; i++) if (request.isExcluded(TIERS[tier][i])) return true;
         return false;
     }
 
@@ -79,16 +75,12 @@ public class BlowpipeDarts {
             || request.candidateMode == CandidateMode.OWNED_OR_BUDGET;
         if (!ownershipScoped) {
             // Game best: the best dart tier that is not excluded.
-            for (int tier = 0; tier < TIERS.length; tier++) {
-                if (!tierExcluded(request, tier)) return tier;
-            }
+            for (int tier = 0; tier < TIERS.length; tier++) if (!tierExcluded(request, tier)) return tier;
             return -1;
         }
         for (int tier = 0; tier < TIERS.length; tier++) {
             if (tierExcluded(request, tier)) continue;
-            for (int i = 1; i < TIERS[tier].length; i++) {
-                if (request.ownedItems.owns(TIERS[tier][i])) return tier;
-            }
+            for (int i = 1; i < TIERS[tier].length; i++) if (request.ownedItems.owns(TIERS[tier][i])) return tier;
         }
         return -1; // owns no usable darts: the blowpipe cannot fire
     }

@@ -500,9 +500,7 @@ public class LoadoutOptimizer {
         List<DpsResult> merged = new ArrayList<>(onTask);
         Set<String> seen = new HashSet<>();
         for (DpsResult r : onTask) seen.add(signature(r.loadout));
-        for (DpsResult r : ot) {
-            if (seen.add(signature(r.loadout))) merged.add(r);
-        }
+        for (DpsResult r : ot) if (seen.add(signature(r.loadout))) merged.add(r);
         merged.sort(ranking(request, Map.of(), Map.of()));
         return limit(merged, request);
     }
@@ -576,7 +574,7 @@ public class LoadoutOptimizer {
             dragonShield = false;
             aa = true;
         }
-        // Required slayer protection (grZ field request 2026-08-08: "some
+        // Required slayer protection (field request 2026-08-08: "some
         // tasks where u need to equip something"): a mandated slot - mirror
         // shield vs a basilisk's gaze, a lit bug lantern to harm harpies at
         // all - enforces exactly like the dragonfire shield: the slot's pool
@@ -703,17 +701,13 @@ public class LoadoutOptimizer {
 
         Map<DpsResult, Long> rbr = new IdentityHashMap<>();
         if (request.isRiskConstrained()) {
-            for (DpsResult result : results) {
-                rbr.put(result, riskGp(result.loadout, null, request.maxTradeables));
-            }
+            for (DpsResult result : results) rbr.put(result, riskGp(result.loadout, null, request.maxTradeables));
         }
         // A defense-weighted run ranks its results by the same weighted
         // score the beam used; a pure run keeps the plain dps order.
         Map<DpsResult, Double> weighted = new IdentityHashMap<>();
         if (incoming != null) {
-            for (DpsResult result : results) {
-                weighted.put(result, beamScore(request, result, result.loadout, incoming));
-            }
+            for (DpsResult result : results) weighted.put(result, beamScore(request, result, result.loadout, incoming));
         }
         results.sort(ranking(request, weighted, rbr));
         if (aa) results.replaceAll(r -> r.withAntifireAssumed(true));
@@ -765,9 +759,7 @@ public class LoadoutOptimizer {
         boolean[] allowed;
         synchronized (context) { allowed = context.allowedFor(request, loadout); }
         DpsResult best = null;
-        for (int i = 0; i < allowed.length; i++) {
-            if (allowed[i]) best = DpsResult.better(best, calc.calculate(context.spellRequests[i], loadout));
-        }
+        for (int i = 0; i < allowed.length; i++) if (allowed[i]) best = DpsResult.better(best, calc.calculate(context.spellRequests[i], loadout));
         return best;
     }
 
@@ -779,7 +771,7 @@ public class LoadoutOptimizer {
             // (field report 2026-08-09: Blood Barrage pin, Trident answer).
             if (request.style == MAGIC && request.spell != null && !spellAllowed(request, loadout, request.spell)) {
                 // A PINNED powered staff is the stronger intent: it casts
-                // its built-in (Apathy, Discord 2026-09-06: the sceptre pin
+                // its built-in (field report 2026-09-06: the sceptre pin
                 // vanished under a pinned spell).
                 if (!isPoweredStaff(loadout.getWeapon()) || !request.isPinned(loadout.getWeapon().id)) return null;
             }
@@ -790,9 +782,7 @@ public class LoadoutOptimizer {
         if (ps) best = DpsResult.better(best, calculator.calculate(request, loadout));
         if (!ps) {
             boolean[] allowed = context.allowedFor(request, loadout);
-            for (int i = 0; i < allowed.length; i++) {
-                if (allowed[i]) best = DpsResult.better(best, calculator.calculate(context.spellRequests[i], loadout));
-            }
+            for (int i = 0; i < allowed.length; i++) if (allowed[i]) best = DpsResult.better(best, calculator.calculate(context.spellRequests[i], loadout));
         }
         // No legal spell for this staff/book: no result - a spell-less
         // 'cast' has max hit 0 and produced garbage 0.04-dps rows.
@@ -826,9 +816,7 @@ public class LoadoutOptimizer {
     // shares. Runs per optimize or per weapon line, never in the beam.
     static <T> List<T> keep(List<T> all, Predicate<T> filter) {
         List<T> kept = new ArrayList<>(all.size());
-        for (T element : all) {
-            if (filter.test(element)) kept.add(element);
-        }
+        for (T element : all) if (filter.test(element)) kept.add(element);
         return kept;
     }
 
@@ -887,9 +875,7 @@ public class LoadoutOptimizer {
     static List<SpellStats> spellsForUnfiltered(LoadoutData data, OptimizationRequest request) {
         if (request.style != MAGIC || !request.isAutoSpell()) return List.of();
         List<SpellStats> spells = new ArrayList<>();
-        for (SpellStats spell : data.spells) {
-            if (request.getLevels().magic >= spell.magicLevel) spells.add(spell);
-        }
+        for (SpellStats spell : data.spells) if (request.getLevels().magic >= spell.magicLevel) spells.add(spell);
         spells.sort(comparingInt(SpellStats::getMaxHit).reversed());
         return spells.isEmpty() ? data.spells : spells;
     }
@@ -958,8 +944,8 @@ public class LoadoutOptimizer {
             boolean hurts = tier == 2 && slot == WEAPON && bane(2, request.style, item);
             // A charged tome scores like an empty shield (0% damage) and the
             // three share one stat key, so without this rescue the pool keeps
-            // at most one and the spell-matched one is luck (rakaykhan1512,
-            // Discord 2026-10-18: the tome of water lost to the ward).
+            // at most one and the spell-matched one is luck (field report
+            // 2026-10-18: the tome of water lost to the ward).
             boolean protective = needProtectiveShield && isProtectiveShield(item) || slot == SHIELD && request.style == MAGIC
                     && item.nameLower.startsWith("tome of ") && "charged".equals(item.versionLower)
                 || hurts || slot == RING && tier > 0 && item.id == EFARITAY || keepInPool(request.monster, item);
@@ -994,9 +980,7 @@ public class LoadoutOptimizer {
             // eligible item - an owned weapon it rates above the worn one
             // must be a weapon the search saw (ISS-01M5PHE6WD81W8542RW71EXSHC).
             if (slot == WEAPON) {
-                for (GearItem item : rows.subList(limit, rows.size())) {
-                    if (request.ownedItems.owns(item.id) || request.isDream(item.id)) cut.add(item);
-                }
+                for (GearItem item : rows.subList(limit, rows.size())) if (request.ownedItems.owns(item.id) || request.isDream(item.id)) cut.add(item);
             }
             // Defense-weighted runs keep a second tier: the best defensive
             // items by utility beyond the offensive cut, so the beam can
@@ -1004,9 +988,7 @@ public class LoadoutOptimizer {
             if (request.defenseWeight > 0 && slot != WEAPON) {
                 List<GearItem> defensive = new ArrayList<>(rows.subList(limit, rows.size()));
                 defensive.sort(comparingLong(LoadoutOptimizer::utilityScore).reversed());
-                for (GearItem item : defensive.subList(0, min(8, defensive.size()))) {
-                    if (utilityScore(item) > 0) cut.add(item);
-                }
+                for (GearItem item : defensive.subList(0, min(8, defensive.size()))) if (utilityScore(item) > 0) cut.add(item);
             }
             rows = cut;
         }
@@ -1066,7 +1048,7 @@ public class LoadoutOptimizer {
     // atlatl: the eclipse atlatl is in play, so a slot's gear also scores
     // by what the atlatl hits with - ranged accuracy and MELEE strength -
     // and the better of the two scores keeps either kind in the pool
-    // (ISS-01M5PTESXPE03VZP9JB8X93KRF, Kendyy 2026-10-23: "atlatl gets its
+    // (ISS-01M5PTESXPE03VZP9JB8X93KRF, field report 2026-10-23: "atlatl gets its
     // damage from melee strength but does range damage ... the calc might
     // be trying to match it with range boosting gear": ferocious gloves,
     // ultor, torture and primordials never entered the ranged pools).
@@ -1390,7 +1372,7 @@ public class LoadoutOptimizer {
             if (candidate.poisonTier() != current.poisonTier()) return candidate.poisonTier() > current.poisonTier();
         }
         // A Rada's blessing beats the god blessing it stat-ties with: the
-        // teleports are the free edge (Muuffin, Discord 2026-10-19 - the
+        // teleports are the free edge (field report 2026-10-19 - the
         // tradeable rule below had been handing the slot to a holy blessing).
         boolean cr = candidate.nameLower.startsWith("rada's blessing");
         if (cr != current.nameLower.startsWith("rada's blessing")) return cr;

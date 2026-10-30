@@ -19,9 +19,7 @@ public class PotionStorage {
     static {
         JsonObject root = JsonResources.objectOrThrow("potion_storage.json");
         JsonResources.ints(root, "_scrolls", SCROLLS);
-        for (String key : root.keySet()) {
-            if (!key.startsWith("_")) BY_VARBIT.put(Integer.parseInt(key), root.get(key).getAsInt());
-        }
+        for (String key : root.keySet()) if (!key.startsWith("_")) BY_VARBIT.put(Integer.parseInt(key), root.get(key).getAsInt());
     }
 
 

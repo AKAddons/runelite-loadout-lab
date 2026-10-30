@@ -54,6 +54,11 @@ public interface LoadoutLabConfig extends Config {
     default boolean showWildyRisk() { return true; }
 
     @ConfigItem(
+        keyName = "hideCompletedCa", name = "Hide completed CA chips",
+        description = "Leave out the combat achievement chips for tasks you have completed.", section = controls, position = 4 )
+    default boolean hideCompletedCa() { return false; }
+
+    @ConfigItem(
         keyName = "showPvpWorldChip", name = "PvP world chip",
         description = "Show the PvP world chip on every card, to plan a PvP-world trip"
             + " from a normal world. Always shown on a PvP world.", section = controls, position = 6 )
@@ -77,9 +82,7 @@ public interface LoadoutLabConfig extends Config {
     // tick included). The key list is RuneLite's own config descriptor -
     // the hub allows no reflection in plugin code.
     static void unsetAll(ConfigManager manager, Config config) {
-        for (ConfigItemDescriptor item : manager.getConfigDescriptor(config).getItems()) {
-            manager.unsetConfiguration("loadoutlab", item.key());
-        }
+        for (ConfigItemDescriptor item : manager.getConfigDescriptor(config).getItems()) manager.unsetConfiguration("loadoutlab", item.key());
     }
 
     @ConfigItem(

@@ -20,9 +20,7 @@ public class VampyreRules {
 
     static {
         JsonObject data = objectOrThrow("vampyre_weapons.json");
-        for (String key : List.of("silver", "silverRanged", "bane2", "bane3")) {
-            strings(data, key, NAMES.computeIfAbsent(key, k -> new ArrayList<>()));
-        }
+        for (String key : List.of("silver", "silverRanged", "bane2", "bane3")) strings(data, key, NAMES.computeIfAbsent(key, k -> new ArrayList<>()));
         stringIntMap(data, "numbers", N);
     }
 

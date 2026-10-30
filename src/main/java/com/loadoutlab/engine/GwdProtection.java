@@ -29,9 +29,7 @@ public class GwdProtection {
 
     static {
         Root root = JsonResources.read("gwd_protection.json", Root.class);
-        for (Route route : root.routes.values()) {
-            for (String monster : route.monsters) ROUTE_BY_MONSTER.put(monster, route.gods);
-        }
+        for (Route route : root.routes.values()) for (String monster : route.monsters) ROUTE_BY_MONSTER.put(monster, route.gods);
         root.items.forEach((god, names) -> {
             for (String name : names) GODS_BY_ITEM.computeIfAbsent(name, n -> new TreeSet<>()).add(god);
         });

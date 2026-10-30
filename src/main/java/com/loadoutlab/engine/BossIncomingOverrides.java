@@ -37,7 +37,11 @@ public class BossIncomingOverrides {
         List<Attack> attacks = List.of();
         String note = "";
         // The share of the fight the boss can be hit; 1 = always.
-        double uptime = 1;
+        public double uptime = 1;
+        // A fixed time the fight adds whatever you hit with (Hespori's
+        // flower rounds), in seconds, and what it is.
+        public double downtime;
+        public String downtimeNote = "";
         transient boolean heals;
     }
 
@@ -48,9 +52,7 @@ public class BossIncomingOverrides {
         Map<String, JsonElement> root = JsonResources.read(RESOURCE, new TypeToken<Map<String, JsonElement>>() { }.getType());
         for (var entry : root.entrySet()) {
             if ("_unpriced".equals(entry.getKey())) {
-                for (var why : entry.getValue().getAsJsonObject().entrySet()) {
-                    UNPRICED.put(Names.lower(why.getKey()), why.getValue().getAsString());
-                }
+                for (var why : entry.getValue().getAsJsonObject().entrySet()) UNPRICED.put(Names.lower(why.getKey()), why.getValue().getAsString());
             } else if (!entry.getKey().startsWith("_")) OVERRIDES.put(Names.lower(entry.getKey()), parse(entry.getValue().getAsJsonObject()));
         }
     }
@@ -76,9 +78,12 @@ public class BossIncomingOverrides {
 
     public static String unpricedReason(MonsterStats monster) { return lookup(UNPRICED, monster); }
 
-    public static double uptime(MonsterStats monster) {
+    static final BossOverride NONE = new BossOverride();
+
+    // The boss's override, or the no-op one: its uptime, downtime and note.
+    public static BossOverride of(MonsterStats monster) {
         BossOverride override = overridesFor(monster);
-        return override == null ? 1 : override.uptime;
+        return override == null ? NONE : override;
     }
 
     static <T> T lookup(Map<String, T> map, MonsterStats monster) {

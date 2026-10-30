@@ -62,9 +62,7 @@ public class RequirementProfile {
             Skill skill = skill(entry.getKey());
             if (skill != null && levels.getOrDefault(skill, 1) < entry.getValue()) return false;
         }
-        for (String quest : requirements.getQuests()) {
-            if (!completedQuests.contains(quest)) return false;
-        }
+        for (String quest : requirements.getQuests()) if (!completedQuests.contains(quest)) return false;
         return true;
     }
 
@@ -81,9 +79,7 @@ public class RequirementProfile {
 
     static Map<Skill, Integer> maxedLevels() {
         var result = new EnumMap<Skill, Integer>(Skill.class);
-        for (Skill skill : Skill.values()) {
-            if (skill != OVERALL) result.put(skill, 99);
-        }
+        for (Skill skill : Skill.values()) if (skill != OVERALL) result.put(skill, 99);
         return result;
     }
 

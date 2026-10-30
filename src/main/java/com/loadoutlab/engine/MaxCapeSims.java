@@ -42,9 +42,7 @@ public class MaxCapeSims {
         Set<Integer> out = new HashSet<>();
         for (var combo : COMBOS.entrySet()) {
             if (cape(data, combo.getValue()) == null) continue;
-            for (GearItem item : data.getGearItems(GearSlot.CAPE)) {
-                if (item.nameLower.equals(combo.getKey())) out.add(item.id);
-            }
+            for (GearItem item : data.getGearItems(GearSlot.CAPE)) if (item.nameLower.equals(combo.getKey())) out.add(item.id);
         }
         return out;
     }

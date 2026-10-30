@@ -41,9 +41,9 @@ class KillTimeLineTest {
 	}
 
 	@Test
-	@DisplayName("the DTPS hover gains the damage taken over the median kill, nothing without a kill time or when the set never kills")
+	@DisplayName("the DTPS hover gains the damage taken over the kill's P05-P95 band, nothing without a kill time or when the set never kills")
 	void damagePerKill() {
-		assertEquals(". ~266 damage per kill", ResultCards.perKill(kill(108, 133, 161, 52, false, 0), 2.0));
+		assertEquals(". ~216-322 damage taken per kill", ResultCards.perKill(kill(108, 133, 161, 52, false, 0), 2.0));
 		assertEquals("", ResultCards.perKill(null, 2.0));
 		assertEquals("", ResultCards.perKill(kill(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, 52, false, 0), 2.0));
 	}
@@ -54,10 +54,11 @@ class KillTimeLineTest {
 		Map<String, Object> trip = kill(360, 400, 450, 200, false, 0);
 		trip.put("members", List.of(Map.of("name", "Blood Moon", "p50", 133.0), Map.of("name", "Blue Moon", "p50", 108.0),
 			Map.of("name", "Eclipse Moon", "p50", 159.0)));
-		trip.put("damage", 812.4);
+		trip.put("damageLow", 690.2);
+		trip.put("damageHigh", 812.4);
 		String[] line = ResultCards.tripLine(trip);
 		assertEquals("Trip ~6:40", line[0]);
-		assertEquals("<html>Median 6:40<br>Usually 6:00-7:30<br>Perfect 3:20<br>Blood Moon 2:13, Blue Moon 1:48, Eclipse Moon 2:39<br>~812 damage per trip</html>", line[1]);
+		assertEquals("<html>Median 6:40<br>Usually 6:00-7:30<br>Perfect 3:20<br>Blood Moon 2:13, Blue Moon 1:48, Eclipse Moon 2:39<br>~690-812 damage taken per trip</html>", line[1]);
 		Map<String, Object> never = kill(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, 200, false, 0);
 		never.put("never", "Eclipse Moon");
 		never.put("members", List.of());

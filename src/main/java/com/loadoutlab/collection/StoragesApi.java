@@ -48,9 +48,7 @@ public class StoragesApi {
         }
         if (canonical.isEmpty()) return null;
         List<Map> itemList = new ArrayList<>(canonical.size());
-        for (var e : canonical.entrySet()) {
-            itemList.add(JsonResources.map("id", e.getKey(), "quantity", e.getValue()));
-        }
+        for (var e : canonical.entrySet()) itemList.add(JsonResources.map("id", e.getKey(), "quantity", e.getValue()));
         return JsonResources.map("category", category, "name", name, "lastUpdated", lastUpdated, "items", itemList);
     }
 

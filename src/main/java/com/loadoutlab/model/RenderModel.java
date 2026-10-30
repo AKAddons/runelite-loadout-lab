@@ -109,23 +109,28 @@ public class RenderModel {
         List<KillTime> times = new ArrayList<>();
         List<Object> members = new ArrayList<>();
         String never = null;
-        double damage = 0;
+        double low = 0, high = 0;
         for (int i : tripMembers(mobs)) {
             StyleResult r = bestOf(perMob.get(i), bis);
             if (r == null) continue;
-            KillTime k = killTime(r, shown(r, bis), mobs.get(i).hitpoints, bis).stretched(BossIncomingOverrides.uptime(mobs.get(i)));
+            var o = BossIncomingOverrides.of(mobs.get(i));
+            KillTime k = killTime(r, shown(r, bis), mobs.get(i).hitpoints, bis).stretched(o.uptime).delayed(o.downtime);
             times.add(k);
-            Map member = killNode(k, 0);
+            Map member = killNode(k, 0, mobs.get(i));
             member.put("name", mobs.get(i).label());
             members.add(member);
             Result in = bis ? r.gameIncoming : r.incoming;
-            if (in != null && !Double.isInfinite(k.p50)) damage += in.totalDps * k.p50;
+            if (in != null && !Double.isInfinite(k.p95)) {
+                low += in.totalDps * k.p05;
+                high += in.totalDps * k.p95;
+            }
             if (never == null && Double.isInfinite(k.p50)) never = mobs.get(i).label();
         }
         if (times.size() < 2) return null;
-        Map node = killNode(KillTime.sum(times), 0);
+        Map node = killNode(KillTime.sum(times), 0, null);
         node.put("members", members);
-        node.put("damage", damage);
+        node.put("damageLow", low);
+        node.put("damageHigh", high);
         if (never != null) node.put("never", never);
         return node;
     }
@@ -137,9 +142,7 @@ public class RenderModel {
     static List<Integer> tripMembers(List<MonsterStats> mobs) {
         List<Integer> out = new ArrayList<>();
         Set<String> seen = new HashSet<>();
-        for (int i = 0; i < mobs.size(); i++) {
-            if (!mobs.get(i).hasAttribute("no_trip") && seen.add(mobs.get(i).name)) out.add(i);
-        }
+        for (int i = 0; i < mobs.size(); i++) if (!mobs.get(i).hasAttribute("no_trip") && seen.add(mobs.get(i).name)) out.add(i);
         return out;
     }
 
@@ -172,13 +175,19 @@ public class RenderModel {
         double spec = bis ? r.gameSpecDpsAdded : r.specDpsAdded;
         KillTime k = dist != null ? KillTime.table(hp, dist, shown.attackSpeed * 0.6, shown.dps, healOf(r, bis), spec, false)
             : KillTime.table(hp, shown.accuracy, shown.maxHit, shown.attackSpeed, shown.dps, healOf(r, bis), spec);
-        // The boss's own downtime (its special phases) stretches the kill.
+        // The boss's own downtime stretches the kill (its special phases) or
+        // adds to it (Hespori's flower rounds).
         MonsterStats mob = MOB_STATS.get();
-        return mob == null ? k : k.stretched(BossIncomingOverrides.uptime(mob));
+        if (mob == null) return k;
+        var o = BossIncomingOverrides.of(mob);
+        return k.stretched(o.uptime).delayed(o.downtime);
     }
 
-    static Map killNode(KillTime k, double heal) {
-        return map("p05", k.p05, "p50", k.p50, "p95", k.p95, "perfect", k.perfect, "approximate", k.approximate, "healDps", heal, "uptime", k.uptime);
+    static Map killNode(KillTime k, double heal, MonsterStats mob) {
+        Map node = map("p05", k.p05, "p50", k.p50, "p95", k.p95, "perfect", k.perfect, "approximate", k.approximate, "healDps", heal, "uptime", k.uptime);
+        var o = BossIncomingOverrides.of(mob);
+        if (o.downtime > 0) node.putAll(map("downtime", o.downtime, "downtimeNote", o.downtimeNote));
+        return node;
     }
 
     static Map mob(MonsterStats mob) {
@@ -209,9 +218,7 @@ public class RenderModel {
     static Map multi(Map<CombatStyle, StyleResult> results,
         int rks, IntPredicate owned, Set<Integer> simmed) {
         Map<String, StyleResult> tools = null;
-        for (StyleResult r : results == null ? List.<StyleResult>of() : results.values()) {
-            if (r != null && r.multiTools != null) tools = r.multiTools;
-        }
+        for (StyleResult r : results == null ? List.<StyleResult>of() : results.values()) if (r != null && r.multiTools != null) tools = r.multiTools;
         if (tools == null) return null;
         Map out = new LinkedHashMap<>();
         for (MultiTool tool : MultiTool.values()) {
@@ -391,7 +398,7 @@ public class RenderModel {
             "spec", spec(result, bis), "incoming", incoming(bis ? result.gameIncoming : result.incoming)));
         // How long this set takes to kill (ISS-01M6415DTE84ZZ45C4YD3MZRBJ).
         Integer hp = HP.get();
-        if (hp != null) card.put("killTime", killNode(killTime(result, shown, hp, bis), healOf(result, bis)));
+        if (hp != null) card.put("killTime", killNode(killTime(result, shown, hp, bis), healOf(result, bis), MOB_STATS.get()));
         // The defensive mode's trade belongs to the Yours side only (BiS
         // stays the pure-DPS ceiling).
         ModeTrade trade = bis ? null : result.modeTrade;
@@ -402,9 +409,7 @@ public class RenderModel {
         // Carried GWD protection: which gods each bench item soothes, for
         // the Inventory row's "wear through the dungeon" tooltip.
         Map protection = new LinkedHashMap<>();
-        for (GearItem item : bis ? result.gameProtection : result.protection) {
-            protection.put(String.valueOf(item.id), join(", ", GwdProtection.godsOf(item)));
-        }
+        for (GearItem item : bis ? result.gameProtection : result.protection) protection.put(String.valueOf(item.id), join(", ", GwdProtection.godsOf(item)));
         // A swap picked by kind says why it rides (Hespori's fast ranged weapon).
         Map swapNotes = new LinkedHashMap<>();
         (bis ? result.gameSwapNotes : result.swapNotes).forEach((id, why) -> swapNotes.put(String.valueOf(id), why));
@@ -426,9 +431,7 @@ public class RenderModel {
                 if (!(sn instanceof Map)) continue;
                 Map node = (Map) sn;
                 int id = ((Number) node.get("id")).intValue();
-                for (GearItem k : risk.kept) {
-                    if (k.id == id) node.put("fate", "kept");
-                }
+                for (GearItem k : risk.kept) if (k.id == id) node.put("fate", "kept");
                 for (GearItem l : risk.lost) {
                     if (l.id == id) {
                         node.put("fate", "lost");

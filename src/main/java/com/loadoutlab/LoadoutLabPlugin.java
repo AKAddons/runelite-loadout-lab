@@ -231,7 +231,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
             String name = npc.getName();
             int id = npc.getId();
             if (!attackable(npc)) {
-                // Corpus membership is not enough (Discord field report
+                // Corpus membership is not enough (field report
                 // 2026-07-23: a Rabbit got the entry): only NPCs whose own
                 // menu offers Attack get one - the entry rides fights, not
                 // scenery.
@@ -436,7 +436,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
                 // Two display settings that described behaviour they did
                 // not control until 2026-08-22.
                 internalSurface.setDisplayGates( () -> config.loadingAnimation(), () -> config.showWildyRisk(),
-                    () -> config.showPvpWorldChip());
+                    () -> config.showPvpWorldChip(), () -> config.hideCompletedCa());
                 companionLink.setPageListener(() -> {
                     RenderSurface surface = internalSurface;
                     if (surface != null) surface.onModelChanged();
@@ -611,7 +611,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
             // paying for a compute.
             engine.execute("republish", Map.of());
         } else if ("resetCustomizations".equals(key) && config.resetCustomizations()) {
-            // Lostmind (Discord 2026-09-17): customisations live in the
+            // Field report 2026-09-17: customisations live in the
             // RuneLite profile, so a reinstall cannot clear them. Andrew
             // (2026-09-18): a just-installed state - settings back to their
             // defaults and the page back to empty as well. Bank memory is
@@ -626,7 +626,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
     // old PANEL_CONFIG_KEYS listed 42 keys for a panel that no longer
     // exists and nothing ever read it (audit 2026-08-22).
     static final Set<String> RENDER_KEYS =
-        Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons", "showTripBreakdown", "showDegradableChip", "showPvpWorldChip");
+        Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons", "showTripBreakdown", "showDegradableChip", "showPvpWorldChip", "hideCompletedCa");
 
     // Client-thread staging push: the castability state the panel's
     // chips read - BOOSTED magic (field call 2026-07-21: castability
@@ -840,7 +840,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
         }
     }
 
-    // The pouch's runes by item id (Mumblerit, Discord 2026-10-10: runes
+    // The pouch's runes by item id (field report 2026-10-10: runes
     // moved into the pouch vanished and Fire Wave fell off the magic set).
     Map<Integer, Integer> scanRunePouch() {
         int[] types = new int[POUCH_TYPES.length];
@@ -855,9 +855,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
 
     static Map<Integer, Integer> itemsOf(ItemContainer container) {
         Map<Integer, Integer> items = new HashMap<>();
-        for (Item item : container.getItems()) {
-            if (item.getId() > 0 && item.getQuantity() > 0) items.merge(item.getId(), item.getQuantity(), Integer::sum);
-        }
+        for (Item item : container.getItems()) if (item.getId() > 0 && item.getQuantity() > 0) items.merge(item.getId(), item.getQuantity(), Integer::sum);
         return items;
     }
 
@@ -967,15 +965,11 @@ import static com.loadoutlab.engine.PlayerLevels.*;
         origins.put("POH costume room", ledger.snapshot(POH_COSTUMES));
         origins.put("STASH", ledger.snapshot(STASH));
         Map<Integer, Integer> cargo = new HashMap<>();
-        for (Source hold : Source.values()) {
-            if (hold.name().startsWith("CARGO_HOLD")) ledger.snapshot(hold).forEach((id, n) -> cargo.merge(id, n, Integer::sum));
-        }
+        for (Source hold : Source.values()) if (hold.name().startsWith("CARGO_HOLD")) ledger.snapshot(hold).forEach((id, n) -> cargo.merge(id, n, Integer::sum));
         origins.put("cargo hold", cargo);
         origins.put("potion storage or scroll book", potionStorage);
         if (config.useDwmsData()) {
-            for (var family : dwmsLink.families().entrySet()) {
-                origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
-            }
+            for (var family : dwmsLink.families().entrySet()) origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
         }
         origins.values().removeIf(Map::isEmpty);
         return origins;
@@ -1152,9 +1146,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
     // the disabled loser. Shared by the NER, DWMS and Bank Tag Layouts
     // detections.
     boolean pluginEnabled(String name) {
-        for (Plugin p : pluginManager.getPlugins()) {
-            if (name.equals(p.getName()) && pluginManager.isPluginEnabled(p)) return true;
-        }
+        for (Plugin p : pluginManager.getPlugins()) if (name.equals(p.getName()) && pluginManager.isPluginEnabled(p)) return true;
         return false;
     }
 
@@ -1445,8 +1437,21 @@ import static com.loadoutlab.engine.PlayerLevels.*;
 
     // The book plate reacts LIVE to a spellbook swap (classic field
     // bug 2026-07-21: the chip stayed red after swapping).
+    // The completed combat achievements, one bit per wiki task number across
+    // the gameval VarPlayerID.CA_TASK_COMPLETED_0..20 varps
+    // (ISS-01M672BWDBZ9DJ7Y0YTA39RRG8); read on the client thread.
+    static final int[] CA_VARPS = {3116, 3117, 3118, 3119, 3120, 3121, 3122, 3123, 3124, 3125, 3126, 3127, 3128, 3387, 3718, 3773, 3774, 4204, 4496, 4721, 5673};
+
     @Subscribe
     public void onVarbitChanged(VarbitChanged event) {
+        if (Arrays.stream(CA_VARPS).anyMatch(v -> v == event.getVarpId())) {
+            long[] words = new long[11];
+            for (int v = 0; v < 21; v++) words[v / 2] |= (client.getVarpValue(CA_VARPS[v]) & 0xffffffffL) << 32 * (v % 2);
+            CommandEngine engine = commandEngine;
+            if (engine != null) engine.setCaDone(BitSet.valueOf(words)::get);
+            ledgerRecomputeTicks = 5;
+            return;
+        }
         if (PotionStorage.tracks(event.getVarbitId())) {
             potionStorage = PotionStorage.owned(client::getVarbitValue);
             ledgerRecomputeTicks = 5;

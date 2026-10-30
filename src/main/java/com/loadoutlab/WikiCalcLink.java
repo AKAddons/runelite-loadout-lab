@@ -90,9 +90,7 @@ public class WikiCalcLink {
                 continue;
             }
             for (int id : POTION_IDS.getOrDefault(token, new int[0])) potions.add(id);
-            for (BoostProfile profile : BoostProfile.values()) {
-                if (profile.toString().equals(token)) boost = profile;
-            }
+            for (BoostProfile profile : BoostProfile.values()) if (profile.toString().equals(token)) boost = profile;
         }
 
         Map equipment = new LinkedHashMap<>();

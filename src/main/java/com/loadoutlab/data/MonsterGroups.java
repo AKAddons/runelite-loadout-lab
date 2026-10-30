@@ -76,9 +76,7 @@ public class MonsterGroups {
                         // ranged 2, magic 4) so every combo stays distinct.
                         List<String> styles = new ArrayList<>();
                         if (member.immuneTo.isJsonArray()) {
-                            for (JsonElement e : member.immuneTo.getAsJsonArray()) {
-                                styles.add(lower(e.getAsString()));
-                            }
+                            for (JsonElement e : member.immuneTo.getAsJsonArray()) styles.add(lower(e.getAsString()));
                         } else styles.add(lower(member.immuneTo.getAsString()));
                         int mask = 0;
                         List<String> attributes = new ArrayList<>();
@@ -120,9 +118,7 @@ public class MonsterGroups {
                 }
                 List<String> aliases = new ArrayList<>();
                 for (String a : row.aliases) aliases.add(lower(a));
-                if (!mobs.isEmpty()) {
-                    groups.add(new MonsterGroup(row.name, row.note, mobs, aliases, row.inventory, row.comingSoon, row.raid));
-                }
+                if (!mobs.isEmpty()) groups.add(new MonsterGroup(row.name, row.note, mobs, aliases, row.inventory, row.comingSoon, row.raid));
             }
         } catch (Exception e) {
             // A malformed curation must never take the panel down.

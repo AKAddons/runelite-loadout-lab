@@ -18,9 +18,7 @@ public enum GearSlot {
         if (value == null) return null;
 
         String normalized = Names.lower(value);
-        for (GearSlot slot : values()) {
-            if (slot.jsonName.equals(normalized)) return slot;
-        }
+        for (GearSlot slot : values()) if (slot.jsonName.equals(normalized)) return slot;
         return null;
     }
 }

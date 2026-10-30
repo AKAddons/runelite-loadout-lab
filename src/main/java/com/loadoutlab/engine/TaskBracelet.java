@@ -3,7 +3,7 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.*;
 import java.util.*;
 
-// The slayer-task bracelet preference (miko, Discord 2026-10-17: "include
+// The slayer-task bracelet preference (field report 2026-10-17: "include
 // ... Expeditious bracelet for all setups"; Andrew: an option for slayer
 // tasks, reachable from the settings panel and the bracelet slot). On task
 // every style card's hands slot is pinned to it unless the mob pins its

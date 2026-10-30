@@ -33,9 +33,7 @@ public class RequiredUtility {
     }
 
     public static boolean hasRecoil(Loadout loadout) {
-        for (GearItem item : loadout.getGear().values()) {
-            if (item != null && RECOIL_ACCESS.containsKey(item.id)) return true;
-        }
+        for (GearItem item : loadout.getGear().values()) if (item != null && RECOIL_ACCESS.containsKey(item.id)) return true;
         return false;
     }
 

@@ -256,7 +256,9 @@ public class BossIncomingOverridesTest {
 			}
 			Assert.assertTrue(name + " shares " + shares, shares <= 1.0 + 1e-9);
 		}
-		Assert.assertEquals(expected.size(), BossIncomingOverrides.names().size());
+		// Hespori's entry is a downtime alone (ISS-01M672QT7BP4H2C04C0872H57N): no attacks, the corpus styles price it.
+		Assert.assertTrue(BossIncomingOverrides.of(named("hespori", List.of("Ranged"))).getAttacks().isEmpty());
+		Assert.assertEquals(expected.size() + 1, BossIncomingOverrides.names().size());
 	}
 
 	@Test

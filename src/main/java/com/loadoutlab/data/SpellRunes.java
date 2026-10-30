@@ -59,9 +59,7 @@ public class SpellRunes {
                 return out;
             }
         }
-        for (String element : new String[]{"air", "water", "earth", "fire"}) {
-            if (nameLower.contains(element) && (nameLower.contains("staff") || nameLower.contains("tome"))) out.add(element);
-        }
+        for (String element : new String[]{"air", "water", "earth", "fire"}) if (nameLower.contains(element) && (nameLower.contains("staff") || nameLower.contains("tome"))) out.add(element);
         return out;
     }
 
@@ -133,9 +131,7 @@ public class SpellRunes {
     public static List<Map> combineCombos(List<Map> runes) {
         if (runes == null) return null;
         Map<String, Map> byName = new LinkedHashMap<>();
-        for (Map rune : runes) {
-            byName.put(String.valueOf(rune.get("name")).replace(" rune", "") .toLowerCase(Locale.ROOT), rune);
-        }
+        for (Map rune : runes) byName.put(String.valueOf(rune.get("name")).replace(" rune", "") .toLowerCase(Locale.ROOT), rune);
         for (String[] combo : COMBOS) {
             Map a = byName.get(combo[1]);
             Map b = byName.get(combo[2]);

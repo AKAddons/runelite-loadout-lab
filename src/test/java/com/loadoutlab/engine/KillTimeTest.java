@@ -102,6 +102,25 @@ class KillTimeTest {
 	}
 
 	@Test
+	@DisplayName("a fixed delay adds to every percentile and Perfect, a trip of delayed members carries it, and no delay is the same table")
+	void delayed() {
+		double dps = 0.7 * 20 / 2.4;
+		KillTime a = KillTime.table(500, 0.7, 40, 4, dps, 0, 0);
+		KillTime late = a.delayed(6);
+		assertEquals(a.p05 + 6, late.p05, 1e-9);
+		assertEquals(a.p50 + 6, late.p50, 1e-9);
+		assertEquals(a.p95 + 6, late.p95, 1e-9);
+		assertEquals(a.perfect + 6, late.perfect, 1e-9);
+		assertEquals(a.uptime, late.uptime, 1e-9);
+		assertSame(a, a.delayed(0));
+		KillTime b = KillTime.table(300, 0.7, 40, 4, dps, 0, 0);
+		KillTime trip = KillTime.sum(List.of(late, b.delayed(18)));
+		KillTime plain = KillTime.sum(List.of(a, b));
+		assertEquals(plain.perfect + 24, trip.perfect, 1e-9);
+		assertEquals(plain.p50 + 24, trip.p50, 0.61);
+	}
+
+	@Test
 	@DisplayName("a boss hittable half the fight takes twice as long on every percentile and on Perfect, a trip of such members stretches with them, and a full-uptime boss is untouched")
 	void stretched() {
 		double dps = 0.7 * 20 / 2.4;
