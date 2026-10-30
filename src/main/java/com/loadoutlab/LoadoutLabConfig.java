@@ -19,8 +19,8 @@ public interface LoadoutLabConfig extends Config {
         name = "Connections", description = "Other plugins Loadout Lab reads data from when they are installed",
         position = 3 ) String connections = "connections";
 
-    /** Its own section, last and folded (Andrew 2026-10-19: the reset tick
-     * sat between two ordinary chip toggles in Controls). */
+    // Its own section, last and folded (Andrew 2026-10-19: the reset tick
+    // sat between two ordinary chip toggles in Controls).
     @ConfigSection(
         name = "Reset", description = "Put this profile back to a just-installed state", position = 4,
         closedByDefault = true ) String reset = "reset";
@@ -73,9 +73,9 @@ public interface LoadoutLabConfig extends Config {
         description = "Tick to put this profile back to a just-installed state: every setting to its default, and all excludes, sims, stored-elsewhere, protect-only, filters, mob pins and notes, and supply defaults wiped. Bank memory stays. Unticks itself. Cannot be undone.",
         section = reset, position = 1 ) default boolean resetCustomizations() { return false; }
 
-    /** Unset every setting so each goes back to its default (the reset
-     * tick included). The key list is RuneLite's own config descriptor -
-     * the hub allows no reflection in plugin code. */
+    // Unset every setting so each goes back to its default (the reset
+    // tick included). The key list is RuneLite's own config descriptor -
+    // the hub allows no reflection in plugin code.
     static void unsetAll(ConfigManager manager, Config config) {
         for (ConfigItemDescriptor item : manager.getConfigDescriptor(config).getItems()) {
             manager.unsetConfiguration("loadoutlab", item.key());
@@ -93,9 +93,9 @@ public interface LoadoutLabConfig extends Config {
             + " damage dealt per damage taken. Tanky (beta): the least damage taken.", section = defaults, position = 1
     ) default OptimizeModeDefault defaultOptimizeMode() { return OptimizeModeDefault.MAX_DPS; }
 
-    /** The mode new searches start on (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6,
-     * Andrew 2026-10-22: "a setting to make max dps/balanced/tanky the
-     * default search option"). Names match OptimizerService.OptimizeMode. */
+    // The mode new searches start on (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6,
+    // Andrew 2026-10-22: "a setting to make max dps/balanced/tanky the
+    // default search option"). Names match OptimizerService.OptimizeMode.
     @lombok.RequiredArgsConstructor
     enum OptimizeModeDefault {
         MAX_DPS("Max DPS"), BALANCED("Balanced (beta)"), TANKY("Tanky (beta)");

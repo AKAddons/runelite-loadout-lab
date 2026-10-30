@@ -3,17 +3,15 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.*;
 import java.util.Set;
 
-/**
- * Dragonfire: monsters whose wiki style list contains "Dragonfire"
- * (regular/metal/brutal/lava dragons, KBD, Vorkath, Elvarg - baby
- * dragons correctly lack it) need anti-dragon protection. By default
- * the set must provide it via a shield (which also rules out two-
- * handed weapons); the antifire-potion toggle assumes a super
- * antifire instead and lifts the constraint.
- */
+// Dragonfire: monsters whose wiki style list contains "Dragonfire"
+// (regular/metal/brutal/lava dragons, KBD, Vorkath, Elvarg - baby
+// dragons correctly lack it) need anti-dragon protection. By default
+// the set must provide it via a shield (which also rules out two-
+// handed weapons); the antifire-potion toggle assumes a super
+// antifire instead and lifts the constraint.
 public class DragonfireRules {
-    /** Antifire potion dose ids per tier - the Detect scan and the
-     * consumable chips share them (relocated from the classic panel). */
+    // Antifire potion dose ids per tier - the Detect scan and the
+    // consumable chips share them (relocated from the classic panel).
     public static final int[] SUPER_ANTIFIRE_IDS = {
         21978, 21981, 21984, 21987, 22209, 22212, 22215, 22218};
     public static final int[] REGULAR_ANTIFIRE_IDS = {
@@ -35,7 +33,7 @@ public class DragonfireRules {
         return item != null && PROTECTIVE_SHIELDS.contains(item.nameLower);
     }
 
-    /** Must this request's sets carry a dragonfire shield? */
+    // Must this request's sets carry a dragonfire shield?
     public static boolean shieldRequired(OptimizationRequest request) {
         return breathesFire(request.monster) && !request.antifirePotion;
     }

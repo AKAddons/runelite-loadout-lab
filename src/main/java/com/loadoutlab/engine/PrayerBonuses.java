@@ -89,9 +89,9 @@ public class PrayerBonuses {
         return result;
     }
 
-    /** The selectable named tiers per style, best first - the assume-chip
-     * picker (field direction 2026-07-21: "I don't use Piety against every
-     * mob"). Factors mirror bestAvailable's cascade exactly. */
+    // The selectable named tiers per style, best first - the assume-chip
+    // picker (field direction 2026-07-21: "I don't use Piety against every
+    // mob"). Factors mirror bestAvailable's cascade exactly.
     public static String[] optionsFor(CombatStyle style) {
         Object[][] picks = picksFor(style);
         String[] names = new String[picks.length];
@@ -99,8 +99,8 @@ public class PrayerBonuses {
         return names;
     }
 
-    /** name -> {accuracy, strength-or-damage, Defence %, Magic-defence %} per
-     * style, best first - mirrors bestAvailable's cascade exactly. */
+    // name -> {accuracy, strength-or-damage, Defence %, Magic-defence %} per
+    // style, best first - mirrors bestAvailable's cascade exactly.
     static final Map<String, Object[][]> PICKS = new HashMap<>();
 
     static {
@@ -119,9 +119,9 @@ public class PrayerBonuses {
 
     static Object[][] picksFor(CombatStyle style) { return PICKS.get(Names.lower(style.name())); }
 
-    /** A specific pick's bonuses for ONE style: the fallback's factors with
-     * this style's replaced by the named tier (the other styles' values are
-     * irrelevant to a single-style request). Unknown names fall back. */
+    // A specific pick's bonuses for ONE style: the fallback's factors with
+    // this style's replaced by the named tier (the other styles' values are
+    // irrelevant to a single-style request). Unknown names fall back.
     public static PrayerBonuses forPick(CombatStyle style, String pick, PrayerBonuses fallback) {
         for (Object[] row : picksFor(style)) {
             if (!row[0].equals(pick)) continue;
@@ -140,7 +140,7 @@ public class PrayerBonuses {
         return fallback;
     }
 
-    /** The prayer tier the numbers assume for a style ("Piety", "Rigour"). */
+    // The prayer tier the numbers assume for a style ("Piety", "Rigour").
     public String nameFor(CombatStyle style) {
         switch (style) {
             case RANGED: return rangedName;
@@ -149,8 +149,8 @@ public class PrayerBonuses {
         }
     }
 
-    /** {Defence, Magic} a boss rolls against under the style's named prayer:
-     * Piety +25% Defence, Augury +25% both (ISS-01M6415DFFW34P8QY468GA74KY). */
+    // {Defence, Magic} a boss rolls against under the style's named prayer:
+    // Piety +25% Defence, Augury +25% both (ISS-01M6415DFFW34P8QY468GA74KY).
     public static int[] defending(CombatStyle style, String prayer, int defence, int magic) {
         for (Object[] row : picksFor(style)) if (row[0].equals(prayer)) return new int[]{defence * (int) row[3] / 100, magic * (int) row[4] / 100};
         return new int[]{defence, magic};

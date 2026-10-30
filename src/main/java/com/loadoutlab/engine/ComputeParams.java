@@ -2,13 +2,11 @@ package com.loadoutlab.engine;
 
 import java.util.Map;
 
-/**
- * The page's compute settings, built fresh per compute by the page state
- * and carried through the plugin to the optimizer as one object (the
- * fourteen scalars used to ride every layer by hand). The engine edits
- * its copy before handing it on: the fire gate, the fight-book lock, the
- * Arceuus veto.
- */
+// The page's compute settings, built fresh per compute by the page state
+// and carried through the plugin to the optimizer as one object (the
+// fourteen scalars used to ride every layer by hand). The engine edits
+// its copy before handing it on: the fire gate, the fight-book lock, the
+// Arceuus veto.
 public class ComputeParams implements Cloneable {
     public boolean f2pOnly;
     public boolean onSlayerTask;
@@ -17,10 +15,10 @@ public class ComputeParams implements Cloneable {
     public int maxTradeables = -1;
     public int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
     public boolean antifirePotion;
-    /** antifireMode as is: 0 none, 1 antifire, 2 super antifire. */
+    // antifireMode as is: 0 none, 1 antifire, 2 super antifire.
     public int antifireTier;
-    /** The combat achievement task's rules plus the player's requirements
-     * (ISS-01M5XC7XYMMEN3Q4QC6CGZFVPK); null = none. */
+    // The combat achievement task's rules plus the player's requirements
+    // (ISS-01M5XC7XYMMEN3Q4QC6CGZFVPK); null = none.
     public SetRules setRules;
     public boolean sunfireRunes;
     public int deathCharge;
@@ -29,33 +27,33 @@ public class ComputeParams implements Cloneable {
     public Map<CombatStyle, String> prayerPicks = Map.of();
     public int upgradeBudgetGp;
     public int maxSwaps = 1;
-    /** The Multi card is showing: the multi tools are computed too. */
+    // The Multi card is showing: the multi tools are computed too.
     public boolean multiView;
-    /** Targets stacked on the Multi card: 3 or 9. */
+    // Targets stacked on the Multi card: 3 or 9.
     public int multiStack = 3;
-    /** The defensive mode - MAX_DPS / BALANCED / TANKY; only ever not
-     * MAX_DPS in developer mode (ISS-01M5G5CZC9SK46499FACRSJ8ZT). */
+    // The defensive mode - MAX_DPS / BALANCED / TANKY; only ever not
+    // MAX_DPS in developer mode (ISS-01M5G5CZC9SK46499FACRSJ8ZT).
     public String optimizeMode = "MAX_DPS";
-    /** The GWD Ancient chip: Zaros joins the protection route
-     * (ISS-01M5G9KPDQWBR014Z10F79B29T). */
+    // The GWD Ancient chip: Zaros joins the protection route
+    // (ISS-01M5G9KPDQWBR014Z10F79B29T).
     public boolean gwdAncient;
-    /** The elite Kourend & Kebos diary is done: Karuulm needs no boots
-     * (ISS-01M5JJ0Z4M988DR0M0ZGJHD139). */
+    // The elite Kourend & Kebos diary is done: Karuulm needs no boots
+    // (ISS-01M5JJ0Z4M988DR0M0ZGJHD139).
     public boolean kourendElite;
-    /** Thralls are on (members, not F2P): with Death Charge, the reason a
-     * group defaults to Arceuus (ISS-01M5PB4R0MP149NXWNFSEEHVP8). */
+    // Thralls are on (members, not F2P): with Death Charge, the reason a
+    // group defaults to Arceuus (ISS-01M5PB4R0MP149NXWNFSEEHVP8).
     public boolean thralls;
-    /** A raid selection: its group runs Arceuus whenever thralls or Death
-     * Charge are on (ISS-01M5TMC6SK50VPV8713B33SPPM). */
+    // A raid selection: its group runs Arceuus whenever thralls or Death
+    // Charge are on (ISS-01M5TMC6SK50VPV8713B33SPPM).
     public boolean raid;
-    /** The stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY): seven levels in
-     * attack/strength/defence/ranged/magic/prayer/hitpoints order, 0 = your
-     * own; null when nothing is simmed. simMaxCape sims the max cape. */
+    // The stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY): seven levels in
+    // attack/strength/defence/ranged/magic/prayer/hitpoints order, 0 = your
+    // own; null when nothing is simmed. simMaxCape sims the max cape.
     public int[] simLevels;
     public boolean simMaxCape;
 
-    /** A field-for-field copy: the roster's second pass edits the lock
-     * and Death Charge without touching the page's own params. */
+    // A field-for-field copy: the roster's second pass edits the lock
+    // and Death Charge without touching the page's own params.
     @lombok.SneakyThrows
     public ComputeParams copy() { return (ComputeParams) clone(); }
 }

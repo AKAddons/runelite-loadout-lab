@@ -6,23 +6,23 @@ import java.util.*;
 import lombok.*;
 import static com.loadoutlab.data.JsonResources.*;
 
-/** Combat achievement tasks whose restrictions shape a set (combat_achievements.json,
- * ISS-01M5XC7XYMMEN3Q4QC6CGZFVPK): each task's rules as SetRules, by id and by mob.
- * The file's names are lowercase already and its keys are SetRules' field names. */
+// Combat achievement tasks whose restrictions shape a set (combat_achievements.json,
+// ISS-01M5XC7XYMMEN3Q4QC6CGZFVPK): each task's rules as SetRules, by id and by mob.
+// The file's names are lowercase already and its keys are SetRules' field names.
 public class CombatAchievements {
     @Value
     public static class Task {
         int id;
         String name, tier, desc;
         Set<String> mobs;
-        /** A fragment the mob's version must contain, or "". */
+        // A fragment the mob's version must contain, or "".
         String version;
         SetRules rules;
-        /** Per-mob weapon lists (Betrayal: each moon's own drop), or null. */
+        // Per-mob weapon lists (Betrayal: each moon's own drop), or null.
         JsonObject mobWeapons;
 
-        /** The rules on these mobs: a per-mob weapon list narrows to theirs
-         * (a group of them allows any of their weapons). */
+        // The rules on these mobs: a per-mob weapon list narrows to theirs
+        // (a group of them allows any of their weapons).
         public SetRules rulesFor(Collection<MonsterStats> on) {
             if (mobWeapons == null) return rules;
             Set<String> weapons = new HashSet<>();
@@ -70,7 +70,7 @@ public class CombatAchievements {
 
     static String text(JsonObject t, String key) { return t.has(key) ? t.get(key).getAsString() : null; }
 
-    /** The string array at key, or null when absent. */
+    // The string array at key, or null when absent.
     static Set<String> set(JsonObject t, String key) {
         if (!t.has(key)) return null;
         Set<String> out = new LinkedHashSet<>();
@@ -80,10 +80,10 @@ public class CombatAchievements {
 
     public static Task byId(int id) { return BY_ID.get(id); }
 
-    /** Every task, in file order. */
+    // Every task, in file order.
     public static Collection<Task> all() { return BY_ID.values(); }
 
-    /** The tasks for a monster (its name, and its version where a task names one). */
+    // The tasks for a monster (its name, and its version where a task names one).
     public static List<Task> tasksFor(MonsterStats mob) {
         List<Task> out = new ArrayList<>();
         for (Task t : BY_ID.values()) if (t.isFor(mob)) out.add(t);

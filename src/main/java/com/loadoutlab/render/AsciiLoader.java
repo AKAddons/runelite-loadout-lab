@@ -13,36 +13,34 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.awt.GraphicsEnvironment;
 
-/**
- * The compute animation, ASCII edition (the pixel mascots retired in
- * the merge-back; field ask 2026-08-20): frames live in
- * loader_frames.txt - a token-free resource - and this class only
- * cycles them. '--' separates frames, '==' separates moods, one
- * random mood per compute (the mascot-roster contract). The timer
- * runs ONLY while computing and dies on unmount (the mascot-era
- * lesson: a hidden component's timer still burns the EDT).
- */
+// The compute animation, ASCII edition (the pixel mascots retired in
+// the merge-back; field ask 2026-08-20): frames live in
+// loader_frames.txt - a token-free resource - and this class only
+// cycles them. '--' separates frames, '==' separates moods, one
+// random mood per compute (the mascot-roster contract). The timer
+// runs ONLY while computing and dies on unmount (the mascot-era
+// lesson: a hidden component's timer still burns the EDT).
 class AsciiLoader extends JEditorPane {
     static final String RESOURCE = "/com/loadoutlab/render/loader_frames.txt";
     static final List<List<String>> MOODS = new ArrayList<>();
-    /** Keyed pools ("==sea ...", "==toa ...", "==tob", "==cox", "==zulrah"
-     * sections): played only for the matching selection, so a kraken never
-     * greets Graardor and the Obelisk charges only for a ToA trip. Land
-     * computes use MOODS. */
+    // Keyed pools ("==sea ...", "==toa ...", "==tob", "==cox", "==zulrah"
+    // sections): played only for the matching selection, so a kraken never
+    // greets Graardor and the Obelisk charges only for a ToA trip. Land
+    // computes use MOODS.
     static final Map<String, List<List<String>>> POOLS = new HashMap<>();
     static {
         load(MOODS, POOLS);
     }
     String key;
 
-    /** The mood faces, bundled: Java's logical Monospaced draws ASCII in one
-     * font and borrows Braille, blocks and shades from another at other
-     * widths on Windows (Andrew 2026-10-15: the flask's rows slid sideways).
-     * The ART draws in DejaVu Sans Mono, Menlo's parent, so the shades ink
-     * the cells the frames were tuned on (Cascadia's medium shade inks 21%
-     * against DejaVu's 48%: "the color tone is off in the potion"); it has no
-     * Braille, so Braille runs draw in Cascadia Mono, same advance and line
-     * height at 12 pt. A missing resource = the logical font as before. */
+    // The mood faces, bundled: Java's logical Monospaced draws ASCII in one
+    // font and borrows Braille, blocks and shades from another at other
+    // widths on Windows (Andrew 2026-10-15: the flask's rows slid sideways).
+    // The ART draws in DejaVu Sans Mono, Menlo's parent, so the shades ink
+    // the cells the frames were tuned on (Cascadia's medium shade inks 21%
+    // against DejaVu's 48%: "the color tone is off in the potion"); it has no
+    // Braille, so Braille runs draw in Cascadia Mono, same advance and line
+    // height at 12 pt. A missing resource = the logical font as before.
     static final Font MOOD_FONT = loadFont("DejaVuSansMono.ttf");
     static final Font BRAILLE_FONT = loadFont("CascadiaMono.ttf");
     static final Pattern BRAILLE = Pattern.compile("[\u2800-\u28ff]+");
@@ -60,7 +58,7 @@ class AsciiLoader extends JEditorPane {
         } catch (Exception e) { return new Font(Font.MONOSPACED, Font.PLAIN, 12); }
     }
 
-    /** The pool key for the pending selection, or null for land. */
+    // The pool key for the pending selection, or null for land.
     void setKey(String key) { this.key = key; }
 
     final Timer timer = new Timer(140, e -> advance());
@@ -80,7 +78,7 @@ class AsciiLoader extends JEditorPane {
         setForeground(ResultCards.ACCENT);
     }
 
-    /** One frame onto the pane: fixed pitch, no margins, markup honoured. */
+    // One frame onto the pane: fixed pitch, no margins, markup honoured.
     void show(String frame) {
         // The family goes on the pre itself, unquoted (Swing keeps quotes); Braille
         // runs switch face inline (a tag never splits a run, so colour runs survive).
@@ -89,7 +87,7 @@ class AsciiLoader extends JEditorPane {
             + "'>" + runs + "</pre></body></html>");
     }
 
-    /** The key the current frames were picked for (a sentinel while idle). */
+    // The key the current frames were picked for (a sentinel while idle).
     String playingKey = "-";
 
     void setRunning(boolean running) {
@@ -116,11 +114,11 @@ class AsciiLoader extends JEditorPane {
         super.removeNotify();
     }
 
-    /** The land pool for a date: the Halloween moods from Oct 15 to Oct 31,
-     * every year (ISS-01M5PR1FRK0XT2PHQ7HJD0D1FZ, Andrew 2026-10-24: "a
-     * halloween themed loading screen that can override the main loadout lab
-     * guy from 10/15-10/31 (yearly)"), the flask otherwise. A keyed
-     * selection's own art outranks the season (setRunning). */
+    // The land pool for a date: the Halloween moods from Oct 15 to Oct 31,
+    // every year (ISS-01M5PR1FRK0XT2PHQ7HJD0D1FZ, Andrew 2026-10-24: "a
+    // halloween themed loading screen that can override the main loadout lab
+    // guy from 10/15-10/31 (yearly)"), the flask otherwise. A keyed
+    // selection's own art outranks the season (setRunning).
     static List<List<String>> seasonal(LocalDate today) {
         List<List<String>> halloween = POOLS.get("halloween");
         boolean season = today.getMonth() == Month.OCTOBER && today.getDayOfMonth() >= 15;
@@ -129,9 +127,9 @@ class AsciiLoader extends JEditorPane {
 
     void advance() { show(frames.get(tick++ % frames.size())); }
 
-    /** Package for the parse test. Fail-soft: a missing or empty
-     * resource degrades to the plain text line, never a crash. A mood
-     * separator of "==<key> ..." routes that mood to the keyed pool. */
+    // Package for the parse test. Fail-soft: a missing or empty
+    // resource degrades to the plain text line, never a crash. A mood
+    // separator of "==<key> ..." routes that mood to the keyed pool.
     static List<List<String>> poolFor(List<List<String>> land, Map<String, List<List<String>>> pools, String key) {
         return key == null ? land : pools.computeIfAbsent(key, k -> new ArrayList<>());
     }

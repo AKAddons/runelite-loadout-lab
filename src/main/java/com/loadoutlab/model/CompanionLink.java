@@ -3,13 +3,11 @@ package com.loadoutlab.model;
 import java.util.Map;
 import java.util.function.Consumer;
 
-/**
- * The in-process page store between the CommandEngine and the
- * renderer: holds the latest published page and notifies the
- * listeners the plugin wires at startup. (The 2026-08 merge-back
- * retired the PluginMessage seam this class once broadcast over -
- * the renderer lives in this plugin now.)
- */
+// The in-process page store between the CommandEngine and the
+// renderer: holds the latest published page and notifies the
+// listeners the plugin wires at startup. (The 2026-08 merge-back
+// retired the PluginMessage seam this class once broadcast over -
+// the renderer lives in this plugin now.)
 public class CompanionLink {
     volatile Map lastPage;
     volatile Runnable pageListener;
@@ -19,13 +17,13 @@ public class CompanionLink {
 
     public void setStatusListener(Consumer<Boolean> statusListener) { this.statusListener = statusListener; }
 
-    /** Compute-in-flight signal - drives the renderer's waiting state. */
+    // Compute-in-flight signal - drives the renderer's waiting state.
     public void publishStatus(boolean computing) {
         Consumer<Boolean> listener = statusListener;
         if (listener != null) listener.accept(computing);
     }
 
-    /** Publish an assembled page (the CommandEngine builds them). */
+    // Publish an assembled page (the CommandEngine builds them).
     public void publishPage(Map page) {
         // Identical pages do not republish (perf, 2026-08-15: post-boss
         // silent refreshes usually land the SAME answer - the deep
@@ -36,6 +34,6 @@ public class CompanionLink {
         if (listener != null) listener.run();
     }
 
-    /** The latest published page - the hosted view renders it. */
+    // The latest published page - the hosted view renders it.
     public Map lastPage() { return lastPage; }
 }

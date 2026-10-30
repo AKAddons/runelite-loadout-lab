@@ -3,14 +3,12 @@ package com.loadoutlab.data;
 import java.util.Arrays;
 import java.util.regex.*;
 
-/**
- * The wiki infobox's listed max hits, per attack family (ISS-01M5FZ3KYCGEMMX1A45D3J9NQ9).
- * The corpus field is free text - "13 (Ranged)", "30-37 (Melee)", "7x2 (Magic)",
- * "26 (melee)<br/> 15x2 (ranged)<br/> 65 (special attack)", "32 total 4+8+20" -
- * so each entry is read for its value and labels: ranges and alternatives take
- * the larger, multi-hits count their total (same expected damage), specials and
- * dragonfire are left to curated data, and an unlabelled value is GENERAL.
- */
+// The wiki infobox's listed max hits, per attack family (ISS-01M5FZ3KYCGEMMX1A45D3J9NQ9).
+// The corpus field is free text - "13 (Ranged)", "30-37 (Melee)", "7x2 (Magic)",
+// "26 (melee)<br/> 15x2 (ranged)<br/> 65 (special attack)", "32 total 4+8+20" -
+// so each entry is read for its value and labels: ranges and alternatives take
+// the larger, multi-hits count their total (same expected damage), specials and
+// dragonfire are left to curated data, and an unlabelled value is GENERAL.
 public class MaxHits {
     public enum Family { MELEE, RANGED, MAGIC, GENERAL }
 
@@ -32,7 +30,7 @@ public class MaxHits {
 
     MaxHits(int[] max) { this.max = max; }
 
-    /** The listed max for this family, or -1 when the wiki lists none. */
+    // The listed max for this family, or -1 when the wiki lists none.
     public int of(Family family) { return max[family.ordinal()]; }
 
     public boolean isEmpty() { return Arrays.stream(max).allMatch(v -> v < 0); }

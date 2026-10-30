@@ -4,42 +4,38 @@ import com.loadoutlab.data.*;
 import com.google.gson.*;
 import java.util.*;
 
-/**
- * What dying to another player above level 20 Wilderness costs per worn
- * UNTRADEABLE item, under the June 2026 Items Kept on Death rework
- * (wiki: Trouver parchment + Items Kept on Death, verified 2026-07-07):
- *
- * - Category 1 (no combat benefit): never lost, costs nothing.
- * - Category 2 (some combat bonuses): breaks; the victim pays the item's
- *   own repair/replacement fee (per-item, wiki-sourced). This bucket also
- *   carries the component-drop items (crystal armour reverts to a seed for
- *   the killer, slayer helm drops as a black mask, imbued rings drop the
- *   base ring, ...) priced at the component's value.
- * - Category 3 (strong combat bonuses): trouver-locked once (permanent);
- *   each PvP death above 20 Wilderness mangles the item and the victim
- *   pays 500,000 coins to restore it (the killer receives the fee). We
- *   assume the one-time lock has already been done, so the per-death cost
- *   is the flat 500k mangle fee.
- *
- * Entries in untradeable_death.json are keyed by lowercase item name
- * (GearItem.name, no version suffix). An UNLISTED untradeable that
- * carries any combat stats falls back to a conservative 500,000 default:
- * unknowns must not smuggle into "low-risk" sets for free - curation
- * whittles the list, the default keeps the risk budget honest meanwhile.
- * Untradeables with no combat stats (graceful class) cost nothing.
- */
+// What dying to another player above level 20 Wilderness costs per worn
+// UNTRADEABLE item, under the June 2026 Items Kept on Death rework
+// (wiki: Trouver parchment + Items Kept on Death, verified 2026-07-07):
+// - Category 1 (no combat benefit): never lost, costs nothing.
+// - Category 2 (some combat bonuses): breaks; the victim pays the item's
+//   own repair/replacement fee (per-item, wiki-sourced). This bucket also
+//   carries the component-drop items (crystal armour reverts to a seed for
+//   the killer, slayer helm drops as a black mask, imbued rings drop the
+//   base ring, ...) priced at the component's value.
+// - Category 3 (strong combat bonuses): trouver-locked once (permanent);
+//   each PvP death above 20 Wilderness mangles the item and the victim
+//   pays 500,000 coins to restore it (the killer receives the fee). We
+//   assume the one-time lock has already been done, so the per-death cost
+//   is the flat 500k mangle fee.
+// Entries in untradeable_death.json are keyed by lowercase item name
+// (GearItem.name, no version suffix). An UNLISTED untradeable that
+// carries any combat stats falls back to a conservative 500,000 default:
+// unknowns must not smuggle into "low-risk" sets for free - curation
+// whittles the list, the default keeps the risk budget honest meanwhile.
+// Untradeables with no combat stats (graceful class) cost nothing.
 public class UntradeableDeathCosts {
     static final String RESOURCE = "untradeable_death.json";
 
-    /** Conservative fallback for combat untradeables we have not curated. */
+    // Conservative fallback for combat untradeables we have not curated.
     public static final long UNKNOWN_COMBAT_UNTRADEABLE_GP = 500_000L;
 
     static final Map<String, Long> COST_BY_NAME = new HashMap<>();
     static final Map<String, Integer> CATEGORY_BY_NAME = new HashMap<>();
-    /** Curated rebuild-errand proxies (re-obtain/re-enchant/re-imbue time,
-     * NOT gp - imbue points refund since April 2024). Counted into the
-     * risk total and the risk cap so "free but a 25-minute errand" items
-     * never read as safe (field request). */
+    // Curated rebuild-errand proxies (re-obtain/re-enchant/re-imbue time,
+    // NOT gp - imbue points refund since April 2024). Counted into the
+    // risk total and the risk cap so "free but a 25-minute errand" items
+    // never read as safe (field request).
     static final Map<String, Long> FRICTION_BY_NAME = new HashMap<>();
 
     static {
@@ -58,12 +54,10 @@ public class UntradeableDeathCosts {
     }
 
 
-    /**
-     * Per-death gp cost of wearing this item into PvP above 20 Wilderness.
-     * Tradeables cost 0 here - their loss is priced by the kept-slot
-     * ranking in PvpRisk - EXCEPT category 5 (destroyed on any death,
-     * protection does not help), which charges regardless of tradeability.
-     */
+    // Per-death gp cost of wearing this item into PvP above 20 Wilderness.
+    // Tradeables cost 0 here - their loss is priced by the kept-slot
+    // ranking in PvpRisk - EXCEPT category 5 (destroyed on any death,
+    // protection does not help), which charges regardless of tradeability.
     public static long costFor(GearItem item) {
         if (item == null) return 0L;
         if (item.tradeable) {
@@ -75,25 +69,23 @@ public class UntradeableDeathCosts {
         return hasCombatStats(item) ? UNKNOWN_COMBAT_UNTRADEABLE_GP : 0L;
     }
 
-    /** Rebuild-errand proxy for a death loss (0 when none curated). */
+    // Rebuild-errand proxy for a death loss (0 when none curated).
     public static long frictionFor(GearItem item) {
         if (item == null) return 0L;
         Long friction = FRICTION_BY_NAME.get(item.nameLower);
         return friction == null ? 0L : friction;
     }
 
-    /** Category 5: destroyed on any death - never protectable. */
+    // Category 5: destroyed on any death - never protectable.
     public static boolean isDestroyedOnDeath(GearItem item) { return categoryFor(item) == 5; }
 
-    /**
-     * Category 4: converts to a tradeable component dropped for the
-     * killer (slayer helm -> black mask, crystal -> seed). These are
-     * LOSABLE, so they compete for kept-on-death protection slots at
-     * their component value - protecting one prevents the drop.
-     */
+    // Category 4: converts to a tradeable component dropped for the
+    // killer (slayer helm -> black mask, crystal -> seed). These are
+    // LOSABLE, so they compete for kept-on-death protection slots at
+    // their component value - protecting one prevents the drop.
     public static boolean isConvertible(GearItem item) { return categoryFor(item) == 4; }
 
-    /** Curated category (1, 2, 3 or 4-converts), or 0 when unlisted. */
+    // Curated category (1, 2, 3 or 4-converts), or 0 when unlisted.
     public static int categoryFor(GearItem item) {
         if (item == null) return 0;
         Integer listed = CATEGORY_BY_NAME.get(item.nameLower);

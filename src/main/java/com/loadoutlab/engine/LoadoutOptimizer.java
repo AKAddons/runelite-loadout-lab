@@ -33,32 +33,27 @@ public class LoadoutOptimizer {
     // 2026-07-18: KBD magic went empty after excluding the anti-dragon
     // shield - the mystic/battlestaff line was pruned at slot two).
     static final int RISK_RESERVE = 8;
-    /**
-     * Beam evaluation order: high-impact slots first so pruning is informed,
-     * and BODY immediately before LEGS so paired set bonuses (crystal armour
-     * with the bofa) compound before the cut - with them apart, a lone
-     * crystal body ranked below raw-stat bodies and was pruned before the
-     * legs could complete the set (the slayer-helm-on regression).
-     */
+    // Beam evaluation order: high-impact slots first so pruning is informed,
+    // and BODY immediately before LEGS so paired set bonuses (crystal armour
+    // with the bofa) compound before the cut - with them apart, a lone
+    // crystal body ranked below raw-stat bodies and was pruned before the
+    // legs could complete the set (the slayer-helm-on regression).
     static final GearSlot[] NON_WEAPON_SLOTS = {
         AMMO, BODY, LEGS, HEAD, NECK, HANDS, SHIELD, CAPE, FEET, RING };
 
     final DpsCalculator calculator = new DpsCalculator();
 
-    /**
-     * DPS-neutral set polish: fill empty slots AND upgrade filled ones to
-     * higher-utility stat ties - prefer prayer bonus, then total defensive
-     * bonuses. A candidate survives only if the recomputed DPS did not drop
-     * (negative style bonuses can cost accuracy). Candidates respect the
-     * request's owned/budget mode - so a best-owned set only draws from the
-     * bank, the game-best set from everything.
-     *
-     * <p>The filled-slot upgrade exists because the BEAM cannot promise the
-     * best of an exact DPS tie: its width cut breaks ties on cost, so a
-     * cheap-but-flimsy body (blood moon) could starve the Torva branch out
-     * of the search entirely (field report). Repairing the DISPLAYED set
-     * here is deterministic and cannot disturb the search.
-     */
+    // DPS-neutral set polish: fill empty slots AND upgrade filled ones to
+    // higher-utility stat ties - prefer prayer bonus, then total defensive
+    // bonuses. A candidate survives only if the recomputed DPS did not drop
+    // (negative style bonuses can cost accuracy). Candidates respect the
+    // request's owned/budget mode - so a best-owned set only draws from the
+    // bank, the game-best set from everything.
+    // <p>The filled-slot upgrade exists because the BEAM cannot promise the
+    // best of an exact DPS tie: its width cut breaks ties on cost, so a
+    // cheap-but-flimsy body (blood moon) could starve the Torva branch out
+    // of the search entirely (field report). Repairing the DISPLAYED set
+    // here is deterministic and cannot disturb the search.
     public DpsResult fillDpsNeutralSlots(LoadoutData data, OptimizationRequest request, DpsResult result) {
         if (result == null) return null;
         var pass = new Pass(data, request);
@@ -74,8 +69,8 @@ public class LoadoutOptimizer {
         return current;
     }
 
-    /** The per-request constants a display pass reads: the spell scratch,
-     * the risk guard, the dragonfire lock and the required-gear slots. */
+    // The per-request constants a display pass reads: the spell scratch,
+    // the risk guard, the dragonfire lock and the required-gear slots.
     static class Pass {
         final SpellContext spells;
         final RiskGuard risk;
@@ -90,14 +85,12 @@ public class LoadoutOptimizer {
         }
     }
 
-    /**
-     * GWD protection, worn when it is free (ISS-01M5G9KPDQWBR014Z10F79B29T,
-     * Andrew 2026-10-21: "worn when DPS-free"): each route god the shown set
-     * does not yet cover may take a non-weapon slot with one of its items -
-     * cheapest first - when the swap keeps DPS, is legal, spends no budget
-     * and uncovers no other route god. Whatever stays uncovered is carried
-     * (carriedGodItems).
-     */
+    // GWD protection, worn when it is free (ISS-01M5G9KPDQWBR014Z10F79B29T,
+    // Andrew 2026-10-21: "worn when DPS-free"): each route god the shown set
+    // does not yet cover may take a non-weapon slot with one of its items -
+    // cheapest first - when the swap keeps DPS, is legal, spends no budget
+    // and uncovers no other route god. Whatever stays uncovered is carried
+    // (carriedGodItems).
     public DpsResult wearGodItems(LoadoutData data, OptimizationRequest request, DpsResult result, List<String> gods) {
         if (result == null || gods.isEmpty()) return result;
         var pass = new Pass(data, request);
@@ -138,13 +131,11 @@ public class LoadoutOptimizer {
         return current;
     }
 
-    /**
-     * The GWD protection to CARRY (worn on the way in, swapped off for the
-     * fight): one item per route god the worn set leaves uncovered - owned
-     * (or allowed by the request's mode) first, an item covering several
-     * uncovered gods next, then the cheapest. With none allowed, the
-     * cheapest standard item is suggested so the trip is never unprotected.
-     */
+    // The GWD protection to CARRY (worn on the way in, swapped off for the
+    // fight): one item per route god the worn set leaves uncovered - owned
+    // (or allowed by the request's mode) first, an item covering several
+    // uncovered gods next, then the cheapest. With none allowed, the
+    // cheapest standard item is suggested so the trip is never unprotected.
     public List<GearItem> carriedGodItems(LoadoutData data, OptimizationRequest request, Loadout worn, List<String> gods) {
         Set<String> missing = new LinkedHashSet<>(gods);
         missing.removeAll(coveredGods(worn));
@@ -173,14 +164,12 @@ public class LoadoutOptimizer {
         return carried;
     }
 
-    /**
-     * The slot ladder's raw material (ISS-01M5GE9EJSX6YWCKMSYEWKZ132): every
-     * eligible item put into ONE slot of the shown set, the rest fixed - a
-     * two-hander evicts the shield, a weapon the worn ammo does not fit
-     * brings its own best usable ammo, the dragonfire
-     * shield and required-gear locks hold. Ownership is left to the caller
-     * (any item may be a step up; only owned ones are steps down).
-     */
+    // The slot ladder's raw material (ISS-01M5GE9EJSX6YWCKMSYEWKZ132): every
+    // eligible item put into ONE slot of the shown set, the rest fixed - a
+    // two-hander evicts the shield, a weapon the worn ammo does not fit
+    // brings its own best usable ammo, the dragonfire
+    // shield and required-gear locks hold. Ownership is left to the caller
+    // (any item may be a step up; only owned ones are steps down).
     public List<DpsResult> slotSwaps(LoadoutData data, OptimizationRequest request, DpsResult shown, GearSlot slot) {
         List<DpsResult> swaps = new ArrayList<>();
         if (shown == null) return swaps;
@@ -248,21 +237,21 @@ public class LoadoutOptimizer {
         return eligible(data, request, item) && allowedByMode(request, item);
     }
 
-    /** The four checks every pool shares: standard gear, not an ornament/
-     * locked/degraded variant (the base item stands in for those), not
-     * excluded, and equippable at the request's levels and quests. */
+    // The four checks every pool shares: standard gear, not an ornament/
+    // locked/degraded variant (the base item stands in for those), not
+    // excluded, and equippable at the request's levels and quests.
     public static boolean eligible(LoadoutData data, OptimizationRequest request, GearItem item) {
         return item.standardGear && !data.isVariant(item.id) && !request.isExcluded(item.id)
             && request.requirementProfile.canWear(item)
             && (request.setRules == null || request.setRules.allows(item));
     }
 
-    /** The dps-neutral fill for ONE slot: swap in the highest-utility item
-     * that does not cost dps (or fill an empty slot), honouring budget,
-     * risk, dragonfire/required-protection locks. Extracted so the roster
-     * quiver relocation can fill just the freed ammo slot without the whole
-     * sweep (field report 2026-08-09: rosters kept the arrow in the ammo
-     * slot because the roster path never ran the sweep). */
+    // The dps-neutral fill for ONE slot: swap in the highest-utility item
+    // that does not cost dps (or fill an empty slot), honouring budget,
+    // risk, dragonfire/required-protection locks. Extracted so the roster
+    // quiver relocation can fill just the freed ammo slot without the whole
+    // sweep (field report 2026-08-09: rosters kept the arrow in the ammo
+    // slot because the roster path never ran the sweep).
     DpsResult fillSlot(LoadoutData data, OptimizationRequest request, DpsResult current, GearSlot slot, Pass pass, double floor) {
         // A pinned slot is the player's explicit choice - never swapped.
         if (slot == WEAPON || request.pinnedFor(slot) != null) return current;
@@ -336,13 +325,13 @@ public class LoadoutOptimizer {
         return current;
     }
 
-    /** Relocate a bow's arrows into a worn Dizana's quiver and fill the
-     * freed ammo slot with a blessing - the quiver-only slice of
-     * fillDpsNeutralSlots, for the roster shown sets (field report
-     * 2026-08-09: a roster BiS kept the arrow in the ammo slot instead of
-     * Rada's, because the roster path never ran the full sweep). Returns
-     * the input unchanged when no relocation applies, so it is safe on
-     * every shown set. */
+    // Relocate a bow's arrows into a worn Dizana's quiver and fill the
+    // freed ammo slot with a blessing - the quiver-only slice of
+    // fillDpsNeutralSlots, for the roster shown sets (field report
+    // 2026-08-09: a roster BiS kept the arrow in the ammo slot instead of
+    // Rada's, because the roster path never ran the full sweep). Returns
+    // the input unchanged when no relocation applies, so it is safe on
+    // every shown set.
     public DpsResult relocateQuiverAmmo(LoadoutData data, OptimizationRequest request, DpsResult result) {
         if (result == null || !QuiverAmmo.relocatable(result.loadout)) return result;
         var pass = new Pass(data, request);
@@ -356,13 +345,11 @@ public class LoadoutOptimizer {
         return fillSlot(data, request, moved, AMMO, pass, moved.net);
     }
 
-    /**
-     * Mandatory utility (Zulrah recoil): when the fight requires an item
-     * class the dps ranking would never pick, swap in the least-costly
-     * satisfying option - ring slot vs feet slot compared on the full
-     * set's dps. Runs after the main search; when nothing satisfying is
-     * accessible the set is returned unchanged (the monster note warns).
-     */
+    // Mandatory utility (Zulrah recoil): when the fight requires an item
+    // class the dps ranking would never pick, swap in the least-costly
+    // satisfying option - ring slot vs feet slot compared on the full
+    // set's dps. Runs after the main search; when nothing satisfying is
+    // accessible the set is returned unchanged (the monster note warns).
     public DpsResult ensureRequiredUtility(LoadoutData data, OptimizationRequest request, DpsResult result) {
         if (result == null || !RequiredUtility.requiresRecoil(request.monster) || RequiredUtility.hasRecoil(result.loadout)
             // A pinned ring is the player's explicit pick - the forced
@@ -383,12 +370,12 @@ public class LoadoutOptimizer {
         return best == null ? result : best;
     }
 
-    /** The beam's objective: pure dps, with a tiny attack-roll nudge. */
-    /** The slots of a shown set where some game candidate beats the worn
-     * item with every other slot fixed: the gold border does not stand
-     * there (Andrew, field 2026-09-27: an occult on a Fire Bolt card,
-     * bordered because the game-best Shadow wears one). The weapon and
-     * protective requirements are never contested. */
+    // The beam's objective: pure dps, with a tiny attack-roll nudge.
+    // The slots of a shown set where some game candidate beats the worn
+    // item with every other slot fixed: the gold border does not stand
+    // there (Andrew, field 2026-09-27: an occult on a Fire Bolt card,
+    // bordered because the game-best Shadow wears one). The weapon and
+    // protective requirements are never contested.
     public Set<GearSlot> beatenSlots(LoadoutData data, OptimizationRequest own, OptimizationRequest game, DpsResult shown) {
         Set<GearSlot> beaten = EnumSet.noneOf(GearSlot.class);
         var pass = new Pass(data, own);
@@ -407,20 +394,18 @@ public class LoadoutOptimizer {
         return beaten;
     }
 
-    /**
-     * The beam's objective. Pure dps (with a tiny attack-roll nudge) by
-     * default; with a defense weight the score becomes dps - weight *
-     * incoming dps, so the beam walks the offence/defence frontier the
-     * defensive modes sweep (restored from 491b6c0, ISS-01M5G5CZC9SK46499FACRSJ8ZT).
-     */
+    // The beam's objective. Pure dps (with a tiny attack-roll nudge) by
+    // default; with a defense weight the score becomes dps - weight *
+    // incoming dps, so the beam walks the offence/defence frontier the
+    // defensive modes sweep (restored from 491b6c0, ISS-01M5G5CZC9SK46499FACRSJ8ZT).
     static double beamScore(OptimizationRequest request, DpsResult score, Loadout loadout, Prepared incoming) {
         double value = score.net + score.attackRoll * 1e-9;
         if (incoming != null) value -= request.defenseWeight * incoming.totalDps(loadout);
         return value;
     }
 
-    /** The style's damage-driving bonus (melee strength / ranged strength /
-     * magic damage) of an item's or a set's bonuses. */
+    // The style's damage-driving bonus (melee strength / ranged strength /
+    // magic damage) of an item's or a set's bonuses.
     static long damageBonus(CombatStyle style, StatBlock bonuses) {
         switch (style) {
             case RANGED:
@@ -433,14 +418,14 @@ public class LoadoutOptimizer {
         }
     }
 
-    /** An item's damage bonus (0 for an empty slot). A DPS-neutral fill
-     * swap must never REDUCE it. */
+    // An item's damage bonus (0 for an empty slot). A DPS-neutral fill
+    // swap must never REDUCE it.
     static long damageBonus(OptimizationRequest request, GearItem item) {
         return item == null ? 0 : damageBonus(request.style, item.bonuses);
     }
 
-    /** Prayer first, then the sum of defensive bonuses - of an item, or of
-     * the whole set. */
+    // Prayer first, then the sum of defensive bonuses - of an item, or of
+    // the whole set.
     static long utility(StatBlock bonuses, StatBlock defensive) {
         return bonuses.prayer * 1000L + (defensive.stab + defensive.slash
             + defensive.crush + defensive.magic + defensive.ranged);
@@ -448,35 +433,29 @@ public class LoadoutOptimizer {
 
     static long utilityScore(GearItem item) { return utility(item.bonuses, item.defensive); }
 
-    /**
-     * The set's total damage bonus for the style - the FIRST DPS-tie
-     * breaker. On a floored DPS tie prefer the set that carries more raw
-     * damage bonus (the stat that almost mattered): blood moon legs (+str)
-     * over proselyte (a pure-prayer tank leg), and torva (+6 str) over blood
-     * moon (+4). Only when damage ties (helms with zero offence: slayer helm
-     * vs bare black mask) does setUtility decide on defence.
-     */
+    // The set's total damage bonus for the style - the FIRST DPS-tie
+    // breaker. On a floored DPS tie prefer the set that carries more raw
+    // damage bonus (the stat that almost mattered): blood moon legs (+str)
+    // over proselyte (a pure-prayer tank leg), and torva (+6 str) over blood
+    // moon (+4). Only when damage ties (helms with zero offence: slayer helm
+    // vs bare black mask) does setUtility decide on defence.
     static long setDamageBonus(OptimizationRequest request, Loadout loadout) {
         return damageBonus(request.style, loadout.bonuses);
     }
 
-    /**
-     * utilityScore at the SET level - the SECONDARY DPS-tie breaker (after
-     * setDamageBonus). Field bug: the slayer helmet and the bare black mask
-     * tie EXACTLY on DPS (same on-task multiplier, zero offence each) AND on
-     * damage bonus (zero), so this decides on defence. Same DPS, same risk,
-     * same damage: prefer the set that protects better.
-     */
+    // utilityScore at the SET level - the SECONDARY DPS-tie breaker (after
+    // setDamageBonus). Field bug: the slayer helmet and the bare black mask
+    // tie EXACTLY on DPS (same on-task multiplier, zero offence each) AND on
+    // damage bonus (zero), so this decides on defence. Same DPS, same risk,
+    // same damage: prefer the set that protects better.
     static long setUtility(Loadout loadout) { return utility(loadout.bonuses, loadout.defensive); }
 
-    /**
-     * TERTIARY DPS-tie breaker, after setUtility: the set's damage bonuses
-     * across ALL styles. Field bug: the Avernic treads ornament variants
-     * tie exactly on the magic tab (same magic damage, same defence, zero
-     * prayer), so the (et) kit could displace the strictly-dominating
-     * (max) - data order decided. When everything the style cares about
-     * ties, prefer the set that is better everywhere else.
-     */
+    // TERTIARY DPS-tie breaker, after setUtility: the set's damage bonuses
+    // across ALL styles. Field bug: the Avernic treads ornament variants
+    // tie exactly on the magic tab (same magic damage, same defence, zero
+    // prayer), so the (et) kit could displace the strictly-dominating
+    // (max) - data order decided. When everything the style cares about
+    // ties, prefer the set that is better everywhere else.
     static long setCrossStyleDamage(Loadout loadout) {
         return loadout.bonuses.strength + loadout.bonuses.rangedStrength + loadout.bonuses.magicDamage;
     }
@@ -500,20 +479,18 @@ public class LoadoutOptimizer {
             ? guaranteeTaskMonotone(data, request, results) : results;
     }
 
-    /**
-     * Being on a slayer task can only ADD an option - the imbued slayer
-     * helm's accuracy bonus - so the on-task best set must never score below
-     * the off-task best (field-reported invariant). The beam is a heuristic
-     * and can break this: on an UNDEAD slayer target the salve amulet's
-     * bonus DOMINATES the exclusive slayer-helm bonus, so the helm is never
-     * actually worn in the optimum, yet its candidate boost steers the beam
-     * into a slayer-helm branch and prunes the raw-stat head the salve set
-     * wants. No beam ORDER fixes this in general (reordering just relocates
-     * the violation). The guarantee: the off-task optimum is always legal
-     * on task at the same dps, so fold the off-task search in and re-rank.
-     * Off-task sets never wear a bonus helm, so their dps is task-invariant
-     * (no recompute needed).
-     */
+    // Being on a slayer task can only ADD an option - the imbued slayer
+    // helm's accuracy bonus - so the on-task best set must never score below
+    // the off-task best (field-reported invariant). The beam is a heuristic
+    // and can break this: on an UNDEAD slayer target the salve amulet's
+    // bonus DOMINATES the exclusive slayer-helm bonus, so the helm is never
+    // actually worn in the optimum, yet its candidate boost steers the beam
+    // into a slayer-helm branch and prunes the raw-stat head the salve set
+    // wants. No beam ORDER fixes this in general (reordering just relocates
+    // the violation). The guarantee: the off-task optimum is always legal
+    // on task at the same dps, so fold the off-task search in and re-rank.
+    // Off-task sets never wear a bonus helm, so their dps is task-invariant
+    // (no recompute needed).
     List<DpsResult> guaranteeTaskMonotone(LoadoutData data, OptimizationRequest request, List<DpsResult> onTask) {
         OptimizationRequest offRequest = request.withSlayerTask(false);
         List<DpsResult> ot = optimize(data, offRequest, preparePools(data, offRequest));
@@ -528,10 +505,10 @@ public class LoadoutOptimizer {
         return limit(merged, request);
     }
 
-    /** The result order: the (weighted) dps, the attack roll, less risk,
-     * then the set tie-breakers - damage bonus, utility, cross-style damage
-     * - and the purchase cost. The maps are per-result overrides (empty
-     * when the run has none). */
+    // The result order: the (weighted) dps, the attack roll, less risk,
+    // then the set tie-breakers - damage bonus, utility, cross-style damage
+    // - and the purchase cost. The maps are per-result overrides (empty
+    // when the run has none).
     static Comparator<DpsResult> ranking(OptimizationRequest request, Map<DpsResult, Double> weighted, Map<DpsResult, Long> risk) {
         return comparingDouble((DpsResult r) -> weighted.getOrDefault(r, r.net)).reversed()
             .thenComparing(comparingLong(DpsResult::getAttackRoll).reversed()) .thenComparingLong(r -> risk.getOrDefault(r, 0L))
@@ -539,16 +516,14 @@ public class LoadoutOptimizer {
             .thenComparingLong(r -> -setCrossStyleDamage(r.loadout)) .thenComparingInt(DpsResult::getPurchaseCost);
     }
 
-    /** The first resultLimit results. */
+    // The first resultLimit results.
     static List<DpsResult> limit(List<DpsResult> results, OptimizationRequest request) {
         return results.size() > request.resultLimit ? new ArrayList<>(results.subList(0, request.resultLimit)) : results;
     }
 
-    /**
-     * The candidate pools one optimize run searches: legal spells, the
-     * weapon pool, the non-weapon slot pools, and (lazily, per weapon) the
-     * compatible-ammo pools. Confined to the optimizer worker.
-     */
+    // The candidate pools one optimize run searches: legal spells, the
+    // weapon pool, the non-weapon slot pools, and (lazily, per weapon) the
+    // compatible-ammo pools. Confined to the optimizer worker.
     @AllArgsConstructor
     public static class CandidatePools {
         final List<SpellStats> spells;
@@ -557,10 +532,8 @@ public class LoadoutOptimizer {
         final Map<GearItem, List<GearItem>> ammoByWeapon = new IdentityHashMap<>();
     }
 
-    /**
-     * Build the pools optimize(data, request) would build. Only useful with
-     * the pool-taking optimize overload, with an identical request.
-     */
+    // Build the pools optimize(data, request) would build. Only useful with
+    // the pool-taking optimize overload, with an identical request.
     public CandidatePools preparePools(LoadoutData data, OptimizationRequest request) {
         Map<GearSlot, List<GearItem>> slotCandidates = new EnumMap<>(GearSlot.class);
         for (GearSlot slot : NON_WEAPON_SLOTS) {
@@ -573,7 +546,7 @@ public class LoadoutOptimizer {
         return new CandidatePools( spellsFor(data, request), candidates(data, request, WEAPON, WEAPON_LIMIT, null), slotCandidates);
     }
 
-    /** optimize() over prebuilt pools - see preparePools for the contract. */
+    // optimize() over prebuilt pools - see preparePools for the contract.
     public List<DpsResult> optimize(LoadoutData data, OptimizationRequest request, CandidatePools pools) {
         if (request.monster == null || request.style == null || request.getLevels() == null) return List.of();
         List<SpellStats> spells = pools.spells;
@@ -745,14 +718,12 @@ public class LoadoutOptimizer {
         return limit(results, request);
     }
 
-    /**
-     * Per-optimize spell scratch: the withSpell request per spell (they do
-     * not vary per candidate set) and, per weapon, which spells are legal -
-     * spell legality depends only on the weapon and the monster, and the
-     * beam re-asks it for thousands of armour combinations around the same
-     * weapon. Created and confined per optimize/fill call (the worker
-     * thread), never stored on the optimizer.
-     */
+    // Per-optimize spell scratch: the withSpell request per spell (they do
+    // not vary per candidate set) and, per weapon, which spells are legal -
+    // spell legality depends only on the weapon and the monster, and the
+    // beam re-asks it for thousands of armour combinations around the same
+    // weapon. Created and confined per optimize/fill call (the worker
+    // thread), never stored on the optimizer.
     static class SpellContext {
         final List<SpellStats> spells;
         final OptimizationRequest[] spellRequests;
@@ -777,14 +748,14 @@ public class LoadoutOptimizer {
         }
     }
 
-    /** Spell contexts by request, for bestSpellFor's repeat callers. */
+    // Spell contexts by request, for bestSpellFor's repeat callers.
     final Map<OptimizationRequest, SpellContext> spellContexts = Collections.synchronizedMap(new WeakHashMap<>());
 
-    /** A set's DPS with the best autocast an auto-spell magic request may
-     * cast - the pick optimize() makes - on the caller's calculator. A group
-     * scored its shared sets with no spell, so a staff that needs an
-     * autocast lost to a powered staff (ISS-01M5K9KFJH7EZ0GMAKNGZ4K2JG,
-     * Andrew 2026-10-22: the trident beat his smoke staves at Barrows). */
+    // A set's DPS with the best autocast an auto-spell magic request may
+    // cast - the pick optimize() makes - on the caller's calculator. A group
+    // scored its shared sets with no spell, so a staff that needs an
+    // autocast lost to a powered staff (ISS-01M5K9KFJH7EZ0GMAKNGZ4K2JG,
+    // Andrew 2026-10-22: the trident beat his smoke staves at Barrows).
     public DpsResult bestSpellFor(LoadoutData data, OptimizationRequest request, Loadout loadout, DpsCalculator calc) {
         if (loadout == null) return null;
         if (isPoweredStaff(loadout.getWeapon())) return calc.calculate(request, loadout);
@@ -849,8 +820,8 @@ public class LoadoutOptimizer {
         return pruneDominatedElementals(all, request);
     }
 
-    /** The elements passing one predicate - the shape every pool filter
-     * shares. Runs per optimize or per weapon line, never in the beam. */
+    // The elements passing one predicate - the shape every pool filter
+    // shares. Runs per optimize or per weapon line, never in the beam.
     static <T> List<T> keep(List<T> all, Predicate<T> filter) {
         List<T> kept = new ArrayList<>(all.size());
         for (T element : all) {
@@ -859,16 +830,14 @@ public class LoadoutOptimizer {
         return kept;
     }
 
-    /**
-     * Plain elementals are interchangeable up to (effective max hit at this
-     * magic level, weakness match): the DPS chain reads nothing else from
-     * them, so for any loadout two same-class spells score identically and
-     * only the FIRST in list order can win (better() keeps the first on
-     * ties). Keeping one spell per class cuts the beam's per-trial spell
-     * loop from ~20 calculates to ~2 without changing any result. Spells
-     * with their own rules (Magic Dart, god/Iban casts, demonbane,
-     * ancients) are never pruned.
-     */
+    // Plain elementals are interchangeable up to (effective max hit at this
+    // magic level, weakness match): the DPS chain reads nothing else from
+    // them, so for any loadout two same-class spells score identically and
+    // only the FIRST in list order can win (better() keeps the first on
+    // ties). Keeping one spell per class cuts the beam's per-trial spell
+    // loop from ~20 calculates to ~2 without changing any result. Spells
+    // with their own rules (Magic Dart, god/Iban casts, demonbane,
+    // ancients) are never pruned.
     static List<SpellStats> pruneDominatedElementals(List<SpellStats> spells, OptimizationRequest request) {
         if (spells.isEmpty() || request.monster == null) return spells;
         String weakness = request.monster.weaknessElement;
@@ -906,7 +875,7 @@ public class LoadoutOptimizer {
     }
 
     static final List<String> ELEMENTS = List.of("air", "water", "earth", "fire");
-    /** Amulet of air, water, earth, fire (gameval ids). */
+    // Amulet of air, water, earth, fire (gameval ids).
     static final int[] ELEMENT_AMULETS = {34407, 34413, 34419, 34425};
 
     static boolean elementAmuletInPool(OptimizationRequest request) {
@@ -1044,12 +1013,12 @@ public class LoadoutOptimizer {
         return rows;
     }
 
-    /** Beam cut. Risk-capped hunts swap the tail of the score cut for the
-     * lowest-risk survivors: risk grows monotonically as slots fill, so a
-     * beam of pure score-leaders can march everyone past the cap and die
-     * even though a cheap compliant set exists. The reserve guarantees a
-     * low-risk line reaches the last slot. Ties keep score order (next is
-     * score-sorted and the sort is stable). */
+    // Beam cut. Risk-capped hunts swap the tail of the score cut for the
+    // lowest-risk survivors: risk grows monotonically as slots fill, so a
+    // beam of pure score-leaders can march everyone past the cap and die
+    // even though a cheap compliant set exists. The reserve guarantees a
+    // low-risk line reaches the last slot. Ties keep score order (next is
+    // score-sorted and the sort is stable).
     static List<SearchState> cutBeam(List<SearchState> next, boolean riskConstrained) {
         if (next.size() <= BEAM_WIDTH) return next;
         if (!riskConstrained) return new ArrayList<>(next.subList(0, BEAM_WIDTH));
@@ -1069,8 +1038,8 @@ public class LoadoutOptimizer {
         return kept;
     }
 
-    /** The candidates whose ids are acceptable for a required slot -
-     * nulls drop too, a mandated slot may not ride empty. */
+    // The candidates whose ids are acceptable for a required slot -
+    // nulls drop too, a mandated slot may not ride empty.
     static List<GearItem> onlyIds(List<GearItem> candidates, Set<Integer> ids) {
         return keep(candidates, item -> item != null && ids.contains(item.id));
     }
@@ -1085,20 +1054,20 @@ public class LoadoutOptimizer {
 
     static final int ECLIPSE_ATLATL = 29000;
 
-    /** The eclipse atlatl can be this ranged request's weapon: eligible and
-     * allowed by the candidate mode (owned, simmed, or the whole game). */
+    // The eclipse atlatl can be this ranged request's weapon: eligible and
+    // allowed by the candidate mode (owned, simmed, or the whole game).
     static boolean atlatlInPlay(LoadoutData data, OptimizationRequest request) {
         GearItem a2 = request.style == RANGED ? data.getGear(ECLIPSE_ATLATL) : null;
         return a2 != null && eligible(data, request, a2) && allowedByMode(request, a2);
     }
 
-    /** atlatl: the eclipse atlatl is in play, so a slot's gear also scores
-     * by what the atlatl hits with - ranged accuracy and MELEE strength -
-     * and the better of the two scores keeps either kind in the pool
-     * (ISS-01M5PTESXPE03VZP9JB8X93KRF, Kendyy 2026-10-23: "atlatl gets its
-     * damage from melee strength but does range damage ... the calc might
-     * be trying to match it with range boosting gear": ferocious gloves,
-     * ultor, torture and primordials never entered the ranged pools). */
+    // atlatl: the eclipse atlatl is in play, so a slot's gear also scores
+    // by what the atlatl hits with - ranged accuracy and MELEE strength -
+    // and the better of the two scores keeps either kind in the pool
+    // (ISS-01M5PTESXPE03VZP9JB8X93KRF, Kendyy 2026-10-23: "atlatl gets its
+    // damage from melee strength but does range damage ... the calc might
+    // be trying to match it with range boosting gear": ferocious gloves,
+    // ultor, torture and primordials never entered the ranged pools).
     static double candidateScore(OptimizationRequest request, GearItem item, boolean a2) {
         double score = item.roughScore(request.style);
         if (a2) {
@@ -1162,11 +1131,9 @@ public class LoadoutOptimizer {
         return score;
     }
 
-    /**
-     * Risk the pinned items alone carry - the wilderness cap constrains
-     * the REST of the set, never the player's explicit picks. Cheap when
-     * nothing is pinned (the overwhelmingly common case).
-     */
+    // Risk the pinned items alone carry - the wilderness cap constrains
+    // the REST of the set, never the player's explicit picks. Cheap when
+    // nothing is pinned (the overwhelmingly common case).
     public static long pinnedRiskFloor(LoadoutData data, OptimizationRequest request) {
         if (request.pinnedItems.isEmpty()) return 0;
         var gear = new EnumMap<GearSlot, GearItem>(GearSlot.class);
@@ -1181,8 +1148,8 @@ public class LoadoutOptimizer {
         return request.pinnedItems.isEmpty() ? Set.of() : new HashSet<>(request.pinnedItems.values());
     }
 
-    /** Per rule, the least and most the slots from index k on can still add
-     * (each slot's pool, the empty slot counting 0) - suffix sums. */
+    // Per rule, the least and most the slots from index k on can still add
+    // (each slot's pool, the empty slot counting 0) - suffix sums.
     class RuleBounds {
         final List<SetRules.Rule> rules;
         final double[][] lo, hi;
@@ -1208,7 +1175,7 @@ public class LoadoutOptimizer {
             }
         }
 
-        /** Could the slots from index k on still bring every rule home? */
+        // Could the slots from index k on still bring every rule home?
         boolean reachable(Loadout loadout, int k) {
             for (int r = 0; r < rules.size(); r++) {
                 double total = SetRules.total(loadout, rules.get(r).getStat());
@@ -1218,13 +1185,11 @@ public class LoadoutOptimizer {
         }
     }
 
-    /**
-     * The request-level risk constants of a wilderness hunt, hoisted out of
-     * the trial loops (they were rebuilt - floor Loadout + a HashSet - per
-     * candidate): the kept slots, the cap (the budget raised by the pinned
-     * items' own risk floor, since the cap constrains the REST of the set),
-     * the pinned ids and the protect-only ids. Null off the Wilderness.
-     */
+    // The request-level risk constants of a wilderness hunt, hoisted out of
+    // the trial loops (they were rebuilt - floor Loadout + a HashSet - per
+    // candidate): the kept slots, the cap (the budget raised by the pinned
+    // items' own risk floor, since the cap constrains the REST of the set),
+    // the pinned ids and the protect-only ids. Null off the Wilderness.
     public static class RiskGuard {
         final int kept;
         final long capGp;
@@ -1242,12 +1207,12 @@ public class LoadoutOptimizer {
             return request.isRiskConstrained() ? new RiskGuard(data, request) : null;
         }
 
-        /** The set (plus a carried spec weapon) would drop more than the cap. */
+        // The set (plus a carried spec weapon) would drop more than the cap.
         public boolean exceedsCap(Loadout loadout, GearItem spec) { return riskGp(loadout, spec, kept) > capGp; }
 
-        /** A rebuild-burdened item (salve line, imbued gear) may never ride
-         * UNPROTECTED in a low-risk set, no matter the cap (field request) -
-         * unless the player PINNED it. */
+        // A rebuild-burdened item (salve line, imbued gear) may never ride
+        // UNPROTECTED in a low-risk set, no matter the cap (field request) -
+        // unless the player PINNED it.
         public boolean unprotected(Loadout loadout, GearItem spec) {
             return risksUnprotected(loadout, spec, kept, pinned, protectOnly);
         }
@@ -1266,7 +1231,7 @@ public class LoadoutOptimizer {
         return request.style == MELEE || item.isImbuedSlayerHead();
     }
 
-    /** Style -> blocks of name -> shortlist boost (shortlist_boosts.json). */
+    // Style -> blocks of name -> shortlist boost (shortlist_boosts.json).
     static final Map<String, List<Map<String, Integer>>> SHORTLIST_BOOSTS = new HashMap<>();
 
     static {
@@ -1284,7 +1249,7 @@ public class LoadoutOptimizer {
         }
     }
 
-    /** Spell -> the weapons that cast it (spell_staves.json). */
+    // Spell -> the weapons that cast it (spell_staves.json).
     static final Map<String, List<String>> SPELL_STAVES = new HashMap<>();
 
     static {
@@ -1373,15 +1338,13 @@ public class LoadoutOptimizer {
         return new ArrayList<>(best.values());
     }
 
-    /**
-     * The stat-identity of a gear item for dedupe(): two items with equal
-     * keys are interchangeable in a slot. Slot and style are deliberately
-     * absent - every dedupe() call operates on rows of ONE slot under ONE
-     * request style, so they cannot distinguish anything within a call.
-     * Prayer and defence belong in the key: without them all zero-offense
-     * blessings collapsed and the tradeable preference ate Rada's
-     * blessing 4 (+2 prayer) in favor of a +1 tradeable blessing.
-     */
+    // The stat-identity of a gear item for dedupe(): two items with equal
+    // keys are interchangeable in a slot. Slot and style are deliberately
+    // absent - every dedupe() call operates on rows of ONE slot under ONE
+    // request style, so they cannot distinguish anything within a call.
+    // Prayer and defence belong in the key: without them all zero-offense
+    // blessings collapsed and the tradeable preference ate Rada's
+    // blessing 4 (+2 prayer) in favor of a +1 tradeable blessing.
     static class StatKey {
         final String category;
         final boolean twoHanded;
@@ -1463,7 +1426,7 @@ public class LoadoutOptimizer {
         return budgetCost(request, candidate) < budgetCost(request, current);
     }
 
-    /** The per-death fee this item pays no matter what is protected. */
+    // The per-death fee this item pays no matter what is protected.
     static long alwaysDeathFee(GearItem item) {
         if (item.tradeable && !isDestroyedOnDeath(item)) {
             return 0; // priced by the kept-slot ranking instead

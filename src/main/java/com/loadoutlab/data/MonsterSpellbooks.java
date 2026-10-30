@@ -3,15 +3,13 @@ package com.loadoutlab.data;
 import com.google.gson.*;
 import java.util.*;
 
-/**
- * Fight-level spellbook requirements (wiki-verified, curated): some
- * fights want a specific book for their MECHANICS regardless of the
- * gear set - the Abyssal Sire's Shadow Barrage stun is the founding
- * case (field report 2026-08-15). Matched by lowercase name-contains
- * so phase and form suffixes ride along.
- */
+// Fight-level spellbook requirements (wiki-verified, curated): some
+// fights want a specific book for their MECHANICS regardless of the
+// gear set - the Abyssal Sire's Shadow Barrage stun is the founding
+// case (field report 2026-08-15). Matched by lowercase name-contains
+// so phase and form suffixes ride along.
 public class MonsterSpellbooks {
-    /** name-fragment -> [book, reason] */
+    // name-fragment -> [book, reason]
     static final Map<String, String[]> BY_NAME = new LinkedHashMap<>();
 
     static {
@@ -27,19 +25,19 @@ public class MonsterSpellbooks {
     }
 
 
-    /** The fight's required book ("ancient"...) or null. */
+    // The fight's required book ("ancient"...) or null.
     public static String bookFor(MonsterStats monster) {
         String[] entry = lookup(monster);
         return entry == null ? null : entry[0];
     }
 
-    /** Why the fight wants it, or null. */
+    // Why the fight wants it, or null.
     public static String reasonFor(MonsterStats monster) {
         String[] entry = lookup(monster);
         return entry == null ? null : entry[1];
     }
 
-    /** The utility cast the fight wants (its runes ride the trip). */
+    // The utility cast the fight wants (its runes ride the trip).
     public static String spellFor(MonsterStats monster) {
         String[] entry = lookup(monster);
         return entry == null ? null : entry[2];

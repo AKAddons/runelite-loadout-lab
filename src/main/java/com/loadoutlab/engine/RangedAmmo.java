@@ -6,8 +6,8 @@ import com.loadoutlab.data.*;
 import java.util.*;
 import static com.loadoutlab.data.JsonResources.*;
 
-/** Weapon/ammo compatibility. The id tables (arrow/bolt tiers, javelins,
- * fixed weapon-ammo pairs) live in ranged_ammo.json - hub token cap. */
+// Weapon/ammo compatibility. The id tables (arrow/bolt tiers, javelins,
+// fixed weapon-ammo pairs) live in ranged_ammo.json - hub token cap.
 public class RangedAmmo {
     static final int DORGESHUUN_CROSSBOW = 8880;
     static final Map<Integer, Integer> ARROW_TIER_BY_WEAPON = new HashMap<>();
@@ -38,8 +38,8 @@ public class RangedAmmo {
     }
 
 
-    /** Sims plus the exclusive ammo of every simmed weapon (a crossbow
-     * that fires only its own bolts is no sim without them). */
+    // Sims plus the exclusive ammo of every simmed weapon (a crossbow
+    // that fires only its own bolts is no sim without them).
     public static Set<Integer> withPairedAmmo(Set<Integer> sims) {
         Set<Integer> out = new HashSet<>(sims);
         for (int id : sims) out.addAll(PAIRS.getOrDefault(id, Set.of()));
@@ -56,15 +56,15 @@ public class RangedAmmo {
         return ammo != null && projectileMatches(ammo, weapon);
     }
 
-    /** Arrow or bolt weapons only - the classes Dizana's quiver can hold
-     * (javelins, darts and chinchompas stay in their own slots). */
+    // Arrow or bolt weapons only - the classes Dizana's quiver can hold
+    // (javelins, darts and chinchompas stay in their own slots).
     static boolean usesArrowsOrBolts(GearItem weapon) {
         return weapon != null && (ARROW_TIER_BY_WEAPON.containsKey(weapon.id)
                 || BOLT_TIER_BY_WEAPON.containsKey(weapon.id) || weapon.id == DORGESHUUN_CROSSBOW);
     }
 
-    /** A blessing (or other passive ammo-slot item) may ride the freed
-     * slot when the quiver carries the projectiles. */
+    // A blessing (or other passive ammo-slot item) may ride the freed
+    // slot when the quiver carries the projectiles.
     static boolean passiveForQuiver(GearItem item) { return passiveAmmoSlotItem(item); }
 
     static boolean weaponUsesProjectileAmmo(GearItem weapon) {

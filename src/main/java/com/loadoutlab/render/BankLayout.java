@@ -4,22 +4,20 @@ import com.loadoutlab.data.JsonResources;
 import java.util.*;
 import static com.loadoutlab.render.Model.*;
 
-/**
- * The bank-tag layout for a card (ported from the classic panel's
- * buildBankLayout): the equipment cross in cols 0-2 of the 8-wide bank
- * grid (spec weapon in the empty cell left of the legs), the carried
- * inventory 4-wide in cols 4-7. Consumable/supply strips join when
- * those nodes reach the model. Returns {ids, layout} ready for the
- * bank-filter seam.
- */
+// The bank-tag layout for a card (ported from the classic panel's
+// buildBankLayout): the equipment cross in cols 0-2 of the 8-wide bank
+// grid (spec weapon in the empty cell left of the legs), the carried
+// inventory 4-wide in cols 4-7. Consumable/supply strips join when
+// those nodes reach the model. Returns {ids, layout} ready for the
+// bank-filter seam.
 class BankLayout {
 
-    /** ids + positions for the shown card; null when the card is empty. */
-    /** Everything the Supplies and Inventory rows draw, as stacks for the
-     * filter (Andrew 2026-09-02: "not seeing all of the supplies in the
-     * filter view"): the trip's runes, the pouch and casting cape when it
-     * casts, the assumed potion unless the raid supplies it, every dose of
-     * each supply pick, and the mob's own "~" filter list. */
+    // ids + positions for the shown card; null when the card is empty.
+    // Everything the Supplies and Inventory rows draw, as stacks for the
+    // filter (Andrew 2026-09-02: "not seeing all of the supplies in the
+    // filter view"): the trip's runes, the pouch and casting cape when it
+    // casts, the assumed potion unless the raid supplies it, every dose of
+    // each supply pick, and the mob's own "~" filter list.
     static List<Map> tripStacks(Map mob, Map cardAssume,
         List<Map> supplies, List<Map> castRunes, List<Map> utilityRunes) {
         LinkedHashSet<Integer> ids = new LinkedHashSet<>();
@@ -45,8 +43,8 @@ class BankLayout {
         return out;
     }
 
-    /** extraStacks: rune stacks (autocast + the trip's utility casts)
-     * that join the carried block, so Filter bank shows them too. */
+    // extraStacks: rune stacks (autocast + the trip's utility casts)
+    // that join the carried block, so Filter bank shows them too.
     static Map build(Map card, List<Map> extraStacks) {
         Map gear = map(card, "gear");
         if (gear == null) return null;

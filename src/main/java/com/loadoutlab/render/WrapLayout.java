@@ -2,8 +2,8 @@ package com.loadoutlab.render;
 
 import java.awt.*;
 
-/** The classic chip-row layout (ported verbatim): FlowLayout that
- * actually wraps, so no control silently clips off the row's end. */
+// The classic chip-row layout (ported verbatim): FlowLayout that
+// actually wraps, so no control silently clips off the row's end.
 class WrapLayout extends FlowLayout {
     WrapLayout(int align, int hgap, int vgap) { super(align, hgap, vgap); }
 

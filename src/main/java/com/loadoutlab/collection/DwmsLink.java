@@ -3,52 +3,46 @@ package com.loadoutlab.collection;
 import lombok.Getter;
 import java.util.*;
 
-/**
- * Live link to "Dude, Where's My Stuff?" over RuneLite's PluginMessage
- * bus (DWMS ships the contract since 2.11.5 - the old best-effort config
- * read is retired).
- *
- * <p>Contract (version 1, authored upstream): we post a request
- * (namespace "dudewheresmystuff", name "storages-request", data
- * {"source": "Loadout Lab"}); DWMS replies with "storages-response"
- * carrying "target" (our source echoed back - responses meant for other
- * plugins are ignored), "version" and "storages", a list of maps with
- * "category"/"name"/"lastUpdated" plus "items" ({"id": canonical item
- * id, "quantity"}). Requests are fire-and-forget: an absent or older
- * DWMS never replies and {@link #isLive()} stays false - its storages
- * then simply do not count as owned.
- *
- * <p>Responses arrive on DWMS's client thread; parsing is defensive
- * (drop, never guess) and the snapshot swap is a volatile write, so no
- * marshalling is needed here.
- */
+// Live link to "Dude, Where's My Stuff?" over RuneLite's PluginMessage
+// bus (DWMS ships the contract since 2.11.5 - the old best-effort config
+// read is retired).
+// <p>Contract (version 1, authored upstream): we post a request
+// (namespace "dudewheresmystuff", name "storages-request", data
+// {"source": "Loadout Lab"}); DWMS replies with "storages-response"
+// carrying "target" (our source echoed back - responses meant for other
+// plugins are ignored), "version" and "storages", a list of maps with
+// "category"/"name"/"lastUpdated" plus "items" ({"id": canonical item
+// id, "quantity"}). Requests are fire-and-forget: an absent or older
+// DWMS never replies and {@link #isLive()} stays false - its storages
+// then simply do not count as owned.
+// <p>Responses arrive on DWMS's client thread; parsing is defensive
+// (drop, never guess) and the snapshot swap is a volatile write, so no
+// marshalling is needed here.
 public class DwmsLink {
-    /** PluginMessage namespace = DWMS's config group, per RuneLite convention. */
+    // PluginMessage namespace = DWMS's config group, per RuneLite convention.
     public static final String DWMS_NAMESPACE = "dudewheresmystuff";
     public static final String REQUEST_NAME = "storages-request";
     public static final String RESPONSE_NAME = "storages-response";
-    /** The one contract version this consumer understands; anything else
-     * is rejected so the fallback under-counts rather than miscounts. */
+    // The one contract version this consumer understands; anything else
+    // is rejected so the fallback under-counts rather than miscounts.
     static final int SUPPORTED_VERSION = 1;
-    /** Our display name - sent as "source", echoed back as "target". */
+    // Our display name - sent as "source", echoed back as "target".
     static final String SOURCE = "Loadout Lab";
 
     volatile Map<Integer, Integer> items = Map.of();
-    /** Response "category" (carryable/death/poh/stash/world...) -> items -
-     * the location-hint provenance families. */
+    // Response "category" (carryable/death/poh/stash/world...) -> items -
+    // the location-hint provenance families.
     volatile Map<String, Map<Integer, Integer>> families = Map.of();
-    /** True once DWMS has answered for the current identity. */
+    // True once DWMS has answered for the current identity.
     @Getter
     volatile boolean live;
 
-    /** The request payload for PluginMessage(DWMS_NAMESPACE, REQUEST_NAME, ...). */
+    // The request payload for PluginMessage(DWMS_NAMESPACE, REQUEST_NAME, ...).
     public static Map request() { return Collections.singletonMap("source", SOURCE); }
 
-    /**
-     * Consume a candidate storages-response payload (namespace/name gating
-     * happens at the caller). Returns true - and replaces the snapshot -
-     * only for a well-formed version-1 response addressed to us.
-     */
+    // Consume a candidate storages-response payload (namespace/name gating
+    // happens at the caller). Returns true - and replaces the snapshot -
+    // only for a well-formed version-1 response addressed to us.
     public boolean accept(Map data) {
         if (data == null || !SOURCE.equals(data.get("target")) || !(data.get("version") instanceof Number)
             || ((Number) data.get("version")).intValue() != SUPPORTED_VERSION || !(data.get("storages") instanceof List)) {
@@ -74,7 +68,7 @@ public class DwmsLink {
         return true;
     }
 
-    /** One {"id", "quantity"} entry; anything malformed is dropped. */
+    // One {"id", "quantity"} entry; anything malformed is dropped.
     static void mergeItem(Object item, Map<Integer, Integer> into) {
         if (!(item instanceof Map)) return;
         Object id = ((Map<?, ?>) item).get("id");
@@ -86,23 +80,23 @@ public class DwmsLink {
         into.merge(itemId, (int) Math.min(amount, Integer.MAX_VALUE), (a, b) -> (int) Math.min((long) a + b, Integer.MAX_VALUE));
     }
 
-    /** A different account/profile: nothing from the previous one survives. */
+    // A different account/profile: nothing from the previous one survives.
     public void reset() {
         items = Map.of();
         families = Map.of();
         live = false;
     }
 
-    /** Category -> merged items, for the location-hint provenance. */
+    // Category -> merged items, for the location-hint provenance.
     public Map<String, Map<Integer, Integer>> families() { return families; }
 
-    /** Item id -> quantity from the latest response, merged across storages. */
+    // Item id -> quantity from the latest response, merged across storages.
     public Map<Integer, Integer> snapshot() { return items; }
 
-    /** Distinct live item count - the panel's provenance line. */
+    // Distinct live item count - the panel's provenance line.
     public int count() { return items.size(); }
 
-    /** Fold the live items into an owned map (quantities sum). */
+    // Fold the live items into an owned map (quantities sum).
     public Map<Integer, Integer> mergeInto(Map<Integer, Integer> owned) {
         items.forEach((id, n) -> owned.merge(id, n, Integer::sum));
         return owned;

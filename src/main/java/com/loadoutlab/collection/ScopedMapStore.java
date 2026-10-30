@@ -5,11 +5,9 @@ import java.lang.reflect.Type;
 import java.util.*;
 import net.runelite.client.config.ConfigManager;
 
-/**
- * A per-character map persisted as one JSON config entry: the always-filter
- * list and the supply defaults share this exact shape (scoped key, load on
- * scope change, unset when empty, corrupt JSON starts fresh).
- */
+// A per-character map persisted as one JSON config entry: the always-filter
+// list and the supply defaults share this exact shape (scoped key, load on
+// scope change, unset when empty, corrupt JSON starts fresh).
 abstract class ScopedMapStore<K, V> implements ScopedStore {
     static final String CONFIG_GROUP = "loadoutlab";
 
@@ -30,13 +28,13 @@ abstract class ScopedMapStore<K, V> implements ScopedStore {
 
     String key() { return ScopedKeys.key(worldScope, configKey); }
 
-    /** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). */
+    // Per-character scope ("std"/"seasonal" plus ".<accountHash>").
     public synchronized void loadScope(String scope) {
         worldScope = scope;
         load();
     }
 
-    /** Re-read from config - the active RuneLite profile may have changed. */
+    // Re-read from config - the active RuneLite profile may have changed.
     public synchronized void reload() { load(); }
 
     public synchronized void clear() {

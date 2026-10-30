@@ -6,31 +6,27 @@ import com.loadoutlab.engine.*;
 import java.util.*;
 import static com.loadoutlab.engine.BoostProfile.*;
 
-/**
- * The best stat boost assumed per style, given what the player actually owns.
- *
- * <p>Field report 2026-08-24 (a fresh ironman): the card claimed "Assumes:
- * Ranging potion" for an account with no ranging potion in the bank. The old
- * rule was "tradeable potions are ALWAYS assumed - cheap consumables, like
- * prayers you just bring them", which holds for a main with a GE but is simply
- * false for an ironman, and contradicts the panel's own "detect best in bank"
- * setting. EVERY boost now gates on ownership and the ladder falls through to
- * NONE.
- *
- * <p>Raid-scoped boosts (overloads, smelling salts) remain deliberately
- * un-assumed. Ids verified against net.runelite.api.ItemID 2026-08-25; the
- * divine arrays below match its DIVINE_* constants exactly.
- */
+// The best stat boost assumed per style, given what the player actually owns.
+// <p>Field report 2026-08-24 (a fresh ironman): the card claimed "Assumes:
+// Ranging potion" for an account with no ranging potion in the bank. The old
+// rule was "tradeable potions are ALWAYS assumed - cheap consumables, like
+// prayers you just bring them", which holds for a main with a GE but is simply
+// false for an ironman, and contradicts the panel's own "detect best in bank"
+// setting. EVERY boost now gates on ownership and the ladder falls through to
+// NONE.
+// <p>Raid-scoped boosts (overloads, smelling salts) remain deliberately
+// un-assumed. Ids verified against net.runelite.api.ItemID 2026-08-25; the
+// divine arrays below match its DIVINE_* constants exactly.
 public class BoostSelector {
-    /** All dose variants - owning any counts (GE-verified ids 2026-07-21). */
-    /** Base (non-divine) potions - these used to be assumed unconditionally. */
-    /** Bastion and battlemage carry the SAME offensive boost as the ranging /
-     * magic potions plus a super-defence half, so owning one means you bring
-     * it - they rank above the plain family, divine or not. Their own divine
-     * variants share those numbers exactly, so both id sets map to the one
-     * profile rather than inventing a duplicate constant. */
+    // All dose variants - owning any counts (GE-verified ids 2026-07-21).
+    // Base (non-divine) potions - these used to be assumed unconditionally.
+    // Bastion and battlemage carry the SAME offensive boost as the ranging /
+    // magic potions plus a super-defence half, so owning one means you bring
+    // it - they rank above the plain family, divine or not. Their own divine
+    // variants share those numbers exactly, so both id sets map to the one
+    // profile rather than inventing a duplicate constant.
 
-    /** Every dose of each boost, by BoostProfile name (boost_items.json). */
+    // Every dose of each boost, by BoostProfile name (boost_items.json).
     static final Map<String, int[]> IDS = new HashMap<>();
 
     static {
@@ -47,9 +43,9 @@ public class BoostSelector {
     static int[] ids(String profile) { return IDS.get(profile); }
 
 
-    /** The best boost in the GAME per style - the BiS ceiling assumption.
-     * F2P mode: members consumables do not exist on a free world - the
-     * only boosts are the attack/strength potion pair (audit A3.5). */
+    // The best boost in the GAME per style - the BiS ceiling assumption.
+    // F2P mode: members consumables do not exist on a free world - the
+    // only boosts are the attack/strength potion pair (audit A3.5).
     public static BoostProfile ceilingFor(CombatStyle style, boolean f2p) {
         if (f2p) return style == CombatStyle.MELEE ? F2P_COMBAT : NONE;
         switch (style) {
@@ -62,17 +58,17 @@ public class BoostSelector {
         }
     }
 
-    /** Each style's ladder, best first (the divine and bastion/battlemage
-     * families outrank the plain potions; the hearts lead magic). */
+    // Each style's ladder, best first (the divine and bastion/battlemage
+    // families outrank the plain potions; the hearts lead magic).
     static final Map<CombatStyle, String[]> LADDERS = Map.of(
         CombatStyle.MELEE, new String[]{"DIVINE_SUPER_COMBAT", "SUPER_COMBAT"},
         CombatStyle.RANGED, new String[]{"DIVINE_BASTION", "BASTION", "DIVINE_RANGING", "RANGING"},
         CombatStyle.MAGIC, new String[]{"SATURATED_HEART", "IMBUED_HEART", "DIVINE_BATTLEMAGE", "BATTLEMAGE", "DIVINE_MAGIC", "MAGIC"});
 
-    /** The best boost you can actually assume per style, given what you own.
-     * Risk-capped wilderness searches never assume a heart (field spec
-     * 2026-07-18): both hearts are tradeable and worth far more than any
-     * sane risk cap, so the assumption falls back to the magic potion. */
+    // The best boost you can actually assume per style, given what you own.
+    // Risk-capped wilderness searches never assume a heart (field spec
+    // 2026-07-18): both hearts are tradeable and worth far more than any
+    // sane risk cap, so the assumption falls back to the magic potion.
     public static BoostProfile bestFor(CombatStyle style, OwnedItems owned, boolean f2p, boolean noHearts) {
         if (f2p) return style == CombatStyle.MELEE ? F2P_COMBAT : NONE;
         // Each ladder walks best -> worst and ends at NONE: an unowned boost is
@@ -84,10 +80,10 @@ public class BoostSelector {
         return NONE;
     }
 
-    /** The highest magic level this player can REACH: their live boosted
-     * level, or their base plus the best magic boost they actually own -
-     * never a potion they don't have, and never MAXED as a stand-in for
-     * unknown levels (the old Death Charge seed did both). */
+    // The highest magic level this player can REACH: their live boosted
+    // level, or their base plus the best magic boost they actually own -
+    // never a potion they don't have, and never MAXED as a stand-in for
+    // unknown levels (the old Death Charge seed did both).
     public static int reachableMagic(PlayerLevels real, PlayerLevels live, OwnedItems owned) {
         if (real == null) return live == null ? 0 : live.magic;
         int reachable = live == null ? real.magic : live.magic;

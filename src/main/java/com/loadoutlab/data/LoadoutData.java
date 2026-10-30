@@ -15,8 +15,8 @@ public class LoadoutData {
     public final List<SpellStats> spells;
     final Map<Integer, GearItem> gearById;
     final Map<Integer, Integer> variantToBase;
-    /** Corpus partitioned by equip slot, corpus order preserved - so slot
-     * scans (every optimizer pool build) skip the other ~5k rows. */
+    // Corpus partitioned by equip slot, corpus order preserved - so slot
+    // scans (every optimizer pool build) skip the other ~5k rows.
     final Map<GearSlot, List<GearItem>> gearBySlot;
 
     LoadoutData( List<GearItem> gearItems, List<MonsterStats> monsters, List<SpellStats> spells,
@@ -34,14 +34,12 @@ public class LoadoutData {
         this.gearBySlot = Collections.unmodifiableMap(bySlot);
     }
 
-    /**
-     * A view of this dataset containing only free-to-play gear and standard-
-     * spellbook spells (monsters unchanged) - drives the non-members filter.
-     * Ancient/Arceuus books are members-only wholesale; the F2P card was
-     * recommending Arceuus Dark Demonbane (audit A3.5/A1.2). Members spells
-     * WITHIN the standard book still pass - a finer F2P spell table can
-     * tighten that later.
-     */
+    // A view of this dataset containing only free-to-play gear and standard-
+    // spellbook spells (monsters unchanged) - drives the non-members filter.
+    // Ancient/Arceuus books are members-only wholesale; the F2P card was
+    // recommending Arceuus Dark Demonbane (audit A3.5/A1.2). Members spells
+    // WITHIN the standard book still pass - a finer F2P spell table can
+    // tighten that later.
     public LoadoutData freeToPlayView() {
         List<GearItem> free = gearItems.stream().filter(g -> !g.members).collect(Collectors.toList());
         Map<Integer, GearItem> byId = new HashMap<>();
@@ -50,24 +48,20 @@ public class LoadoutData {
             .filter(spell -> "standard".equalsIgnoreCase(spell.spellbook)).collect(Collectors.toList()), byId, variantToBase);
     }
 
-    /**
-     * True for ornament/locked/degraded variants of a base item with the
-     * same stats - never suggested; the base version stands in for them.
-     */
+    // True for ornament/locked/degraded variants of a base item with the
+    // same stats - never suggested; the base version stands in for them.
     public boolean isVariant(int itemId) { return variantToBase.containsKey(itemId); }
 
-    /**
-     * Owned quantities with every variant also credited to its base item,
-     * so an owned "Abyssal whip (or)" satisfies an "Abyssal whip" pick.
-     */
+    // Owned quantities with every variant also credited to its base item,
+    // so an owned "Abyssal whip (or)" satisfies an "Abyssal whip" pick.
     static final Pattern CHARGE = Pattern.compile("\\(*i?\\d+\\)*");
 
-    /** The result cache's ownership key with charge counts folded
-     * (ISS-01M5V7W28574DBWHTR5ATE37Q8, Andrew 2026-10-25: "when i teleport it
-     * should stay the same and should be able to fully rely on the cache"):
-     * a teleport turns a games necklace (8) into (7), a new id. Gear counts
-     * as its name and its version with a bare charge number folded; any
-     * other version (Charged, Uncharged) and every non-gear id stays itself. */
+    // The result cache's ownership key with charge counts folded
+    // (ISS-01M5V7W28574DBWHTR5ATE37Q8, Andrew 2026-10-25: "when i teleport it
+    // should stay the same and should be able to fully rely on the cache"):
+    // a teleport turns a games necklace (8) into (7), a new id. Gear counts
+    // as its name and its version with a bare charge number folded; any
+    // other version (Charged, Uncharged) and every non-gear id stays itself.
     public int chargeFreeFingerprint(Map<Integer, Integer> owned) {
         var keys = new TreeSet<String>();
         for (var e : owned.entrySet()) {
@@ -88,15 +82,13 @@ public class LoadoutData {
         return result;
     }
 
-    /**
-     * Community nicknames and activity names -> the monster to show.
-     * Raids and wave activities map to their final boss - a defensible
-     * anchor for "what do I wear there". Keys and values are in
-     * normalizeQuery form.
-     */
+    // Community nicknames and activity names -> the monster to show.
+    // Raids and wave activities map to their final boss - a defensible
+    // anchor for "what do I wear there". Keys and values are in
+    // normalizeQuery form.
     static final Map<String, String> SEARCH_ALIASES = new HashMap<>();
-    /** Extra search words for one version ("name|version" -> words): the
-     * Wardens' "p2 phase 2" (ISS-01M5HKWBZNJF0V8ZD58FH9XS5B). */
+    // Extra search words for one version ("name|version" -> words): the
+    // Wardens' "p2 phase 2" (ISS-01M5HKWBZNJF0V8ZD58FH9XS5B).
     static final Map<String, String> VERSION_TERMS = new HashMap<>();
 
     static {
@@ -143,10 +135,10 @@ public class LoadoutData {
         return result;
     }
 
-    /** Every typed word starts a word of the monster's name, version, id or
-     * version terms, a trailing "s" forgiven - "tumeken warden" ("tumekens
-     * warden"), "wardens", "elidinis active", "warden p2" (Andrew 2026-10-22:
-     * the phase-2 Warden was unsearchable without "toa"). */
+    // Every typed word starts a word of the monster's name, version, id or
+    // version terms, a trailing "s" forgiven - "tumeken warden" ("tumekens
+    // warden"), "wardens", "elidinis active", "warden p2" (Andrew 2026-10-22:
+    // the phase-2 Warden was unsearchable without "toa").
     static boolean wordsMatch(String text, MonsterStats monster) {
         String terms = VERSION_TERMS.get(MonsterStats.normalizeQuery(monster.name)
             + "|" + MonsterStats.normalizeQuery(monster.version));
@@ -166,7 +158,7 @@ public class LoadoutData {
         return true;
     }
 
-    /** Lower = a better default for a bare-name search. */
+    // Lower = a better default for a bare-name search.
     static int versionTier(String version) {
         if (version == null || version.isEmpty()) return 1;
         String v = Names.lower(version);
@@ -194,11 +186,9 @@ public class LoadoutData {
         }
     }
 
-    /**
-     * All ids interchangeable with this one for OWNERSHIP purposes: the
-     * base plus every variant that canonicalizes to it - so a bank
-     * highlight for "Abyssal whip" also lights the (or) version.
-     */
+    // All ids interchangeable with this one for OWNERSHIP purposes: the
+    // base plus every variant that canonicalizes to it - so a bank
+    // highlight for "Abyssal whip" also lights the (or) version.
     public Set<Integer> equivalentIds(int itemId) {
         Integer base = variantToBase.getOrDefault(itemId, itemId);
         Set<Integer> ids = new HashSet<>(List.of(itemId, base));
@@ -211,7 +201,7 @@ public class LoadoutData {
     public GearItem getGear(int id) { return gearById.get(id); }
 
 
-    /** The corpus items for one equip slot, in getGearItems() order. */
+    // The corpus items for one equip slot, in getGearItems() order.
     public List<GearItem> getGearItems(GearSlot slot) { return gearBySlot.get(slot); }
 
 

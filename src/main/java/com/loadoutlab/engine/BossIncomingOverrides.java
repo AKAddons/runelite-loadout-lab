@@ -5,24 +5,22 @@ import lombok.*;
 import com.google.gson.*;
 import java.util.*;
 
-/**
- * Curated per-boss incoming-attack overrides - the D-2 layer on top of the
- * uniform v1 model in IncomingDpsCalculator. The stat sheet gets scripted
- * max hits wrong (Graardor's ranged slam is 15-35, the NPC formula derives
- * 58), rotations are not uniform, some attacks pierce protection prayers,
- * and Typeless/Dragonfire attacks are otherwise unmodeled. Each entry in
- * boss_incoming.json (keyed by lowercase display name, or name|version)
- * lists the boss's real attacks: style, scripted max hit, hits per attack,
- * rotation share, whether the matching protection prayer blocks it, whether
- * the standard play prays it on cue (flicked) and how much still leaks, an
- * optional per-attack speed. Numeric facts are wiki-sourced; see each
- * entry's note. The "_unpriced" block names the monsters the wiki cannot
- * price yet, with the reason the card shows instead of a number.
- */
+// Curated per-boss incoming-attack overrides - the D-2 layer on top of the
+// uniform v1 model in IncomingDpsCalculator. The stat sheet gets scripted
+// max hits wrong (Graardor's ranged slam is 15-35, the NPC formula derives
+// 58), rotations are not uniform, some attacks pierce protection prayers,
+// and Typeless/Dragonfire attacks are otherwise unmodeled. Each entry in
+// boss_incoming.json (keyed by lowercase display name, or name|version)
+// lists the boss's real attacks: style, scripted max hit, hits per attack,
+// rotation share, whether the matching protection prayer blocks it, whether
+// the standard play prays it on cue (flicked) and how much still leaks, an
+// optional per-attack speed. Numeric facts are wiki-sourced; see each
+// entry's note. The "_unpriced" block names the monsters the wiki cannot
+// price yet, with the reason the card shows instead of a number.
 public class BossIncomingOverrides {
     static final String RESOURCE = "boss_incoming.json";
 
-    /** One curated attack in the boss's rotation. */
+    // One curated attack in the boss's rotation.
     @AllArgsConstructor
     @Getter
     public static class Attack {
@@ -30,49 +28,49 @@ public class BossIncomingOverrides {
         public final int maxHit;
         final double share;
         final boolean prayable;
-        /** Fraction of damage that gets THROUGH the matching protection
-         * prayer: 0 = fully blocked, 0.5 = half pierces (Callisto melee,
-         * Corp magic), 1 = prayer does nothing. maxHit is always the TRUE
-         * unprayed value. */
+        // Fraction of damage that gets THROUGH the matching protection
+        // prayer: 0 = fully blocked, 0.5 = half pierces (Callisto melee,
+        // Corp magic), 1 = prayer does nothing. maxHit is always the TRUE
+        // unprayed value.
         final double prayerFactor;
-        /** 0 means "use the stat sheet's attack speed". */
+        // 0 means "use the stat sheet's attack speed".
         public final int speedTicks;
-        /** Dodgeable by design (Zulrah's magma slam): the standard play
-         * takes zero, so the attack is excluded from both dps totals and
-         * kept in the threat list for the tooltip - the same philosophy as
-         * assuming the protection prayer is up. */
+        // Dodgeable by design (Zulrah's magma slam): the standard play
+        // takes zero, so the attack is excluded from both dps totals and
+        // kept in the threat list for the tooltip - the same philosophy as
+        // assuming the protection prayer is up.
         final boolean avoidable;
-        /** The card's row label when the style alone would not tell two
-         * rows apart ("ranged volley", "melee (x2)"); "" = the style. */
+        // The card's row label when the style alone would not tell two
+        // rows apart ("ranged volley", "melee (x2)"); "" = the style.
         public final String name;
-        /** Hits per attack (three projectiles a volley, a 42 x2 melee):
-         * the rate scales with it, the card's max hit does not. */
+        // Hits per attack (three projectiles a volley, a 42 x2 melee):
+        // the rate scales with it, the card's max hit does not.
         final int hits;
-        /** Telegraphed: the standard play prays it on cue whatever single
-         * prayer it camps (ISS-01M5PBSZBBBAS9Y46X04MVMHZB). */
+        // Telegraphed: the standard play prays it on cue whatever single
+        // prayer it camps (ISS-01M5PBSZBBBAS9Y46X04MVMHZB).
         final boolean flicked;
-        /** The fraction of a flicked attack that still lands under standard
-         * play - a mixed volley's odd projectile, a late swap. */
+        // The fraction of a flicked attack that still lands under standard
+        // play - a mixed volley's odd projectile, a late swap.
         final double leak;
-        /** Dragonfire by protection layers (Vorkath): key "none" / "shield" /
-         * "antifire" / "super" / "shield+antifire" / "shield+super" ->
-         * {max without, max with Protect from Magic}; null for other attacks. */
+        // Dragonfire by protection layers (Vorkath): key "none" / "shield" /
+        // "antifire" / "super" / "shield+antifire" / "shield+super" ->
+        // {max without, max with Protect from Magic}; null for other attacks.
         final Map<String, int[]> layers;
-        /** A landed hit of damage d heals the boss clamp(factor x d, min,
-         * max) - Blood Moon's 1x/2x/3x stack (ISS-01M6415DTE84ZZ45C4YD3MZRBJ);
-         * null when the attack heals nothing. */
+        // A landed hit of damage d heals the boss clamp(factor x d, min,
+        // max) - Blood Moon's 1x/2x/3x stack (ISS-01M6415DTE84ZZ45C4YD3MZRBJ);
+        // null when the attack heals nothing.
         final double[] heal;
-        /** Lands only if the previous attack in the list landed (one miss
-         * ends the stack); it rides that attack's share and speed. */
+        // Lands only if the previous attack in the list landed (one miss
+        // ends the stack); it rides that attack's share and speed.
         final boolean chain;
     }
 
-    /** The full curated picture for one boss. */
+    // The full curated picture for one boss.
     @Getter
     public static class BossOverride {
         final List<Attack> attacks;
         final String note;
-        /** Some attack heals the boss off what lands: the sets rank by net dps. */
+        // Some attack heals the boss off what lands: the sets rank by net dps.
         final boolean heals;
 
         BossOverride(List<Attack> attacks, String note) {
@@ -85,7 +83,7 @@ public class BossIncomingOverrides {
     }
 
     static final Map<String, BossOverride> OVERRIDES = new HashMap<>();
-    /** Monsters the wiki cannot price yet, with the reason the card shows. */
+    // Monsters the wiki cannot price yet, with the reason the card shows.
     static final Map<String, String> UNPRICED = new HashMap<>();
 
     static {
@@ -99,16 +97,14 @@ public class BossIncomingOverrides {
         }
     }
 
-    /**
-     * Shape-only read of one boss entry. The DATA validation that used to
-     * throw from here (style whitelist, typeless-must-not-be-prayable, sane
-     * maxHit/share/speed, shares summing to at most 1.0, non-empty attack
-     * list) now lives in BossIncomingOverridesTest's all-overrides sweep -
-     * test source is free of the hub token cap, and the sweep is coupled to a
-     * hardcoded boss list so a newly added boss cannot skip it. Only the
-     * "resource missing" throw stays here: that is a packaging failure, not
-     * bad data.
-     */
+    // Shape-only read of one boss entry. The DATA validation that used to
+    // throw from here (style whitelist, typeless-must-not-be-prayable, sane
+    // maxHit/share/speed, shares summing to at most 1.0, non-empty attack
+    // list) now lives in BossIncomingOverridesTest's all-overrides sweep -
+    // test source is free of the hub token cap, and the sweep is coupled to a
+    // hardcoded boss list so a newly added boss cannot skip it. Only the
+    // "resource missing" throw stays here: that is a packaging failure, not
+    // bad data.
     static BossOverride parse(JsonObject json) {
         List<Attack> attacks = new ArrayList<>();
         for (JsonElement element : json.getAsJsonArray("attacks")) {
@@ -143,25 +139,25 @@ public class BossIncomingOverrides {
     }
 
 
-    /** The curated override for this monster, or null to use the v1 model.
-     * Keyed by display name so every version/phase row shares one entry. */
+    // The curated override for this monster, or null to use the v1 model.
+    // Keyed by display name so every version/phase row shares one entry.
     public static BossOverride overridesFor(MonsterStats monster) { return lookup(OVERRIDES, monster); }
 
-    /** True when the monster's curated attacks heal it off what lands. */
+    // True when the monster's curated attacks heal it off what lands.
     public static boolean heals(MonsterStats monster) {
         BossOverride override = overridesFor(monster);
         return override != null && override.heals;
     }
 
-    /** Why the card shows no estimate for this monster, or null when the
-     * curated data or the sheet prices it. */
+    // Why the card shows no estimate for this monster, or null when the
+    // curated data or the sheet prices it.
     public static String unpricedReason(MonsterStats monster) { return lookup(UNPRICED, monster); }
 
-    /** Version-keyed first ("zulrah|serpentine"): multi-form bosses fight
-     * differently per form, and the roster lens shows one form at a time -
-     * each must carry ITS OWN attacks and protect prayer (field report
-     * 2026-07-17: every Zulrah form said pray mage). The bare name stays as
-     * the whole-fight fallback. */
+    // Version-keyed first ("zulrah|serpentine"): multi-form bosses fight
+    // differently per form, and the roster lens shows one form at a time -
+    // each must carry ITS OWN attacks and protect prayer (field report
+    // 2026-07-17: every Zulrah form said pray mage). The bare name stays as
+    // the whole-fight fallback.
     static <T> T lookup(Map<String, T> map, MonsterStats monster) {
         if (monster == null) return null;
         String version = monster.version;
@@ -172,6 +168,6 @@ public class BossIncomingOverrides {
         return map.get(monster.nameLower);
     }
 
-    /** All curated boss names (lowercase) - test and tooling surface. */
+    // All curated boss names (lowercase) - test and tooling surface.
     public static Set<String> names() { return Collections.unmodifiableSet(OVERRIDES.keySet()); }
 }

@@ -5,27 +5,23 @@ import com.loadoutlab.data.*;
 import java.util.*;
 import lombok.*;
 
-/**
- * Melee combat styles available per weapon category - game facts from the
- * wiki's weapon-type pages (cross-checked against the official calculator,
- * 2026-07-05). The upstream best-dps engine assumed every melee weapon has
- * every attack type at every stance, which invented styles weapons don't
- * have: a whip has no aggressive stance, and a Blunt weapon cannot slash -
- * that one let a barronite mace "slash" a Grey golem (slash defence 1,
- * everything else 300) for a 3x accuracy error against the official calc.
- *
- * <p>Stances: accurate = +3 attack, aggressive = +3 strength,
- * controlled = +1 both. Defensive is omitted - it adds no offence, so it
- * can never be the best-DPS pick.
- *
- * <p>The table itself lives in weapon_styles.json (hub token cap: data goes
- * in resources, not source). It is GENERATED from the old hardcoded table by
- * scripts/extract_weapon_styles.py, which asserts 24 categories, 56 style
- * entries and the 9-entry fallback row - regenerate with that script, never
- * by hand.
- */
+// Melee combat styles available per weapon category - game facts from the
+// wiki's weapon-type pages (cross-checked against the official calculator,
+// 2026-07-05). The upstream best-dps engine assumed every melee weapon has
+// every attack type at every stance, which invented styles weapons don't
+// have: a whip has no aggressive stance, and a Blunt weapon cannot slash -
+// that one let a barronite mace "slash" a Grey golem (slash defence 1,
+// everything else 300) for a 3x accuracy error against the official calc.
+// <p>Stances: accurate = +3 attack, aggressive = +3 strength,
+// controlled = +1 both. Defensive is omitted - it adds no offence, so it
+// can never be the best-DPS pick.
+// <p>The table itself lives in weapon_styles.json (hub token cap: data goes
+// in resources, not source). It is GENERATED from the old hardcoded table by
+// scripts/extract_weapon_styles.py, which asserts 24 categories, 56 style
+// entries and the 9-entry fallback row - regenerate with that script, never
+// by hand.
 public class WeaponStyles {
-    /** One selectable style: the attack type plus its stance bonuses. */
+    // One selectable style: the attack type plus its stance bonuses.
     @RequiredArgsConstructor
     public static class MeleeStyle {
         public final String attackType;
@@ -34,13 +30,13 @@ public class WeaponStyles {
     }
 
     static final String RESOURCE = "weapon_styles.json";
-    /** Resource key of the unknown-category fallback row - not a real weapon
-     * category, so it can never collide with one. */
+    // Resource key of the unknown-category fallback row - not a real weapon
+    // category, so it can never collide with one.
     static final String FALLBACK = "*";
 
     static final Map<String, List<MeleeStyle>> BY_CATEGORY = load();
 
-    /** Every attack type x stance a full search would try - the fallback. */
+    // Every attack type x stance a full search would try - the fallback.
     static final List<MeleeStyle> ALL = BY_CATEGORY.getOrDefault(FALLBACK, List.of());
 
     static Map<String, List<MeleeStyle>> load() {
@@ -60,7 +56,7 @@ public class WeaponStyles {
     }
 
 
-    /** The melee styles this weapon actually offers (unknown category: all). */
+    // The melee styles this weapon actually offers (unknown category: all).
     public static List<MeleeStyle> melee(GearItem weapon) {
         // Null weapon = bare fists, which is a real category row. Looking it up
         // through the same map (rather than returning it directly) is what

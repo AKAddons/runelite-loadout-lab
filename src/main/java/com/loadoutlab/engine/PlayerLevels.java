@@ -6,7 +6,7 @@ import net.runelite.api.Skill;
 import java.util.Map;
 import static net.runelite.api.Skill.*;
 
-/** The seven combat levels; toString() is the optimizer's cache-key form. */
+// The seven combat levels; toString() is the optimizer's cache-key form.
 @ToString
 @Getter
 public class PlayerLevels {
@@ -48,9 +48,9 @@ public class PlayerLevels {
             ranged + rangedBoost, magic + magicBoost, prayer, hitpoints);
     }
 
-    /** These levels with each named sim in place of your own (seven, in
-     * attack/strength/defence/ranged/magic/prayer/hitpoints order, 0 =
-     * yours): the stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY). */
+    // These levels with each named sim in place of your own (seven, in
+    // attack/strength/defence/ranged/magic/prayer/hitpoints order, 0 =
+    // yours): the stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY).
     public PlayerLevels overridden(int[] sims) {
         if (sims == null || sims.length < 7) return this;
         int[] mine = {attack, strength, defence, ranged, magic, prayer, hitpoints};
@@ -60,7 +60,7 @@ public class PlayerLevels {
         return new PlayerLevels(mine[0], mine[1], mine[2], mine[3], mine[4], mine[5], mine[6]);
     }
 
-    /** Element-wise max - never assume a boost below what is already live. */
+    // Element-wise max - never assume a boost below what is already live.
     public PlayerLevels max(PlayerLevels other) {
         if (other == null) return this;
         return new PlayerLevels( Math.max(attack, other.attack), Math.max(strength, other.strength),

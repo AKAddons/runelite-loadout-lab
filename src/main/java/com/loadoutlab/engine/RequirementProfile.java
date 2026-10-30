@@ -12,9 +12,9 @@ public class RequirementProfile {
     final Map<Skill, Integer> levels;
     final Set<String> completedQuests;
 
-    /** Items worn whatever their requirements: the simmed max capes, whose
-     * 99-in-every-skill rule the seven-level stat sim cannot meet
-     * (ISS-01M5RYC2TB43AEGQ96TTNEKEJN). */
+    // Items worn whatever their requirements: the simmed max capes, whose
+    // 99-in-every-skill rule the seven-level stat sim cannot meet
+    // (ISS-01M5RYC2TB43AEGQ96TTNEKEJN).
     final Set<Integer> waived;
 
     public RequirementProfile(Map<Skill, Integer> levels, Set<String> completedQuests) { this(levels, completedQuests, Set.of()); }
@@ -27,17 +27,17 @@ public class RequirementProfile {
         this.completedQuests = new HashSet<>(completedQuests == null ? Set.of() : completedQuests);
     }
 
-    /** The same levels with every quest done - the game-best ceiling never
-     * trims on the quest log (Andrew 2026-09-09). */
+    // The same levels with every quest done - the game-best ceiling never
+    // trims on the quest log (Andrew 2026-09-09).
     public RequirementProfile withAllQuests() { return new RequirementProfile(levels, allQuests(), waived); }
 
     public RequirementProfile waiving(Set<Integer> ids) { return new RequirementProfile(levels, completedQuests, ids); }
 
     public boolean canWear(GearItem item) { return waived.contains(item.id) || canEquip(item.requirements); }
 
-    /** The same quests with the seven combat levels replaced: the stat
-     * sim's gear gate (ISS-01M5QY13K6YHTYDW1CCYD30CSY) - 99 Attack admits the
-     * fang, 60 drops it; the other skills ride along unchanged. */
+    // The same quests with the seven combat levels replaced: the stat
+    // sim's gear gate (ISS-01M5QY13K6YHTYDW1CCYD30CSY) - 99 Attack admits the
+    // fang, 60 drops it; the other skills ride along unchanged.
     public RequirementProfile withLevels(PlayerLevels simmed) {
         Map<Skill, Integer> next = new EnumMap<>(Skill.class);
         next.putAll(levels);
@@ -51,7 +51,7 @@ public class RequirementProfile {
         return new RequirementProfile(next, completedQuests, waived);
     }
 
-    /** Both already unmodifiable (the constructor wraps its copies). */
+    // Both already unmodifiable (the constructor wraps its copies).
     public Map<Skill, Integer> getLevels() { return levels; }
 
     public Set<String> getCompletedQuests() { return completedQuests; }

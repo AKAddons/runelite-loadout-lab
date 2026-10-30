@@ -23,13 +23,11 @@ import java.util.regex.Pattern;
 import java.awt.image.BufferedImage;
 import static java.awt.BorderLayout.*;
 
-/**
- * The renderer handed to Core by reference (one-surface ruling): Core
- * calls it on the EDT with the latest page and mounts what it returns
- * inside Core's own panel. We keep the mounted root and repaint it in
- * place when a new page arrives, so Core does not need to re-mount
- * per page.
- */
+// The renderer handed to Core by reference (one-surface ruling): Core
+// calls it on the EDT with the latest page and mounts what it returns
+// inside Core's own panel. We keep the mounted root and repaint it in
+// place when a new page arrives, so Core does not need to re-mount
+// per page.
 @lombok.extern.slf4j.Slf4j
 @lombok.RequiredArgsConstructor
 public class RenderSurface {
@@ -41,12 +39,12 @@ public class RenderSurface {
     @lombok.Setter
     SpriteManager spriteManager;
 
-    /** The compute animation's pool: a sea lens draws the sea moods; a
-     * raid MONSTER its raid's - they live nowhere else, so a single Zebak
-     * search charges the Obelisk (Andrew 2026-09-02); a Zulrah lens hers;
-     * anything else the land flask. */
-    /** Monster-name prefix -> pool key, from mood_routes.tsv (Andrew
-     * 2026-09-03: ten bosses join Zulrah; the raids route by group data). */
+    // The compute animation's pool: a sea lens draws the sea moods; a
+    // raid MONSTER its raid's - they live nowhere else, so a single Zebak
+    // search charges the Obelisk (Andrew 2026-09-02); a Zulrah lens hers;
+    // anything else the land flask.
+    // Monster-name prefix -> pool key, from mood_routes.tsv (Andrew
+    // 2026-09-03: ten bosses join Zulrah; the raids route by group data).
     static final Map<String, String> MOOD_ROUTES = tsv("mood_routes.tsv");
 
     static String moodKey(Map page) {
@@ -63,7 +61,7 @@ public class RenderSurface {
         return null;
     }
 
-    /** The lensed mob of the first entry that has mobs, or null. */
+    // The lensed mob of the first entry that has mobs, or null.
     static Map lensedMob(Map page) {
         int lens = id(firstParams(page), "lensIndex");
         for (Map entry : list(page, "entries")) {
@@ -73,13 +71,13 @@ public class RenderSurface {
         return null;
     }
 
-    /** Config gates the renderer honours: the compute animation and the
-     * wilderness risk controls. Both settings described behaviour they
-     * did not control until 2026-08-22 - the merge-back dropped the
-     * DisplayOptions bridge and nothing replaced it. */
+    // Config gates the renderer honours: the compute animation and the
+    // wilderness risk controls. Both settings described behaviour they
+    // did not control until 2026-08-22 - the merge-back dropped the
+    // DisplayOptions bridge and nothing replaced it.
     BooleanSupplier animationGate = () -> true;
     BooleanSupplier wildyRiskGate = () -> true;
-    /** The "PvP world chip" setting: show it on every card. */
+    // The "PvP world chip" setting: show it on every card.
     BooleanSupplier pvpChipGate = () -> false;
 
     public void setDisplayGates(BooleanSupplier animation, BooleanSupplier wildyRisk, BooleanSupplier pvpChip) {
@@ -89,7 +87,7 @@ public class RenderSurface {
     }
     JPanel root;
     JPanel matchesBox;
-    /** The classic search cadence: 150ms debounce, 2+ characters. */
+    // The classic search cadence: 150ms debounce, 2+ characters.
     final Timer searchDebounce = once(150, e -> runSearch());
     JTextField search;
     JPanel cardArea;
@@ -97,7 +95,7 @@ public class RenderSurface {
     AsciiLoader loader;
     volatile boolean isComputing;
 
-    /** Compute-in-flight: shows the static Computing... slot. */
+    // Compute-in-flight: shows the static Computing... slot.
     public void setComputing(boolean computing) {
         isComputing = computing;
         SwingUtilities.invokeLater(() -> {
@@ -142,7 +140,7 @@ public class RenderSurface {
         searcher.search(query, matches -> SwingUtilities.invokeLater(() -> showMatches(matches)));
     }
 
-    /** The dropdown rebuilt from the matches - folded away when there are none. */
+    // The dropdown rebuilt from the matches - folded away when there are none.
     void showMatches(List<Map> matches) {
         matchesBox.removeAll();
         for (Map match : matches) matchesBox.add(matchRow(match));
@@ -151,8 +149,8 @@ public class RenderSurface {
         root.repaint();
     }
 
-    /** One dropdown row: the label, group rows bold - click selects.
-     * Full width, so the hover highlight spans the whole view. */
+    // One dropdown row: the label, group rows bold - click selects.
+    // Full width, so the hover highlight spans the whole view.
     JComponent matchRow(Map match) {
         var row = new JLabel(str(match, "label"));
         boolean group = match.get("group") != null;
@@ -203,22 +201,22 @@ public class RenderSurface {
         clearMatches();
     }
 
-    /** The search box emptied and its dropdown folded away. */
+    // The search box emptied and its dropdown folded away.
     void clearMatches() {
         search.setText("");
         showMatches(List.of());
     }
 
-    /** The reference Core stores; JDK types only cross the seam. */
+    // The reference Core stores; JDK types only cross the seam.
     public Function<Map, JComponent> asFunction() { return page -> root(); }
 
-    /** A new page (or hello) arrived - repaint the mounted root. */
-    /** Rebuilds are COALESCED (freeze reports 2026-08-14: each publish
-     * rebuilt the full tree synchronously, so any publish burst locked
-     * the EDT for their combined duration - the dumps' signature was an
-     * event-flooded EDT with huge cpu=). A 50ms debounce turns any storm
-     * into at most ~20 rebuilds a second, and logs bursts so a publish
-     * loop shows itself instead of freezing the client. */
+    // A new page (or hello) arrived - repaint the mounted root.
+    // Rebuilds are COALESCED (freeze reports 2026-08-14: each publish
+    // rebuilt the full tree synchronously, so any publish burst locked
+    // the EDT for their combined duration - the dumps' signature was an
+    // event-flooded EDT with huge cpu=). A 50ms debounce turns any storm
+    // into at most ~20 rebuilds a second, and logs bursts so a publish
+    // loop shows itself instead of freezing the client.
     final AtomicInteger pendingRepaints = new AtomicInteger();
     Timer repaintDebounce;
 
@@ -238,29 +236,29 @@ public class RenderSurface {
         });
     }
 
-    /** Boolean param chips: label -> params-node key. Rendered from the
-     * model (never local state) - a chip is checked because Core says so. */
+    // Boolean param chips: label -> params-node key. Rendered from the
+    // model (never local state) - a chip is checked because Core says so.
     static final String[][] CHIPS = {
         {"Spec", "specWeapon"},
         {"Thralls", "thralls"}, };
 
-    /** Built per repaint; ResultCards mounts it under the mob list. */
+    // Built per repaint; ResultCards mounts it under the mob list.
     JButton addMobButton;
     JPanel chipRow;
-    /** The dev-mode Max DPS | Balanced | Tanky control's own row. */
+    // The dev-mode Max DPS | Balanced | Tanky control's own row.
     JPanel modeRow;
     JPanel invRow;
-    /** The stat sim's editor row, under the chips (ISS-01M5S1MXR1R6BV5FCWBREV6471). */
+    // The stat sim's editor row, under the chips (ISS-01M5S1MXR1R6BV5FCWBREV6471).
     JPanel statsRow;
     JPanel rosterArea;
     JPanel countsRow;
     JPanel footerRow;
-    /** The Shortest Path link, above the footer (ISS-01M5TE7QAZYZQMTPA1JZ0BQN1Z). */
+    // The Shortest Path link, above the footer (ISS-01M5TE7QAZYZQMTPA1JZ0BQN1Z).
     JPanel pathRow;
     JButton undoButton;
     JButton redoButton;
 
-    /** Uniform chip config: every control in the row shares it. */
+    // Uniform chip config: every control in the row shares it.
     static JButton chip(String text, String tooltip, Runnable onClick) {
         var button = new JButton(text);
         button.setFocusable(false);
@@ -273,16 +271,16 @@ public class RenderSurface {
     static final Color CHIP_ON = ACCENT;
     static final Color CHIP_OFF = new Color(0x969696);
 
-    /** The classic parameter pill: flat, rounded, accent when active. */
+    // The classic parameter pill: flat, rounded, accent when active.
     static JLabel pill(String text, boolean on, String tooltip, Runnable onClick) {
         return pill(text, on, !on, tooltip, onClick);
     }
 
-    /** A classic pill that paints its new state IMMEDIATELY on click
-     * (field report 2026-08-12: "tiles don't highlight until the search
-     * is complete") - the arriving page then rewrites every pill from
-     * Core's truth, so an optimistic guess that Core refuses corrects
-     * itself on the next publish. */
+    // A classic pill that paints its new state IMMEDIATELY on click
+    // (field report 2026-08-12: "tiles don't highlight until the search
+    // is complete") - the arriving page then rewrites every pill from
+    // Core's truth, so an optimistic guess that Core refuses corrects
+    // itself on the next publish.
     static JLabel pill(String text, boolean on, boolean po, String tooltip, Runnable onClick) {
         var label = new JLabel(text);
         paintPill(label, on);
@@ -295,8 +293,8 @@ public class RenderSurface {
         return label;
     }
 
-    /** The Task chip: the slayer skill icon + "Task" (field ask
-     * 2026-08-15), always the FIRST chip. */
+    // The Task chip: the slayer skill icon + "Task" (field ask
+    // 2026-08-15), always the FIRST chip.
     JLabel taskPill(boolean on, boolean po, String tooltip, Runnable onClick) {
         JLabel pill = pill("Task", on, po, tooltip, onClick);
         if (spriteManager != null) {
@@ -313,13 +311,13 @@ public class RenderSurface {
         label.setBorder(new RoundedBorder(on ? CHIP_ON : MEDIUM_GRAY_COLOR, 2, 8));
     }
 
-    /** The defensive mode as one 3-way control in the chip area (Andrew
-     * 2026-10-21: "a 3/way tab instead of a chip but in the same area"; a
-     * filled square tab "looks bad" - picked look B): one rounded pill
-     * outline like the chips, three words split by thin bars, the active
-     * word in the accent. */
-    /** The mode control's row: centered, with a thin divider below that
-     * sets it apart from the chip row. */
+    // The defensive mode as one 3-way control in the chip area (Andrew
+    // 2026-10-21: "a 3/way tab instead of a chip but in the same area"; a
+    // filled square tab "looks bad" - picked look B): one rounded pill
+    // outline like the chips, three words split by thin bars, the active
+    // word in the accent.
+    // The mode control's row: centered, with a thin divider below that
+    // sets it apart from the chip row.
     static JPanel modeRowPanel() {
         JPanel row = panel(new FlowLayout(FlowLayout.CENTER, 0, 4));
         row.setBorder(createCompoundBorder( createEmptyBorder(2, 8, 4, 8), createMatteBorder(0, 0, 1, 0, MEDIUM_GRAY_COLOR)));
@@ -364,9 +362,9 @@ public class RenderSurface {
         return tabs;
     }
 
-    /** Why the card being viewed stands down its Arceuus casts (an
-     * autocast from another book), or null (ISS-01M5K9KFJH7EZ0GMAKNGZ4K2JG,
-     * Andrew 2026-10-22: the Whisperer's Earth Surge kept the chips lit). */
+    // Why the card being viewed stands down its Arceuus casts (an
+    // autocast from another book), or null (ISS-01M5K9KFJH7EZ0GMAKNGZ4K2JG,
+    // Andrew 2026-10-22: the Whisperer's Earth Surge kept the chips lit).
     static String viewedStandDown(Map page) {
         String tab = effectiveTab(page);
         Map styles = map(lensedMob(page), "styles");
@@ -374,7 +372,7 @@ public class RenderSurface {
         return str(map(node, "yours"), "arceuusStandDown");
     }
 
-    /** A chip shown but off: greyed, the reason in its tooltip, no click. */
+    // A chip shown but off: greyed, the reason in its tooltip, no click.
     static JLabel disabledPill(String text, String tooltip) {
         var label = new JLabel(text);
         paintPill(label, false);
@@ -386,49 +384,49 @@ public class RenderSurface {
     static final String[] SIM_KEYS = {"simAttack", "simStrength", "simDefence", "simRanged", "simMagic", "simPrayer", "simHitpoints"};
     static final String[] SIM_ARGS = {"attack", "strength", "defence", "ranged", "magic", "prayer", "hitpoints"};
     static final String[] SIM_NAMES = {"Att", "Str", "Def", "Rng", "Mag", "Pray", "HP"};
-    /** Whether the stat sim's row is open - a view choice kept across publishes. */
+    // Whether the stat sim's row is open - a view choice kept across publishes.
     boolean statsOpen;
-    /** The "+ Requirement" editor row and whether it is open (ISS-01M5XC7XYMMEN3Q4QC6CGZFVPK). */
+    // The "+ Requirement" editor row and whether it is open (ISS-01M5XC7XYMMEN3Q4QC6CGZFVPK).
     JPanel reqRow;
-    /** The requirements as last published: Add and the chips' remove read it at
-     * click time, so a second Add before the redraw appends instead of replacing. */
+    // The requirements as last published: Add and the chips' remove read it at
+    // click time, so a second Add before the redraw appends instead of replacing.
     String reqLive = "";
     static final String[] REQ_OPS = {">=", ">", "<=", "<"};
-    /** Each stat's game icon and its badge (-1 none): the combat-style and
-     * stat icons, a defence shield on the defence stats, strength on the
-     * damage stats (Andrew 2026-10-27: "more symbol based"). */
+    // Each stat's game icon and its badge (-1 none): the combat-style and
+    // stat icons, a defence shield on the defence stats, strength on the
+    // damage stats (Andrew 2026-10-27: "more symbol based").
     static final int[][] REQ_ICONS = {{240, -1}, {238, -1}, {255, -1}, {202, -1}, {200, -1}, {240, 199}, {238, 199},
         {255, 199}, {202, 199}, {200, 199}, {198, -1}, {200, 198}, {202, 198}, {201, -1}, {649, -1}};
-    /** Requirement stats (the engine's SetRules.STATS keys) and their chip labels, from text.tsv. */
+    // Requirement stats (the engine's SetRules.STATS keys) and their chip labels, from text.tsv.
     static final String[] REQ_KEYS = text("req.keys").split(","), REQ_NAMES = text("req.stats").split(",");
 
-    /** The stat sim chip's label (ISS-01M5T4Y0N8S474ACHVFBBCQTZJ, Andrew
-     * 2026-10-25: "by default it should say stats: yours and if it's running
-     * modified stats it should say stats: custom"); the levels ride the tooltip. */
+    // The stat sim chip's label (ISS-01M5T4Y0N8S474ACHVFBBCQTZJ, Andrew
+    // 2026-10-25: "by default it should say stats: yours and if it's running
+    // modified stats it should say stats: custom"); the levels ride the tooltip.
     static String statsLabel(int simmed, boolean cape) {
         return simmed > 0 || cape ? "Stats: custom" : "Stats: yours";
     }
 
-    /** The stat sim chip (ISS-01M5QY13K6YHTYDW1CCYD30CSY, Andrew 2026-10-24:
-     * "sim as any stat, defaulted to your current ones"): it toggles the stat
-     * row under the Inv slider (ISS-01M5S1MXR1R6BV5FCWBREV6471) - seven boxes in a
-     * fixed grid holding the simmed or your live level, a Max cape tick, Max
-     * (all 99 and the cape) and Mine. Every edit is one sim-stats command; a
-     * box left at your own level sends 0 = yours, so a level-up keeps
-     * following you. */
-    /** "prayer>=12" -> "Prayer >= 12" (ASCII: the chips render in the client's font). */
+    // The stat sim chip (ISS-01M5QY13K6YHTYDW1CCYD30CSY, Andrew 2026-10-24:
+    // "sim as any stat, defaulted to your current ones"): it toggles the stat
+    // row under the Inv slider (ISS-01M5S1MXR1R6BV5FCWBREV6471) - seven boxes in a
+    // fixed grid holding the simmed or your live level, a Max cape tick, Max
+    // (all 99 and the cape) and Mine. Every edit is one sim-stats command; a
+    // box left at your own level sends 0 = yours, so a level-up keeps
+    // following you.
+    // "prayer>=12" -> "Prayer >= 12" (ASCII: the chips render in the client's font).
     static String reqLabel(String part) {
         var m = Pattern.compile("([a-z_]+)(>=|<=|>|<)(.*)").matcher(part);
         int i = m.matches() ? Arrays.asList(REQ_KEYS).indexOf(m.group(1)) : -1;
         return i < 0 ? part : REQ_NAMES[i] + " " + m.group(2) + " " + m.group(3);
     }
 
-    /** The "+ Requirement" row: a stat, at least / at most, a number, Add. */
+    // The "+ Requirement" row: a stat, at least / at most, a number, Add.
     List<String> reqParts() {
         return reqLive.isEmpty() ? new ArrayList<>() : new ArrayList<>(List.of(reqLive.split(";")));
     }
 
-    /** Sends the list and keeps reqLive ahead of the redraw. */
+    // Sends the list and keeps reqLive ahead of the redraw.
     void setRequirements(List<String> parts) {
         reqLive = String.join(";", parts);
         commands.set("requirements", reqLive);
@@ -495,7 +493,7 @@ public class RenderSurface {
         return row;
     }
 
-    /** A stat's icon, its badge drawn small in the corner, into icons[k]. */
+    // A stat's icon, its badge drawn small in the corner, into icons[k].
     void statIcon(int k, ImageIcon[] icons, JComponent box) {
         if (spriteManager == null) return;
         spriteManager.getSpriteAsync(REQ_ICONS[k][0], 0, base -> {
@@ -589,7 +587,7 @@ public class RenderSurface {
             });
     }
 
-    /** A box's level: 1-99, or 0 (= yours) for anything else. */
+    // A box's level: 1-99, or 0 (= yours) for anything else.
     static int parseLevel(String text) {
         try {
             int level = Integer.parseInt(text.trim());
@@ -601,7 +599,7 @@ public class RenderSurface {
         return pill(label, selected, label + (selected ? " on" : " off"), () -> commands.set(key, !selected));
     }
 
-    /** True when any mob on the page passes the test. */
+    // True when any mob on the page passes the test.
     static boolean anyMob(Map page, Predicate<Map> test) {
         for (Map entry : list(page, "entries")) {
             for (Map mob : list(entry, "mobs")) {
@@ -611,8 +609,8 @@ public class RenderSurface {
         return false;
     }
 
-    /** A classic count pill: "-N" red / "+N" green / "~N" grey, muted at
-     * zero, always visible; click = the manage menu + add-by-search. */
+    // A classic count pill: "-N" red / "+N" green / "~N" grey, muted at
+    // zero, always visible; click = the manage menu + add-by-search.
     void pillChip(Map counts, String listKey, String sigil,
         Color[] palette, String removeVerb, String command, String ap, List<Map> sc) {
         List<Map> items = list(counts, listKey);
@@ -655,10 +653,10 @@ public class RenderSurface {
         countsRow.add(pill);
     }
 
-    /** A pill that WEARS its value (field spec 2026-08-14: no bare text
-     * entries in the chip row) - clicking swaps in the entry field;
-     * Enter commits (the page repaint restores the pill), Escape just
-     * collapses. */
+    // A pill that WEARS its value (field spec 2026-08-14: no bare text
+    // entries in the chip row) - clicking swaps in the entry field;
+    // Enter commits (the page repaint restores the pill), Escape just
+    // collapses.
     JComponent valueChip(String label, boolean active, String tooltip, String currentText, Consumer<String> onCommit) {
         var flip = new CardLayout();
         JPanel holder = panel(flip);
@@ -681,7 +679,7 @@ public class RenderSurface {
         return holder;
     }
 
-    /** One radio-style supply-default choice (checked = current). */
+    // One radio-style supply-default choice (checked = current).
     JMenuItem supplyChoice(String category, String key, String label, boolean selected) {
         return check(label, selected, () -> commands.send("set-supply-default", Map.of("category", category, "choice", key)));
     }
@@ -798,10 +796,10 @@ public class RenderSurface {
         return root;
     }
 
-    /** The Wiki calc chip's tooltip: the base line, plus - when the
-     * viewed card folds spec or thralls into its number - the sum that
-     * reconciles our shown dps with what the calculator will display
-     * (the bare set). Mirrors the engine's view derivation. */
+    // The Wiki calc chip's tooltip: the base line, plus - when the
+    // viewed card folds spec or thralls into its number - the sum that
+    // reconciles our shown dps with what the calculator will display
+    // (the bare set). Mirrors the engine's view derivation.
     static String wikiCalcTip(Map page) {
         String head = text("wiki.head");
         String base = tip(head);
@@ -843,7 +841,7 @@ public class RenderSurface {
     Map lastRenderedPage;
     int skippedIdentical;
 
-    /** True when any entry of the page carries the flag. */
+    // True when any entry of the page carries the flag.
     static boolean anyEntry(Map page, String flag) {
         for (Map entry : list(page, "entries")) {
             if (flag(entry, flag)) return true;

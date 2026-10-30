@@ -2,18 +2,15 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.*;
 
-/**
- * Flying monsters (Kree'arra and the aviansies, Dawn, Vespula...) cannot be
- * reached by melee except with halberds or salamanders - wiki-verified
- * 2026-07-05 (Kree'arra page; halberds allowed since the 25 June 2025 game
- * update). The restriction covers melee special attacks too (e.g. the
- * Voidwaker's magic-damage spec still cannot be used).
- *
- * <p>Ranged and magic are unaffected.
- */
+// Flying monsters (Kree'arra and the aviansies, Dawn, Vespula...) cannot be
+// reached by melee except with halberds or salamanders - wiki-verified
+// 2026-07-05 (Kree'arra page; halberds allowed since the 25 June 2025 game
+// update). The restriction covers melee special attacks too (e.g. the
+// Voidwaker's magic-damage spec still cannot be used).
+// <p>Ranged and magic are unaffected.
 public class FlyingRules {
 
-    /** False when a melee weapon cannot reach this monster. */
+    // False when a melee weapon cannot reach this monster.
     public static boolean canReach(MonsterStats monster, CombatStyle style, GearItem weapon) {
         if (style != CombatStyle.MELEE || monster == null || !monster.hasAttribute("flying")) return true;
         if (weapon == null) {

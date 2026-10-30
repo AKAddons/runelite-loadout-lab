@@ -4,38 +4,34 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Where each owned item lives - the per-source view the flattened owned
- * map erases. Built from the ledger's source snapshots plus the manual
- * stored-elsewhere list and the DWMS import families; lookups are
- * variant-aware, so a STASH'd ornamented variant answers for the base id
- * the optimizer suggests.
- */
+// Where each owned item lives - the per-source view the flattened owned
+// map erases. Built from the ledger's source snapshots plus the manual
+// stored-elsewhere list and the DWMS import families; lookups are
+// variant-aware, so a STASH'd ornamented variant answers for the base id
+// the optimizer suggests.
 @lombok.AllArgsConstructor
 public class ItemLocations {
-    /** Suffix convention for origins the DWMS import contributed. */
+    // Suffix convention for origins the DWMS import contributed.
     public static final String VIA_DWMS = " (via DWMS)";
 
-    /** Origin label -> itemId -> quantity, in display order. */
+    // Origin label -> itemId -> quantity, in display order.
     final Map<String, Map<Integer, Integer>> origins;
 
-    /** id -> all ids interchangeable with it for ownership (incl. itself);
-     * null means exact-id matching only (dataset still loading). */
+    // id -> all ids interchangeable with it for ownership (incl. itself);
+    // null means exact-id matching only (dataset still loading).
     final Function<Integer, Set<Integer>> equivalents;
 
-    /** Origin labels holding this item or an interchangeable variant. */
+    // Origin labels holding this item or an interchangeable variant.
     public List<String> where(int itemId) {
         Set<Integer> ids = equivalents == null ? Set.of(itemId) : equivalents.apply(itemId);
         return origins.entrySet().stream().filter(origin -> ids.stream().anyMatch(origin.getValue()::containsKey))
             .map(Map.Entry::getKey).collect(Collectors.toList());
     }
 
-    /**
-     * Legend label for the item's primary origin: the first origin in
-     * display order, with DWMS families folded onto their native twin
-     * ("STASH (via DWMS)" -> "STASH") and DWMS-only families bucketed as
-     * "DWMS". "" when the location is unknown.
-     */
+    // Legend label for the item's primary origin: the first origin in
+    // display order, with DWMS families folded onto their native twin
+    // ("STASH (via DWMS)" -> "STASH") and DWMS-only families bucketed as
+    // "DWMS". "" when the location is unknown.
     public String primary(int itemId) {
         List<String> where = where(itemId);
         if (where.isEmpty()) return "";

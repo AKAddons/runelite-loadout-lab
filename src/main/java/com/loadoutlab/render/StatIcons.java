@@ -8,15 +8,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
 
-/** The classic stat icons, baked from the original painted art (see git
- * history for the painters): the hitsplat for max hit, the crosshair for
- * accuracy, and the fixed-width wrapper that gives every stat line one
- * hard left edge. */
+// The classic stat icons, baked from the original painted art (see git
+// history for the painters): the hitsplat for max hit, the crosshair for
+// accuracy, and the fixed-width wrapper that gives every stat line one
+// hard left edge.
 class StatIcons {
 
-    /** Baked images by resource name. A missing or unreadable resource
-     * caches a fully transparent placeholder so paint degrades to blank -
-     * it never throws inside a Swing paint pass. */
+    // Baked images by resource name. A missing or unreadable resource
+    // caches a fully transparent placeholder so paint degrades to blank -
+    // it never throws inside a Swing paint pass.
     static final Map<String, BufferedImage> BAKED = new ConcurrentHashMap<>();
 
     static BufferedImage baked(String name, int size) {
@@ -33,14 +33,12 @@ class StatIcons {
         });
     }
 
-    /**
-     * A square baked icon: a single pixel size used as both width and
-     * height, drawn from a PNG baked at exactly that size from the original
-     * paint code - "hitsplat" (the red hitsplat for the max-hit line) and
-     * "crosshair" (the accuracy line), both glyph-safe.
-     */
+    // A square baked icon: a single pixel size used as both width and
+    // height, drawn from a PNG baked at exactly that size from the original
+    // paint code - "hitsplat" (the red hitsplat for the max-hit line) and
+    // "crosshair" (the accuracy line), both glyph-safe.
     static class SizedIcon implements Icon {
-        /** Icon edge length in pixels. */
+        // Icon edge length in pixels.
         final int size;
         final BufferedImage image;
 
@@ -57,9 +55,9 @@ class StatIcons {
     }
 
 
-    /** A fixed-width box that centres its delegate - every stat-panel
-     * line's icon occupies the SAME column width, so the values start on
-     * one hard left edge (field spec: a strong visual column). */
+    // A fixed-width box that centres its delegate - every stat-panel
+    // line's icon occupies the SAME column width, so the values start on
+    // one hard left edge (field spec: a strong visual column).
     @lombok.AllArgsConstructor
     static class FixedWidthIcon implements Icon {
         static final int WIDTH = 20;

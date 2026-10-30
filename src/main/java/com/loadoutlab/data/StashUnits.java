@@ -4,21 +4,18 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-/**
- * STASH units: chart text -> the item ids a FILLED unit is assumed to
- * hold. These are each unit's default items - "any stole"-style
- * alternates resolve to the base variant, which is exactly what the
- * ownership canonicalizer wants. Vendored from Dude, Where's My Stuff's
- * StashUnit enum (BSD-2, licenses/dude-wheres-my-stuff-LICENSE) via
- * scripts/gen_stash_units.py; regenerate there, never edit the TSV.
- *
- * <p>Also hosts the STASH chart state machine (widget group 493, opened
- * from the noticeboard by Watson's house): each tier panel lists units
- * as a text cell (type 4) followed by up to two sprite cells (type 5) -
- * first sprite means built, second means filled.
- */
+// STASH units: chart text -> the item ids a FILLED unit is assumed to
+// hold. These are each unit's default items - "any stole"-style
+// alternates resolve to the base variant, which is exactly what the
+// ownership canonicalizer wants. Vendored from Dude, Where's My Stuff's
+// StashUnit enum (BSD-2, licenses/dude-wheres-my-stuff-LICENSE) via
+// scripts/gen_stash_units.py; regenerate there, never edit the TSV.
+// <p>Also hosts the STASH chart state machine (widget group 493, opened
+// from the noticeboard by Watson's house): each tier panel lists units
+// as a text cell (type 4) followed by up to two sprite cells (type 5) -
+// first sprite means built, second means filled.
 public class StashUnits {
-    /** Widget child types on the chart, per the in-game interface. */
+    // Widget child types on the chart, per the in-game interface.
     public static final int TEXT_CELL = 4;
     public static final int SPRITE_CELL = 5;
 
@@ -26,7 +23,7 @@ public class StashUnits {
 
     StashUnits(Map<String, int[]> byChartText) { this.byChartText = byChartText; }
 
-    /** Load the vendored table from resources; throws on a broken bundle. */
+    // Load the vendored table from resources; throws on a broken bundle.
     public static StashUnits load() {
         Map<String, int[]> units = new HashMap<>();
         try (InputStream in = StashUnits.class.getResourceAsStream("stash-units.tsv")) {
@@ -44,23 +41,21 @@ public class StashUnits {
         return new StashUnits(units);
     }
 
-    /** Default item ids for a chart entry, or null when unknown. */
+    // Default item ids for a chart entry, or null when unknown.
     public int[] itemsFor(String chartText) { return byChartText.get(chartText); }
 
     public int size() { return byChartText.size(); }
 
-    /** One chart cell (widget child) as extracted from a tier panel. */
+    // One chart cell (widget child) as extracted from a tier panel.
     @lombok.AllArgsConstructor
     public static class Cell {
         final int type;
         final String text;
     }
 
-    /**
-     * Chart texts of FILLED units in one tier panel's cells. masterTier
-     * disambiguates the Warriors' Guild bank unit, which appears on two
-     * tiers under the same chart text.
-     */
+    // Chart texts of FILLED units in one tier panel's cells. masterTier
+    // disambiguates the Warriors' Guild bank unit, which appears on two
+    // tiers under the same chart text.
     public static List<String> filledNames(List<Cell> cells, boolean masterTier) {
         List<String> filled = new ArrayList<>();
         String current = null;

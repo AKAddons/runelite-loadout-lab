@@ -27,44 +27,39 @@ import static com.loadoutlab.data.RequiredGear.*;
 import static com.loadoutlab.engine.LoadoutOptimizer.*;
 import static com.loadoutlab.engine.MaxCapeSims.*;
 
-/**
- * Runs BiS searches off the game threads and caches results.
- *
- * <p>Caching (founding requirement): results are keyed PER STYLE by
- * (collection fingerprint, monster id, levels, f2p, ..., style, that style's
- * pins) - the fingerprint changes iff ownership changes, so a cache hit is
- * always current, and per-style state (pins) never invalidates the other
- * styles' answers. LRU-bounded.
- *
- * <p>Each query answers TWO questions per style: the best set you OWN, and
- * the best set that exists in the game - so the panel can show how close
- * your gear is to the ceiling.
- *
- * <p>Threading: optimize() is CPU work - it runs on a single daemon worker,
- * never the EDT or client thread. Callbacks are NOT thread-marshalled here;
- * UI callers wrap in SwingUtilities.invokeLater.
- */
+// Runs BiS searches off the game threads and caches results.
+// <p>Caching (founding requirement): results are keyed PER STYLE by
+// (collection fingerprint, monster id, levels, f2p, ..., style, that style's
+// pins) - the fingerprint changes iff ownership changes, so a cache hit is
+// always current, and per-style state (pins) never invalidates the other
+// styles' answers. LRU-bounded.
+// <p>Each query answers TWO questions per style: the best set you OWN, and
+// the best set that exists in the game - so the panel can show how close
+// your gear is to the ceiling.
+// <p>Threading: optimize() is CPU work - it runs on a single daemon worker,
+// never the EDT or client thread. Callbacks are NOT thread-marshalled here;
+// UI callers wrap in SwingUtilities.invokeLater.
 public class OptimizerService {
     static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OptimizerService.class);
 
-    /** Per-STYLE entries (a monster query stores three). */
+    // Per-STYLE entries (a monster query stores three).
     static final int CACHE_MAX = 192;
 
-    /** Which point of the offence/defence frontier to show - the dev-mode
-     * prototype of ISS-01M5G5CZC9SK46499FACRSJ8ZT. Andrew 2026-10-21:
-     * "balance = maximizing the DTPS/DPS ratio in an optimized way, tanky =
-     * minimum DTPS" - Balanced takes the least damage per damage dealt. */
+    // Which point of the offence/defence frontier to show - the dev-mode
+    // prototype of ISS-01M5G5CZC9SK46499FACRSJ8ZT. Andrew 2026-10-21:
+    // "balance = maximizing the DTPS/DPS ratio in an optimized way, tanky =
+    // minimum DTPS" - Balanced takes the least damage per damage dealt.
     public enum OptimizeMode {
         MAX_DPS, BALANCED, TANKY
     }
 
-    /** Frontier sweep weights, as multiples of maxDps/incoming; the 10.0
-     * extreme reaches the genuine minimum-intake end (491b6c0). */
+    // Frontier sweep weights, as multiples of maxDps/incoming; the 10.0
+    // extreme reaches the genuine minimum-intake end (491b6c0).
     static final double[] SWEEP_ALPHAS = {0.3, 0.7, 1.5, 3.0, 10.0};
 
-    /** What a defensive mode did to the shown set: the DPS it gave up and
-     * the damage taken it cut, whole percents vs the max-DPS set - or, when
-     * it kept that set, why (reason non-null). */
+    // What a defensive mode did to the shown set: the DPS it gave up and
+    // the damage taken it cut, whole percents vs the max-DPS set - or, when
+    // it kept that set, why (reason non-null).
     @AllArgsConstructor
     public static class ModeTrade {
         public final OptimizeMode mode;
@@ -73,65 +68,65 @@ public class OptimizerService {
         public final String reason;
     }
 
-    /** One step on a slot ladder: the item, the set's DPS and damage taken
-     * with it swapped in, and whether you own it. */
+    // One step on a slot ladder: the item, the set's DPS and damage taken
+    // with it swapped in, and whether you own it.
     @RequiredArgsConstructor
     public static class Rung {
         public final GearItem item;
         public final double dps;
         public final double dtps;
         public final boolean owned;
-        /** The ammo a weapon step brings when it changes the worn ammo
-         * (ISS-01M5H2AH8ERQG471AZY3S67FKW); null otherwise. */
+        // The ammo a weapon step brings when it changes the worn ammo
+        // (ISS-01M5H2AH8ERQG471AZY3S67FKW); null otherwise.
         public final GearItem with;
-        /** The shield a one-handed weapon step brings when it changes the
-         * worn one (weapon + offhand vs a two-hander, ISS-01M5JFG00G1BS82X9X2QNZZC7S). */
+        // The shield a one-handed weapon step brings when it changes the
+        // worn one (weapon + offhand vs a two-hander, ISS-01M5JFG00G1BS82X9X2QNZZC7S).
         public GearItem offhand;
-        /** A group step's dps for EACH member (index-aligned with the roster):
-         * the card shows its own mob's number, the group figure ranks
-         * (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW). Null on a solo ladder. */
+        // A group step's dps for EACH member (index-aligned with the roster):
+        // the card shows its own mob's number, the group figure ranks
+        // (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW). Null on a solo ladder.
         public double[] perMob;
-        /** The swapped set behind a solo step: what the card adopts when an
-         * owned step outranks the worn item (ISS-01M5PKSQBAP823XNC13QBW8830). */
+        // The swapped set behind a solo step: what the card adopts when an
+        // owned step outranks the worn item (ISS-01M5PKSQBAP823XNC13QBW8830).
         DpsResult set;
     }
 
-    /** A slot's ladder (ISS-01M5GE9EJSX6YWCKMSYEWKZ132): the steps just above
-     * the worn item (any item, closest first) and just below (owned only,
-     * closest first), ranked by the mode the set was picked for. Shown in
-     * game as the slot's "swaps". */
+    // A slot's ladder (ISS-01M5GE9EJSX6YWCKMSYEWKZ132): the steps just above
+    // the worn item (any item, closest first) and just below (owned only,
+    // closest first), ranked by the mode the set was picked for. Shown in
+    // game as the slot's "swaps".
     @RequiredArgsConstructor
     public static class Ladder {
-        /** Steps each way by default... */
+        // Steps each way by default...
         public static final int RUNGS = 2;
-        /** ...and always this many beside the worn item when the steps exist. */
+        // ...and always this many beside the worn item when the steps exist.
         public static final int SPOTS = 2 * RUNGS;
-        /** ...and this many further steps each way kept for the strip's
-         * "more" pages (ISS-01M5QD7PNMCMNRZD92RPRMHWRP, Andrew 2026-10-24: "an
-         * option to 'show more' on the ladder to see more alternatives"). */
+        // ...and this many further steps each way kept for the strip's
+        // "more" pages (ISS-01M5QD7PNMCMNRZD92RPRMHWRP, Andrew 2026-10-24: "an
+        // option to 'show more' on the ladder to see more alternatives").
         public static final int MORE = 10;
-        /** The steps past up/down, closest first - the pages after the strip. */
+        // The steps past up/down, closest first - the pages after the strip.
         public List<Rung> upMore = List.of();
         public List<Rung> downMore = List.of();
-        /** Scored across a group search's members, HP-weighted, on the
-         * group's shared kit (ISS-01M5JAGFEJ5QHXE37B37XM8HJJ). */
+        // Scored across a group search's members, HP-weighted, on the
+        // group's shared kit (ISS-01M5JAGFEJ5QHXE37B37XM8HJJ).
         public boolean group;
-        /** The worn item's dps per member on a group ladder (null solo). */
+        // The worn item's dps per member on a group ladder (null solo).
         public double[] basePerMob;
-        /** The weapon slot only: every step the strip could show, best first,
-         * for the "All weapons" list (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW). */
+        // The weapon slot only: every step the strip could show, best first,
+        // for the "All weapons" list (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW).
         public List<Rung> all;
-        /** The magic weapon slot only: the same steps split by kind - powered
-         * staves and autocast staves, each around the worn weapon (Andrew
-         * 2026-10-24: "for magic just show two ladders: a powered and a non
-         * powered one so we don't need to do the math of combining them").
-         * Null elsewhere, and for a kind with no step. */
+        // The magic weapon slot only: the same steps split by kind - powered
+        // staves and autocast staves, each around the worn weapon (Andrew
+        // 2026-10-24: "for magic just show two ladders: a powered and a non
+        // powered one so we don't need to do the math of combining them").
+        // Null elsewhere, and for a kind with no step.
         public Ladder powered;
         public Ladder autocast;
 
-        /** How many steps up and down to show (ISS-01M5H13V0TVF58RHPHT8WQ1GFP,
-         * Andrew 2026-10-21: "when the user has bis show the 4 preceding"):
-         * two each way, a short side's spare spots going to the other. */
+        // How many steps up and down to show (ISS-01M5H13V0TVF58RHPHT8WQ1GFP,
+        // Andrew 2026-10-21: "when the user has bis show the 4 preceding"):
+        // two each way, a short side's spare spots going to the other.
         static int[] spots(int above, int below) {
             int up = min(RUNGS, above);
             int down = min(RUNGS, below);
@@ -147,18 +142,18 @@ public class OptimizerService {
         public final List<Rung> down;
     }
 
-    /** Per-style outcome: your best owned sets, the game-wide best set, and
-     * the strongest special-attack weapon for each - owned and game-wide. */
+    // Per-style outcome: your best owned sets, the game-wide best set, and
+    // the strongest special-attack weapon for each - owned and game-wide.
     public static class StyleResult {
-        /** The defensive mode's trade on the Yours side; null on Max DPS. */
+        // The defensive mode's trade on the Yours side; null on Max DPS.
         public ModeTrade modeTrade;
-        /** GWD protection CARRIED on each side (worn on the way in, swapped
-         * off for the fight) - also in the bench; empty away from GWD. */
+        // GWD protection CARRIED on each side (worn on the way in, swapped
+        // off for the fight) - also in the bench; empty away from GWD.
         public List<GearItem> protection = List.of();
         public List<GearItem> gameProtection = List.of();
         public Map<GearSlot, Ladder> ladder = Map.of();
-        /** The carried spec weapon's swaps, ranked by DPS added; null when
-         * no spec is carried (ISS-01M5HCS725N7XVVBC7CMK6Y43A). */
+        // The carried spec weapon's swaps, ranked by DPS added; null when
+        // no spec is carried (ISS-01M5HCS725N7XVVBC7CMK6Y43A).
         public Ladder specLadder;
         public final List<DpsResult> owned;
         public final DpsResult overallBest;
@@ -170,35 +165,37 @@ public class OptimizerService {
         public final GearItem gameSpecWeapon;
         public final double gameSpecExpectedDamage;
         public final double gameSpecDpsAdded;
-        /** The prayers/boost YOUR numbers assume ("Deadeye + Ranging potion"). */
+        // The prayers/boost YOUR numbers assume ("Deadeye + Ranging potion").
         public final String boostLabel;
-        /** The ceiling assumption for game best ("Rigour + Ranging potion"). */
+        // The ceiling assumption for game best ("Rigour + Ranging potion").
         public final String gameBoostLabel;
-        /** What the boss does back to you in the shown owned set (nullable);
-         * a group's mode re-wear resets it (modeCard). */
+        // What the boss does back to you in the shown owned set (nullable);
+        // a group's mode re-wear resets it (modeCard).
         public Result incoming;
-        /** Same, in the game-best set - the BiS side's DTPS (nullable). */
+        // Same, in the game-best set - the BiS side's DTPS (nullable).
         public final Result gameIncoming;
-        /** The INVENTORY vs this mob on the Yours side: the trip plan's
-         * items not currently worn (spec weapon first). */
+        // The INVENTORY vs this mob on the Yours side: the trip plan's
+        // items not currently worn (spec weapon first).
         public List<GearItem> bench;
-        /** Same, for the BiS side's kit. */
+        // Same, for the BiS side's kit.
         public final List<GearItem> gameBench;
-        /** True when the Yours half is something the CARRIED KIT can
-         * actually assemble mid-trip (or no kit ran, so the shared set IS
-         * the trip). False marks a tab-only fallback - "what this style
-         * could do if you geared for it" - which must never win the mob
-         * row (field bug 2026-08-06: the vents row showed a whole ranged
-         * set on a melee kit with Inventory 3). */
+        // True when the Yours half is something the CARRIED KIT can
+        // actually assemble mid-trip (or no kit ran, so the shared set IS
+        // the trip). False marks a tab-only fallback - "what this style
+        // could do if you geared for it" - which must never win the mob
+        // row (field bug 2026-08-06: the vents row showed a whole ranged
+        // set on a melee kit with Inventory 3).
         public final boolean ownedKitBacked;
-        /** Same contract for the BiS half. */
+        // Same contract for the BiS half.
         public final boolean gameKitBacked;
-        /** Slots of the Yours set where some item in the game beats the
-         * worn one with the rest of the set fixed - no gold border there
-         * (Andrew, field 2026-09-27: an occult on a Fire Bolt card). */
+        // Slots of the Yours set where some item in the game beats the
+        // worn one with the rest of the set fixed - no gold border there
+        // (Andrew, field 2026-09-27: an occult on a Fire Bolt card).
         public Set<GearSlot> beaten = Set.of();
-        /** The Multi card rows (tool key -> per-target result) when the
-         * switch is on and the mob is fought in multi; null otherwise. */
+        // The shown sets' damage per attack (HitDist) for their kill time.
+        public double[] hitDist, gameHitDist;
+        // The Multi card rows (tool key -> per-target result) when the
+        // switch is on and the mob is fought in multi; null otherwise.
         public Map<String, StyleResult> multiTools;
 
         StyleResult(List<DpsResult> owned, DpsResult overallBest,
@@ -230,23 +227,38 @@ public class OptimizerService {
     final LoadoutData data;
     final LoadoutOptimizer optimizer = new LoadoutOptimizer();
 
-    /** Stamp the Yours set's beaten slots on a fresh result. */
+    // Stamp the Yours set's beaten slots on a fresh result.
     StyleResult verified(StyleResult result, LoadoutData dataset, OptimizationRequest own, OptimizationRequest game) {
         if (own != null && game != null && !emptyBest(result.owned)) result.beaten = optimizer.beatenSlots(dataset, own, game, result.owned.get(0));
+        if (own != null && !emptyBest(result.owned)) result.hitDist = hitDist(dataset, own, result.owned.get(0));
+        if (game != null && result.overallBest != null) result.gameHitDist = hitDist(dataset, game, result.overallBest);
         return result;
     }
 
-    /** Roster fan-out pool (field fix 2026-07-17: a 15-mob raid ran ~90
-     * independent optimize() calls serially - THE wall, not the kit
-     * search). Small and near-minimum priority so the client thread never
-     * starves; each task builds its own LoadoutOptimizer because the
-     * optimizer's internal DpsCalculator is stateful. Fixed size rather
-     * than sized to the host: the Plugin Hub bans java.lang.Runtime, so
-     * availableProcessors() is unavailable - 4 min-priority daemon threads
-     * clear the serial wall without oversubscribing a modest machine.
-     * The 4 is also what the #14014 review thread was told, so it stays 4
-     * until a widening is deliberately decided and re-verified - a wider
-     * pool rode along uninvited once (2026-08-05, reverted same day). */
+    // The shown set's damage per attack at the card's spell
+    // (ISS-01M655THWG41VPTM1ZTRA5B3YE); null unless it reproduces the card's
+    // expected hit.
+    static double[] hitDist(LoadoutData data, OptimizationRequest request, DpsResult shown) {
+        String spell = shown.getSpellName();
+        if (spell != null) {
+            for (SpellStats s : data.spells) if (s.name.equals(spell)) request = request.withSpell(s);
+        }
+        var calc = new DpsCalculator();
+        double[] dist = calc.hitDist(request, shown.loadout);
+        return dist != null && Math.abs(HitDist.mean(dist) - shown.expectedHit) <= 1e-6 * Math.max(1, shown.expectedHit) ? dist : null;
+    }
+
+    // Roster fan-out pool (field fix 2026-07-17: a 15-mob raid ran ~90
+    // independent optimize() calls serially - THE wall, not the kit
+    // search). Small and near-minimum priority so the client thread never
+    // starves; each task builds its own LoadoutOptimizer because the
+    // optimizer's internal DpsCalculator is stateful. Fixed size rather
+    // than sized to the host: the Plugin Hub bans java.lang.Runtime, so
+    // availableProcessors() is unavailable - 4 min-priority daemon threads
+    // clear the serial wall without oversubscribing a modest machine.
+    // The 4 is also what the #14014 review thread was told, so it stays 4
+    // until a widening is deliberately decided and re-verified - a wider
+    // pool rode along uninvited once (2026-08-05, reverted same day).
     static final int ROSTER_POOL_SIZE = 4;
     final ExecutorService rosterPool = Executors.newFixedThreadPool( ROSTER_POOL_SIZE, r -> {
                 var t = new Thread(r, "loadout-lab-roster");
@@ -264,36 +276,30 @@ public class OptimizerService {
         return t;
     });
 
-    /** Lazily-built free-to-play view of the dataset (gear filtered by the members flag). */
+    // Lazily-built free-to-play view of the dataset (gear filtered by the members flag).
     volatile LoadoutData f2pData;
 
-    /**
-     * Supersession: every bestPerStyle call takes a fresh ticket; an
-     * in-flight computation checks it at each checkpoint and abandons
-     * itself the moment a newer request exists (toggling slayer/f2p/risk
-     * mid-load must not make the new answer wait behind the stale one,
-     * nor let stale results flash in). Panel-driven: only the newest
-     * request ever matters.
-     */
+    // Supersession: every bestPerStyle call takes a fresh ticket; an
+    // in-flight computation checks it at each checkpoint and abandons
+    // itself the moment a newer request exists (toggling slayer/f2p/risk
+    // mid-load must not make the new answer wait behind the stale one,
+    // nor let stale results flash in). Panel-driven: only the newest
+    // request ever matters.
     final AtomicLong requestSeq = new AtomicLong();
 
-    /**
-     * Results cached PER STYLE, not per query: pins are per-style state, so
-     * pinning a melee item must not throw away the ranged and magic answers
-     * (a pin toggle was recomputing all three - the reported-choppy path).
-     * The key is the query key minus pins, plus the style and ITS pins.
-     */
+    // Results cached PER STYLE, not per query: pins are per-style state, so
+    // pinning a melee item must not throw away the ranged and magic answers
+    // (a pin toggle was recomputing all three - the reported-choppy path).
+    // The key is the query key minus pins, plus the style and ITS pins.
     final Map<String, StyleResult> cache = new LinkedHashMap<>(32, 0.75f, true) {
             protected boolean removeEldestEntry(Map.Entry<String, StyleResult> eldest) { return size() > CACHE_MAX; }
         };
 
     public OptimizerService(LoadoutData data) { this.data = data; }
 
-    /**
-     * Compute, per melee/ranged/magic: the best OWNED set and the game-wide
-     * best set against a monster. Cached; the callback runs on the worker
-     * thread on a miss and synchronously on a hit.
-     */
+    // Compute, per melee/ranged/magic: the best OWNED set and the game-wide
+    // best set against a monster. Cached; the callback runs on the worker
+    // thread on a miss and synchronously on a hit.
     public void bestPerStyle( MonsterStats monster, PlayerLevels rl, PlayerLevels boostedLevels,
         PrayerUnlocks pu, RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
         ComputeParams p, Map<CombatStyle, Set<Integer>> ebs, Set<Integer> di,
@@ -306,9 +312,9 @@ public class OptimizerService {
             singletonMap(id, pinnedSpec), poi), callback);
     }
 
-    /** The single-mob compute on a built context: a synchronous answer when
-     * every style is cached, else one worker job. A one-mob roster takes
-     * this road too, its member's own exclusions and sims on the context. */
+    // The single-mob compute on a built context: a synchronous answer when
+    // every style is cached, else one worker job. A one-mob roster takes
+    // this road too, its member's own exclusions and sims on the context.
     void bestPerStyle(MonsterStats monster, ComputeContext ctx, Consumer<Map<CombatStyle, StyleResult>> callback) {
         ctx.gwdAncient = ctx.p.gwdAncient;
         String bk = baseKeyFor(monster, ctx);
@@ -331,10 +337,10 @@ public class OptimizerService {
             "compute failed for {}", monster.name, callback);
     }
 
-    /** One compute on the worker under a fresh ticket: abandoned when
-     * superseded while queued, mid-flight (a null answer) or after it. A
-     * throw must still answer (the fallback), or the card sits on Computing
-     * for good (TonyDAnnunzio 2026-10-18). */
+    // One compute on the worker under a fresh ticket: abandoned when
+    // superseded while queued, mid-flight (a null answer) or after it. A
+    // throw must still answer (the fallback), or the card sits on Computing
+    // for good (TonyDAnnunzio 2026-10-18).
     <T> void submit(LongFunction<T> compute, Supplier<T> fallback, String failure, String name, Consumer<T> callback) {
         long ticket = requestSeq.incrementAndGet();
         worker.execute(() -> {
@@ -351,11 +357,11 @@ public class OptimizerService {
         });
     }
 
-    /** Every query-wide value the per-style compute needs, gathered once so
-     * the roster path can run computeAllStyles for each mob. */
+    // Every query-wide value the per-style compute needs, gathered once so
+    // the roster path can run computeAllStyles for each mob.
     static class ComputeContext {
-        /** The page's compute settings as handed in; the fields below are
-         * the ones the context derives or normalises from them. */
+        // The page's compute settings as handed in; the fields below are
+        // the ones the context derives or normalises from them.
         ComputeParams p;
         LoadoutData dataset;
         OwnedItems effectiveOwned;
@@ -370,44 +376,44 @@ public class OptimizerService {
         int collectionFingerprint;
         Set<Integer> dreams;
         Set<Integer> protectOnly;
-        /** The bench size: carried items beyond the worn set; the spec
-         * weapon occupies a slot when it differs from the worn weapon. */
+        // The bench size: carried items beyond the worn set; the spec
+        // weapon occupies a slot when it differs from the worn weapon.
         int maxSwaps = 1;
-        /** PER-MOB pins (profileId -> style -> slot -> item), pinned spell
-         * and pinned spec, keyed like excludedByMob: a mixed roster reads
-         * each member's own (ISS-01M4Y2VJ8DWBBKFR1HP9NR45NG); the single-mob
-         * path wraps its three arguments into one-entry maps. */
+        // PER-MOB pins (profileId -> style -> slot -> item), pinned spell
+        // and pinned spec, keyed like excludedByMob: a mixed roster reads
+        // each member's own (ISS-01M4Y2VJ8DWBBKFR1HP9NR45NG); the single-mob
+        // path wraps its three arguments into one-entry maps.
         Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob;
         Map<Integer, SpellStats> spellByMob;
-        /** A pinned SPEC weapon id (0 = auto-pick): forces the spec slot on
-         * the card whose style the weapon serves, leaving other styles to
-         * pick freely. The pin machinery's carried-slot twin; a roster
-         * seats its FIRST member's as the shared spec. */
+        // A pinned SPEC weapon id (0 = auto-pick): forces the spec slot on
+        // the card whose style the weapon serves, leaving other styles to
+        // pick freely. The pin machinery's carried-slot twin; a roster
+        // seats its FIRST member's as the shared spec.
         Map<Integer, Integer> specByMob;
         Map<CombatStyle, Set<Integer>> excluded;
-        /** PER-MOB exclusions for rosters, keyed by MonsterStats.profileId()
-         * (field decision 2026-07-17): each mob's request carries its own
-         * exclusions on top of the global set - the group may still use the
-         * item, the excluding mob's answer never does. */
+        // PER-MOB exclusions for rosters, keyed by MonsterStats.profileId()
+        // (field decision 2026-07-17): each mob's request carries its own
+        // exclusions on top of the global set - the group may still use the
+        // item, the excluding mob's answer never does.
         Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob = Map.of();
-        /** PER-MOB sims (profileId -> ids): counted as owned for that mob
-         * only - the local twin of the global dream items. */
+        // PER-MOB sims (profileId -> ids): counted as owned for that mob
+        // only - the local twin of the global dream items.
         Map<Integer, Set<Integer>> dreamsByMob = Map.of();
-        /** The defensive mode (single-mob path only; rosters stay Max DPS). */
+        // The defensive mode (single-mob path only; rosters stay Max DPS).
         OptimizeMode mode = MAX_DPS;
-        /** The GWD Ancient chip: Zaros joins the route (the Nex bank). */
+        // The GWD Ancient chip: Zaros joins the route (the Nex bank).
         boolean gwdAncient;
-        /** This compute's request ticket - the mode sweep bails when superseded. */
+        // This compute's request ticket - the mode sweep bails when superseded.
         long ticket;
     }
 
-    /** The spec-weapon restriction (0 = none): a user PIN forces the spec
-     * slot to that weapon on EVERY style card, not just its own - specs
-     * compete cross-style (a ranged Tonalztics is a real spec swap on a
-     * melee setup; a DWH on a magic set), so a pin that only bound its own
-     * style read as "the pin doesn't take" when viewing another card
-     * (field report 2026-08-09). A card the weapon cannot serve shows the
-     * pinned spec at its honest ~0 (keepZero), never a different auto pick. */
+    // The spec-weapon restriction (0 = none): a user PIN forces the spec
+    // slot to that weapon on EVERY style card, not just its own - specs
+    // compete cross-style (a ranged Tonalztics is a real spec swap on a
+    // melee setup; a DWH on a magic set), so a pin that only bound its own
+    // style read as "the pin doesn't take" when viewing another card
+    // (field report 2026-08-09). A card the weapon cannot serve shows the
+    // pinned spec at its honest ~0 (keepZero), never a different auto pick.
     static Set<Integer> restrictSpec(ComputeContext ctx, CombatStyle style, MonsterStats mob) {
         int id = ctx.specByMob.getOrDefault(mob.profileId(), 0);
         if (id == 0) return null;
@@ -415,10 +421,10 @@ public class OptimizerService {
         return pinned != null && SpecialAttack.match(pinned) != null ? singleton(id) : null;
     }
 
-    /** The style's pins for ONE mob (its own profile's). A weapon pin binds
-     * only the styles its weapon fights with (ISS-01M5TH7V74GYQKRN231XRCM6BE,
-     * Andrew 2026-10-25: a trident pinned on the Enraged Warden left "only
-     * ... a magic set" though the bowfa was "a more applicaable range set"). */
+    // The style's pins for ONE mob (its own profile's). A weapon pin binds
+    // only the styles its weapon fights with (ISS-01M5TH7V74GYQKRN231XRCM6BE,
+    // Andrew 2026-10-25: a trident pinned on the Enraged Warden left "only
+    // ... a magic set" though the bowfa was "a more applicaable range set").
     static Map<GearSlot, Integer> pinsFor(ComputeContext ctx, CombatStyle style, MonsterStats mob) {
         Map<CombatStyle, Map<GearSlot, Integer>> byStyle = ctx.pinsByMob.get(mob.profileId());
         Map<GearSlot, Integer> pins = byStyle == null ? Map.of() : byStyle.getOrDefault(style, Map.of());
@@ -434,16 +440,16 @@ public class OptimizerService {
         return ctx.spellByMob.get(mob.profileId());
     }
 
-    /** The per-style pin state that shapes a cached answer: the mob's pins
-     * and, on magic, its pinned spell. */
+    // The per-style pin state that shapes a cached answer: the mob's pins
+    // and, on magic, its pinned spell.
     static String pinKey(ComputeContext ctx, CombatStyle style, MonsterStats mob) {
         SpellStats spell = spellFor(ctx, mob);
         return pinsFor(ctx, style, mob).hashCode() + "|" + (style == MAGIC && spell != null ? spell.name : "");
     }
 
-    /** Per-(mob, style, side) optimize results for the roster path, LRU.
-     * Keyed WITHOUT mode/inventory (they do not shape an optimize), so a
-     * chip tweak recomputes only the kit - not the ~2x3xN optimizes. */
+    // Per-(mob, style, side) optimize results for the roster path, LRU.
+    // Keyed WITHOUT mode/inventory (they do not shape an optimize), so a
+    // chip tweak recomputes only the kit - not the ~2x3xN optimizes.
     final Map<String, List<DpsResult>> optimizeCache = new LinkedHashMap<String, List<DpsResult>>(256, 0.75f, true) {
             protected boolean removeEldestEntry(Map.Entry<String, List<DpsResult>> eldest) { return size() > 1024; }
         };
@@ -458,8 +464,8 @@ public class OptimizerService {
             + "|" + excludedFor(ctx, style, mob).hashCode() + "|" + pinKey(ctx, style, mob);
     }
 
-    /** The query-wide ctx fields every cache key shares (keys only need
-     * equality, so the two key builders reuse one middle). */
+    // The query-wide ctx fields every cache key shares (keys only need
+    // equality, so the two key builders reuse one middle).
     static String ctxKey(ComputeContext ctx) {
         return ctx.collectionFingerprint + "|" + Objects.hashCode(ctx.effectiveOwned.atHand) + "|" + ctx.p.f2pOnly + "|" + ctx.p.onSlayerTask
             + "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.p.maxTradeables
@@ -470,8 +476,8 @@ public class OptimizerService {
             + "|" + ctx.real + "|" + ctx.boostedLevels + "|" + ctx.p.kourendElite;
     }
 
-    /** One roster optimize (a pool task): LRU-cached; a hit hands out a
-     * fresh list copy so downstream mutation never poisons the cache. */
+    // One roster optimize (a pool task): LRU-cached; a hit hands out a
+    // fresh list copy so downstream mutation never poisons the cache.
     List<DpsResult> optimizeCached(MonsterStats mob, CombatStyle style, boolean game,
         ComputeContext ctx, OptimizationRequest req, long ticket) {
         String key = optimizeKey(mob, style, game, ctx);
@@ -489,9 +495,9 @@ public class OptimizerService {
         return best;
     }
 
-    /** One side's polished optimize for a card: a style card's through the
-     * optimize cache (mode and bench are not in its key, so a flip of either
-     * reuses it), a multi tool's direct - as is a miss the ticket abandoned. */
+    // One side's polished optimize for a card: a style card's through the
+    // optimize cache (mode and bench are not in its key, so a flip of either
+    // reuses it), a multi tool's direct - as is a miss the ticket abandoned.
     List<DpsResult> sideBest(boolean game, ComputeContext ctx, OptimizationRequest req, ToolPick tool) {
         List<DpsResult> best = tool == null ? optimizeCached(req.monster, req.style, game, ctx, req, ctx.ticket) : null;
         if (best == null) {
@@ -501,8 +507,8 @@ public class OptimizerService {
         return best;
     }
 
-    /** The displayed set's finish, shared by every optimize site: top up
-     * DPS-neutral empty slots and required utility (verified DPS-neutral). */
+    // The displayed set's finish, shared by every optimize site: top up
+    // DPS-neutral empty slots and required utility (verified DPS-neutral).
     static void polish(LoadoutOptimizer opt, LoadoutData dataset, OptimizationRequest req, List<DpsResult> best) {
         if (!best.isEmpty()) {
             best.set(0, opt.fillDpsNeutralSlots(dataset, req, best.get(0)));
@@ -510,15 +516,15 @@ public class OptimizerService {
         }
     }
 
-    /** The single-mob post-passes on a roster shown set (field reports
-     * 2026-08-09): the Dizana's quiver relocation and the mandatory-recoil
-     * swap (a Zulrah roster recommended sets with no recoil gear). Runs on
-     * the phase-1 sets and again on whatever the kit merge shows. */
+    // The single-mob post-passes on a roster shown set (field reports
+    // 2026-08-09): the Dizana's quiver relocation and the mandatory-recoil
+    // swap (a Zulrah roster recommended sets with no recoil gear). Runs on
+    // the phase-1 sets and again on whatever the kit merge shows.
     DpsResult postPass(ComputeContext ctx, OptimizationRequest req, DpsResult shown) {
         return optimizer.ensureRequiredUtility(ctx.dataset, req, optimizer.relocateQuiverAmmo(ctx.dataset, req, shown));
     }
 
-    /** The dream items for ONE mob: global sims plus that mob's own. */
+    // The dream items for ONE mob: global sims plus that mob's own.
     static Set<Integer> dreamsFor(ComputeContext ctx, MonsterStats mob) {
         Set<Integer> local = ctx.dreamsByMob.get(mob.profileId());
         if (local == null || local.isEmpty()) return ctx.dreams;
@@ -527,7 +533,7 @@ public class OptimizerService {
         return merged;
     }
 
-    /** The style's exclusions for ONE mob: global plus that mob's own. */
+    // The style's exclusions for ONE mob: global plus that mob's own.
     static Set<Integer> excludedFor(ComputeContext ctx, CombatStyle style, MonsterStats mob) {
         Set<Integer> global = ctx.excluded.getOrDefault(style, Set.of());
         Map<CombatStyle, Set<Integer>> bm = ctx.excludedByMob.get(mob.profileId());
@@ -538,11 +544,11 @@ public class OptimizerService {
         return merged;
     }
 
-    /** One multi tool through the per-style pipeline: BARRAGE pins Ice
-     * Barrage (Ice Burst under 94), CHINS the best owned chinchompa (the
-     * ceiling black), VENATOR the charged bow. Yours only when the player
-     * owns the tool and, for the spell, its runes. Null when the account
-     * cannot cast any burst. */
+    // One multi tool through the per-style pipeline: BARRAGE pins Ice
+    // Barrage (Ice Burst under 94), CHINS the best owned chinchompa (the
+    // ceiling black), VENATOR the charged bow. Yours only when the player
+    // owns the tool and, for the spell, its runes. Null when the account
+    // cannot cast any burst.
     StyleResult multiToolResult(MonsterStats monster, ComputeContext ctx, MultiTool tool) {
         var pick = new ToolPick();
         boolean ownedSide;
@@ -572,9 +578,9 @@ public class OptimizerService {
         return styleResultFor(monster, ctx, tool.style, pick, ownedSide);
     }
 
-    /** One style's answer: both sides, spec, incoming, bench. The multi
-     * tools run through it with their pins; ownedSide false skips Yours
-     * (a tool the player does not own). */
+    // One style's answer: both sides, spec, incoming, bench. The multi
+    // tools run through it with their pins; ownedSide false skips Yours
+    // (a tool the player does not own).
     StyleResult styleResultFor(MonsterStats monster, ComputeContext ctx, CombatStyle style, ToolPick tool, boolean ownedSide) {
             BoostProfile supplied = suppliedBoost(monster);
             StylePlan plan = stylePlan(ctx, style, supplied);
@@ -671,9 +677,9 @@ public class OptimizerService {
             // the styles it finished.
     }
 
-    /** The query-wide cache key for one monster (per-style state layered on
-     * top by styleKey). Centralised so the fast path and computeAllStyles
-     * can never drift into split/colliding cache buckets. */
+    // The query-wide cache key for one monster (per-style state layered on
+    // top by styleKey). Centralised so the fast path and computeAllStyles
+    // can never drift into split/colliding cache buckets.
     static String baseKeyFor(MonsterStats monster, ComputeContext ctx) {
         // The invocation level scales the monster's defence but not its id
         // (found 2026-08-09: optimizeKey carried it, this key did not, so
@@ -732,14 +738,12 @@ public class OptimizerService {
         return results;
     }
 
-    /**
-     * Sweep defense weights over the max-DPS set to trace the offence/
-     * defence frontier, pick the mode's point, swap it into ownedBest[0],
-     * and say what it cost. Only where the damage-taken model covers the
-     * monster (full or curated) - a partial number would steer the pick by
-     * the attacks it leaves out. A group's sweep task passes its own
-     * optimizer (the shared one's calculator is stateful).
-     */
+    // Sweep defense weights over the max-DPS set to trace the offence/
+    // defence frontier, pick the mode's point, swap it into ownedBest[0],
+    // and say what it cost. Only where the damage-taken model covers the
+    // monster (full or curated) - a partial number would steer the pick by
+    // the attacks it leaves out. A group's sweep task passes its own
+    // optimizer (the shared one's calculator is stateful).
     ModeTrade applyMode(ComputeContext ctx, OptimizationRequest ownedRequest,
         List<DpsResult> ob, MonsterStats monster, long ticket, LoadoutOptimizer opt) {
         OptimizeMode mode = ctx.mode;
@@ -782,18 +786,18 @@ public class OptimizerService {
         return new ModeTrade(mode, (int) round((1 - picked.dps / d0) * 100), (int) round((1 - pr.dtps / i0) * 100), null);
     }
 
-    /** applyMode's verdict when the sweep finds nothing safer. The data
-     * verdicts before it also stop a group member's re-wear; this one does not. */
+    // applyMode's verdict when the sweep finds nothing safer. The data
+    // verdicts before it also stop a group member's re-wear; this one does not.
     static final String NO_SAFER = "no safer set";
 
-    /** A set scored for the mode's ranking: its DPS and its damage taken. */
+    // A set scored for the mode's ranking: its DPS and its damage taken.
     static Rung rungOf(ComputeContext ctx, MonsterStats mob, CombatStyle style, DpsResult r) {
         return new Rung(null, r.net, incomingFor(mob, r.loadout, ctx, style).totalDps, false, null);
     }
 
-    /** Every worn slot's ladder for the shown Yours set: each swap scored by
-     * the active mode (Andrew 2026-10-21: "same objective as the active
-     * mode"), two steps up from any item, two down from owned ones. */
+    // Every worn slot's ladder for the shown Yours set: each swap scored by
+    // the active mode (Andrew 2026-10-21: "same objective as the active
+    // mode"), two steps up from any item, two down from owned ones.
     Map<GearSlot, Ladder> ladderFor(ComputeContext ctx, OptimizationRequest request, DpsResult shown, MonsterStats monster) {
         Map<GearSlot, Ladder> ladders = new EnumMap<>(GearSlot.class);
         boolean scoresDamage = ctx.mode != MAX_DPS;
@@ -826,13 +830,13 @@ public class OptimizerService {
         return ladders;
     }
 
-    /** The solo card's ladders, the set first made to wear its own owned
-     * upgrades (ISS-01M5PKSQBAP823XNC13QBW8830, Andrew 2026-10-24: "it's still
-     * doing the thing for whisperer where it things a mystic smoke battlestaff
-     * is an upgrade. so if it is SIM IT AS THE MAIN SET"): while a step the
-     * strip rates above the worn item under the mode is yours - owned or
-     * simmed - the shown set becomes that step's set and the ladders are
-     * rebuilt from it, a few rounds at most. */
+    // The solo card's ladders, the set first made to wear its own owned
+    // upgrades (ISS-01M5PKSQBAP823XNC13QBW8830, Andrew 2026-10-24: "it's still
+    // doing the thing for whisperer where it things a mystic smoke battlestaff
+    // is an upgrade. so if it is SIM IT AS THE MAIN SET"): while a step the
+    // strip rates above the worn item under the mode is yours - owned or
+    // simmed - the shown set becomes that step's set and the ladders are
+    // rebuilt from it, a few rounds at most.
     Map<GearSlot, Ladder> adoptOwnedSteps(ComputeContext ctx, OptimizationRequest request,
         List<DpsResult> ob, MonsterStats monster) {
         Map<GearSlot, Ladder> ladders = ladderFor(ctx, request, ob.get(0), monster);
@@ -866,12 +870,12 @@ public class OptimizerService {
         return ladders;
     }
 
-    /** A worn item kept only in storage gives way to a same-slot, same-stats
-     * twin at hand (ISS-01M5ZS534AA325AZ0DW97B5G33, Andrew 2026-10-27: "guthix
-     * d'hide boots are in my costume room and sara d'hide boots are in my
-     * inventory. since they ahve the same stats and the god item attribution
-     * is not relevant") - never where the god is the point (a GWD route), and
-     * only when the swap passes the request's own rules at no dps cost. */
+    // A worn item kept only in storage gives way to a same-slot, same-stats
+    // twin at hand (ISS-01M5ZS534AA325AZ0DW97B5G33, Andrew 2026-10-27: "guthix
+    // d'hide boots are in my costume room and sara d'hide boots are in my
+    // inventory. since they ahve the same stats and the god item attribution
+    // is not relevant") - never where the god is the point (a GWD route), and
+    // only when the swap passes the request's own rules at no dps cost.
     void preferAtHand(ComputeContext ctx, OptimizationRequest request, List<DpsResult> ob, MonsterStats monster) {
         if (ctx.effectiveOwned.atHand == null || !GwdProtection.godsFor(monster, ctx.gwdAncient).isEmpty()) return;
         DpsResult shown = ob.get(0);
@@ -908,10 +912,10 @@ public class OptimizerService {
             && a.prayer == b.prayer;
     }
 
-    /** The magic weapon ladder's two kinds (ISS-01M5PKSQBAP823XNC13QBW8830):
-     * powered staves and autocast staves, each ranked around the worn weapon
-     * by the same rule, sharing the "All weapons" list. Other styles, and the
-     * other slots, have one ladder. */
+    // The magic weapon ladder's two kinds (ISS-01M5PKSQBAP823XNC13QBW8830):
+    // powered staves and autocast staves, each ranked around the worn weapon
+    // by the same rule, sharing the "All weapons" list. Other styles, and the
+    // other slots, have one ladder.
     static void splitByKind(Ladder ladder, OptimizeMode mode, CombatStyle style, Rung worn,
         List<Rung> candidates, double baseDps, double baseDtps) {
         if (style != MAGIC) return;
@@ -934,18 +938,18 @@ public class OptimizerService {
     static final Pattern BATTLESTAFF = Pattern.compile("(air|water|earth|fire|lava|mud|mist|steam|dust|smoke) battlestaff");
     static final Pattern MYSTIC = Pattern.compile("mystic (air|water|earth|fire|lava|mud|mist|steam|dust|smoke) staff");
 
-    /** The twin that stands for a base weapon: the mystic staff for an
-     * <element> battlestaff, the (e) for a trident (ISS-01M5PTHS4MAVKFB8C1QXF0KTS1,
-     * Andrew 2026-10-24: "combine trident of the seas/swamp and their (e)
-     * version - those have the same damage just hold a different number of
-     * charges"); null for every other weapon. */
+    // The twin that stands for a base weapon: the mystic staff for an
+    // <element> battlestaff, the (e) for a trident (ISS-01M5PTHS4MAVKFB8C1QXF0KTS1,
+    // Andrew 2026-10-24: "combine trident of the seas/swamp and their (e)
+    // version - those have the same damage just hold a different number of
+    // charges"); null for every other weapon.
     static String twinOf(String name) {
         Matcher staff = BATTLESTAFF.matcher(name);
         if (staff.matches()) return "mystic " + staff.group(1) + " staff";
         return name.equals("trident of the seas") || name.equals("trident of the swamp") ? name + " (e)" : null;
     }
 
-    /** The base a twin stands for; null when the name is no twin. */
+    // The base a twin stands for; null when the name is no twin.
     static String baseOf(String name) {
         Matcher m = MYSTIC.matcher(name);
         if (m.matches()) return m.group(1) + " battlestaff";
@@ -953,12 +957,12 @@ public class OptimizerService {
         return twinOf(base) != null ? base : null;
     }
 
-    /** A weapon and its twin are one weapon to the strip (Andrew 2026-10-24:
-     * "just consider that as the same weapon and if the user has the mystic
-     * version use that and if they don't sim the other but don't waste both
-     * slots with the results in the ladder"): the worn one stands for the
-     * pair, else the OWNED twin, else the base - a twin's sim rung never sits
-     * beside its base. */
+    // A weapon and its twin are one weapon to the strip (Andrew 2026-10-24:
+    // "just consider that as the same weapon and if the user has the mystic
+    // version use that and if they don't sim the other but don't waste both
+    // slots with the results in the ladder"): the worn one stands for the
+    // pair, else the OWNED twin, else the base - a twin's sim rung never sits
+    // beside its base.
     static List<Rung> foldStaffFamilies(List<Rung> rungs, GearItem worn) {
         Map<String, Rung> byName = new HashMap<>();
         for (Rung rung : rungs) byName.put(rung.item.nameLower, rung);
@@ -976,15 +980,15 @@ public class OptimizerService {
         return kept;
     }
 
-    /** The weight a style's shared kit gives each member
-     * (ISS-01M5PKSQBAP823XNC13QBW8830, Andrew 2026-10-24: "it is missing
-     * trident of the seas in this calculation which is even better because it
-     * allows the whole set to use arceuss"): its kit weight where the style
-     * is how the member is fought - the side's best set's style, or one within
-     * 5% of it - and a thousandth of it where it is not, so the Warden's Core
-     * you melee has next to no say in the magic kit, yet a member fought
-     * another way still gets a valid set in this style (its pinned weapon is
-     * still worth carrying, a kit nobody fights with still answers). */
+    // The weight a style's shared kit gives each member
+    // (ISS-01M5PKSQBAP823XNC13QBW8830, Andrew 2026-10-24: "it is missing
+    // trident of the seas in this calculation which is even better because it
+    // allows the whole set to use arceuss"): its kit weight where the style
+    // is how the member is fought - the side's best set's style, or one within
+    // 5% of it - and a thousandth of it where it is not, so the Warden's Core
+    // you melee has next to no say in the magic kit, yet a member fought
+    // another way still gets a valid set in this style (its pinned weapon is
+    // still worth carrying, a kit nobody fights with still answers).
     static final double STYLE_BAND = 0.95;
     static final double OTHER_STYLE_SHARE = 0.001;
 
@@ -1005,12 +1009,12 @@ public class OptimizerService {
         return bests == null || j >= bests.size() || emptyBest(bests.get(j)) ? 0 : bests.get(j).get(0).net;
     }
 
-    /** Every side's shared-spec options together, best trip value first
-     * (ISS-01M5PVHNZDC61B019S782QN0PJ, Andrew 2026-10-24, Royal Titans: "it's
-     * recommending dark bow spec on royal titans i feel like a chally spec
-     * would be much better"): the trip carries ONE spec weapon, so a primary
-     * weighs the meleed titans' chally against the out-of-reach pair's dark
-     * bow, not just its own side's list. */
+    // Every side's shared-spec options together, best trip value first
+    // (ISS-01M5PVHNZDC61B019S782QN0PJ, Andrew 2026-10-24, Royal Titans: "it's
+    // recommending dark bow spec on royal titans i feel like a chally spec
+    // would be much better"): the trip carries ONE spec weapon, so a primary
+    // weighs the meleed titans' chally against the out-of-reach pair's dark
+    // bow, not just its own side's list.
     static List<SpecPick[]> tripSpecOptions(Map<CombatStyle, SharedSide> sides, List<MonsterStats> mobs) {
         double[] weights = hpWeights(mobs);
         List<SpecPick[]> all = new ArrayList<>();
@@ -1019,22 +1023,22 @@ public class OptimizerService {
         return all;
     }
 
-    /** A kill slower than this counts as this long in a trip's time: a member
-     * the set cannot damage neither vetoes the set nor drops out. */
+    // A kill slower than this counts as this long in a trip's time: a member
+    // the set cannot damage neither vetoes the set nor drops out.
     static final double KILL_CAP = 600;
 
-    /** A member's say in a group's objective (ISS-01M6415DTE84ZZ45C4YD3MZRBJ,
-     * Andrew 2026-10-29: the kit ranks by total trip time): minus its weighted
-     * kill time, hp / net dps capped at KILL_CAP, so the higher sum still
-     * wins. The weight already carries its hp (kitWeight, specWeight), so
-     * the term is weight / net: the trip's seconds times the group weight. */
+    // A member's say in a group's objective (ISS-01M6415DTE84ZZ45C4YD3MZRBJ,
+    // Andrew 2026-10-29: the kit ranks by total trip time): minus its weighted
+    // kill time, hp / net dps capped at KILL_CAP, so the higher sum still
+    // wins. The weight already carries its hp (kitWeight, specWeight), so
+    // the term is weight / net: the trip's seconds times the group weight.
     static double worth(double net, double weight, MonsterStats mob) {
         double cap = KILL_CAP / max(1, mob.hitpoints);
         return -weight * (net <= EPS ? cap : min(1 / net, cap));
     }
 
-    /** Every member's spec weight: the trip's spec currency - a spec-only
-     * member (the Warden's Core) counts in full here and nowhere else. */
+    // Every member's spec weight: the trip's spec currency - a spec-only
+    // member (the Warden's Core) counts in full here and nowhere else.
     static double[] hpWeights(List<MonsterStats> mobs) {
         double[] weights = new double[mobs.size()];
         for (int j = 0; j < weights.length; j++) weights[j] = specWeight(mobs.get(j));
@@ -1043,9 +1047,9 @@ public class OptimizerService {
 
     static final int ALL_STEPS = 24;
 
-    /** Every step the strip could show, best first, owned ahead on ties
-     * (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW, Andrew 2026-10-24: "it should evaluate
-     * all options and show the result of all based on dps"). */
+    // Every step the strip could show, best first, owned ahead on ties
+    // (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW, Andrew 2026-10-24: "it should evaluate
+    // all options and show the result of all based on dps").
     static List<Rung> allRanked(OptimizeMode mode, CombatStyle style, List<Rung> candidates) {
         List<Rung> all = new ArrayList<>(candidates);
         Comparator<Rung> order = (a, b) -> compareRungs(mode, a, b);
@@ -1053,19 +1057,19 @@ public class OptimizerService {
         return all.size() > ALL_STEPS ? new ArrayList<>(all.subList(0, ALL_STEPS)) : all;
     }
 
-    /** The item a swapped set brings in a slot the worn set does not already
-     * fill with it (a weapon step's ammo or offhand); null otherwise. */
+    // The item a swapped set brings in a slot the worn set does not already
+    // fill with it (a weapon step's ammo or offhand); null otherwise.
     static GearItem brought(Loadout swapped, Loadout worn, GearSlot slot) {
         GearItem item = swapped.get(slot);
         GearItem had = worn.get(slot);
         return item != null && (had == null || item.id != had.id) ? item : null;
     }
 
-    /** The steps around the worn item: up from any item, down from your own,
-     * closest first, five columns by the fill rule. Equal under the mode,
-     * the item's own stats decide (ISS-01M5H9KGF4FSAM5DR1XSD9F9RX, Andrew
-     * 2026-10-22: Torva tied Bandos on one max hit, and a whole band of
-     * boots folded into Boots of the Eye). Null when there is no step. */
+    // The steps around the worn item: up from any item, down from your own,
+    // closest first, five columns by the fill rule. Equal under the mode,
+    // the item's own stats decide (ISS-01M5H9KGF4FSAM5DR1XSD9F9RX, Andrew
+    // 2026-10-22: Torva tied Bandos on one max hit, and a whole band of
+    // boots folded into Boots of the Eye). Null when there is no step.
     static Ladder rankSteps(OptimizeMode mode, CombatStyle style, Rung base, List<Rung> candidates,
         double baseDps, double baseDtps) {
         Comparator<Rung> order = (a, b) -> compareRungs(mode, a, b);
@@ -1096,15 +1100,15 @@ public class OptimizerService {
         return ladder;
     }
 
-    /** A group search's swaps (ISS-01M5JAGFEJ5QHXE37B37XM8HJJ, Andrew 2026-10-22: "ladder
-     * view is disabled for group searches but i think it should be
-     * included" - scored by "The whole group"): each slot of what each member
-     * WEARS for the style - the kit-backed set where the kit answers
-     * (ISS-01M5QJMTBRNAWX5WT7NRJD8JWC, Andrew 2026-10-24: "melee dps is
-     * calcing to 4.44 with nox halberd but ladder is showing 6.06") - swapped
-     * for every member, the DPS averaged by the weights that picked the kit
-     * (side.weights). The strip's worn item is the one most members wear in
-     * the slot. One strip for the group. */
+    // A group search's swaps (ISS-01M5JAGFEJ5QHXE37B37XM8HJJ, Andrew 2026-10-22: "ladder
+    // view is disabled for group searches but i think it should be
+    // included" - scored by "The whole group"): each slot of what each member
+    // WEARS for the style - the kit-backed set where the kit answers
+    // (ISS-01M5QJMTBRNAWX5WT7NRJD8JWC, Andrew 2026-10-24: "melee dps is
+    // calcing to 4.44 with nox halberd but ladder is showing 6.06") - swapped
+    // for every member, the DPS averaged by the weights that picked the kit
+    // (side.weights). The strip's worn item is the one most members wear in
+    // the slot. One strip for the group.
     Map<GearSlot, Ladder> groupLadderFor(ComputeContext ctx, SharedSide side, List<MonsterStats> mobs,
         List<Map<CombatStyle, StyleResult>> perMob, CombatStyle style) {
         Map<GearSlot, Ladder> ladders = new EnumMap<>(GearSlot.class);
@@ -1174,7 +1178,7 @@ public class OptimizerService {
         return ladders;
     }
 
-    /** The item most members wear in a slot; null when none does. */
+    // The item most members wear in a slot; null when none does.
     static GearItem mostWorn(DpsResult[] base, GearSlot slot) {
         Map<Integer, int[]> counts = new HashMap<>();
         GearItem best = null;
@@ -1189,11 +1193,11 @@ public class OptimizerService {
         return best;
     }
 
-    /** The carried spec's swaps (ISS-01M5HCS725N7XVVBC7CMK6Y43A, Andrew
-     * 2026-10-22: "not seeing the ladder view for the spec weapon slot"):
-     * every spec weapon scored alone by the card's own pick - the DPS it
-     * adds over just attacking - any item above the carried one, your own
-     * below, five columns by the slots' fill rule. */
+    // The carried spec's swaps (ISS-01M5HCS725N7XVVBC7CMK6Y43A, Andrew
+    // 2026-10-22: "not seeing the ladder view for the spec weapon slot"):
+    // every spec weapon scored alone by the card's own pick - the DPS it
+    // adds over just attacking - any item above the carried one, your own
+    // below, five columns by the slots' fill rule.
     Ladder specLadderFor(ComputeContext ctx, OptimizationRequest request, DpsResult main, GearItem carried) {
         SpecPick worn = bestSpec(ctx.dataset, request, main, null, Set.of(carried.id), true);
         if (worn == null) return null;
@@ -1213,9 +1217,9 @@ public class OptimizerService {
         return rankSteps(MAX_DPS, null, new Rung(carried, worn.dpsAdded, 0, true, null), candidates, worn.dpsAdded, 0);
     }
 
-    /** The first SPOTS + MORE distinct steps of an already-sorted list
-     * (distinct under {@code order}: a step equal to the previous one folds
-     * into it). */
+    // The first SPOTS + MORE distinct steps of an already-sorted list
+    // (distinct under {@code order}: a step equal to the previous one folds
+    // into it).
     static List<Rung> closest(List<Rung> sorted, Comparator<Rung> order) {
         List<Rung> kept = new ArrayList<>();
         for (Rung rung : sorted) {
@@ -1225,8 +1229,8 @@ public class OptimizerService {
         return kept;
     }
 
-    /** Positive when a's item has the better stats for the style: its rough
-     * offensive score, then its total defence. */
+    // Positive when a's item has the better stats for the style: its rough
+    // offensive score, then its total defence.
     static int compareStats(CombatStyle style, Rung a, Rung b) {
         double sa = a.item.roughScore(style);
         double sb = b.item.roughScore(style);
@@ -1239,8 +1243,8 @@ public class OptimizerService {
         return d.stab + d.slash + d.crush + d.magic + d.ranged;
     }
 
-    /** Positive when a is better under the mode: Max DPS by DPS; Tanky by
-     * least damage taken; Balanced by least DTPS/DPS - DPS breaks ties. */
+    // Positive when a is better under the mode: Max DPS by DPS; Tanky by
+    // least damage taken; Balanced by least DTPS/DPS - DPS breaks ties.
     static int compareRungs(OptimizeMode mode, Rung a, Rung b) {
         if (mode == TANKY && abs(a.dtps - b.dtps) > EPS) return a.dtps < b.dtps ? 1 : -1;
         if (mode == BALANCED) {
@@ -1251,10 +1255,10 @@ public class OptimizerService {
         return abs(a.dps - b.dps) <= EPS ? 0 : a.dps > b.dps ? 1 : -1;
     }
 
-    /** One side's GWD protection: wear the free ones into best[0], return
-     * what must be carried (empty when the monster is not on a GWD route).
-     * Under a defensive mode "free" also means no more damage taken - a
-     * DPS-neutral god item must not undo the set Tanky/Balanced picked. */
+    // One side's GWD protection: wear the free ones into best[0], return
+    // what must be carried (empty when the monster is not on a GWD route).
+    // Under a defensive mode "free" also means no more damage taken - a
+    // DPS-neutral god item must not undo the set Tanky/Balanced picked.
     List<GearItem> protect(ComputeContext ctx, OptimizationRequest request,
         List<DpsResult> best, List<String> gods, MonsterStats monster, boolean defensive) {
         if (gods.isEmpty() || best.isEmpty()) return new ArrayList<>();
@@ -1266,16 +1270,16 @@ public class OptimizerService {
         return new ArrayList<>(optimizer.carriedGodItems(ctx.dataset, request, best.get(0).loadout, gods));
     }
 
-    /** What the boss does back to you in this worn set, at REAL levels under
-     * the style's prayer (protection up) - null loadout answers null. Twin
-     * owned/game call sites in both compute paths share it. */
+    // What the boss does back to you in this worn set, at REAL levels under
+    // the style's prayer (protection up) - null loadout answers null. Twin
+    // owned/game call sites in both compute paths share it.
     static Result incomingFor(MonsterStats mob, Loadout worn, ComputeContext ctx, CombatStyle style) {
         int[] dm = defending(style, prayerLabelFor(ctx, style, ctx.real, ctx.unlocks), ctx.real.defence, ctx.real.magic);
         return worn == null ? null : IncomingDpsCalculator.calculate(mob, worn, dm[0], dm[1], ctx.p.antifireTier);
     }
 
-    /** The fight's swap gear beside the set: on Yours the first one you own or sim,
-     * on the ceiling the first; never one the set already wears. */
+    // The fight's swap gear beside the set: on Yours the first one you own or sim,
+    // on the ceiling the first; never one the set already wears.
     static List<GearItem> fightSwaps(ComputeContext ctx, MonsterStats mob, List<DpsResult> best, boolean owned) {
         List<GearItem> out = new ArrayList<>();
         if (best.isEmpty()) return out;
@@ -1287,8 +1291,8 @@ public class OptimizerService {
         return out;
     }
 
-    /** One side's bench for the single-mob path: the spec weapon when the
-     * shown set does not already wear it. */
+    // One side's bench for the single-mob path: the spec weapon when the
+    // shown set does not already wear it.
     static List<GearItem> specBenchOf(SpecPick spec, List<DpsResult> best) {
         List<GearItem> bench = new ArrayList<>();
         if (spec != null && spec.weapon != null && !best.isEmpty() && (best.get(0).loadout.getWeapon() == null
@@ -1299,9 +1303,9 @@ public class OptimizerService {
         return bench;
     }
 
-    /** Gather the query-wide state one compute needs. Shared by the single-
-     * mob (bestPerStyle) and roster (bestPerStyleAcross) entry points so the
-     * two can never disagree on levels, cache keys, or candidate eligibility. */
+    // Gather the query-wide state one compute needs. Shared by the single-
+    // mob (bestPerStyle) and roster (bestPerStyleAcross) entry points so the
+    // two can never disagree on levels, cache keys, or candidate eligibility.
     ComputeContext buildContext( PlayerLevels rl, PlayerLevels boostedLevels, PrayerUnlocks pu,
         RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
         ComputeParams p, Map<CombatStyle, Set<Integer>> ebs, Set<Integer> di,
@@ -1339,31 +1343,31 @@ public class OptimizerService {
         return ctx;
     }
 
-    /** The roster answer: one shared set per style, chosen for the best
-     * AVERAGE dps across the mobs (field decision 2026-07-17), with a per-mob
-     * display bundle for that set (index-aligned with the mob list). */
+    // The roster answer: one shared set per style, chosen for the best
+    // AVERAGE dps across the mobs (field decision 2026-07-17), with a per-mob
+    // display bundle for that set (index-aligned with the mob list).
     @AllArgsConstructor
     public static class RosterResult {
         public final List<MonsterStats> mobs;
         public final List<Map<CombatStyle, StyleResult>> perMob;
-        /** The one book the whole group computed under ("" = none pinned)
-         * and why - the plates and the stand-down read it
-         * (ISS-01M5PB4R0MP149NXWNFSEEHVP8). */
+        // The one book the whole group computed under ("" = none pinned)
+        // and why - the plates and the stand-down read it
+        // (ISS-01M5PB4R0MP149NXWNFSEEHVP8).
         public final String groupBook;
         public final String groupBookReason;
     }
 
-    /** The group's one spellbook: the lock already set (the player's chip,
-     * Cure Me, a fight book) stands; else the book the magic-using
-     * autocasters demand - the heaviest HP-weighted magic when they
-     * disagree; else Arceuus while thralls or Death Charge are on, so the
-     * summons stay up and magic casts from powered staves (Andrew
-     * 2026-10-24: "the spellbook has to be one total choice for everything"). */
+    // The group's one spellbook: the lock already set (the player's chip,
+    // Cure Me, a fight book) stands; else the book the magic-using
+    // autocasters demand - the heaviest HP-weighted magic when they
+    // disagree; else Arceuus while thralls or Death Charge are on, so the
+    // summons stay up and magic casts from powered staves (Andrew
+    // 2026-10-24: "the spellbook has to be one total choice for everything").
     @AllArgsConstructor
     static class GroupBook {
         final String book;
         final String reason;
-        /** The first pass's picks disagree with the book: run again under it. */
+        // The first pass's picks disagree with the book: run again under it.
         final boolean recompute;
     }
 
@@ -1459,22 +1463,22 @@ public class OptimizerService {
             + " book" + others + edge + "; thralls and Death Charge stand down", recompute);
     }
 
-    /** The Arceuus side of the group's book, or null when the autocast book
-     * is strictly ahead: each magic card's Arceuus cast plus its thralls,
-     * against its autocast on the other book, HP-weighted over the magic
-     * cards. Ties and near-ties stay Arceuus (Andrew 2026-10-24: "favor a
-     * powered staff but if a non-powered staff has a supreme result it
-     * should be the winner"). */
+    // The Arceuus side of the group's book, or null when the autocast book
+    // is strictly ahead: each magic card's Arceuus cast plus its thralls,
+    // against its autocast on the other book, HP-weighted over the magic
+    // cards. Ties and near-ties stay Arceuus (Andrew 2026-10-24: "favor a
+    // powered staff but if a non-powered staff has a supreme result it
+    // should be the winner").
     static String arceuusIfNotBeaten(double at2, double at3, String summons, String who, String what) {
         if (at2 + EPS < at3) return null;
         return String.format("Arceuus for the group: Arceuus casts with %s on the magic cards outweigh %s's %s"
             + " (%.0f vs %.0f weighted dps)", summons, who, what, at2, at3);
     }
 
-    /** The mob's best magic set under the Arceuus lock - a powered staff or
-     * an Arceuus autocast (the Grasp line); 0 when it owns nothing that
-     * casts there. A pinned spell is dropped: the question is what the
-     * player would cast on Arceuus. */
+    // The mob's best magic set under the Arceuus lock - a powered staff or
+    // an Arceuus autocast (the Grasp line); 0 when it owns nothing that
+    // casts there. A pinned spell is dropped: the question is what the
+    // player would cast on Arceuus.
     double arceuusMagicDps(ComputeContext ctx, List<MonsterStats> mobs, int j) {
         StylePlan plan = stylePlan(ctx, MAGIC, suppliedAcross(mobs));
         OptimizationRequest request = ownedRequestFor(ctx, mobs.get(j), MAGIC, plan.levels, null)
@@ -1483,13 +1487,13 @@ public class OptimizerService {
         return out.isEmpty() ? 0 : out.get(0).net;
     }
 
-    /** The mob's shown owned magic set, or null. */
+    // The mob's shown owned magic set, or null.
     static DpsResult ownedMagic(Map<CombatStyle, StyleResult> results) {
         StyleResult magic = results.get(MAGIC);
         return magic == null || magic.owned.isEmpty() ? null : magic.owned.get(0);
     }
 
-    /** Magic is how this mob gets fought: nothing else owned beats it. */
+    // Magic is how this mob gets fought: nothing else owned beats it.
     static boolean usesMagic(Map<CombatStyle, StyleResult> results, DpsResult magic) {
         for (var entry : results.entrySet()) {
             if (entry.getKey() != MAGIC && !entry.getValue().owned.isEmpty() && entry.getValue().owned.get(0).net > magic.net) return false;
@@ -1504,8 +1508,8 @@ public class OptimizerService {
         return "";
     }
 
-    /** This mob's first-pass magic set re-cast under `book`: its own dps on
-     * its own book, 0 when its staff can cast nothing from the other one. */
+    // This mob's first-pass magic set re-cast under `book`: its own dps on
+    // its own book, 0 when its staff can cast nothing from the other one.
     double magicDpsUnder(ComputeContext ctx, List<MonsterStats> mobs, int j, Map<CombatStyle, StyleResult> results, String book) {
         DpsResult magic = ownedMagic(results);
         if (book.equals(bookOf(ctx.dataset, magic.getSpellName()))) return magic.net;
@@ -1515,8 +1519,8 @@ public class OptimizerService {
         return cast == null ? 0 : cast.net;
     }
 
-    /** The raid's own boost when EVERY mob is inside the same raid (CoX
-     * overload+, ToA salts), else null. */
+    // The raid's own boost when EVERY mob is inside the same raid (CoX
+    // overload+, ToA salts), else null.
     static BoostProfile suppliedAcross(List<MonsterStats> mobs) {
         BoostProfile supplied = suppliedBoost(mobs.get(0));
         for (MonsterStats mob : mobs) {
@@ -1525,20 +1529,18 @@ public class OptimizerService {
         return supplied;
     }
 
-    /**
-     * Greedy bench selection: candidates are the per-mob free-best items
-     * that differ from the shared base; each round carries the item with
-     * the best HP-weighted marginal gain (every mob wearing its best
-     * combination of base + carried) until the bench is full or nothing
-     * gains. Small scale by construction: candidates <= mobs x slots.
-     */
-    /** True when a per-mob optimize answer has nothing usable in front. */
+    // Greedy bench selection: candidates are the per-mob free-best items
+    // that differ from the shared base; each round carries the item with
+    // the best HP-weighted marginal gain (every mob wearing its best
+    // combination of base + carried) until the bench is full or nothing
+    // gains. Small scale by construction: candidates <= mobs x slots.
+    // True when a per-mob optimize answer has nothing usable in front.
     static boolean emptyBest(List<DpsResult> best) {
         return best == null || best.isEmpty() || best.get(0) == null;
     }
 
-    /** The same-style swap candidate pool: every per-mob free-best item
-     * that differs from the base in its slot. */
+    // The same-style swap candidate pool: every per-mob free-best item
+    // that differs from the base in its slot.
     static Collection<GearItem> swapCandidates(Loadout base, List<List<DpsResult>> fb2) {
         LinkedHashMap<Integer, GearItem> candidates = new LinkedHashMap<>();
         for (List<DpsResult> best : fb2) {
@@ -1589,14 +1591,14 @@ public class OptimizerService {
         return sum;
     }
 
-    /** calculate(), refusing a loadout that wears an item EXCLUDED for
-     * this mob's request (field decision 2026-07-17: exclusions are
-     * per-mob - the kit may carry the scythe for the roster, but the
-     * excluding mob's shown answer never wears it). */
-    /** The true upgrade cost of a set: the summed price of pieces the
-     * player does NOT own (field bug 2026-08-14: kit-backed cards showed
-     * the WHOLE set's value - calculate() defaults purchaseCost to
-     * loadout.cost, and only the beam path was overwriting it). */
+    // calculate(), refusing a loadout that wears an item EXCLUDED for
+    // this mob's request (field decision 2026-07-17: exclusions are
+    // per-mob - the kit may carry the scythe for the roster, but the
+    // excluding mob's shown answer never wears it).
+    // The true upgrade cost of a set: the summed price of pieces the
+    // player does NOT own (field bug 2026-08-14: kit-backed cards showed
+    // the WHOLE set's value - calculate() defaults purchaseCost to
+    // loadout.cost, and only the beam path was overwriting it).
     static int unownedValue(Loadout loadout, OwnedItems owned) {
         if (loadout == null) return 0;
         long total = 0;
@@ -1649,12 +1651,12 @@ public class OptimizerService {
         return calc.calculate(req, loadout);
     }
 
-    /** The trip inventory while fighting ONE mob: the roster PLAN (the
-     * union of what the mobs actually WEAR in their best answers, plus
-     * the spec weapon) minus what is worn right now. Gear no mob wears
-     * is not brought at all (field fix 2026-07-17: base-compromise and
-     * candidate leftovers read as junk at Inventory 20), and a worn item
-     * never duplicates into the view. */
+    // The trip inventory while fighting ONE mob: the roster PLAN (the
+    // union of what the mobs actually WEAR in their best answers, plus
+    // the spec weapon) minus what is worn right now. Gear no mob wears
+    // is not brought at all (field fix 2026-07-17: base-compromise and
+    // candidate leftovers read as junk at Inventory 20), and a worn item
+    // never duplicates into the view.
     static List<GearItem> inventoryFor(Collection<GearItem> plan, GearItem specCarried, Loadout worn) {
         Set<Integer> wi = worn == null ? Set.of() : worn.ids();
         List<GearItem> inventory = new ArrayList<>();
@@ -1666,11 +1668,11 @@ public class OptimizerService {
         return inventory;
     }
 
-    /** A cross-style carry: another style's weapon (+ its ammo when the
-     * weapon needs slot ammo), worn INTO the primary base set and rolled
-     * under its OWN style's request - "bring a blowpipe in your melee
-     * gear". Cost = bench slots consumed; a weapon the bench already
-     * carries as the spec weapon costs nothing extra. */
+    // A cross-style carry: another style's weapon (+ its ammo when the
+    // weapon needs slot ammo), worn INTO the primary base set and rolled
+    // under its OWN style's request - "bring a blowpipe in your melee
+    // gear". Cost = bench slots consumed; a weapon the bench already
+    // carries as the spec weapon costs nothing extra.
     @AllArgsConstructor
     static class SwapBundle {
         final CombatStyle style;
@@ -1678,17 +1680,17 @@ public class OptimizerService {
         final int cost;
     }
 
-    /** The chosen kit: same-style single swaps + cross-style bundles. */
+    // The chosen kit: same-style single swaps + cross-style bundles.
     static class KitAnswer {
         final List<GearItem> singles = new ArrayList<>();
         final List<SwapBundle> bundles = new ArrayList<>();
         double total;
     }
 
-    /** The mob's own free best, when the kit can actually assemble it -
-     * every worn item present in the base or carried. This is what makes
-     * a BIG bench an EASY problem (field insight 2026-07-17): at the
-     * limit every mob simply wears its own best owned set, exactly. */
+    // The mob's own free best, when the kit can actually assemble it -
+    // every worn item present in the base or carried. This is what makes
+    // a BIG bench an EASY problem (field insight 2026-07-17): at the
+    // limit every mob simply wears its own best owned set, exactly.
     static DpsResult coverableBest(List<DpsResult> fb, Loadout base, List<GearItem> carried) {
         if (emptyBest(fb)) return null;
         Set<Integer> have = base.ids();
@@ -1699,8 +1701,8 @@ public class OptimizerService {
         return fb.get(0);
     }
 
-    /** Wear a bundle into the base set; null when it cannot be worn
-     * honestly (shield under a 2h, projectile weapon with no ammo). */
+    // Wear a bundle into the base set; null when it cannot be worn
+    // honestly (shield under a 2h, projectile weapon with no ammo).
     static Loadout applyBundle(Loadout base, SwapBundle bundle) {
         Loadout out = base;
         for (GearItem item : bundle.items) {
@@ -1721,9 +1723,9 @@ public class OptimizerService {
         return out;
     }
 
-    /** Cross-style bundle candidates for a primary base: the other styles'
-     * shared and per-mob free-best weapons, each offered bare and (when the
-     * source set wears ammo) with its ammo. */
+    // Cross-style bundle candidates for a primary base: the other styles'
+    // shared and per-mob free-best weapons, each offered bare and (when the
+    // source set wears ammo) with its ammo.
     static List<SwapBundle> bundleCandidates(CombatStyle primary, Loadout base,
         GearItem specCarried, Map<CombatStyle, SharedSide> sides) {
         List<SwapBundle> out = new ArrayList<>();
@@ -1753,10 +1755,10 @@ public class OptimizerService {
         return out;
     }
 
-    /** One mob's best answer given the kit: the primary base + singles,
-     * challenged by every carried bundle rolled under its own style, and
-     * by any style's FREE BEST the kit can fully assemble - the best of
-     * every style's shownFor (only its dps is read). */
+    // One mob's best answer given the kit: the primary base + singles,
+    // challenged by every carried bundle rolled under its own style, and
+    // by any style's FREE BEST the kit can fully assemble - the best of
+    // every style's shownFor (only its dps is read).
     DpsResult kitBest(DpsCalculator calc, Loadout base, CombatStyle primary,
         List<GearItem> singles, List<SwapBundle> bundles, List<GearItem> carried, Map<CombatStyle, SharedSide> sides, int mi) {
         DpsResult best = null;
@@ -1766,11 +1768,11 @@ public class OptimizerService {
         return best;
     }
 
-    /** One (mob, style) answer on a kit: the primary style wears the base
-     * + singles, a bundled style wears its weapon into the base armour, and
-     * any style whose free best the kit can fully assemble shows it exactly
-     * (the best of the three, the earlier on ties); null when the style has
-     * no answer on this kit. */
+    // One (mob, style) answer on a kit: the primary style wears the base
+    // + singles, a bundled style wears its weapon into the base armour, and
+    // any style whose free best the kit can fully assemble shows it exactly
+    // (the best of the three, the earlier on ties); null when the style has
+    // no answer on this kit.
     DpsResult shownFor(DpsCalculator calc, Loadout base, CombatStyle primary,
         List<GearItem> singles, List<SwapBundle> bundles, List<GearItem> carried,
         Map<CombatStyle, SharedSide> sides, int mi, CombatStyle s) {
@@ -1784,12 +1786,12 @@ public class OptimizerService {
         return better(result, coverableBest(side.bests.get(mi), base, carried));
     }
 
-    /** One mob's kit dps, MEMOIZED (field insight 2026-07-17: hone the
-     * greedy toward dynamic programming): the answer depends only on the
-     * carried bundles and the carried singles RELEVANT to this mob (items
-     * worn by some free best of its own), so the key is exactly that -
-     * testing a candidate against the roster re-evaluates only the mobs
-     * it could matter to, and repeat evaluations are table lookups. */
+    // One mob's kit dps, MEMOIZED (field insight 2026-07-17: hone the
+    // greedy toward dynamic programming): the answer depends only on the
+    // carried bundles and the carried singles RELEVANT to this mob (items
+    // worn by some free best of its own), so the key is exactly that -
+    // testing a candidate against the roster re-evaluates only the mobs
+    // it could matter to, and repeat evaluations are table lookups.
     double evalMobDps(DpsCalculator calc, Loadout base, CombatStyle primary,
         List<GearItem> singles, List<SwapBundle> bundles, String bundlesKey, Map<CombatStyle, SharedSide> sides,
         Set<Integer> relevant, int mi, Map<String, Double> memo) {
@@ -1822,12 +1824,12 @@ public class OptimizerService {
         return String.join(";", parts);
     }
 
-    /** The cross-style single-swap candidate pool for a kit search: the
-     * primary style's diff items PLUS the other carried styles' non-weapon
-     * pieces, deduped by id - the diff between the per-mob BiS sets IS the
-     * candidate list, so a generous budget can assemble the other style's
-     * FULL set, not just its weapon. The other styles' weapons are excluded
-     * because a weapon swap is a bundle, not a single. */
+    // The cross-style single-swap candidate pool for a kit search: the
+    // primary style's diff items PLUS the other carried styles' non-weapon
+    // pieces, deduped by id - the diff between the per-mob BiS sets IS the
+    // candidate list, so a generous budget can assemble the other style's
+    // FULL set, not just its weapon. The other styles' weapons are excluded
+    // because a weapon swap is a bundle, not a single.
     static List<GearItem> crossStylePool(Loadout base, CombatStyle primary, Map<CombatStyle, SharedSide> sides) {
         List<GearItem> pool = new ArrayList<>(swapCandidates(base, sides.get(primary).bests));
         for (CombatStyle s : sides.keySet()) {
@@ -1839,15 +1841,15 @@ public class OptimizerService {
         return pool;
     }
 
-    /** Kit selection. A BIGGER bench is an EASIER problem (field insight
-     * 2026-07-17): the ceiling is each mob wearing its own winning free
-     * best, so first test that ideal - the union of every mob's winning
-     * diff vs the base; when it fits the budget, carry exactly that with
-     * NO search. Only a LIMITED budget ranks the diff items: greedy over
-     * singles (cost 1) and bundles (their slot cost) by HP-weighted
-     * marginal gain - "the most valuable swap item, then the 2nd" -
-     * with cost-0 bundles (the spec weapon doubling as the other style's
-     * weapon) fitting even a full bench. */
+    // Kit selection. A BIGGER bench is an EASIER problem (field insight
+    // 2026-07-17): the ceiling is each mob wearing its own winning free
+    // best, so first test that ideal - the union of every mob's winning
+    // diff vs the base; when it fits the budget, carry exactly that with
+    // NO search. Only a LIMITED budget ranks the diff items: greedy over
+    // singles (cost 1) and bundles (their slot cost) by HP-weighted
+    // marginal gain - "the most valuable swap item, then the 2nd" -
+    // with cost-0 bundles (the spec weapon doubling as the other style's
+    // weapon) fitting even a full bench.
     KitAnswer chooseKit(DpsCalculator calc, Loadout base, CombatStyle primary,
         Collection<GearItem> singleCandidates, List<SwapBundle> bundleCandidates, Map<CombatStyle, SharedSide> sides,
         List<MonsterStats> mobs, int slots, Map<String, Double> memo) {
@@ -1964,13 +1966,11 @@ public class OptimizerService {
         return kit;
     }
 
-    /**
-     * The best worn combination for ONE mob: start from the base and
-     * greedily apply the single carried swap with the biggest gain until
-     * none helps (approximates set-bonus interactions without a subset
-     * explosion). A 2h swap clears the shield; a shield swap is skipped
-     * under a 2h weapon.
-     */
+    // The best worn combination for ONE mob: start from the base and
+    // greedily apply the single carried swap with the biggest gain until
+    // none helps (approximates set-bonus interactions without a subset
+    // explosion). A 2h swap clears the shield; a shield swap is skipped
+    // under a 2h weapon.
     Loadout bestWorn(DpsCalculator calc, OptimizationRequest req, Loadout base, List<GearItem> carried) {
         Loadout worn = base;
         DpsResult wr = calcRespecting(calc, req, worn);
@@ -2004,8 +2004,8 @@ public class OptimizerService {
         return worn;
     }
 
-    /** A copy with one slot changed (null empties it) and NO quiver ammo -
-     * the kit passes price every re-show from the slot contents alone. */
+    // A copy with one slot changed (null empties it) and NO quiver ammo -
+    // the kit passes price every re-show from the slot contents alone.
     static Loadout withSlot(Loadout base, GearSlot slot, GearItem item) {
         return new Loadout(base.with(slot, item).getGear());
     }
@@ -2020,14 +2020,14 @@ public class OptimizerService {
         return slot == WEAPON && swap.twoHanded ? withSlot(out, SHIELD, null) : out;
     }
 
-    /** Pick the set that maximises the HP-WEIGHTED average dps across the
-     * roster (field decision 2026-07-17, superseding the plain mean): a
-     * 500-hp mob's needs outweigh a 50-hp mob's ten to one, because that is
-     * where the trip's time goes. A mob the set cannot damage contributes
-     * zero to every candidate regardless of its hp - so an unhittable big
-     * mob drops out of the decision naturally ("unless you can't hit it").
-     * Candidate pool = each mob's own best set; a compromise that is
-     * nobody's #1 is not considered (heuristic). */
+    // Pick the set that maximises the HP-WEIGHTED average dps across the
+    // roster (field decision 2026-07-17, superseding the plain mean): a
+    // 500-hp mob's needs outweigh a 50-hp mob's ten to one, because that is
+    // where the trip's time goes. A mob the set cannot damage contributes
+    // zero to every candidate regardless of its hp - so an unhittable big
+    // mob drops out of the decision naturally ("unless you can't hit it").
+    // Candidate pool = each mob's own best set; a compromise that is
+    // nobody's #1 is not considered (heuristic).
     Loadout chooseSharedLoadout(DpsCalculator calc, List<List<DpsResult>> bests, List<OptimizationRequest> reqs, double[] weights) {
         List<Loadout> candidates = new ArrayList<>();
         for (List<DpsResult> b : bests) {
@@ -2049,9 +2049,9 @@ public class OptimizerService {
         return best;
     }
 
-    /** Every style's plan, member requests and optimizes (pass A), the
-     * optimizes cached; null when superseded or stopped. A single mob
-     * runs it too, so its cards read their six optimizes back. */
+    // Every style's plan, member requests and optimizes (pass A), the
+    // optimizes cached; null when superseded or stopped. A single mob
+    // runs it too, so its cards read their six optimizes back.
     Map<CombatStyle, StyleWork> passA(List<MonsterStats> mobs, ComputeContext ctx, long ticket) {
         int n = mobs.size();
         Map<CombatStyle, StyleWork> works = new EnumMap<>(CombatStyle.class);
@@ -2091,7 +2091,7 @@ public class OptimizerService {
         return fanOut(ot, ticket) ? works : null;
     }
 
-    /** One flat fan-out over the roster pool; false when superseded or stopped. */
+    // One flat fan-out over the roster pool; false when superseded or stopped.
     boolean fanOut(List<Callable<Object>> tasks, long ticket) {
         try {
             // Check every future: a task that THROWS otherwise vanishes
@@ -2114,10 +2114,10 @@ public class OptimizerService {
         return requestSeq.get() == ticket;
     }
 
-    /** Each member's sweep under a defensive mode, every style at once on the
-     * pool (ISS-01M64GNB852CBYVVWE29A9HJK4, Andrew 2026-10-29: "Mode picks
-     * feed the kit"): applyMode's pick replaces the member's best before the
-     * kit is built, and its verdict waits for the card's trade. */
+    // Each member's sweep under a defensive mode, every style at once on the
+    // pool (ISS-01M64GNB852CBYVVWE29A9HJK4, Andrew 2026-10-29: "Mode picks
+    // feed the kit"): applyMode's pick replaces the member's best before the
+    // kit is built, and its verdict waits for the card's trade.
     boolean sweep(List<MonsterStats> mobs, ComputeContext ctx, long ticket, Map<CombatStyle, StyleWork> works) {
         List<Callable<Object>> st = new ArrayList<>();
         for (StyleWork w : works.values()) {
@@ -2134,22 +2134,22 @@ public class OptimizerService {
         return fanOut(st, ticket);
     }
 
-    /** A group's cards. Under Balanced or Tanky they are built twice
-     * (ISS-01M64GNB852CBYVVWE29A9HJK4): Max DPS first, each mode card's trade
-     * reads against it, as a single search's reads its own max-DPS set. Pass
-     * A's optimizes are cache hits the second time. */
+    // A group's cards. Under Balanced or Tanky they are built twice
+    // (ISS-01M64GNB852CBYVVWE29A9HJK4): Max DPS first, each mode card's trade
+    // reads against it, as a single search's reads its own max-DPS set. Pass
+    // A's optimizes are cache hits the second time.
     List<Map<CombatStyle, StyleResult>> computeStyleAcross(List<MonsterStats> mobs, ComputeContext ctx, long ticket) {
         List<Map<CombatStyle, StyleResult>> max = ctx.mode == MAX_DPS ? null : styleAcross(mobs, ctx, ticket, null);
         return ctx.mode != MAX_DPS && max == null ? null : styleAcross(mobs, ctx, ticket, max);
     }
 
-    /** Per style: optimise each mob independently, choose ONE shared owned
-     * set and ONE shared game set by average dps, then rebuild every mob's
-     * StyleResult around the shared sets (that mob's own dps/incoming/spec).
-     * With max (the group's Max DPS cards) the mode's sweep feeds the kit
-     * and each member re-wears by the mode; without it under a mode this IS
-     * that Max DPS answer, and skips the swap strips nobody sees. Returns
-     * null if the request was superseded mid-compute. */
+    // Per style: optimise each mob independently, choose ONE shared owned
+    // set and ONE shared game set by average dps, then rebuild every mob's
+    // StyleResult around the shared sets (that mob's own dps/incoming/spec).
+    // With max (the group's Max DPS cards) the mode's sweep feeds the kit
+    // and each member re-wears by the mode; without it under a mode this IS
+    // that Max DPS answer, and skips the swap strips nobody sees. Returns
+    // null if the request was superseded mid-compute.
     List<Map<CombatStyle, StyleResult>> styleAcross(List<MonsterStats> mobs, ComputeContext ctx, long ticket,
         List<Map<CombatStyle, StyleResult>> max) {
         int n = mobs.size();
@@ -2313,11 +2313,11 @@ public class OptimizerService {
         return perMob;
     }
 
-    /** A group card under the defensive mode (ISS-01M64GNB852CBYVVWE29A9HJK4):
-     * the member wears its mode-best combination of what the trip carries for
-     * it (unless its sweep had no damage to rank by), then its trade reads
-     * against its card in the group's Max DPS answer b - kept Max DPS, with
-     * the sweep's reason, when the set is the same. */
+    // A group card under the defensive mode (ISS-01M64GNB852CBYVVWE29A9HJK4):
+    // the member wears its mode-best combination of what the trip carries for
+    // it (unless its sweep had no damage to rank by), then its trade reads
+    // against its card in the group's Max DPS answer b - kept Max DPS, with
+    // the sweep's reason, when the set is the same.
     void modeCard(DpsCalculator calc, ComputeContext ctx, MonsterStats mob, CombatStyle s, StyleWork w, int j,
         StyleResult sr, StyleResult b) {
         OptimizationRequest req = w.ownedReqs.get(j);
@@ -2342,10 +2342,10 @@ public class OptimizerService {
                 bd <= 0 || sr.incoming == null ? 0 : (int) round((1 - sr.incoming.totalDps / bd) * 100), null);
     }
 
-    /** The member's mode-best combination of the shown set and what it
-     * carries: bestWorn's greedy wear ranked by the mode (compareRungs), or
-     * its own sweep pick when the shown set and the carried items cover it
-     * and it ranks higher. Shown itself when nothing ranks higher. */
+    // The member's mode-best combination of the shown set and what it
+    // carries: bestWorn's greedy wear ranked by the mode (compareRungs), or
+    // its own sweep pick when the shown set and the carried items cover it
+    // and it ranks higher. Shown itself when nothing ranks higher.
     DpsResult modeWear(DpsCalculator calc, ComputeContext ctx, OptimizationRequest req, MonsterStats mob,
         DpsResult shown, List<GearItem> carried, DpsResult pick) {
         DpsResult worn = shown;
@@ -2374,8 +2374,8 @@ public class OptimizerService {
         return cover != null && compareRungs(ctx.mode, rungOf(ctx, mob, req.style, cover), wr) > 0 ? cover : worn;
     }
 
-    /** The bench after a re-wear: what was worn or carried, minus the new
-     * set (a carried spec weapon stays first). */
+    // The bench after a re-wear: what was worn or carried, minus the new
+    // set (a carried spec weapon stays first).
     static List<GearItem> rebench(List<GearItem> bench, Loadout was, Loadout now) {
         var all = new LinkedHashMap<Integer, GearItem>();
         pack(all, bench);
@@ -2383,10 +2383,10 @@ public class OptimizerService {
         return inventoryFor(all.values(), null, now);
     }
 
-    /** One style's roster state: pass A's plan and member requests and the
-     * fanned-out optimize answers (one array slot per task), then the
-     * shared-spec picks the kit merge reads back, and under a defensive mode
-     * each member's sweep verdict and pick. */
+    // One style's roster state: pass A's plan and member requests and the
+    // fanned-out optimize answers (one array slot per task), then the
+    // shared-spec picks the kit merge reads back, and under a defensive mode
+    // each member's sweep verdict and pick.
     static class StyleWork {
         StylePlan plan;
         final List<OptimizationRequest> ownedReqs = new ArrayList<>();
@@ -2406,23 +2406,23 @@ public class OptimizerService {
         }
     }
 
-    /** One side's shared answer for a style (Yours or BiS): the member
-     * requests and free bests, the shared set, each mob's result on it (null
-     * where calculate() has nothing - the TD shield phases) and the ranked
-     * shared-spec options - the kit pass's per-style input. */
+    // One side's shared answer for a style (Yours or BiS): the member
+    // requests and free bests, the shared set, each mob's result on it (null
+    // where calculate() has nothing - the TD shield phases) and the ranked
+    // shared-spec options - the kit pass's per-style input.
     @RequiredArgsConstructor
     static class SharedSide {
         final List<OptimizationRequest> reqs;
         final List<List<DpsResult>> bests;
-        /** Each member's say in this style's kit (styleUseWeights). */
+        // Each member's say in this style's kit (styleUseWeights).
         final double[] weights;
         Loadout shared;
         DpsResult[] shown;
         List<SpecPick[]> specOptions = List.of();
     }
 
-    /** The side's shared set re-shown per mob, with its shared spec and the
-     * Lightbearer arbitration on top. owned == null is the BiS side. */
+    // The side's shared set re-shown per mob, with its shared spec and the
+    // Lightbearer arbitration on top. owned == null is the BiS side.
     SharedSide sharedSideFor(DpsCalculator calc, ComputeContext ctx, List<MonsterStats> mobs,
         List<OptimizationRequest> reqs, List<List<DpsResult>> bests, OwnedItems owned, double[] weights) {
         var side = new SharedSide(reqs, bests, weights);
@@ -2440,7 +2440,7 @@ public class OptimizerService {
         return side;
     }
 
-    /** Each mob's result on the shared set (all null without one). */
+    // Each mob's result on the shared set (all null without one).
     DpsResult[] shownAcross(DpsCalculator calc, List<OptimizationRequest> reqs, Loadout shared) {
         DpsResult[] shown = new DpsResult[reqs.size()];
         for (int j = 0; shared != null && j < shown.length; j++) {
@@ -2449,14 +2449,14 @@ public class OptimizerService {
         return shown;
     }
 
-    /** ROSTER LIGHTBEARER ARBITRATION (field report 2026-08-08: a Nex
-     * group recommended Ring of shadows over the Lightbearer): the
-     * shared ring falls out of raw-stat set construction, which the
-     * stat-less Lightbearer can never win - but doubled regen scales
-     * the whole trip's spec value. Price the trip both ways (HP-
-     * weighted shared-set dps + top shared-spec value) and adopt the
-     * variant on a strict win - the single-mob arbitration's argmax,
-     * at the shared-set altitude. */
+    // ROSTER LIGHTBEARER ARBITRATION (field report 2026-08-08: a Nex
+    // group recommended Ring of shadows over the Lightbearer): the
+    // shared ring falls out of raw-stat set construction, which the
+    // stat-less Lightbearer can never win - but doubled regen scales
+    // the whole trip's spec value. Price the trip both ways (HP-
+    // weighted shared-set dps + top shared-spec value) and adopt the
+    // variant on a strict win - the single-mob arbitration's argmax,
+    // at the shared-set altitude.
     void adoptLightbearer(DpsCalculator calc, ComputeContext ctx, List<MonsterStats> mobs,
         List<OptimizationRequest> reqs, OwnedItems owned, SharedSide side) {
         Loadout variant = lightbearerVariant(ctx.dataset, side.shared, reqs, owned);
@@ -2478,15 +2478,15 @@ public class OptimizerService {
         }
     }
 
-    /** Every non-null item into the plan, once each. */
+    // Every non-null item into the plan, once each.
     static void pack(Map<Integer, GearItem> plan, Collection<GearItem> items) {
         for (GearItem item : items) {
             if (item != null) plan.putIfAbsent(item.id, item);
         }
     }
 
-    /** The style whose free best answers mob j with the most dps (the
-     * earlier on ties), or null when no style has an answer. */
+    // The style whose free best answers mob j with the most dps (the
+    // earlier on ties), or null when no style has an answer.
     static CombatStyle answerFor(Map<CombatStyle, SharedSide> sides, int j) {
         CombatStyle answer = null;
         DpsResult top = null;
@@ -2500,9 +2500,9 @@ public class OptimizerService {
         return answer;
     }
 
-    /** One primary base's kit contest: the kit, the kept spec option with
-     * its carried [weapon, ammo, offhand], and the score the primaries are
-     * ranked on. */
+    // One primary base's kit contest: the kit, the kept spec option with
+    // its carried [weapon, ammo, offhand], and the score the primaries are
+    // ranked on.
     @AllArgsConstructor
     static class Primary {
         final CombatStyle style;
@@ -2512,13 +2512,13 @@ public class OptimizerService {
         final double score;
     }
 
-    /** The carried spec weapon's pick for mob j on this side's OWN sets, from
-     * the side's ranked options: the kit's kept option was priced on the
-     * primary style's sets, so a card another style answers reads its own
-     * (ISS-01M5PKSQBAP823XNC13QBW8830: with the magic primary's dagger option
-     * priced for the Core alone, Ba-Ba's melee card lost the Wardens'
-     * dagger). Null when no option carries it or it adds nothing here. */
-    /** One side's kit answer for a style on one mob (the merge above); null when the kit has none. */
+    // The carried spec weapon's pick for mob j on this side's OWN sets, from
+    // the side's ranked options: the kit's kept option was priced on the
+    // primary style's sets, so a card another style answers reads its own
+    // (ISS-01M5PKSQBAP823XNC13QBW8830: with the magic primary's dagger option
+    // priced for the Core alone, Ba-Ba's melee card lost the Wardens'
+    // dagger). Null when no option carries it or it adds nothing here.
+    // One side's kit answer for a style on one mob (the merge above); null when the kit has none.
     @AllArgsConstructor
     static class Half {
         final DpsResult r;
@@ -2546,26 +2546,24 @@ public class OptimizerService {
         return null;
     }
 
-    /** One side's kit view, ready to merge over the phase-1 tabs. */
+    // One side's kit view, ready to merge over the phase-1 tabs.
     @AllArgsConstructor
     static class KitView {
         final Set<CombatStyle> styles;
         final GearItem specCarried;
-        /** The kept spec picks, or null when the swaps outbid the spec. */
+        // The kept spec picks, or null when the swaps outbid the spec.
         final SpecPick[] specs;
         final List<Map<CombatStyle, DpsResult>> shownByMob;
         final LinkedHashMap<Integer, GearItem> plan;
     }
 
-    /**
-     * The cross-style kit pass for ONE side (Yours or BiS): unify neutral
-     * ammo, try each style as the primary base, let the SPEC COMPETE for
-     * its slot against the swaps (field fix 2026-07-17: a spec weapon must
-     * not lock the budget when a cross-style weapon would answer an immune
-     * phase), pick the winner by HP-weighted total plus the spec's damage
-     * value, and compute every (mob, style) answer plus the trip plan.
-     * Returns null only when superseded mid-compute.
-     */
+    // The cross-style kit pass for ONE side (Yours or BiS): unify neutral
+    // ammo, try each style as the primary base, let the SPEC COMPETE for
+    // its slot against the swaps (field fix 2026-07-17: a spec weapon must
+    // not lock the budget when a cross-style weapon would answer an immune
+    // phase), pick the winner by HP-weighted total plus the spec's damage
+    // value, and compute every (mob, style) answer plus the trip plan.
+    // Returns null only when superseded mid-compute.
     KitView kitPass(DpsCalculator calc, List<MonsterStats> mobs,
         ComputeContext ctx, long ticket, Map<CombatStyle, SharedSide> sides, boolean defensive) {
         int n = mobs.size();
@@ -2795,7 +2793,7 @@ public class OptimizerService {
 
     static List<GearItem> carriedOf(KitAnswer kit) { return carriedOf(kit.singles, kit.bundles); }
 
-    /** Everything a kit carries, once each: the singles, then the bundles' pieces. */
+    // Everything a kit carries, once each: the singles, then the bundles' pieces.
     static List<GearItem> carriedOf(List<GearItem> singles, List<SwapBundle> bundles) {
         List<GearItem> carried = new ArrayList<>(singles);
         for (SwapBundle bundle : bundles) {
@@ -2806,15 +2804,13 @@ public class OptimizerService {
         return carried;
     }
 
-    /**
-     * Optimise ONE shared set per style across a roster of mobs. Single-mob
-     * rosters take the exact bestPerStyle path (wrapped as a 1-mob answer);
-     * multi-mob rosters choose the shared set by average dps and deliver a
-     * per-mob display bundle. Parameters mirror bestPerStyle (result-level
-     * params shared across the roster; exclusions, sims, pins, the pinned
-     * spell and the pinned spec are per member, keyed by profileId - the
-     * spec seats the FIRST member's).
-     */
+    // Optimise ONE shared set per style across a roster of mobs. Single-mob
+    // rosters take the exact bestPerStyle path (wrapped as a 1-mob answer);
+    // multi-mob rosters choose the shared set by average dps and deliver a
+    // per-mob display bundle. Parameters mirror bestPerStyle (result-level
+    // params shared across the roster; exclusions, sims, pins, the pinned
+    // spell and the pinned spec are per member, keyed by profileId - the
+    // spec seats the FIRST member's).
     public void bestPerStyleAcross( List<MonsterStats> mobs,
         PlayerLevels rl, PlayerLevels boostedLevels, PrayerUnlocks pu,
         RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
@@ -2855,8 +2851,8 @@ public class OptimizerService {
             "roster compute failed for {}", roster.get(0).name, callback);
     }
 
-    /** The per-style cache key: the query key minus per-style state, plus
-     * this style and the pins/exclusions/pinned-spell that shape ITS answer. */
+    // The per-style cache key: the query key minus per-style state, plus
+    // this style and the pins/exclusions/pinned-spell that shape ITS answer.
     static String styleKey(String bk, CombatStyle style, ComputeContext ctx, MonsterStats mob) {
         return bk + "|" + style.name() + "|" + excludedFor(ctx, style, mob).hashCode() + "|" + pinKey(ctx, style, mob);
     }
@@ -2866,51 +2862,49 @@ public class OptimizerService {
         return boost == null ? prayer : prayer + " + " + boost;
     }
 
-    /** Package-private: SpecPoisonTest pins the spec tie-break. */
+    // Package-private: SpecPoisonTest pins the spec tie-break.
     @AllArgsConstructor
     static class SpecPick {
         final SpecialAttack spec;
         final GearItem weapon;
         final double expectedDamage;
-        /** The DPS this spec ADDS to the kill over just attacking - the
-         * win-over-replacement value the card shows and the ranking key. */
+        // The DPS this spec ADDS to the kill over just attacking - the
+        // win-over-replacement value the card shows and the ranking key.
         final double dpsAdded;
-        /** Non-null when the spec needs its own ammo carried (a dark bow
-         * next to a chargebow base needs arrows - an extra slot). */
+        // Non-null when the spec needs its own ammo carried (a dark bow
+        // next to a chargebow base needs arrows - an extra slot).
         final GearItem ammo;
-        /** The offhand brought for the switch - a one-handed spec weapon
-         * off a two-handed main (N, Discord 2026-09-26). An extra slot. */
+        // The offhand brought for the switch - a one-handed spec weapon
+        // off a two-handed main (N, Discord 2026-09-26). An extra slot.
         final GearItem offhand;
-        /** This pick WITH its best offhand and the numbers that follow;
-         * null when none applies. The bare pick is what ranks. */
+        // This pick WITH its best offhand and the numbers that follow;
+        // null when none applies. The bare pick is what ranks.
         final SpecPick upgraded;
     }
 
-    /** The pick the inventory can seat: the offhand rides only when the
-     * weapon, its ammo and the offhand all have a slot. */
+    // The pick the inventory can seat: the offhand rides only when the
+    // weapon, its ammo and the offhand all have a slot.
     static SpecPick seat(SpecPick pick, int slots) {
         return pick != null && pick.upgraded != null && slots >= (pick.ammo == null ? 2 : 3) ? pick.upgraded : pick;
     }
 
-    /**
-     * The strongest special-attack weapon for this style, evaluated by
-     * swapping it into the base set (shield dropped for two-handers, ammo
-     * re-picked for compatibility) and applying the spec's verified roll
-     * modifiers. With an ownership ledger, only owned weapons/ammo count
-     * (requirement #7/#8); with null, everything standard counts - the
-     * game-best spec.
-     */
-    /** One shared spec weapon for the whole roster: candidates are each
-     * mob's free pick, RANKED by HP-weighted value added (a mob a candidate
-     * cannot roll against contributes zero). The kit seat check walks this
-     * ranking and keeps the strongest option that pays for its carried slot
-     * - the argmax winner alone can be vetoed at the seat (a drain-heavy
-     * pick whose value the damage-priced seat cannot see), and dropping the
-     * spec entirely loses to carrying the runner-up (regression 2026-08-08:
-     * the DWH outbid the dagger trip-wide, failed its seat, and the roster
-     * carried no spec at all). Each entry is one candidate's per-mob
-     * SpecPicks (null where it cannot spec); empty list = no candidate has
-     * positive trip value. */
+    // The strongest special-attack weapon for this style, evaluated by
+    // swapping it into the base set (shield dropped for two-handers, ammo
+    // re-picked for compatibility) and applying the spec's verified roll
+    // modifiers. With an ownership ledger, only owned weapons/ammo count
+    // (requirement #7/#8); with null, everything standard counts - the
+    // game-best spec.
+    // One shared spec weapon for the whole roster: candidates are each
+    // mob's free pick, RANKED by HP-weighted value added (a mob a candidate
+    // cannot roll against contributes zero). The kit seat check walks this
+    // ranking and keeps the strongest option that pays for its carried slot
+    // - the argmax winner alone can be vetoed at the seat (a drain-heavy
+    // pick whose value the damage-priced seat cannot see), and dropping the
+    // spec entirely loses to carrying the runner-up (regression 2026-08-08:
+    // the DWH outbid the dagger trip-wide, failed its seat, and the roster
+    // carried no spec at all). Each entry is one candidate's per-mob
+    // SpecPicks (null where it cannot spec); empty list = no candidate has
+    // positive trip value.
     List<SpecPick[]> chooseSharedSpec(ComputeContext ctx, List<MonsterStats> mobs,
         List<OptimizationRequest> reqs, DpsResult[] shown, OwnedItems owned, double[] weights) {
         int n = mobs.size();
@@ -2960,12 +2954,12 @@ public class OptimizerService {
         return ranked;
     }
 
-    /** The shared set with a Lightbearer in the ring slot, or null when the
-     * roster arbitration cannot apply: no shared set, already a Lightbearer,
-     * a ring pinned or a risk budget on any mob (the shared risk package is
-     * not re-priced here - conservative skip), or the ring unavailable
-     * (unowned and unsimmed, excluded, requirements). owned == null is the
-     * game-best side: everything standard is available. */
+    // The shared set with a Lightbearer in the ring slot, or null when the
+    // roster arbitration cannot apply: no shared set, already a Lightbearer,
+    // a ring pinned or a risk budget on any mob (the shared risk package is
+    // not re-priced here - conservative skip), or the ring unavailable
+    // (unowned and unsimmed, excluded, requirements). owned == null is the
+    // game-best side: everything standard is available.
     static Loadout lightbearerVariant(LoadoutData dataset, Loadout shared, List<OptimizationRequest> reqs, OwnedItems owned) {
         if (shared == null) return null;
         for (OptimizationRequest req : reqs) {
@@ -2974,11 +2968,11 @@ public class OptimizerService {
         return lightbearerSwap(dataset, shared, reqs, owned);
     }
 
-    /** The shared Lightbearer machinery: find the ring, prove it available
-     * under every request (excluded/requirements/owned-or-dreamed), and wear
-     * it into the set - null when the swap cannot apply. Callers layer their
-     * own pin/risk policy on top (the roster skips risk conservatively; the
-     * single-mob arbitration prices it). */
+    // The shared Lightbearer machinery: find the ring, prove it available
+    // under every request (excluded/requirements/owned-or-dreamed), and wear
+    // it into the set - null when the swap cannot apply. Callers layer their
+    // own pin/risk policy on top (the roster skips risk conservatively; the
+    // single-mob arbitration prices it).
     static Loadout lightbearerSwap(LoadoutData dataset, Loadout shared, List<OptimizationRequest> reqs, OwnedItems owned) {
         GearItem worn = shared.get(RING);
         if (worn != null && worn.nameLower.contains("lightbearer")) return null;
@@ -2999,13 +2993,13 @@ public class OptimizerService {
         return shared.with(RING, l2);
     }
 
-    /** The trip time the top-ranked shared-spec option saves on these shown sets. */
+    // The trip time the top-ranked shared-spec option saves on these shown sets.
     static double topSpecScore(List<SpecPick[]> options, double[] weights, DpsResult[] shown, List<MonsterStats> mobs) {
         return options.isEmpty() ? 0 : tripValue(options.get(0), weights, shown, mobs);
     }
 
-    /** The trip time a spec option saves (worth's currency): each member's
-     * kill with the spec's dpsAdded on top of its shown set's net dps. */
+    // The trip time a spec option saves (worth's currency): each member's
+    // kill with the spec's dpsAdded on top of its shown set's net dps.
     static double tripValue(SpecPick[] picks, double[] weights, DpsResult[] shown, List<MonsterStats> mobs) {
         double score = 0;
         for (int j = 0; j < weights.length; j++) {
@@ -3014,8 +3008,8 @@ public class OptimizerService {
         return score;
     }
 
-    /** Weighted trip value of one shared-spec option (null = no spec there):
-     * a style side weighs by styleUseWeights, the cross-style kit by hpWeights. */
+    // Weighted trip value of one shared-spec option (null = no spec there):
+    // a style side weighs by styleUseWeights, the cross-style kit by hpWeights.
     static double tripValue(SpecPick[] picks, double[] weights) {
         double score = 0;
         for (int j = 0; j < weights.length; j++) {
@@ -3024,22 +3018,22 @@ public class OptimizerService {
         return score;
     }
 
-    /** owned == null is the game-best side: everything standard counts. */
+    // owned == null is the game-best side: everything standard counts.
     static boolean available(OwnedItems owned, OptimizationRequest request, int id) {
         return owned == null || owned.owns(id) || request.isDream(id);
     }
 
-    /** The spec's expected damage per use at the Multi card's stack. */
+    // The spec's expected damage per use at the Multi card's stack.
     static double specDamage(SpecialAttack spec, DpsResult base, OptimizationRequest request) {
         return spec.expectedDamage(base, request.monster, request.getLevels())
             * spec.multiFactor(request.multiStack);
     }
 
-    /** The carried slots a shared-spec option costs: [weapon, ammo,
-     * offhand], all null when the base already wears the spec weapon (it rides free). A
-     * dark bow next to a chargebow base needs its arrows carried too - the
-     * spec spends TWO slots when the base quiver cannot feed it (field
-     * spec 2026-07-18). */
+    // The carried slots a shared-spec option costs: [weapon, ammo,
+    // offhand], all null when the base already wears the spec weapon (it rides free). A
+    // dark bow next to a chargebow base needs its arrows carried too - the
+    // spec spends TWO slots when the base quiver cannot feed it (field
+    // spec 2026-07-18).
     static GearItem[] carriedSpecOf(SpecPick[] specs, Loadout shared) {
         for (SpecPick pick : specs) {
             if (pick != null && pick.weapon != null && shared != null && (shared.getWeapon() == null
@@ -3050,7 +3044,7 @@ public class OptimizerService {
         return new GearItem[3];
     }
 
-    /** The bench slots those carried pieces spend. */
+    // The bench slots those carried pieces spend.
     static int slotsOf(GearItem... slots) {
         int spent = 0;
         for (GearItem slot : slots) {
@@ -3059,18 +3053,18 @@ public class OptimizerService {
         return spent;
     }
 
-    /** restrictTo non-null: only these weapon ids are scanned - the roster
-     * path uses it to evaluate ONE shared spec weapon per mob. */
-    /** The Lightbearer never survives the ring slot's raw-stat cut (its
-     * stat line is empty), but its doubled spec regen can beat the best
-     * dps ring ON THE TOTAL - set dps + spec dps-added - at fights with
-     * real spec value (roadmap's "compare the two totals"; field report
-     * 2026-08-08: "it can be really impactful in fights with big spec
-     * utility"). Deterministic post-arbitration: both candidates fully
-     * priced, the argmax wins, the beam is never touched. On a win the
-     * results list is updated in place so the card shows the ring that
-     * earned its slot. Rosters run the same argmax at the shared-set
-     * altitude (lightbearerVariant, field report 2026-08-08 #2). */
+    // restrictTo non-null: only these weapon ids are scanned - the roster
+    // path uses it to evaluate ONE shared spec weapon per mob.
+    // The Lightbearer never survives the ring slot's raw-stat cut (its
+    // stat line is empty), but its doubled spec regen can beat the best
+    // dps ring ON THE TOTAL - set dps + spec dps-added - at fights with
+    // real spec value (roadmap's "compare the two totals"; field report
+    // 2026-08-08: "it can be really impactful in fights with big spec
+    // utility"). Deterministic post-arbitration: both candidates fully
+    // priced, the argmax wins, the beam is never touched. On a win the
+    // results list is updated in place so the card shows the ring that
+    // earned its slot. Rosters run the same argmax at the shared-set
+    // altitude (lightbearerVariant, field report 2026-08-08 #2).
     SpecPick arbitrateLightbearer( LoadoutData dataset, OptimizationRequest request, List<DpsResult> results,
         OwnedItems owned, Set<Integer> rt) {
         SpecPick spec = bestSpec(dataset, request, results.isEmpty() ? null : results.get(0), owned, rt, rt != null);
@@ -3096,11 +3090,11 @@ public class OptimizerService {
         return spec;
     }
 
-    /** main: the worn set's result the spec swaps into (null = nothing to
-     * spec from). keepZero: keep a restricted (user-PINNED) weapon even
-     * when it adds ~0 dps, so the pin always displays with an honest
-     * number instead of silently vanishing (field report 2026-08-09: a
-     * pinned Tonalztics showed nothing on a set it did not help). */
+    // main: the worn set's result the spec swaps into (null = nothing to
+    // spec from). keepZero: keep a restricted (user-PINNED) weapon even
+    // when it adds ~0 dps, so the pin always displays with an honest
+    // number instead of silently vanishing (field report 2026-08-09: a
+    // pinned Tonalztics showed nothing on a set it did not help).
     SpecPick bestSpec( LoadoutData dataset, OptimizationRequest request, DpsResult main, OwnedItems owned,
         Set<Integer> rt, boolean keepZero) {
         if (main == null) return null;
@@ -3191,53 +3185,47 @@ public class OptimizerService {
         return best;
     }
 
-    /**
-     * Defence-drain specs (DWH/BGS/elder maul) are worth more than their
-     * hit: a landed drain raises the main set's DPS for the REST of the
-     * kill. Valued as land-chance x dps-gain-at-drained-defence x expected
-     * remaining fight (monster hp / current dps) - which is exactly why
-     * drains shine on high-HP, high-defence targets and are pointless on
-     * throwaway mobs.
-     */
-    /**
-     * The DPS this spec ADDS to the kill over just attacking with the main
-     * set - its win-over-replacement value, the ranking key and the number
-     * the card shows (field direction 2026-07-19). Three ingredients:
-     *
-     * <ul>
-     * <li><b>Marginal.</b> Every spec fired gives up a main-hand attack, so
-     *     the per-use win is {@code specDamage - replacedAuto}, never the raw
-     *     spec damage.</li>
-     * <li><b>Regen-aware over the fight.</b> The opening 100% bar
-     *     ({@code 100/cost} uses) amortises across the kill length, on top of
-     *     the sustained regen-fed rate (10%/30s, doubled by a Lightbearer) -
-     *     a longer kill fits more specs.</li>
-     * <li><b>Drain, for every style.</b> A landed defence-drain lowers the
-     *     Defence LEVEL, which ranged and magic roll against too, not only
-     *     melee (v0.3.1 valued the drain for melee main-hands only). The
-     *     player fishes for the land with the specs the energy budget
-     *     allows - P(landed) over the attempts, charged the EXPECTED specs
-     *     spent (fishing stops on the land) - so a Lightbearer's doubled
-     *     regen buys real drain probability where the budget limits
-     *     fishing (field report 2026-08-08).</li>
-     * </ul>
-     *
-     * A weapon is used the better of the two ways (damage or drain), so the
-     * value is their max, not their sum - a small undercount for a spec that
-     * genuinely does both at once (BGS), accepted for v1.
-     */
-    /** The spec energy available per kill at SUSTAINED pace (field
-     * direction 2026-08-08: "sustained is more realistic for 99% of
-     * outings" - a 50-200 mob grind is regen-bound, so the opening bar
-     * amortises to nothing and specs per kill go fractional): regen
-     * (10%/30s, doubled by a Lightbearer) over the kill, plus - with
-     * Death Charge assumed - one 15% refund per cast window, scaled down
-     * when kills come faster than the window (the refund needs a killing
-     * blow in it). Yama's rite of vile transference upgrades the spell to
-     * refund from TWO kills per cast, an effective 30s window (level 2).
-     * The old burst frame (every kill opens on a full 100% bar) is
-     * roadmapped as a POH-pool mode. Package-private: the deterministic
-     * unit under DeathChargeTest. */
+    // Defence-drain specs (DWH/BGS/elder maul) are worth more than their
+    // hit: a landed drain raises the main set's DPS for the REST of the
+    // kill. Valued as land-chance x dps-gain-at-drained-defence x expected
+    // remaining fight (monster hp / current dps) - which is exactly why
+    // drains shine on high-HP, high-defence targets and are pointless on
+    // throwaway mobs.
+    // The DPS this spec ADDS to the kill over just attacking with the main
+    // set - its win-over-replacement value, the ranking key and the number
+    // the card shows (field direction 2026-07-19). Three ingredients:
+    // <ul>
+    // <li><b>Marginal.</b> Every spec fired gives up a main-hand attack, so
+    //     the per-use win is {@code specDamage - replacedAuto}, never the raw
+    //     spec damage.</li>
+    // <li><b>Regen-aware over the fight.</b> The opening 100% bar
+    //     ({@code 100/cost} uses) amortises across the kill length, on top of
+    //     the sustained regen-fed rate (10%/30s, doubled by a Lightbearer) -
+    //     a longer kill fits more specs.</li>
+    // <li><b>Drain, for every style.</b> A landed defence-drain lowers the
+    //     Defence LEVEL, which ranged and magic roll against too, not only
+    //     melee (v0.3.1 valued the drain for melee main-hands only). The
+    //     player fishes for the land with the specs the energy budget
+    //     allows - P(landed) over the attempts, charged the EXPECTED specs
+    //     spent (fishing stops on the land) - so a Lightbearer's doubled
+    //     regen buys real drain probability where the budget limits
+    //     fishing (field report 2026-08-08).</li>
+    // </ul>
+    // A weapon is used the better of the two ways (damage or drain), so the
+    // value is their max, not their sum - a small undercount for a spec that
+    // genuinely does both at once (BGS), accepted for v1.
+    // The spec energy available per kill at SUSTAINED pace (field
+    // direction 2026-08-08: "sustained is more realistic for 99% of
+    // outings" - a 50-200 mob grind is regen-bound, so the opening bar
+    // amortises to nothing and specs per kill go fractional): regen
+    // (10%/30s, doubled by a Lightbearer) over the kill, plus - with
+    // Death Charge assumed - one 15% refund per cast window, scaled down
+    // when kills come faster than the window (the refund needs a killing
+    // blow in it). Yama's rite of vile transference upgrades the spell to
+    // refund from TWO kills per cast, an effective 30s window (level 2).
+    // The old burst frame (every kill opens on a full 100% bar) is
+    // roadmapped as a POH-pool mode. Package-private: the deterministic
+    // unit under DeathChargeTest.
     static double specEnergyOverKill(double ts, boolean l2, int dcl, boolean freshBar) {
         double regenPerSec = l2 ? 10.0 / 15.0 : 10.0 / 30.0;
         double window = dcl >= 2 ? 30.0 : 60.0;
@@ -3309,8 +3297,8 @@ public class OptimizerService {
         return max(damageDps, dd);
     }
 
-    /** The base set with the spec weapon swapped in, or null if unusable.
-     * owned == null -> any standard ammo may be picked (game-best spec). */
+    // The base set with the spec weapon swapped in, or null if unusable.
+    // owned == null -> any standard ammo may be picked (game-best spec).
     Loadout specLoadout(LoadoutData dataset, Loadout baseSet, GearItem weapon, OwnedItems owned, OptimizationRequest request,
         GearItem[] ao) {
         Loadout out = withSwap(baseSet, weapon);
@@ -3332,10 +3320,10 @@ public class OptimizerService {
         return out;
     }
 
-    /** The per-style assumption bundle: your levels/boost/prayer label and
-     * the game-ceiling versions. Shared by the single-mob and roster paths
-     * (they MUST agree - levels and labels depend on style + owned + real,
-     * never the mob). */
+    // The per-style assumption bundle: your levels/boost/prayer label and
+    // the game-ceiling versions. Shared by the single-mob and roster paths
+    // (they MUST agree - levels and labels depend on style + owned + real,
+    // never the mob).
     @AllArgsConstructor
     static class StylePlan {
         final PlayerLevels levels;
@@ -3344,8 +3332,8 @@ public class OptimizerService {
         final String gameLabel;
     }
 
-    /** Decorate a request with the user's prayer pick: NONE = prayerless,
-     * a named tier = that tier's factors for this style (detect otherwise). */
+    // Decorate a request with the user's prayer pick: NONE = prayerless,
+    // a named tier = that tier's factors for this style (detect otherwise).
     static OptimizationRequest withPrayerPick(OptimizationRequest r,
         ComputeContext ctx, CombatStyle style, PlayerLevels levels, PrayerUnlocks unlocks) {
         String pick = ctx.prayerPicks.get(style);
@@ -3353,8 +3341,8 @@ public class OptimizerService {
         return r.withPrayers("NONE".equals(pick) ? NONE : forPick(style, pick, bestAvailable(levels, unlocks)));
     }
 
-    /** The user's boost pick for this style (assume-chip picker), or null
-     * for detect; "NONE" maps to the unboosted profile. */
+    // The user's boost pick for this style (assume-chip picker), or null
+    // for detect; "NONE" maps to the unboosted profile.
     static BoostProfile boostPickFor(ComputeContext ctx, CombatStyle style) {
         String pick = ctx.boostPicks.get(style);
         if (pick == null) return null;
@@ -3363,8 +3351,8 @@ public class OptimizerService {
         } catch (IllegalArgumentException bad) { return null; }
     }
 
-    /** The assumed-prayer label part: the user's pick (null part when
-     * prayerless), or detect's best-available tier. */
+    // The assumed-prayer label part: the user's pick (null part when
+    // prayerless), or detect's best-available tier.
     static String prayerLabelFor(ComputeContext ctx, CombatStyle style, PlayerLevels levels, PrayerUnlocks unlocks) {
         String pick = ctx.prayerPicks.get(style);
         if (pick == null) return bestAvailable(levels, unlocks).nameFor(style);
@@ -3389,17 +3377,17 @@ public class OptimizerService {
         return new StylePlan(levels, label, gameLevels, gameLabel);
     }
 
-    /** A multi tool's pins and spell, in place of the mob's own. */
+    // A multi tool's pins and spell, in place of the mob's own.
     static class ToolPick {
         Map<GearSlot, Integer> pins = Map.of();
         Map<GearSlot, Integer> gamePins = Map.of();
         SpellStats spell;
     }
 
-    /** The best-OWNED request for one mob at one style - shared verbatim by
-     * the single-mob and roster paths (they MUST agree). Pins shape YOUR
-     * set only; a pinned autocast spell forces the magic search around it;
-     * a multi tool (nullable) brings its own pins and spell. */
+    // The best-OWNED request for one mob at one style - shared verbatim by
+    // the single-mob and roster paths (they MUST agree). Pins shape YOUR
+    // set only; a pinned autocast spell forces the magic search around it;
+    // a multi tool (nullable) brings its own pins and spell.
     OptimizationRequest ownedRequestFor(ComputeContext ctx, MonsterStats mob,
         CombatStyle style, PlayerLevels sl, ToolPick tool) {
         OptimizationRequest r = request(ctx, mob, style, sl, ctx.unlocks, ctx.requirements,
@@ -3414,12 +3402,12 @@ public class OptimizerService {
         return r;
     }
 
-    /** Required slayer gear you own none of (ISS-01M5JJ0Z4M988DR0M0ZGJHD139,
-     * Andrew 2026-10-22: "we should pin/require those by default and show
-     * them as necessary even when the player doesn't own those items"): the
-     * first acceptable item you can equip rides as if owned for this
-     * request, so the card wears it - marked not owned - instead of the
-     * requirement quietly lapsing. Soft rules and a pinned slot never force. */
+    // Required slayer gear you own none of (ISS-01M5JJ0Z4M988DR0M0ZGJHD139,
+    // Andrew 2026-10-22: "we should pin/require those by default and show
+    // them as necessary even when the player doesn't own those items"): the
+    // first acceptable item you can equip rides as if owned for this
+    // request, so the card wears it - marked not owned - instead of the
+    // requirement quietly lapsing. Soft rules and a pinned slot never force.
     Set<Integer> withForcedRequired(ComputeContext ctx, MonsterStats mob, CombatStyle style, Set<Integer> dreams) {
         Map<GearSlot, Integer> pins = pinsFor(ctx, style, mob);
         Set<Integer> out = null;
@@ -3439,15 +3427,14 @@ public class OptimizerService {
         return out == null ? dreams : out;
     }
 
-    /** The game-ceiling request: every obtainable item you can actually
-     * equip, no pins - so Yours and BiS differ by OWNERSHIP alone, which is
-     * the gap the comparison is meant to isolate.
-     *
-     * <p>This gated on RequirementProfile.MAXED until 2026-08-27. The intent
-     * was a pure gear gap, but it introduced a second difference between the
-     * two sides and, on a low-level account, named gear the player cannot
-     * wear: Obor's BiS came back a rune scimitar at 10 Attack, a DPS that can
-     * never occur, since reaching 40 Attack changes the number. */
+    // The game-ceiling request: every obtainable item you can actually
+    // equip, no pins - so Yours and BiS differ by OWNERSHIP alone, which is
+    // the gap the comparison is meant to isolate.
+    // <p>This gated on RequirementProfile.MAXED until 2026-08-27. The intent
+    // was a pure gear gap, but it introduced a second difference between the
+    // two sides and, on a low-level account, named gear the player cannot
+    // wear: Obor's BiS came back a rune scimitar at 10 Attack, a DPS that can
+    // never occur, since reaching 40 Attack changes the number.
     OptimizationRequest gameRequestFor(ComputeContext ctx, MonsterStats mob,
         CombatStyle style, PlayerLevels gameLevels, ToolPick tool) {
         // The max cape options (ISS-01M5T53FBMHVMJTDPS5ZW4WS50, Andrew
@@ -3475,10 +3462,10 @@ public class OptimizerService {
         return withPrayerPick(r, ctx, style, gameLevels, ctx.p.f2pOnly ? F2P : ALL);
     }
 
-    /** The request both the owned and the game-best sides start from: the
-     * mob, style and levels, the best prayers at those levels and unlocks
-     * (the spell auto-picked, untradeables counted, budgetGp = the total
-     * upgrade spend OWNED_OR_BUDGET allows) and the query-wide settings. */
+    // The request both the owned and the game-best sides start from: the
+    // mob, style and levels, the best prayers at those levels and unlocks
+    // (the spell auto-picked, untradeables counted, budgetGp = the total
+    // upgrade spend OWNED_OR_BUDGET allows) and the query-wide settings.
     OptimizationRequest request(ComputeContext ctx, MonsterStats mob, CombatStyle style,
         PlayerLevels levels, PrayerUnlocks unlocks, RequirementProfile requirements, CandidateMode mode, int limit, int budgetGp) {
         return new OptimizationRequest(mob, style, levels, bestAvailable(levels, unlocks),
@@ -3499,8 +3486,8 @@ public class OptimizerService {
         return view;
     }
 
-    /** Drop all cached results - account or profile switched. The optimize
-     * cache goes too: its key carries no quest or diary state. */
+    // Drop all cached results - account or profile switched. The optimize
+    // cache goes too: its key carries no quest or diary state.
     public void clearCache() {
         synchronized (cache) { cache.clear(); }
         synchronized (optimizeCache) { optimizeCache.clear(); }

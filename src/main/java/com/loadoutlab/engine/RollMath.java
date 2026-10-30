@@ -40,23 +40,23 @@ public class RollMath {
         return accuracy * (maxHit / 2.0 + 1.0 / (maxHit + 1.0));
     }
 
-    /** The venator bow's chain in multi (wiki): two bounces, each rolled on
-     * its own accuracy at a max of two-thirds of the first, floored - so
-     * the whole arrow is worth 1 + 2 x E(floor(2m/3)) / E(m) single hits
-     * (accuracy cancels). One target: 1. */
+    // The venator bow's chain in multi (wiki): two bounces, each rolled on
+    // its own accuracy at a max of two-thirds of the first, floored - so
+    // the whole arrow is worth 1 + 2 x E(floor(2m/3)) / E(m) single hits
+    // (accuracy cancels). One target: 1.
     public static double venatorFactor(int maxHit) {
         if (maxHit <= 0) return 1.0;
         return 1.0 + 2.0 * normalExpectedHit(1.0, maxHit * 2 / 3) / normalExpectedHit(1.0, maxHit);
     }
 
-    /** Expected hit under the monster's FLAT ARMOUR, official-calc
-     * semantics (flatAddTransformer, verified 2026-08-21): POSITIVE
-     * armour clamps EVERY roll to max(0, k - armour) - the low rolls
-     * become zeros, which the old shifted-bounds model missed
-     * (Eclipse Moon overpriced ~16%, grey golem ~15%). Negative
-     * armour (Blood/Blue Moon's flat bonus) is an exact bound shift,
-     * delegated so armour-free numbers stay bit-identical. Bounds are
-     * RAW (pre-armour). */
+    // Expected hit under the monster's FLAT ARMOUR, official-calc
+    // semantics (flatAddTransformer, verified 2026-08-21): POSITIVE
+    // armour clamps EVERY roll to max(0, k - armour) - the low rolls
+    // become zeros, which the old shifted-bounds model missed
+    // (Eclipse Moon overpriced ~16%, grey golem ~15%). Negative
+    // armour (Blood/Blue Moon's flat bonus) is an exact bound shift,
+    // delegated so armour-free numbers stay bit-identical. Bounds are
+    // RAW (pre-armour).
     public static double expectedHitWithFlatArmour(double accuracy, int minHit, int maxHit, int armour) {
         if (armour <= 0) {
             // NEGATIVE armour is a flat damage BONUS, and their
@@ -78,9 +78,9 @@ public class RollMath {
         return accuracy * ((double) sum / (maxHit - lo + 1));
     }
 
-    /** The best of several damage rolls on one landed hit (the Obligator's
-     * Lunge): P(best = v) weights each roll's damage under the same flat
-     * armour rule as expectedHitWithFlatArmour; best of one is that hit. */
+    // The best of several damage rolls on one landed hit (the Obligator's
+    // Lunge): P(best = v) weights each roll's damage under the same flat
+    // armour rule as expectedHitWithFlatArmour; best of one is that hit.
     public static double bestOfExpected(double accuracy, int maxHit, int rolls, int armour) {
         if (maxHit <= 0 || accuracy <= 0.0) return 0.0;
         double total = 0;
@@ -93,7 +93,7 @@ public class RollMath {
         return accuracy * total;
     }
 
-    /** 0 + 1 + ... + n; n below zero is an empty run. */
+    // 0 + 1 + ... + n; n below zero is an empty run.
     static long triangle(long n) { return n <= 0 ? 0 : n * (n + 1) / 2; }
 
     public static double expectedHit(double accuracy, int minHit, int maxHit) {
@@ -103,10 +103,10 @@ public class RollMath {
         return accuracy * ((minimum + maxHit) / 2.0);
     }
 
-    /** Confliction gauntlets (official BaseCalc): casting one-handed
-     * grants a SECOND accuracy roll, resolved as
-     * double / (1 + double - single) - the same double-roll the fang
-     * uses, folded so the extra roll cannot exceed certainty. */
+    // Confliction gauntlets (official BaseCalc): casting one-handed
+    // grants a SECOND accuracy roll, resolved as
+    // double / (1 + double - single) - the same double-roll the fang
+    // uses, folded so the extra roll cannot exceed certainty.
     public static double conflictionAccuracy(long attackRoll, long defenceRoll) {
         double single = normalAccuracy(attackRoll, defenceRoll);
         double doubleRoll = fangAccuracy(attackRoll, defenceRoll);

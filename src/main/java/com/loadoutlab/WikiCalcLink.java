@@ -10,27 +10,25 @@ import net.runelite.client.util.LinkBrowser;
 import okhttp3.*;
 import static com.loadoutlab.data.JsonResources.*;
 
-/**
- * One-click "open this exact setup in the official wiki calculator":
- * builds the calculator's ImportableData shape from a shown result, POSTs
- * it to the wiki's shortlink service (the same endpoint the calculator's
- * own Share button uses - the ONLY way a full setup can ride a URL), and
- * opens {@code ?id=<shortlink>}. Strictly user-initiated; shapes verified
- * against weirdgloop/osrs-dps-calc source 2026-07-23 (IMPORT_VERSION 10).
- */
+// One-click "open this exact setup in the official wiki calculator":
+// builds the calculator's ImportableData shape from a shown result, POSTs
+// it to the wiki's shortlink service (the same endpoint the calculator's
+// own Share button uses - the ONLY way a full setup can ride a URL), and
+// opens {@code ?id=<shortlink>}. Strictly user-initiated; shapes verified
+// against weirdgloop/osrs-dps-calc source 2026-07-23 (IMPORT_VERSION 10).
 @Slf4j
 @lombok.AllArgsConstructor
 public class WikiCalcLink {
     static final String SHORTLINK_API = "https://tools.runescape.wiki/osrs-dps/shortlink";
     static final String CALC_URL = "https://tools.runescape.wiki/osrs-dps/?id=";
 
-    /** Their Prayer enum ordinals by the tier names our labels use, and
-     * their Potion enum ordinals by OUR boost labels (the calculator has
-     * no divine variants - identical numbers - so divines map to the
-     * base). Data-driven from wiki_calc_ids.json (a token-free resource).
-     * Fail SOFT like AssumeIcons: this class is constructed in startUp, so
-     * a static-init throw would kill the whole plugin over a share button;
-     * WikiCalcLinkTest pins the exact ordinals loudly instead. */
+    // Their Prayer enum ordinals by the tier names our labels use, and
+    // their Potion enum ordinals by OUR boost labels (the calculator has
+    // no divine variants - identical numbers - so divines map to the
+    // base). Data-driven from wiki_calc_ids.json (a token-free resource).
+    // Fail SOFT like AssumeIcons: this class is constructed in startUp, so
+    // a static-init throw would kill the whole plugin over a share button;
+    // WikiCalcLinkTest pins the exact ordinals loudly instead.
     static final Map<String, Integer> PRAYER_IDS = new LinkedHashMap<>();
     static final Map<String, int[]> POTION_IDS = new LinkedHashMap<>();
 
@@ -46,8 +44,8 @@ public class WikiCalcLink {
     final OkHttpClient http;
     final Gson gson;
 
-    /** POST the setup to the shortlink service, then open the calculator
-     * on the returned id. Fire-and-forget; failures only log. */
+    // POST the setup to the shortlink service, then open the calculator
+    // on the returned id. Fire-and-forget; failures only log.
     public void open(MonsterStats mob, DpsResult shown, int dartId, String assumes,
         PlayerLevels real, PlayerLevels live, boolean onSlayerTask, boolean inWilderness) {
         Map data = payload(mob, shown, dartId, assumes, real, live, onSlayerTask, inWilderness);
@@ -73,7 +71,7 @@ public class WikiCalcLink {
         });
     }
 
-    /** The ImportableData document, built pure for testability. */
+    // The ImportableData document, built pure for testability.
     static Map payload(MonsterStats mob, DpsResult shown, int dartId,
         String assumes, PlayerLevels real, PlayerLevels live, boolean onSlayerTask, boolean inWilderness) {
         List<Integer> prayers = new ArrayList<>();
@@ -165,16 +163,16 @@ public class WikiCalcLink {
         return map("serializationVersion", 10, "loadouts", loadouts, "selectedLoadout", 0, "monster", monster);
     }
 
-    /** Their PlayerSkills shape. Mining/herblore are not tracked here -
-     * 99 keeps the rare pickaxe-dependent checks permissive. */
+    // Their PlayerSkills shape. Mining/herblore are not tracked here -
+    // 99 keeps the rare pickaxe-dependent checks permissive.
     static Map skillsMap(PlayerLevels levels) {
         return map("atk", levels.attack, "str", levels.strength, "def", levels.defence,
             "hp", levels.hitpoints, "ranged", levels.ranged, "magic", levels.magic,
             "prayer", levels.prayer, "mining", 99, "herblore", 99);
     }
 
-    /** The per-skill boost DELTAS the calculator adds to the base skills -
-     * computed from our own boost model so the math matches exactly. */
+    // The per-skill boost DELTAS the calculator adds to the base skills -
+    // computed from our own boost model so the math matches exactly.
     static Map boostsMap(BoostProfile boost, PlayerLevels real, PlayerLevels live) {
         PlayerLevels boosted = boost == null ? real : boost.apply(real, live);
         return map("atk", boosted.attack - real.attack,
@@ -183,10 +181,10 @@ public class WikiCalcLink {
             "prayer", 0, "mining", 0, "herblore", 0);
     }
 
-    /** Their PlayerCombatStyle {type, stance} from our attack-type strings:
-     * "slash (aggressive)", "ranged rapid - dragon dart", "magic: Fire
-     * Surge". The style NAME is omitted - the calculator's math reads only
-     * type and stance. */
+    // Their PlayerCombatStyle {type, stance} from our attack-type strings:
+    // "slash (aggressive)", "ranged rapid - dragon dart", "magic: Fire
+    // Surge". The style NAME is omitted - the calculator's math reads only
+    // type and stance.
     static Map<String, String> styleOf(String attackType) {
         if (attackType == null || attackType.isEmpty()) return null;
         Map<String, String> style = new LinkedHashMap<>();

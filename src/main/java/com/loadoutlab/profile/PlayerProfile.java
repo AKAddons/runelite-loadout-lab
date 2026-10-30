@@ -6,14 +6,12 @@ import com.loadoutlab.engine.*;
 import java.util.*;
 import net.runelite.api.Skill;
 
-/**
- * A player as data: levels (real and live-boosted), prayer unlocks,
- * equip requirements (skills + quests), and owned items. Everything a
- * query needs - so the optimizer can be driven by a MOCK environment
- * (fixtures, the headless runner, replayed bug reports) without a
- * running client. The plugin exports the real account to
- * .runelite/loadout-lab/profile.json on every query.
- */
+// A player as data: levels (real and live-boosted), prayer unlocks,
+// equip requirements (skills + quests), and owned items. Everything a
+// query needs - so the optimizer can be driven by a MOCK environment
+// (fixtures, the headless runner, replayed bug reports) without a
+// running client. The plugin exports the real account to
+// .runelite/loadout-lab/profile.json on every query.
 public class PlayerProfile {
     public final PlayerLevels realLevels;
     public final PlayerLevels boostedLevels;
@@ -21,8 +19,8 @@ public class PlayerProfile {
     public final RequirementProfile requirements;
     public final Map<Integer, Integer> owned;
     public final boolean bankScanned;
-    /** Optional provenance: origin label ("bank", "STASH", ...) -> items.
-     * The flat owned map stays the source of truth for the optimizer. */
+    // Optional provenance: origin label ("bank", "STASH", ...) -> items.
+    // The flat owned map stays the source of truth for the optimizer.
     public final Map<String, Map<Integer, Integer>> ownedBySource;
 
     public PlayerProfile(PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks, RequirementProfile requirements,
@@ -80,7 +78,7 @@ public class PlayerProfile {
         return root.toString();
     }
 
-    /** {"itemId": quantity} for an owned map. */
+    // {"itemId": quantity} for an owned map.
     static JsonObject items(Map<Integer, Integer> items) {
         var out = new JsonObject();
         items.forEach((id, n) -> out.addProperty(String.valueOf(id), n));
@@ -132,9 +130,9 @@ public class PlayerProfile {
         return object;
     }
 
-    /** Whether the plugin's cached level/prayer/quest snapshot, taken while
-     * {@code snapshotAccount} was logged in, may still serve now that the
-     * client reports {@code currentAccount} (-1 = logged out). */
+    // Whether the plugin's cached level/prayer/quest snapshot, taken while
+    // {@code snapshotAccount} was logged in, may still serve now that the
+    // client reports {@code currentAccount} (-1 = logged out).
     public static boolean snapshotSurvives(long snapshotAccount, long currentAccount) {
         // Logout keeps the last character (field report 2026-09-01: Piety at
         // 45 prayer once the snapshot was dropped and MAXED filled in); only

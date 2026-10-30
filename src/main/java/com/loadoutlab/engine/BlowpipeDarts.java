@@ -4,18 +4,15 @@ import com.google.gson.*;
 import com.loadoutlab.data.*;
 import java.util.*;
 
-/**
- * Blowpipes fire a LOADED dart whose ranged strength stacks on the
- * weapon's own stats - flat gear data cannot express it, which made bare
- * thrown dragon darts (35 str) outrank a dragon-dart blowpipe (20 + 35).
- *
- * <p>Game best assumes dragon darts; ownership-scoped queries use the
- * best dart tier the player owns (any poison variant counts). A blowpipe
- * with no owned darts gets no bonus and naturally falls out of the
- * suggestions - it cannot fire.
- */
+// Blowpipes fire a LOADED dart whose ranged strength stacks on the
+// weapon's own stats - flat gear data cannot express it, which made bare
+// thrown dragon darts (35 str) outrank a dragon-dart blowpipe (20 + 35).
+// <p>Game best assumes dragon darts; ownership-scoped queries use the
+// best dart tier the player owns (any poison variant counts). A blowpipe
+// with no owned darts gets no bonus and naturally falls out of the
+// suggestions - it cannot fire.
 public class BlowpipeDarts {
-    /** Dart tiers, strongest first: {ranged strength, ids...} (all poison variants). */
+    // Dart tiers, strongest first: {ranged strength, ids...} (all poison variants).
     static final int[][] TIERS;
     static final String[] TIER_NAMES;
 
@@ -34,8 +31,8 @@ public class BlowpipeDarts {
     }
 
 
-    /** Every tier for the pickers: [{id (unpoisoned base), name}],
-     * strongest first - excluding the base id protects the whole tier. */
+    // Every tier for the pickers: [{id (unpoisoned base), name}],
+    // strongest first - excluding the base id protects the whole tier.
     public static List<Map> tiers() {
         List<Map> out = new ArrayList<>();
         for (int tier = 0; tier < TIERS.length; tier++) {
@@ -47,20 +44,20 @@ public class BlowpipeDarts {
         return out;
     }
 
-    /** Extra ranged strength from the loaded dart, 0 for non-blowpipes. */
+    // Extra ranged strength from the loaded dart, 0 for non-blowpipes.
     public static int strength(OptimizationRequest request, GearItem weapon) {
         int tier = tierFor(request, weapon);
         return tier < 0 ? 0 : TIERS[tier][0];
     }
 
-    /** The assumed/owned dart tier name for display, or null. */
+    // The assumed/owned dart tier name for display, or null.
     public static String tierName(OptimizationRequest request, GearItem weapon) {
         int tier = tierFor(request, weapon);
         return tier < 0 ? null : TIER_NAMES[tier];
     }
 
-    /** The representative (unpoisoned) dart id for a display tier name -
-     * lets the panel offer "exclude the loaded darts" on the blowpipe. */
+    // The representative (unpoisoned) dart id for a display tier name -
+    // lets the panel offer "exclude the loaded darts" on the blowpipe.
     public static Integer baseIdForTierName(String tierName) {
         for (int tier = 0; tier < TIER_NAMES.length; tier++) {
             if (TIER_NAMES[tier].equals(tierName)) return TIERS[tier][1];
@@ -68,7 +65,7 @@ public class BlowpipeDarts {
         return null;
     }
 
-    /** Excluding any variant of a dart tier protects the whole tier. */
+    // Excluding any variant of a dart tier protects the whole tier.
     static boolean tierExcluded(OptimizationRequest request, int tier) {
         for (int i = 1; i < TIERS[tier].length; i++) {
             if (request.isExcluded(TIERS[tier][i])) return true;

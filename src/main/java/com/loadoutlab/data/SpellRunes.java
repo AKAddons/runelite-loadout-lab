@@ -6,16 +6,14 @@ import java.util.*;
 import static com.loadoutlab.data.JsonResources.*;
 import com.loadoutlab.engine.OwnedItems;
 
-/**
- * Runes per cast for every corpus spell (wiki-fetched, see the
- * resource's note). Elemental staves cover their element: the worn
- * weapon and shield names decide which requirements drop - the combo
- * staves (smoke/mist/dust/mud/lava/steam) cover two, the Kodai wand
- * covers water, the tomes cover their book's element.
- */
+// Runes per cast for every corpus spell (wiki-fetched, see the
+// resource's note). Elemental staves cover their element: the worn
+// weapon and shield names decide which requirements drop - the combo
+// staves (smoke/mist/dust/mud/lava/steam) cover two, the Kodai wand
+// covers water, the tomes cover their book's element.
 public class SpellRunes {
     static final Map<String, Integer> RUNE_ITEMS = new LinkedHashMap<>();
-    /** Sunfire rune (gameval ItemID.SUNFIRERUNE). */
+    // Sunfire rune (gameval ItemID.SUNFIRERUNE).
     public static final int SUNFIRE_RUNE = 28929;
     static final Map<String, Map<String, Integer>> BY_SPELL = new LinkedHashMap<>();
 
@@ -33,15 +31,15 @@ public class SpellRunes {
     }
 
 
-    /** Runes a player cannot conjure from pocket change: the high-level
-     * combat runes. Elemental/mind/chaos-class runes are deliberately not
-     * checked - any shop sells them. */
+    // Runes a player cannot conjure from pocket change: the high-level
+    // combat runes. Elemental/mind/chaos-class runes are deliberately not
+    // checked - any shop sells them.
     static final Set<String> PREMIUM = Set.of("blood", "soul", "death", "wrath");
 
-    /** True when the spell needs no blood/soul/death/wrath runes, or the
-     * player owns every one it needs (field report 2026-08-27: a runeless
-     * account was told to autocast blood-rune spells). Unknown spells fail
-     * OPEN - the corpus, not this gate, decides what exists. */
+    // True when the spell needs no blood/soul/death/wrath runes, or the
+    // player owns every one it needs (field report 2026-08-27: a runeless
+    // account was told to autocast blood-rune spells). Unknown spells fail
+    // OPEN - the corpus, not this gate, decides what exists.
     public static boolean premiumRunesOwned(String spellName, OwnedItems owned) {
         Map<String, Integer> cost = spellName == null ? null : BY_SPELL.get(spellName);
         if (cost == null || owned == null) return true;
@@ -49,11 +47,11 @@ public class SpellRunes {
             && RUNE_ITEMS.get(rune) != null && !owned.owns(RUNE_ITEMS.get(rune)));
     }
 
-    /** The elements a worn item covers, by name (empty = none): the first
-     * combo staff / Kodai fragment of STAVES that the name carries, else -
-     * "staff of air", "air battlestaff", "mystic fire staff", "tome of fire"
-     * - the element word is the signal, but only on staves and tomes (an
-     * "earth warrior" style name never reaches here: gear names only). */
+    // The elements a worn item covers, by name (empty = none): the first
+    // combo staff / Kodai fragment of STAVES that the name carries, else -
+    // "staff of air", "air battlestaff", "mystic fire staff", "tome of fire"
+    // - the element word is the signal, but only on staves and tomes (an
+    // "earth warrior" style name never reaches here: gear names only).
     static List<String> covers(String nameLower) {
         List<String> out = new ArrayList<>(2);
         if (nameLower == null) return out;
@@ -69,8 +67,8 @@ public class SpellRunes {
         return out;
     }
 
-    /** [{id, name, qty}] for one cast of the spell, minus what the worn
-     * weapon/shield provide; null when the spell is unknown. */
+    // [{id, name, qty}] for one cast of the spell, minus what the worn
+    // weapon/shield provide; null when the spell is unknown.
     public static List<Map> costFor(String spellName, String weaponNameLower, String shieldNameLower) {
         Map<String, Integer> runes = spellName == null ? null : BY_SPELL.get(spellName);
         if (runes == null) return null;
@@ -86,10 +84,10 @@ public class SpellRunes {
         return out;
     }
 
-    /** Sunfire runes stand in for fire runes (wiki): the cost's fire stack
-     * becomes the same count of sunfire runes, everything else as it was.
-     * A cost with no fire runes (a fire staff or tome covers them) comes
-     * back unchanged; null stays null. */
+    // Sunfire runes stand in for fire runes (wiki): the cost's fire stack
+    // becomes the same count of sunfire runes, everything else as it was.
+    // A cost with no fire runes (a fire staff or tome covers them) comes
+    // back unchanged; null stays null.
     public static List<Map> withSunfire(List<Map> runes) {
         if (runes == null) return null;
         Integer fire = RUNE_ITEMS.get("fire");
@@ -105,11 +103,11 @@ public class SpellRunes {
         return out;
     }
 
-    /** Combo-rune fold: where a combination rune covers two of the
-     * cost's elements, ONE stack of it (the larger quantity) replaces
-     * both - a combo rune counts as one of each element per cast. */
+    // Combo-rune fold: where a combination rune covers two of the
+    // cost's elements, ONE stack of it (the larger quantity) replaces
+    // both - a combo rune counts as one of each element per cast.
     static final String[][] COMBOS;
-    /** The combo staves and the Kodai wand: [name fragment, elements covered...]. */
+    // The combo staves and the Kodai wand: [name fragment, elements covered...].
     static final String[][] STAVES;
 
     static {
@@ -118,10 +116,10 @@ public class SpellRunes {
         STAVES = rows(root.getAsJsonArray("staves"));
     }
 
-    /** The combination-rune item ids - the ownership detection behind
-     * the panel's "Detect" preference reads these. */
-    /** A rune the pouch holds - a basic, combination or sunfire rune; never a
-     * seed box or a slayer item riding the utility list (ISS-01M5VH8H5MBRK0BFA6B8E68Z7T). */
+    // The combination-rune item ids - the ownership detection behind
+    // the panel's "Detect" preference reads these.
+    // A rune the pouch holds - a basic, combination or sunfire rune; never a
+    // seed box or a slayer item riding the utility list (ISS-01M5VH8H5MBRK0BFA6B8E68Z7T).
     public static boolean isRune(int id) {
         return RUNE_ITEMS.containsValue(id) || id == SUNFIRE_RUNE || Arrays.stream(comboRuneIds()).anyMatch(c -> c == id);
     }

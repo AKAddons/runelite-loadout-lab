@@ -12,9 +12,9 @@ public class SpellStats {
     public final String element;
     public final String nameFirstWord;
     public final String nameSecondWord;
-    /** "magic: Fire Surge" (a magic result's attack type) and "amulet of fire"
-     * (its +2 marker), built once: per trial they were 13% of a roster's
-     * allocation, and a fresh marker re-hashed on every check. */
+    // "magic: Fire Surge" (a magic result's attack type) and "amulet of fire"
+    // (its +2 marker), built once: per trial they were 13% of a roster's
+    // allocation, and a fresh marker re-hashed on every check.
     public final String attack, amulet;
 
     public SpellStats(String name, int maxHit, int magicLevel, String spellbook, String element) {
@@ -34,9 +34,9 @@ public class SpellStats {
         amulet = "amulet of " + this.element;
     }
 
-    /** First word of a two-word spell name, else null (cached). */
+    // First word of a two-word spell name, else null (cached).
 
-    /** Second word of a two-word spell name, else null (cached). */
+    // Second word of a two-word spell name, else null (cached).
 
 
 

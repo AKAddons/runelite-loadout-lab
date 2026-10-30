@@ -4,41 +4,38 @@ import com.google.gson.Gson;
 import java.lang.reflect.Type;
 import net.runelite.client.config.ConfigManager;
 
-/**
- * Per-character config keys, plus the one-time adoption of the pre-0.4.1
- * unscoped entry.
- *
- * <p>Field report 2026-08-26: on an install upgraded from 0.4.0 the alt still
- * showed the main's exclude list. The first cut fell back to the unscoped key
- * whenever the scoped one was empty, which is true for EVERY new character -
- * so every character adopted the main's list. Adoption has to happen once and
- * then stop, which means MOVING the entry into the first character that loads
- * it rather than copying it.
- */
+// Per-character config keys, plus the one-time adoption of the pre-0.4.1
+// unscoped entry.
+// <p>Field report 2026-08-26: on an install upgraded from 0.4.0 the alt still
+// showed the main's exclude list. The first cut fell back to the unscoped key
+// whenever the scoped one was empty, which is true for EVERY new character -
+// so every character adopted the main's list. Adoption has to happen once and
+// then stop, which means MOVING the entry into the first character that loads
+// it rather than copying it.
 class ScopedKeys {
 
-    /** A scope with no account hash behaves as the pre-0.4.1 bucket, so edits
-     * made before login are adopted by the first character instead of landing
-     * in a key nothing reads. */
+    // A scope with no account hash behaves as the pre-0.4.1 bucket, so edits
+    // made before login are adopted by the first character instead of landing
+    // in a key nothing reads.
     static String key(String scope, String legacyKey) {
         return scope == null || scope.isEmpty() ? legacyKey : scope + "." + legacyKey;
     }
 
-    /** Stored JSON for this scope, adopting the legacy entry once. */
+    // Stored JSON for this scope, adopting the legacy entry once.
     static String read(ConfigManager configManager, String group, String scope, String legacyKey) {
         return adopt(configManager, group, key(scope, legacyKey), legacyKey);
     }
 
-    /** A stored JSON value, or null when the entry is empty or corrupt (a
-     * corrupt entry starts the store fresh rather than failing the plugin). */
+    // A stored JSON value, or null when the entry is empty or corrupt (a
+    // corrupt entry starts the store fresh rather than failing the plugin).
     static <T> T parse(Gson gson, String json, Type type) {
         try {
             return json == null || json.isEmpty() ? null : gson.fromJson(json, type);
         } catch (RuntimeException ex) { return null; }
     }
 
-    /** As {@link #read}, for a store whose legacy key is not simply the
-     * scoped key without its prefix. */
+    // As {@link #read}, for a store whose legacy key is not simply the
+    // scoped key without its prefix.
     static String adopt(ConfigManager configManager, String group, String key, String legacyKey) {
         String json = configManager.getConfiguration(group, key);
         if (json != null && !json.isEmpty()) return json;

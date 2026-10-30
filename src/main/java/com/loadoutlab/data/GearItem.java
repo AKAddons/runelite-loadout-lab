@@ -11,9 +11,9 @@ import static com.loadoutlab.data.JsonResources.*;
 
 @Getter
 public class GearItem {
-    /** The name vocabulary behind poweredStaff, the demonbane class and
-     * isWeaponFor lives in gear_words.json (hub token cap); the lists are
-     * walked once per item at load, or once per pool build. */
+    // The name vocabulary behind poweredStaff, the demonbane class and
+    // isWeaponFor lives in gear_words.json (hub token cap); the lists are
+    // walked once per item at load, or once per pool build.
     static final List<String> POWERED = new ArrayList<>();
     static final List<String> MELEE_DEMONBANE = new ArrayList<>();
     static final List<String> RANGED_WEAPON = new ArrayList<>();
@@ -54,16 +54,16 @@ public class GearItem {
     public final String categoryLower;
     final String labelLower;
     final String nameVersionLower;
-    /** Powered staff (built-in spell, no autocast) - see DpsCalculator.isPoweredStaff. */
+    // Powered staff (built-in spell, no autocast) - see DpsCalculator.isPoweredStaff.
     public final boolean poweredStaff;
     public final boolean meleeDemonbane;
     public final boolean demonbane;
-    /** Kilograms, from the corpus (negative for weight-reducing gear); set once at load. */
+    // Kilograms, from the corpus (negative for weight-reducing gear); set once at load.
     public double weight;
 
-    /** Name markers by bit, assigned on first sight. marks = [markers
-     * covered, bits...], rebuilt when asked a newer one: a bit test beat the
-     * per-set substring scans (29% of a search's CPU). */
+    // Name markers by bit, assigned on first sight. marks = [markers
+    // covered, bits...], rebuilt when asked a newer one: a bit test beat the
+    // per-set substring scans (29% of a search's CPU).
     static final Map<String, Integer> MARKERS = new ConcurrentHashMap<>();
     static final List<String> MARKER_LIST = new CopyOnWriteArrayList<>();
     volatile int[] marks = {0};
@@ -80,9 +80,9 @@ public class GearItem {
         return bit;
     }
 
-    /** The items' marks ORed: a set answers every marker check with one bit
-     * test (each spell re-asks them all of the same set). Active skips
-     * "Inactive" versions (uncharged crystal). */
+    // The items' marks ORed: a set answers every marker check with one bit
+    // test (each spell re-asks them all of the same set). Active skips
+    // "Inactive" versions (uncharged crystal).
     public static int[] marks(GearItem[] items, boolean active) {
         int n = MARKER_LIST.size();
         int[] m = new int[2 + n / 32];
@@ -136,8 +136,8 @@ public class GearItem {
         demonbane = meleeDemonbane || nameLower.startsWith("scorching bow") || nameLower.startsWith("purging staff");
     }
 
-    /** This item as a tradeable at a price: a charged weapon priced as the
-     * uncharged twin you buy and charge (ISS-01M5QQV2TGQ5X730T0JJ75S1RD). */
+    // This item as a tradeable at a price: a charged weapon priced as the
+    // uncharged twin you buy and charge (ISS-01M5QQV2TGQ5X730T0JJ75S1RD).
     void setWeight(double weight) { this.weight = weight; }
 
     public GearItem priced(int price) {
@@ -182,15 +182,13 @@ public class GearItem {
 
     public String label() { return version.isEmpty() ? name : name + " (" + version + ")"; }
 
-    /** label() lowercased (Locale.ROOT), precomputed. */
+    // label() lowercased (Locale.ROOT), precomputed.
     public String labelLower() { return labelLower; }
 
-    /**
-     * Poison tier of this version: Poison++ 3, Poison+ 2, Poison 1,
-     * everything else 0. Poison is free damage the DPS model does not
-     * price, so suggestion tie-breaks prefer the higher tier (field
-     * request: always recommend dragon dagger p++ over plain).
-     */
+    // Poison tier of this version: Poison++ 3, Poison+ 2, Poison 1,
+    // everything else 0. Poison is free damage the DPS model does not
+    // price, so suggestion tie-breaks prefer the higher tier (field
+    // request: always recommend dragon dagger p++ over plain).
     public int poisonTier() {
         if (versionLower.contains("unpoison")) return 0;
         if (versionLower.contains("poison++")) return 3;

@@ -11,30 +11,27 @@ import static com.loadoutlab.data.AssumeIcons.*;
 import static java.lang.String.*;
 import static com.loadoutlab.engine.MultiTool.*;
 
-/**
- * The generic render-model of ADR-0008: everything a UI needs to draw,
- * as JSON-safe maps (the Companion loads in its OWN classloader - no
- * shared classes cross the seam, only this structure). Renderers - the
- * Companion's rich panel, Core's bare text surface, any future UI -
- * consume this and never re-derive game logic.
- *
- * <p>v1 is the vertical slice straight off the optimizer's results:
- * per-mob per-style cards for both sides, spec, incoming, bench.
- * Entry parameter state, chips, and the pre-resolved display strings
- * join field-by-field as the panel port peels them out of Swing
- * (docs/COMPANION_CONTRACT.md tracks the full shape).
- */
+// The generic render-model of ADR-0008: everything a UI needs to draw,
+// as JSON-safe maps (the Companion loads in its OWN classloader - no
+// shared classes cross the seam, only this structure). Renderers - the
+// Companion's rich panel, Core's bare text surface, any future UI -
+// consume this and never re-derive game logic.
+// <p>v1 is the vertical slice straight off the optimizer's results:
+// per-mob per-style cards for both sides, spec, incoming, bench.
+// Entry parameter state, chips, and the pre-resolved display strings
+// join field-by-field as the panel port peels them out of Swing
+// (docs/COMPANION_CONTRACT.md tracks the full shape).
 public class RenderModel {
-    /** Contract version stamped on every page; additive evolution only. */
+    // Contract version stamped on every page; additive evolution only.
     public static final int VERSION = 1;
 
 
-    /** A node from key/value pairs, in argument order (the JSON stays
-     * canonical: every builder below lists its keys in the contract's order). */
+    // A node from key/value pairs, in argument order (the JSON stays
+    // canonical: every builder below lists its keys in the contract's order).
     static Map map(Object... kv) { return JsonResources.map(kv); }
 
-    /** The side a card shows: the game-wide best, or the first owned set
-     * (null for none, or for no result). */
+    // The side a card shows: the game-wide best, or the first owned set
+    // (null for none, or for no result).
     static DpsResult shown(StyleResult result, boolean bis) {
         return result == null ? null : bis ? result.overallBest
             : result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
@@ -44,17 +41,17 @@ public class RenderModel {
         return map("v", VERSION, "entries", entries);
     }
 
-    /** One result entry: its mobs and, per mob, the per-style cards.
-     * Single-mob pages are the one-mob case of the same shape. */
+    // One result entry: its mobs and, per mob, the per-style cards.
+    // Single-mob pages are the one-mob case of the same shape.
     public static Map entry(List<MonsterStats> mobs, List<Map<CombatStyle, StyleResult>> perMob) {
         return entry(mobs, perMob, -1, null, Set.of(), null);
     }
 
-    /** Per-build provenance lookup: an item's storage NAME when a fetch
-     * trip is needed (the classic source dots), "" when at hand.
-     * riskKeptSlots >= 0 adds a wilderness risk node per card; ownership +
-     * simmed ids flag every gear cell for the classic border language
-     * (gold owned-BiS / green assumed / grey). */
+    // Per-build provenance lookup: an item's storage NAME when a fetch
+    // trip is needed (the classic source dots), "" when at hand.
+    // riskKeptSlots >= 0 adds a wilderness risk node per card; ownership +
+    // simmed ids flag every gear cell for the classic border language
+    // (gold owned-BiS / green assumed / grey).
     static final ThreadLocal<IntFunction<String>> LOCATION = new ThreadLocal<>();
 
     public static Map entry(List<MonsterStats> mobs,
@@ -95,16 +92,16 @@ public class RenderModel {
         return entry;
     }
 
-    /** The roster index of the mob whose card is being built: a group
-     * ladder reads that mob's own numbers (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW);
-     * and its hitpoints, for the card's kill time. */
+    // The roster index of the mob whose card is being built: a group
+    // ladder reads that mob's own numbers (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW);
+    // and its hitpoints, for the card's kill time.
     static final ThreadLocal<Integer> MOB = new ThreadLocal<>();
     static final ThreadLocal<Integer> HP = new ThreadLocal<>();
 
-    /** The trip's kill time (Andrew 2026-10-29: "TTK for moons of peril,
-     * barrows should be the combined kill time of all 3 bosses"): each
-     * member's table in the set its row recommends, convolved; the member
-     * that never dies named. Null with fewer than two members answered. */
+    // The trip's kill time (Andrew 2026-10-29: "TTK for moons of peril,
+    // barrows should be the combined kill time of all 3 bosses"): each
+    // member's table in the set its row recommends, convolved; the member
+    // that never dies named. Null with fewer than two members answered.
     static Map trip(List<MonsterStats> mobs, List<Map<CombatStyle, StyleResult>> perMob, boolean bis) {
         List<KillTime> times = new ArrayList<>();
         List<Object> members = new ArrayList<>();
@@ -113,7 +110,9 @@ public class RenderModel {
             KillTime k = killOf(perMob.get(i), mobs.get(i).hitpoints, bis);
             if (k == null) continue;
             times.add(k);
-            members.add(map("name", mobs.get(i).label(), "p50", k.p50));
+            Map member = killNode(k, 0);
+            member.put("name", mobs.get(i).label());
+            members.add(member);
             if (never == null && Double.isInfinite(k.p50)) never = mobs.get(i).label();
         }
         if (times.size() < 2) return null;
@@ -123,8 +122,8 @@ public class RenderModel {
         return node;
     }
 
-    /** The member's kill time in the set its row recommends: its kit-backed
-     * card with the most net DPS plus spec, or null when no style answers. */
+    // The member's kill time in the set its row recommends: its kit-backed
+    // card with the most net DPS plus spec, or null when no style answers.
     static KillTime killOf(Map<CombatStyle, StyleResult> results, int hp, boolean bis) {
         KillTime best = null;
         double bd = -1;
@@ -145,15 +144,17 @@ public class RenderModel {
         return incoming == null ? 0 : incoming.healDps;
     }
 
-    /** The set's kill-time table vs this mob: the card's hit model, the
-     * boss's heal off the set and the sustained spec (KillTime). */
+    // The set's kill-time table vs this mob: the card's hit model, the
+    // boss's heal off the set and the sustained spec (KillTime).
     static KillTime killTime(StyleResult r, DpsResult shown, int hp, boolean bis) {
-        return KillTime.table(hp, shown.accuracy, shown.maxHit, shown.attackSpeed, shown.dps, healOf(r, bis),
-            bis ? r.gameSpecDpsAdded : r.specDpsAdded);
+        double[] dist = bis ? r.gameHitDist : r.hitDist;
+        double spec = bis ? r.gameSpecDpsAdded : r.specDpsAdded;
+        return dist != null ? KillTime.table(hp, dist, shown.attackSpeed * 0.6, shown.dps, healOf(r, bis), spec, false)
+            : KillTime.table(hp, shown.accuracy, shown.maxHit, shown.attackSpeed, shown.dps, healOf(r, bis), spec);
     }
 
     static Map killNode(KillTime k, double heal) {
-        return map("p10", k.p10, "p50", k.p50, "p90", k.p90, "perfect", k.perfect, "approximate", k.approximate, "healDps", heal);
+        return map("p05", k.p05, "p50", k.p50, "p95", k.p95, "perfect", k.perfect, "approximate", k.approximate, "healDps", heal);
     }
 
     static Map mob(MonsterStats mob) {
@@ -179,8 +180,8 @@ public class RenderModel {
         return styles;
     }
 
-    /** The Multi card rows as style nodes keyed by tool, unscaled (the
-     * engine's decoration applies the stack); null without the switch. */
+    // The Multi card rows as style nodes keyed by tool, unscaled (the
+    // engine's decoration applies the stack); null without the switch.
     static Map multi(Map<CombatStyle, StyleResult> results,
         int rks, IntPredicate owned, Set<Integer> simmed) {
         Map<String, StyleResult> tools = null;
@@ -216,16 +217,16 @@ public class RenderModel {
             "bisTabDps", result.overallBest == null ? 0 : result.overallBest.dps + result.gameSpecDpsAdded);
     }
 
-    /** A slot ladder for the card (ISS-01M5GE9EJSX6YWCKMSYEWKZ132): each rung
-     * with its change in the mode's own terms and a signed gain (positive =
-     * better under the mode) that sizes the strip's bars; base = the worn
-     * item's own value in the same terms. */
+    // A slot ladder for the card (ISS-01M5GE9EJSX6YWCKMSYEWKZ132): each rung
+    // with its change in the mode's own terms and a signed gain (positive =
+    // better under the mode) that sizes the strip's bars; base = the worn
+    // item's own value in the same terms.
     public static Map ladderNode(Ladder ladder) { return ladderNode(ladder, MOB.get()); }
 
-    /** The ladder for mob `mob` of a roster (null = a solo card): a group
-     * ladder shows that mob's own base and changes and names the group
-     * figure beside them (Andrew 2026-10-24: "3.97 but in the card it is
-     * showing 5.54 which is a confusing mismatch"). */
+    // The ladder for mob `mob` of a roster (null = a solo card): a group
+    // ladder shows that mob's own base and changes and names the group
+    // figure beside them (Andrew 2026-10-24: "3.97 but in the card it is
+    // showing 5.54 which is a confusing mismatch").
     public static Map ladderNode(Ladder ladder, Integer mob) {
         boolean own = ladder.basePerMob != null && mob != null && mob < ladder.basePerMob.length;
         double base = own ? ladder.basePerMob[mob] : ladder.baseDps;
@@ -261,7 +262,7 @@ public class RenderModel {
         return node;
     }
 
-    /** The rung's improvement over the worn item under the ladder's mode. */
+    // The rung's improvement over the worn item under the ladder's mode.
     static double ladderGain(Ladder ladder, Rung rung) {
         switch (ladder.mode) {
             case TANKY:
@@ -299,8 +300,8 @@ public class RenderModel {
         return out;
     }
 
-    /** "+0.12 DPS" (Max DPS and Balanced, whose damage taken rides as
-     * delta2), "-0.30 taken/s" (Tanky). */
+    // "+0.12 DPS" (Max DPS and Balanced, whose damage taken rides as
+    // delta2), "-0.30 taken/s" (Tanky).
     static String ladderDelta(Ladder ladder, Rung rung) {
         switch (ladder.mode) {
             case TANKY:
@@ -310,7 +311,7 @@ public class RenderModel {
         }
     }
 
-    /** One side's card: the shown set and everything rendered around it. */
+    // One side's card: the shown set and everything rendered around it.
     static Map card(StyleResult result, boolean bis, int rks, IntPredicate owned, Set<Integer> simmed) {
         DpsResult shown = shown(result, bis);
         if (shown == null) return null;
@@ -411,14 +412,14 @@ public class RenderModel {
         return card;
     }
 
-    /** The items' labels, for the risk node's kept/lost lists. */
+    // The items' labels, for the risk node's kept/lost lists.
     static List<Object> labels(List<GearItem> items) {
         List<Object> out = new ArrayList<>();
         for (GearItem item : items) out.add(item.label());
         return out;
     }
 
-    /** Analogs count as best-available (any god's d'hide coif). */
+    // Analogs count as best-available (any god's d'hide coif).
     static boolean statEquivalent(GearItem a, GearItem b) {
         return a.slot == b.slot && a.speed == b.speed && a.twoHanded == b.twoHanded
             && a.category.equals(b.category) && sameBlock(a.offensive, b.offensive)
@@ -427,15 +428,15 @@ public class RenderModel {
 
     static boolean sameBlock(StatBlock a, StatBlock b) { return Arrays.equals(values(a), values(b)); }
 
-    /** Every stat of the block, in one array to compare. */
+    // Every stat of the block, in one array to compare.
     static int[] values(StatBlock b) {
         return new int[]{b.stab, b.slash, b.crush, b.magic, b.ranged,
             b.strength, b.rangedStrength, b.magicDamage, b.prayer};
     }
 
-    /** Facts for the header assume icons: the label "Piety + Divine
-     * super combat" resolves to a prayer sprite id and a boost potion
-     * item id (renderers draw, never map). */
+    // Facts for the header assume icons: the label "Piety + Divine
+    // super combat" resolves to a prayer sprite id and a boost potion
+    // item id (renderers draw, never map).
     static Map assumeNode(String boostLabel) {
         if (boostLabel == null || boostLabel.isEmpty()) {
             // "None + none" must still be a node: the assume icons ARE the

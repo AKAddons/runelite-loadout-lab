@@ -15,18 +15,15 @@ import javax.swing.*;
 import net.runelite.client.RuneLite;
 import okhttp3.*;
 
-/**
- * Async monster thumbnails for the mob rows: the OSRS wiki's infobox
- * render (Special:FilePath/&lt;file&gt;.png), fetched off the game threads
- * through the client's shared OkHttp, cached in memory and on disk under
- * the RuneLite dir.
- *
- * <p>The wiki FILE NAME is never guessed. Every row of the bundled monster
- * corpus carries the wiki's own {@code image} value, so a thumbnail costs
- * exactly ONE request, a miss costs one and is remembered, and a cached
- * icon costs none. Every failure fails QUIET - a row with no picture just
- * keeps its text-only look.
- */
+// Async monster thumbnails for the mob rows: the OSRS wiki's infobox
+// render (Special:FilePath/&lt;file&gt;.png), fetched off the game threads
+// through the client's shared OkHttp, cached in memory and on disk under
+// the RuneLite dir.
+// <p>The wiki FILE NAME is never guessed. Every row of the bundled monster
+// corpus carries the wiki's own {@code image} value, so a thumbnail costs
+// exactly ONE request, a miss costs one and is remembered, and a cached
+// icon costs none. Every failure fails QUIET - a row with no picture just
+// keeps its text-only look.
 @lombok.RequiredArgsConstructor
 @lombok.extern.slf4j.Slf4j
 public class MonsterIcons {
@@ -37,10 +34,10 @@ public class MonsterIcons {
     final OkHttpClient http;
     final Map<String, ImageIcon> cache = new ConcurrentHashMap<>();
     final Set<String> failed = ConcurrentHashMap.newKeySet();
-    /** Keys being loaded -> callbacks waiting on them (guarded by itself). */
+    // Keys being loaded -> callbacks waiting on them (guarded by itself).
     final Map<String, List<Runnable>> waiting = new HashMap<>();
-    /** "name|version" and bare "name|" -> the wiki file, built once on the
-     * worker thread the first time an icon is asked for. */
+    // "name|version" and bare "name|" -> the wiki file, built once on the
+    // worker thread the first time an icon is asked for.
     volatile Map<String, String> files;
     final ExecutorService worker = Executors.newSingleThreadExecutor(r -> {
         var t = new Thread(r, "loadout-lab-monster-icons");
@@ -50,11 +47,9 @@ public class MonsterIcons {
         return t;
     });
 
-    /**
-     * The monster's icon at the given height, or null while it loads (or
-     * after it failed). When null, onReady fires later on the EDT once the
-     * icon is available - call get() again there for the cache hit.
-     */
+    // The monster's icon at the given height, or null while it loads (or
+    // after it failed). When null, onReady fires later on the EDT once the
+    // icon is available - call get() again there for the cache hit.
     public ImageIcon get(String name, String version, int height, Runnable onReady) {
         String lower = key(name, version);
         String cacheKey = lower + "@" + height;
@@ -109,18 +104,16 @@ public class MonsterIcons {
         return img;
     }
 
-    /**
-     * The corpus's wiki file for this mob: the per-form image when the row
-     * carries a version ("Abyssal demon (Catacombs of Kourend).png"), else
-     * the name's first image. Null when the corpus does not name one.
-     */
+    // The corpus's wiki file for this mob: the per-form image when the row
+    // carries a version ("Abyssal demon (Catacombs of Kourend).png"), else
+    // the name's first image. Null when the corpus does not name one.
     String wikiFile(String name, String version) {
         Map<String, String> index = index();
         String exact = index.get(key(name, version));
         return exact != null ? exact : index.get(key(name, ""));
     }
 
-    /** Built once, on the worker thread, from the bundled corpus. */
+    // Built once, on the worker thread, from the bundled corpus.
     Map<String, String> index() {
         Map<String, String> local = files;
         if (local != null) return local;

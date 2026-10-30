@@ -6,23 +6,20 @@ import java.util.stream.Collectors;
 import static com.loadoutlab.data.JsonResources.*;
 import static com.loadoutlab.data.Names.*;
 
-/**
- * Curated monster groups (M-3): a group is the ROSTER of distinct mob
- * types featured in the content - Fight Caves, Inferno, Zulrah's forms,
- * the Dagannoth Kings... - searchable beside the monsters and expanding
- * into one multi-mob result (one shared set per style, HP-weighted).
- *
- * Members resolve against LOADED corpus rows by exact name (+ version
- * when the name is ambiguous) - never raw wiki names, because the
- * stat-key collapse merges versions (Zuk Normal/Enraged, Tz-Kek's two
- * levels). A member that fails to resolve fails loudly in tests, not
- * silently at runtime: the group simply omits it and carries on.
- */
+// Curated monster groups (M-3): a group is the ROSTER of distinct mob
+// types featured in the content - Fight Caves, Inferno, Zulrah's forms,
+// the Dagannoth Kings... - searchable beside the monsters and expanding
+// into one multi-mob result (one shared set per style, HP-weighted).
+// Members resolve against LOADED corpus rows by exact name (+ version
+// when the name is ambiguous) - never raw wiki names, because the
+// stat-key collapse merges versions (Zuk Normal/Enraged, Tz-Kek's two
+// levels). A member that fails to resolve fails loudly in tests, not
+// silently at runtime: the group simply omits it and carries on.
 public class MonsterGroups {
     static final String RESOURCE = "monster_groups.json";
 
-    /** One curated group, resolved to loaded rows (the loader hands in
-     * unmodifiable mob and alias lists). */
+    // One curated group, resolved to loaded rows (the loader hands in
+    // unmodifiable mob and alias lists).
     @lombok.Getter
     @lombok.AllArgsConstructor
     public static class MonsterGroup {
@@ -32,17 +29,17 @@ public class MonsterGroups {
         final List<String> aliases;
         final int inventory;
         final boolean comingSoon;
-        /** A raid selection: shared supplied boosts, big inventories, and
-         * never a slayer-task context (Andrew, 2026-08-31). */
+        // A raid selection: shared supplied boosts, big inventories, and
+        // never a slayer-task context (Andrew, 2026-08-31).
         final boolean raid;
 
-        /** "Fight Caves - 7 mobs" for list rows (the coming-soon note
-         * renders in the RESULT card, not here - field spec 2026-07-18). */
+        // "Fight Caves - 7 mobs" for list rows (the coming-soon note
+        // renders in the RESULT card, not here - field spec 2026-07-18).
         public String label() { return name + " - " + mobs.size() + " mobs"; }
     }
 
 
-    /** Load and resolve every curated group against the dataset. */
+    // Load and resolve every curated group against the dataset.
     public static List<MonsterGroup> load(LoadoutData data) {
         List<MonsterGroup> groups = new ArrayList<>();
         try {
@@ -130,8 +127,8 @@ public class MonsterGroups {
         }
     }
 
-    /** Exact-name match; version disambiguates when given, otherwise the
-     * name must be unique (ambiguity = curation bug, caught by tests). */
+    // Exact-name match; version disambiguates when given, otherwise the
+    // name must be unique (ambiguity = curation bug, caught by tests).
     static MonsterStats resolve(LoadoutData data, String name, String version) {
         // Two hits = ambiguous: the curation must name a version.
         List<MonsterStats> matches = data.monsters.stream().filter(m -> m.name.equalsIgnoreCase(name)
@@ -139,7 +136,7 @@ public class MonsterGroups {
         return matches.size() == 1 ? matches.get(0) : null;
     }
 
-    /** Name-contains search over the groups, hits in curated order. */
+    // Name-contains search over the groups, hits in curated order.
     public static List<MonsterGroup> search(List<MonsterGroup> groups, String query, int limit) {
         String text = query == null ? "" : lower(query.trim());
         if (text.length() < 2) return new ArrayList<>();

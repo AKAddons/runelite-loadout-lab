@@ -12,21 +12,19 @@ public class Loadout {
     public final StatBlock defensive;
     public final StatBlock bonuses;
     public final int cost;
-    /** The worn items (a null is an empty slot): the name-fragment checks
-     * scan these, so a trial builds no joined name string (that was 27% of
-     * the optimizer's allocation). */
+    // The worn items (a null is an empty slot): the name-fragment checks
+    // scan these, so a trial builds no joined name string (that was 27% of
+    // the optimizer's allocation).
     final GearItem[] worn;
-    /** GearItem.marks of the worn items, built on the first check. */
+    // GearItem.marks of the worn items, built on the first check.
     volatile int[] marks;
 
     public Loadout(Map<GearSlot, GearItem> gear) { this(copyOf(gear), true); }
 
-    /**
-     * Adopt the given map WITHOUT copying: the caller hands over ownership
-     * and must never mutate it afterward. The optimizer builds a fresh
-     * EnumMap per beam trial - the public constructor's defensive copy
-     * doubled that work across hundreds of thousands of trials.
-     */
+    // Adopt the given map WITHOUT copying: the caller hands over ownership
+    // and must never mutate it afterward. The optimizer builds a fresh
+    // EnumMap per beam trial - the public constructor's defensive copy
+    // doubled that work across hundreds of thousands of trials.
     public static Loadout adopting(EnumMap<GearSlot, GearItem> gear) { return new Loadout(gear, true); }
 
     static EnumMap<GearSlot, GearItem> copyOf(Map<GearSlot, GearItem> gear) {
@@ -35,8 +33,8 @@ public class Loadout {
         return copy;
     }
 
-    /** The marker keeps this overload from ever being chosen by a plain
-     * {@code new Loadout(enumMap)} - adoption must be an explicit opt-in. */
+    // The marker keeps this overload from ever being chosen by a plain
+    // {@code new Loadout(enumMap)} - adoption must be an explicit opt-in.
     Loadout(EnumMap<GearSlot, GearItem> gear, boolean adoptMarker) {
         this.gear = gear;
 
@@ -76,22 +74,22 @@ public class Loadout {
         return new StatBlock(acc[0], acc[1], acc[2], acc[3], acc[4], acc[5], acc[6], acc[7], acc[8]);
     }
 
-    /** Ammunition carried IN a Dizana's quiver rather than the ammo slot
-     * (see QuiverAmmo). Set once by the display post-pass on final
-     * results - never inside the beam - so the field stays off the hot
-     * path. Deliberately OUTSIDE the stat sums: QuiverAmmo.strength adds
-     * it in the max-hit chain, mirroring the blowpipe's loaded dart. */
+    // Ammunition carried IN a Dizana's quiver rather than the ammo slot
+    // (see QuiverAmmo). Set once by the display post-pass on final
+    // results - never inside the beam - so the field stays off the hot
+    // path. Deliberately OUTSIDE the stat sums: QuiverAmmo.strength adds
+    // it in the max-hit chain, mirroring the blowpipe's loaded dart.
     public GearItem quiverAmmo;
 
-    /** A copy with ammunition moved into the quiver (see QuiverAmmo). */
+    // A copy with ammunition moved into the quiver (see QuiverAmmo).
     public Loadout withQuiverAmmo(GearItem carried) {
         var copy = new Loadout(copyOf(gear), true);
         copy.quiverAmmo = carried;
         return copy;
     }
 
-    /** A copy with one slot changed (null empties it); the quiver's
-     * carried ammo rides along. */
+    // A copy with one slot changed (null empties it); the quiver's
+    // carried ammo rides along.
     public Loadout with(GearSlot slot, GearItem item) {
         EnumMap<GearSlot, GearItem> copy = copyOf(gear);
         if (item == null) {
@@ -102,7 +100,7 @@ public class Loadout {
         return out;
     }
 
-    /** The worn items, empty slots skipped. */
+    // The worn items, empty slots skipped.
     public List<GearItem> items() {
         List<GearItem> items = new ArrayList<>(gear.size());
         for (GearItem item : gear.values()) {
@@ -111,7 +109,7 @@ public class Loadout {
         return items;
     }
 
-    /** The worn item ids. */
+    // The worn item ids.
     public Set<Integer> ids() {
         Set<Integer> ids = new HashSet<>();
         for (GearItem item : items()) ids.add(item.id);
@@ -124,8 +122,8 @@ public class Loadout {
 
     public Map<GearSlot, GearItem> getGear() { return Collections.unmodifiableMap(gear); }
 
-    /** A worn item's name holds the lower-case marker; active = "Inactive"
-     * versions (uncharged crystal) never match. */
+    // A worn item's name holds the lower-case marker; active = "Inactive"
+    // versions (uncharged crystal) never match.
     boolean wears(String marker, boolean active) {
         int bit = GearItem.markerBit(marker);
         int[] m = active ? GearItem.marks(worn, true) : marks;

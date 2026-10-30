@@ -6,100 +6,97 @@ import com.loadoutlab.data.*;
 import java.util.*;
 import com.loadoutlab.data.NavalCombat.Cannon;
 
-/**
- * Core-owned page state for the Companion seam (ADR-0008: Core owns
- * ALL state, including view parameters, so every renderer - the bare
- * UI, the Companion, undo history - sees the same world). v1 holds
- * one active entry: the selected mob and the full compute parameter
- * set. The old Swing panel still keeps its own ResultEntry during the
- * transition; the two reconcile when the panel leaves for the
- * Companion.
- *
- * <p>The params live in ONE map seeded from {@link #DEFAULTS} (the slim,
- * 2026-10-23: 35 fields and a 40-arm switch said the same thing three
- * times over). Booleans, ints and strings are set by the type of their
- * default; the arms of {@link #setParam} cover the few with rules of
- * their own.
- */
+// Core-owned page state for the Companion seam (ADR-0008: Core owns
+// ALL state, including view parameters, so every renderer - the bare
+// UI, the Companion, undo history - sees the same world). v1 holds
+// one active entry: the selected mob and the full compute parameter
+// set. The old Swing panel still keeps its own ResultEntry during the
+// transition; the two reconcile when the panel leaves for the
+// Companion.
+// <p>The params live in ONE map seeded from {@link #DEFAULTS} (the slim,
+// 2026-10-23: 35 fields and a 40-arm switch said the same thing three
+// times over). Booleans, ints and strings are set by the type of their
+// default; the arms of {@link #setParam} cover the few with rules of
+// their own.
 public class PageState {
     MonsterStats mob;
     List<MonsterStats> rosterMobs;
     String rosterName;
 
-    /** Every page param with its default, in the params node's order, from
-     * page_params.json (hub token cap) - the int clamps, the view params and
-     * the keys a select seeds ride the same file. What each one means, where
-     * it is not obvious:
-     * <ul>
-     * <li>f2pWorld - true while the client is on a NON-members world. The
-     * chip renders from this, not from f2pOnly - otherwise unticking the
-     * filter hides the control that unticked it and there is no way back.
-     * <li>pvpWorld - PvP mode: 0 off, 1 PvP world, 2 High Risk (Ragnarrok,
-     * 2026-10-20: "3 iteming" on PvP worlds). World state like f2pWorld,
-     * so never in the selection snapshot; pvpWorldHere = the client is on
-     * one.
-     * <li>kourendElite - the elite Kourend & Kebos diary is done (varbit
-     * 7928) - Karuulm needs no boots (ISS-01M5JJ0Z4M988DR0M0ZGJHD139).
-     * <li>optimizeMode - MAX_DPS / BALANCED / TANKY, every player's since
-     * 2026-10-22 (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6; no developer-mode gate).
-     * <li>gwdAncient - the GWD Ancient chip: Zaros joins the protection
-     * route - the Nex bank (ISS-01M5G9KPDQWBR014Z10F79B29T).
-     * <li>nerAvailable - Not Enough Runes is enabled - the ladder's "how
-     * to get it" link.
-     * <li>ladderSlot - the slot whose ladder strip is open on the Yours
-     * card ("" = none); ladderPage - the strip's page (0 = the strip, n =
-     * the nth five further steps up), reset when another slot opens.
-     * <li>reqOpen - the "+ Requirement" editor is open; a new search
-     * closes it (Andrew 2026-10-27).
-     * <li>cannonCount, cannon1/2Material, cannonAmmo, shipKeel,
-     * cannon1/2Operator - ship combat (REQ-SC-2/3/3b). Post-compute
-     * additive like thralls - none of these enter the optimizer request,
-     * so none ride computeArgs. They persist across lens changes; the
-     * ENGINE only reads them for a naval mob (REQ-SC-7's veto, same shape
-     * as the F2P lock). "detect" ammo resolves to the best BANKED ball
-     * every carried cannon can fire (the boost idiom, Andrew 2026-08-31);
-     * a tier name pins it. An operator is "you", or "crew1".."crew4" for
-     * a crewmate of that Privateering (REQ-SC-9). At most one cannon is
-     * yours - picking "you" on one flips the other back to crew. Picking
-     * a material auto-RAISES a crew operator to the minimum Privateering
-     * that can man it (Andrew: "automatically assume you are going to
-     * pick a crew member at minimum that can man the cannon") and never
-     * lowers an explicit pick.
-     * <li>raidSelection - true while the selection is a RAID group (ToB
-     * included - the boost heuristic missed it): raids are never a
-     * slayer-task context. Set by the selects, never by a command.
-     * <li>riskCapped - whether a cap is actually in force; never inferred
-     * from the gp value, which collides with the engine's no-cap sentinel.
-     * <li>spellbookSwap - bringing Spellbook Swap + Vengeance on the trip.
-     * Supplies only - the DPS Vengeance returns is deliberately not
-     * modelled.
-     * <li>antifireMode - 0 = shield required, 1 = regular antifire, 2 =
-     * super antifire - the classic tri-state; Detect resolves it at
-     * selection time.
-     * <li>sunfireRunes - assumed for a fire spell (seeded from ownership
-     * at each selection; the card plate overrides).
-     * <li>multiView, multiStack - the Multi card (Andrew 2026-10-19): the
-     * switch computes the multi tools; the stack is a view scale on their
-     * per-target numbers.
-     * <li>viewingBis, selectedTab, thralls, lensIndex - view state,
-     * core-owned like everything else (ADR-0008), but a change here
-     * republishes without recomputing (see CommandEngine).
-     * </ul> */
+    // Every page param with its default, in the params node's order, from
+    // page_params.json (hub token cap) - the int clamps, the view params and
+    // the keys a select seeds ride the same file. What each one means, where
+    // it is not obvious:
+    // <ul>
+    // <li>f2pWorld - true while the client is on a NON-members world. The
+    // chip renders from this, not from f2pOnly - otherwise unticking the
+    // filter hides the control that unticked it and there is no way back.
+    // <li>pvpWorld - PvP mode: 0 off, 1 PvP world, 2 High Risk (Ragnarrok,
+    // 2026-10-20: "3 iteming" on PvP worlds). World state like f2pWorld,
+    // so never in the selection snapshot; pvpWorldHere = the client is on
+    // one.
+    // <li>kourendElite - the elite Kourend & Kebos diary is done (varbit
+    // 7928) - Karuulm needs no boots (ISS-01M5JJ0Z4M988DR0M0ZGJHD139).
+    // <li>optimizeMode - MAX_DPS / BALANCED / TANKY, every player's since
+    // 2026-10-22 (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6; no developer-mode gate).
+    // <li>gwdAncient - the GWD Ancient chip: Zaros joins the protection
+    // route - the Nex bank (ISS-01M5G9KPDQWBR014Z10F79B29T).
+    // <li>nerAvailable - Not Enough Runes is enabled - the ladder's "how
+    // to get it" link.
+    // <li>ladderSlot - the slot whose ladder strip is open on the Yours
+    // card ("" = none); ladderPage - the strip's page (0 = the strip, n =
+    // the nth five further steps up), reset when another slot opens.
+    // <li>reqOpen - the "+ Requirement" editor is open; a new search
+    // closes it (Andrew 2026-10-27).
+    // <li>cannonCount, cannon1/2Material, cannonAmmo, shipKeel,
+    // cannon1/2Operator - ship combat (REQ-SC-2/3/3b). Post-compute
+    // additive like thralls - none of these enter the optimizer request,
+    // so none ride computeArgs. They persist across lens changes; the
+    // ENGINE only reads them for a naval mob (REQ-SC-7's veto, same shape
+    // as the F2P lock). "detect" ammo resolves to the best BANKED ball
+    // every carried cannon can fire (the boost idiom, Andrew 2026-08-31);
+    // a tier name pins it. An operator is "you", or "crew1".."crew4" for
+    // a crewmate of that Privateering (REQ-SC-9). At most one cannon is
+    // yours - picking "you" on one flips the other back to crew. Picking
+    // a material auto-RAISES a crew operator to the minimum Privateering
+    // that can man it (Andrew: "automatically assume you are going to
+    // pick a crew member at minimum that can man the cannon") and never
+    // lowers an explicit pick.
+    // <li>raidSelection - true while the selection is a RAID group (ToB
+    // included - the boost heuristic missed it): raids are never a
+    // slayer-task context. Set by the selects, never by a command.
+    // <li>riskCapped - whether a cap is actually in force; never inferred
+    // from the gp value, which collides with the engine's no-cap sentinel.
+    // <li>spellbookSwap - bringing Spellbook Swap + Vengeance on the trip.
+    // Supplies only - the DPS Vengeance returns is deliberately not
+    // modelled.
+    // <li>antifireMode - 0 = shield required, 1 = regular antifire, 2 =
+    // super antifire - the classic tri-state; Detect resolves it at
+    // selection time.
+    // <li>sunfireRunes - assumed for a fire spell (seeded from ownership
+    // at each selection; the card plate overrides).
+    // <li>multiView, multiStack - the Multi card (Andrew 2026-10-19): the
+    // switch computes the multi tools; the stack is a view scale on their
+    // per-target numbers.
+    // <li>viewingBis, selectedTab, thralls, lensIndex - view state,
+    // core-owned like everything else (ADR-0008), but a change here
+    // republishes without recomputing (see CommandEngine).
+    // </ul>
     static final Map DEFAULTS = new LinkedHashMap<>();
-    /** Set by the engine (the selects, the risk cap), never by a command. */
+    // Set by the engine (the selects, the risk cap), never by a command.
     static final Set<String> DERIVED = Set.of("raidSelection", "riskCapped", "myLevels");
     static final String[] SIM_KEYS = {"simAttack", "simStrength", "simDefence", "simRanged", "simMagic", "simPrayer", "simHitpoints"};
 
-    /** Your live levels for the page ("a/s/d/r/m/p/h"): what the stat sim's
-     * boxes and the report show where nothing is simmed. */
+    // Your live levels for the page ("a/s/d/r/m/p/h"): what the stat sim's
+    // boxes and the report show where nothing is simmed.
     public synchronized void setMyLevels(String levels) { params.put("myLevels", levels == null ? "" : levels); }
-    /** Int params with a range: {min, max}. */
+    // Int params with a range: {min, max}.
     static final Map<String, int[]> CLAMPS = new HashMap<>();
-    /** The params a select seeds (antifire, tab, view side, on-task,
-     * wilderness, bench, and the config seeds) - what undoing it restores:
-     * undoing a Callisto used to leave its wilderness and risk chips
-     * sitting on the restored mob (pre-release adversarial pass
-     * 2026-08-22). */
+    // The params a select seeds (antifire, tab, view side, on-task,
+    // wilderness, bench, and the config seeds) - what undoing it restores:
+    // undoing a Callisto used to leave its wilderness and risk chips
+    // sitting on the restored mob (pre-release adversarial pass
+    // 2026-08-22).
     static final List<String> SNAPSHOT_KEYS = new ArrayList<>();
     static final Set<String> VIEW_PARAMS = new HashSet<>();
 
@@ -122,7 +119,7 @@ public class PageState {
     final Map<CombatStyle, String> boostPicks = new LinkedHashMap<>();
     final Map<CombatStyle, String> prayerPicks = new LinkedHashMap<>();
 
-    /** Parameters that change what is SHOWN, not what is computed. */
+    // Parameters that change what is SHOWN, not what is computed.
     public static boolean isViewParam(String param) { return VIEW_PARAMS.contains(param); }
 
     public synchronized void select(MonsterStats mob) {
@@ -143,8 +140,8 @@ public class PageState {
 
     public synchronized List<MonsterStats> rosterMobs() { return rosterMobs; }
 
-    /** Selection snapshot for undo: restore() reinstates it exactly -
-     * the mob or roster, and the params a select seeds (SNAPSHOT_KEYS). */
+    // Selection snapshot for undo: restore() reinstates it exactly -
+    // the mob or roster, and the params a select seeds (SNAPSHOT_KEYS).
     public synchronized Object[] selectionSnapshot() {
         Map seeded = new LinkedHashMap<>();
         for (String key : SNAPSHOT_KEYS) seeded.put(key, params.get(key));
@@ -160,8 +157,8 @@ public class PageState {
 
     public synchronized boolean hasSelection() { return mob != null || rosterMobs != null; }
 
-    /** Apply one named parameter; returns false for an unknown name so
-     * the engine can refuse loudly instead of silently dropping it. */
+    // Apply one named parameter; returns false for an unknown name so
+    // the engine can refuse loudly instead of silently dropping it.
     public synchronized boolean setParam(String param, Object value) {
         Object current = param == null ? null : params.get(param);
         if (current == null || DERIVED.contains(param)) return false;
@@ -228,18 +225,18 @@ public class PageState {
         }
     }
 
-    /** An int param's default - what a non-numeric value falls back to. */
+    // An int param's default - what a non-numeric value falls back to.
     static int defaultInt(String param) { return (Integer) DEFAULTS.get(param); }
 
-    /** Normalize an operator pick; a crew pick is clamped 1-4 and then
-     * raised to the material's gate. */
+    // Normalize an operator pick; a crew pick is clamped 1-4 and then
+    // raised to the material's gate.
     static String operator(Object value, String material) {
         String v = String.valueOf(value);
         return "you".equals(v) ? "you" : raiseCrewToGate("crew" + Math.max(1, Math.min(4, crewLevel(v))), material);
     }
 
-    /** Crew operators rise to the minimum Privateering the material demands;
-     * "you" and already-sufficient crew pass through untouched. */
+    // Crew operators rise to the minimum Privateering the material demands;
+    // "you" and already-sufficient crew pass through untouched.
     static String raiseCrewToGate(String operator, String material) {
         if ("you".equals(operator)) return operator;
         Cannon cannon = NavalCombat.cannon(material);
@@ -247,8 +244,8 @@ public class PageState {
         return "crew" + Math.max(crewLevel(operator), gate);
     }
 
-    /** The Privateering of a "crewN" operator; 1 for "you", a bare "crew"
-     * or anything else. */
+    // The Privateering of a "crewN" operator; 1 for "you", a bare "crew"
+    // or anything else.
     static int crewLevel(String operator) {
         if (operator != null && operator.startsWith("crew")) {
             try {
@@ -269,8 +266,8 @@ public class PageState {
 
     String str(String key) { return (String) params.get(key); }
 
-    /** The params node of the model page - what a renderer needs to
-     * draw every chip in its current position. */
+    // The params node of the model page - what a renderer needs to
+    // draw every chip in its current position.
     public synchronized Map paramsNode() {
         Map node = new LinkedHashMap<>(params);
         node.put("prayerPicks", lowered(prayerPicks));
@@ -278,7 +275,7 @@ public class PageState {
         return node;
     }
 
-    /** A pick map keyed by the style's lower-case name, for the page. */
+    // A pick map keyed by the style's lower-case name, for the page.
     static Map lowered(Map<CombatStyle, String> picks) {
         Map out = new LinkedHashMap<>();
         for (var pick : picks.entrySet()) out.put(pick.getKey().name().toLowerCase(), pick.getValue());
@@ -287,8 +284,8 @@ public class PageState {
 
     public synchronized int toaInvocation() { return num("toaInvocation"); }
 
-    /** Prayer/boost pick per style: null value = Detect (remove),
-     * "NONE" = explicitly none, else the option key. */
+    // Prayer/boost pick per style: null value = Detect (remove),
+    // "NONE" = explicitly none, else the option key.
     public synchronized void setPick(boolean prayer, CombatStyle style, String value) {
         Map<CombatStyle, String> picks = prayer ? prayerPicks : boostPicks;
         if (value == null) {
@@ -296,7 +293,7 @@ public class PageState {
         } else picks.put(style, value);
     }
 
-    /** The picked combat achievement tasks ("161,72"), in pick order. */
+    // The picked combat achievement tasks ("161,72"), in pick order.
     public synchronized List<CombatAchievements.Task> caPicks() {
         List<CombatAchievements.Task> out = new ArrayList<>();
         for (String id : str("caPicks").split(",")) {
@@ -306,7 +303,7 @@ public class PageState {
         return out;
     }
 
-    /** Every picked task's rules on the page's mobs, ANDed; null when none is picked. */
+    // Every picked task's rules on the page's mobs, ANDed; null when none is picked.
     public synchronized SetRules taskRules() {
         SetRules all = null;
         List<MonsterStats> on = rosterMobs != null ? rosterMobs : mob != null ? List.of(mob) : List.of();
@@ -314,13 +311,13 @@ public class PageState {
         return all;
     }
 
-    /** The F2P lock: the param, or a picked free-to-play task (ISS-01M60HTYZT9DTZKDSFAGRNNK53). */
+    // The F2P lock: the param, or a picked free-to-play task (ISS-01M60HTYZT9DTZKDSFAGRNNK53).
     public synchronized boolean f2pLocked() {
         SetRules tasks = taskRules();
         return flag("f2pOnly") || tasks != null && tasks.f2p;
     }
 
-    /** The compute settings, one object per compute (see CommandEngine). */
+    // The compute settings, one object per compute (see CommandEngine).
     public synchronized ComputeParams computeParams() {
         // Kept-slots mirror the classic riskCap() gate: a risk cap only
         // binds in the wilderness or on a PvP world, and Protect Item

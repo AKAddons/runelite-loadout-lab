@@ -3,14 +3,12 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.*;
 import java.util.*;
 
-/**
- * Utility items a fight REQUIRES that pure dps ranking would never
- * pick: Zulrah's snakelings demand a recoil source (ring of recoil,
- * a recoil-charged Ring of suffering, or Echo boots). The optimizer
- * satisfies the requirement with the least-dps-loss option after the
- * main search; owning the UNCHARGED suffering counts as access to the
- * charged form (recoil rings are pocket change).
- */
+// Utility items a fight REQUIRES that pure dps ranking would never
+// pick: Zulrah's snakelings demand a recoil source (ring of recoil,
+// a recoil-charged Ring of suffering, or Echo boots). The optimizer
+// satisfies the requirement with the least-dps-loss option after the
+// main search; owning the UNCHARGED suffering counts as access to the
+// charged form (recoil rings are pocket change).
 public class RequiredUtility {
     static final int RING_OF_RECOIL = 2550;
     static final int SUFFERING_RECOIL = 20655;
@@ -19,7 +17,7 @@ public class RequiredUtility {
     static final int SUFFERING_I_UNCHARGED = 19710;
     static final int ECHO_BOOTS = 28945;
 
-    /** Satisfying item id -> the owned id that grants access to it. */
+    // Satisfying item id -> the owned id that grants access to it.
     static final Map<Integer, Integer> RECOIL_ACCESS = new LinkedHashMap<>();
 
     static {
@@ -41,7 +39,7 @@ public class RequiredUtility {
         return false;
     }
 
-    /** Recoil items this request may equip, best-first preference. */
+    // Recoil items this request may equip, best-first preference.
     public static List<GearItem> recoilCandidates(LoadoutData data, OptimizationRequest request) {
         List<GearItem> result = new ArrayList<>();
         for (var entry : RECOIL_ACCESS.entrySet()) {

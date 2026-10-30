@@ -5,17 +5,15 @@ import com.loadoutlab.data.*;
 import java.util.*;
 import static com.loadoutlab.engine.CombatStyle.*;
 
-/**
- * Per-NPC combat mechanics the stat sheets cannot express: style
- * immunities, the NPCs whose magic defence uses their Defence level, and
- * damage-modifier rules. The id lists are vendored from the official
- * calculator's constants (game facts, regenerated with the data - see
- * scripts/official-harness/README.md); the weapon rules are wiki-sourced.
- */
+// Per-NPC combat mechanics the stat sheets cannot express: style
+// immunities, the NPCs whose magic defence uses their Defence level, and
+// damage-modifier rules. The id lists are vendored from the official
+// calculator's constants (game facts, regenerated with the data - see
+// scripts/official-harness/README.md); the weapon rules are wiki-sourced.
 public class MonsterMechanics {
     static final JsonObject ROOT = JsonResources.gz("/com/loadoutlab/data/npc_mechanics.json.gz").getAsJsonObject();
 
-    /** A file id list as a bitset: a Set<Integer> read boxed per trial. */
+    // A file id list as a bitset: a Set<Integer> read boxed per trial.
     static final class Ids {
         final BitSet bits = new BitSet();
 
@@ -37,17 +35,17 @@ public class MonsterMechanics {
 
 
 
-    /** "immune_melee" and its kin, built once - the per-set checks used to
-     * concatenate and lower-case them every trial. */
+    // "immune_melee" and its kin, built once - the per-set checks used to
+    // concatenate and lower-case them every trial.
     static final String[] IMMUNE_ATTR = Arrays.stream(CombatStyle.values())
         .map(s -> "immune_" + Names.lower(s.name())).toArray(String[]::new);
 
-    /** Full immunity check for a concrete loadout (mirrors the official calc). */
+    // Full immunity check for a concrete loadout (mirrors the official calc).
     static final Set<String> ZOGRES = Set.of("zogre", "skogre", "slash bash");
 
-    /** Gear a monster's own rule needs, kept past the pool's score cut: a
-     * pickaxe for Slagilith, the comp ogre bow and brutal arrows for zogres,
-     * ice arrows for the Fire Warrior (ISS-01M5RVDTMR5XG16HM6G2JTF7FF). */
+    // Gear a monster's own rule needs, kept past the pool's score cut: a
+    // pickaxe for Slagilith, the comp ogre bow and brutal arrows for zogres,
+    // ice arrows for the Fire Warrior (ISS-01M5RVDTMR5XG16HM6G2JTF7FF).
     public static boolean keepInPool(MonsterStats monster, GearItem item) {
         if (monster == null) return false;
         String name = monster.nameLower;
@@ -102,16 +100,16 @@ public class MonsterMechanics {
         return monster.hasAttribute("leafy") && !leafBladed(style, loadout, spell);
     }
 
-    /** The id-list melee bars: the melee-immune rows (Zulrah can be reached
-     * with a polearm), Vespula (immune despite the polearm rule for flying),
-     * the salamander-only rows and the Guardians' pickaxe rule. */
+    // The id-list melee bars: the melee-immune rows (Zulrah can be reached
+    // with a polearm), Vespula (immune despite the polearm rule for flying),
+    // the salamander-only rows and the Guardians' pickaxe rule.
     static boolean meleeBarred(int id, String category) {
         return IMMUNE_MELEE.contains(id) && !(ZULRAH.contains(id) && "Polearm".equals(category)) || VESPULA.contains(id)
             || SALAMANDER_ONLY_MELEE.contains(id) && !"Salamander".equals(category)
             || GUARDIANS.contains(id) && !"Pickaxe".equals(category);
     }
 
-    /** Leafy monsters (turoths/kurasks): leaf-bladed melee, broad ammo, or Magic Dart. */
+    // Leafy monsters (turoths/kurasks): leaf-bladed melee, broad ammo, or Magic Dart.
     static boolean leafBladed(CombatStyle style, Loadout loadout, SpellStats spell) {
         GearItem weapon = loadout.getWeapon();
         String weaponName = weapon == null ? "" : weapon.nameLower;
@@ -124,15 +122,15 @@ public class MonsterMechanics {
         return spell != null && "Magic Dart".equals(spell.name);
     }
 
-    /** The weapon-level bars a worn weapon faces at this monster (vampyre
-     * tiers, flying, rat bone) - the calculator's gate and the pool share it. */
+    // The weapon-level bars a worn weapon faces at this monster (vampyre
+    // tiers, flying, rat bone) - the calculator's gate and the pool share it.
     public static boolean weaponUsable(MonsterStats monster, CombatStyle style, GearItem weapon) {
         return VampyreRules.canDamage(monster, style, weapon) && FlyingRules.canReach(monster, style, weapon)
             && RatBoneRules.canUse(monster, weapon);
     }
 
-    /** Weapon-level pre-filter for candidate selection (conservative: only
-     * prunes when the weapon alone decides; ammo/spell-dependent cases pass). */
+    // Weapon-level pre-filter for candidate selection (conservative: only
+    // prunes when the weapon alone decides; ammo/spell-dependent cases pass).
     public static boolean weaponCanEverWork(MonsterStats monster, CombatStyle style, GearItem weapon) {
         if (monster == null || style != MELEE) return true;
         int id = monster.id;
@@ -142,51 +140,51 @@ public class MonsterMechanics {
             || monster.hasAttribute("leafy") && !weapon.nameLower.startsWith("leaf-bladed"));
     }
 
-    /** The walk between the Sire's four vents, amortised per kill - the
-     * tunable estimate behind the ranged-demonbane-first ORDER the tests
-     * pin (field decision 2026-08-06). */
+    // The walk between the Sire's four vents, amortised per kill - the
+    // tunable estimate behind the ranged-demonbane-first ORDER the tests
+    // pin (field decision 2026-08-06).
     static final int VENT_MELEE_WALK_TICKS = 5;
 
-    /** Ticks a MELEE attacker spends walking between the Sire's four
-     * vents, amortised per kill - and a demonbane kill IS one attack, so
-     * it lands straight on the attack interval. The vents sit apart
-     * across the arena; ranged and magic one-shot each from one spot,
-     * which is why the bow "drastically cuts the time between kills". */
+    // Ticks a MELEE attacker spends walking between the Sire's four
+    // vents, amortised per kill - and a demonbane kill IS one attack, so
+    // it lands straight on the attack interval. The vents sit apart
+    // across the arena; ranged and magic one-shot each from one spot,
+    // which is why the bow "drastically cuts the time between kills".
     public static int meleeReachPenaltyTicks(MonsterStats monster) {
         return isRespiratorySystem(monster) ? VENT_MELEE_WALK_TICKS : 0;
     }
 
-    /** The vents shrug off standard melee - "magic, ranged or a halberd"
-     * per the wiki, plus the melee demonbane one-shot. weaponCanEverWork
-     * prunes the pool with this and damageFactor zeroes re-shows with it,
-     * so pool and math can never disagree. */
+    // The vents shrug off standard melee - "magic, ranged or a halberd"
+    // per the wiki, plus the melee demonbane one-shot. weaponCanEverWork
+    // prunes the pool with this and damageFactor zeroes re-shows with it,
+    // so pool and math can never disagree.
     static boolean ventMeleeLands(GearItem weapon) {
         return "Polearm".equals(weapon == null ? "" : weapon.category) || isMeleeDemonbane(weapon);
     }
 
-    /** The Inferno's nibblers - the mob whose whole role is being
-     * barraged: three spawn per wave and one AoE cast clears the set. */
+    // The Inferno's nibblers - the mob whose whole role is being
+    // barraged: three spawn per wave and one AoE cast clears the set.
     public static boolean isNibbler(MonsterStats monster) {
         return monster != null && NIBBLERS.contains(monster.id);
     }
 
-    /** Salarin the twisted - strike-spells-only, flat damage. */
+    // Salarin the twisted - strike-spells-only, flat damage.
     public static boolean isSalarin(MonsterStats monster) {
         return monster != null && SALARIN.contains(monster.id);
     }
 
-    /** Salarin's whitelist - the only casts that damage him. isImmune and
-     * the optimizer's spell pool enforce the same fact through this. */
+    // Salarin's whitelist - the only casts that damage him. isImmune and
+    // the optimizer's spell pool enforce the same fact through this.
     public static boolean salarinDamagingSpell(SpellStats spell) {
         return spell != null && "Strike".equals(spell.nameSecondWord);
     }
 
-    /** The Wardens' ejected core (ToA P2): melee "will always deal their
-     * max hit" against it (wiki) - DpsCalculator and SpecialAttack apply
-     * the same certainty rule. */
-    /** One fight per seed, totem, casket or entry (Hespori, Skotizo, the
-     * Mimic, Jad, Zuk, the Hunllefs, Obor, Bryophyta): the spec bar opens
-     * full, so burst specs count there (DES-01M5914JFX6HHTNSAP0HANN5GA). */
+    // The Wardens' ejected core (ToA P2): melee "will always deal their
+    // max hit" against it (wiki) - DpsCalculator and SpecialAttack apply
+    // the same certainty rule.
+    // One fight per seed, totem, casket or entry (Hespori, Skotizo, the
+    // Mimic, Jad, Zuk, the Hunllefs, Obor, Bryophyta): the spec bar opens
+    // full, so burst specs count there (DES-01M5914JFX6HHTNSAP0HANN5GA).
     public static boolean startsWithFullBar(MonsterStats monster) {
         return monster != null && FRESH_BAR.contains(monster.id);
     }
@@ -195,26 +193,26 @@ public class MonsterMechanics {
         return monster != null && WARDEN_CORES.contains(monster.id) && monster.versionStartsWith("Core-ejected");
     }
 
-    /** ToA rows whose defence scales with the raid's invocation level
-     * (vendored from the official calc, which excludes the Kephri
-     * overlords). profileId maps the group's synthetic phase variants
-     * back to their real rows. */
-    /** HP times the group's kit weight - the shared-kit currency. Zero for
-     * a spec-only member (the Warden's Core, ISS-01M5QEFMBSZXAHV84ZXF1YZHWY,
-     * Andrew 2026-10-24: "we dont care about he backup melee weapon for it"):
-     * its main weapon has no say in any kit, swap or strip. */
+    // ToA rows whose defence scales with the raid's invocation level
+    // (vendored from the official calc, which excludes the Kephri
+    // overlords). profileId maps the group's synthetic phase variants
+    // back to their real rows.
+    // HP times the group's kit weight - the shared-kit currency. Zero for
+    // a spec-only member (the Warden's Core, ISS-01M5QEFMBSZXAHV84ZXF1YZHWY,
+    // Andrew 2026-10-24: "we dont care about he backup melee weapon for it"):
+    // its main weapon has no say in any kit, swap or strip.
     public static double kitWeight(MonsterStats monster) {
         return monster != null && monster.hasAttribute("spec_only") ? 0 : specWeight(monster);
     }
 
-    /** HP times the group's weight - the trip's spec currency, a spec-only
-     * member at full weight ("we should only be measuring the spec hits of DDS"). */
+    // HP times the group's weight - the trip's spec currency, a spec-only
+    // member at full weight ("we should only be measuring the spec hits of DDS").
     public static double specWeight(MonsterStats monster) {
         String w = monster == null ? null : monster.attributeValue("weight:");
         return Math.max(1, monster == null ? 1 : monster.hitpoints) * (w == null ? 1 : Integer.parseInt(w));
     }
 
-    /** The spec weapon family a group stipulates for this mob, or null. */
+    // The spec weapon family a group stipulates for this mob, or null.
     public static String specStipulation(MonsterStats monster) {
         return monster == null ? null : monster.attributeValue("spec:");
     }
@@ -223,43 +221,41 @@ public class MonsterMechanics {
         return monster != null && TOA_INVOCATION_SCALED.contains(monster.profileId());
     }
 
-    /** The monster priced at a raid level: a factored copy for scaled ToA
-     * rows (level 0 clears an earlier factor), the monster itself
-     * otherwise. */
+    // The monster priced at a raid level: a factored copy for scaled ToA
+    // rows (level 0 clears an earlier factor), the monster itself
+    // otherwise.
     public static MonsterStats atToaInvocation(MonsterStats monster, int level) {
         return isToaInvocationScaled(monster) ? monster.withToaInvocation(level) : monster;
     }
 
-    /** The Sire's vents (per-monster rules live on the id set). */
+    // The Sire's vents (per-monster rules live on the id set).
     public static boolean isRespiratorySystem(MonsterStats monster) {
         return monster != null && RESPIRATORY_SYSTEMS.contains(monster.id);
     }
 
-    /** Demonbane in EVERY style, holy water excluded: the class that
-     * destroys a respiratory system on any landed hit. The Scorching bow
-     * and Purging staff belong here too - field report 2026-08-05: the
-     * melee-only reading ranked a blowpipe above the bow that one-shots.
-     * The vocabulary itself is precomputed on GearItem (one list for this,
-     * TormentedDemonRules, and the optimizer's demon bump). */
+    // Demonbane in EVERY style, holy water excluded: the class that
+    // destroys a respiratory system on any landed hit. The Scorching bow
+    // and Purging staff belong here too - field report 2026-08-05: the
+    // melee-only reading ranked a blowpipe above the bow that one-shots.
+    // The vocabulary itself is precomputed on GearItem (one list for this,
+    // TormentedDemonRules, and the optimizer's demon bump).
     public static boolean isDemonbane(GearItem weapon) { return weapon != null && weapon.demonbane; }
 
-    /** Melee demonbane - the class that destroys a respiratory system on
-     * any successful hit (wiki: "demonbane weapons (other than holy water)
-     * will instantly kill the systems"). */
+    // Melee demonbane - the class that destroys a respiratory system on
+    // any successful hit (wiki: "demonbane weapons (other than holy water)
+    // will instantly kill the systems").
     static boolean isMeleeDemonbane(GearItem weapon) { return weapon != null && weapon.meleeDemonbane; }
 
-    /** Some NPCs' magic defence rolls use their Defence level, not Magic. */
+    // Some NPCs' magic defence rolls use their Defence level, not Magic.
     public static boolean magicDefenceUsesDefenceLevel(MonsterStats monster) {
         return monster != null && MAGIC_DEFENCE_BY_DEF_LEVEL.contains(monster.id);
     }
 
-    /**
-     * Damage scale from per-monster rules (applied like the vampyre factor):
-     * Corporeal Beast halves everything except stab spears/halberds/fang and
-     * magic; Kraken takes 1/7 from ranged; Tekton 1/5 from magic; the CoX Ice
-     * demon 1/3 unless fire spells or demonbane; Slagilith 1/3 without a
-     * pickaxe; zogres quarter damage (Crumble Undead: half).
-     */
+    // Damage scale from per-monster rules (applied like the vampyre factor):
+    // Corporeal Beast halves everything except stab spears/halberds/fang and
+    // magic; Kraken takes 1/7 from ranged; Tekton 1/5 from magic; the CoX Ice
+    // demon 1/3 unless fire spells or demonbane; Slagilith 1/3 without a
+    // pickaxe; zogres quarter damage (Crumble Undead: half).
     public static double damageFactor(MonsterStats monster, CombatStyle style, Loadout loadout, String attackType, SpellStats spell) {
         if (monster == null) return 1.0;
         String name = monster.nameLower;

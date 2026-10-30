@@ -6,12 +6,10 @@ import java.util.function.Supplier;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
 
-/**
- * "Show in bank": outlines the active set's items in the bank (and the
- * bank-side inventory) so gearing up is a visual scan, not a search.
- * The id set is pre-expanded with variants (whip (or) glows when the
- * set says whip); null/empty means off.
- */
+// "Show in bank": outlines the active set's items in the bank (and the
+// bank-side inventory) so gearing up is a visual scan, not a search.
+// The id set is pre-expanded with variants (whip (or) glows when the
+// set says whip); null/empty means off.
 public class BankHighlightOverlay extends WidgetItemOverlay {
     static final Color GLOW = new Color(0x8CC88C);
     static final Color FILL = new Color(0x288CC88C, true);

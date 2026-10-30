@@ -1,8 +1,8 @@
 package com.loadoutlab.render;
 
-/** The classic gp field vocabulary (ported from the panel's
- * parsedBudgetGp): k/m/b suffixes, "max" or "-" = 2b, empty or
- * unparseable = 0, clamped to [0, 2b]. */
+// The classic gp field vocabulary (ported from the panel's
+// parsedBudgetGp): k/m/b suffixes, "max" or "-" = 2b, empty or
+// unparseable = 0, clamped to [0, 2b].
 public class Gp {
 
     public static int parse(String text) {
@@ -20,8 +20,8 @@ public class Gp {
         } catch (NumberFormatException ex) { return 0; }
     }
 
-    /** The compact display form: rounded, never the raw integer -
-     * "25m", "7.9m", "480k". For chips and stat lines. */
+    // The compact display form: rounded, never the raw integer -
+    // "25m", "7.9m", "480k". For chips and stat lines.
     static String formatShort(int gp) {
         if (gp <= 0) return "";
         if (gp >= 10_000_000) return Math.round(gp / 1_000_000.0) + "m";

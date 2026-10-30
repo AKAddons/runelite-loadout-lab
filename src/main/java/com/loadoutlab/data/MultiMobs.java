@@ -3,12 +3,10 @@ package com.loadoutlab.data;
 import com.google.gson.*;
 import java.util.*;
 
-/**
- * The mobs fought in multi-combat areas: multi_mobs.json, curated from the
- * wiki location tables, the crowdsourced multicombat tiles and the area
- * pages (docs/data/multi-mobs.md), keyed name + version as the loader
- * sees them. A listed mob gets the Multi switch on its card.
- */
+// The mobs fought in multi-combat areas: multi_mobs.json, curated from the
+// wiki location tables, the crowdsourced multicombat tiles and the area
+// pages (docs/data/multi-mobs.md), keyed name + version as the loader
+// sees them. A listed mob gets the Multi switch on its card.
 public class MultiMobs {
     static final Map<String, List<String>> LOCATIONS = new HashMap<>();
 
@@ -33,7 +31,7 @@ public class MultiMobs {
         return mob != null && LOCATIONS.containsKey(key(mob.name, mob.version));
     }
 
-    /** The multi locations the mob is fought in, for the switch's tooltip. */
+    // The multi locations the mob is fought in, for the switch's tooltip.
     public static List<String> locations(MonsterStats mob) {
         return mob == null ? List.of() : LOCATIONS.getOrDefault(key(mob.name, mob.version), List.of());
     }

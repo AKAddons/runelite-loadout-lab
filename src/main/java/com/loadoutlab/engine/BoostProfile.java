@@ -1,15 +1,12 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
-/**
- * A potion/prayer-free stat boost applied on top of the base levels.
- *
- * <p>Every non-live profile is the same shape - floor(flat + level * factor)
- * added to a fixed set of skills - so each constant just carries its flat
- * term, its factor, and which skills it touches as letters over the alphabet
- * a(ttack) s(trength) d(efence) r(anged) m(agic). Magic potion's flat +4 is
- * encoded as factor 0.0, which makes floor(4 + level * 0.0) exactly 4.
- */
+// A potion/prayer-free stat boost applied on top of the base levels.
+// <p>Every non-live profile is the same shape - floor(flat + level * factor)
+// added to a fixed set of skills - so each constant just carries its flat
+// term, its factor, and which skills it touches as letters over the alphabet
+// a(ttack) s(trength) d(efence) r(anged) m(agic). Magic potion's flat +4 is
+// encoded as factor 0.0, which makes floor(4 + level * 0.0) exactly 4.
 public enum BoostProfile {
     NONE("No boosts", 0, 0, ""), LIVE_CURRENT("Current boosted levels", 0, 0, ""),
     // Label deliberately avoids " + " - the assumes chips split on it.
@@ -31,7 +28,7 @@ public enum BoostProfile {
     final String label;
     final int flat;
     final double factor;
-    /** Which skills this profile boosts, as letters from "asdrm". */
+    // Which skills this profile boosts, as letters from "asdrm".
     final String skills;
 
     BoostProfile(String label, int flat, double factor, String skills) {
@@ -51,11 +48,11 @@ public enum BoostProfile {
             boostIf('d', source.defence), boostIf('r', source.ranged), boostIf('m', source.magic));
     }
 
-    /** True when this profile boosts the skill letter (from "asdrm") - the
-     * assume-chip picker filters style-relevant boosts with it. */
+    // True when this profile boosts the skill letter (from "asdrm") - the
+    // assume-chip picker filters style-relevant boosts with it.
     public boolean boosts(char skill) { return skills.indexOf(skill) >= 0; }
 
-    /** floor(flat + level * factor), or 0 when this profile skips the skill. */
+    // floor(flat + level * factor), or 0 when this profile skips the skill.
     int boostIf(char skill, int level) {
         return skills.indexOf(skill) < 0 ? 0 : (int) Math.floor(flat + level * factor);
     }

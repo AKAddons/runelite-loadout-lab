@@ -7,7 +7,8 @@ import java.io.InputStream;
 
 /** The build-stamped plugin version (processResources writes
  * version.properties; VersionStampTest pins it to the hub manifest).
- * Neutral home - the report builder, seam hello and UIs all read it. */
+ * Test-side since 0.7.2: nothing in main reads it (the report went).
+ */
 public class PluginVersion {
     /** Bumped with every release (VersionStampTest pins it to build.gradle):
      * hub builds ship the resource unexpanded, so this is what players see. */

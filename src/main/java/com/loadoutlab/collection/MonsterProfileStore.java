@@ -10,26 +10,23 @@ import net.runelite.client.config.ConfigManager;
 import com.loadoutlab.model.CommandEngine;
 import static com.loadoutlab.data.MonsterStats.*;
 
-/**
- * Per-monster user profiles: the preferences the optimizer cannot infer,
- * remembered per mob. Each profile carries PINS (slot -> item the player
- * always brings THERE), a free-text NOTE, and extra ITEMS unioned into
- * the Show-in-bank / Filter-bank sets (trip supplies no suggestion would
- * contain). Pins and filter items are SCOPED: "ALL" applies to every
- * style card, or a specific style ("MELEE"/"RANGED"/"MAGIC") applies to
- * that card only - a super combat for melee, a ranged potion for ranged.
- * The effective view overlays ALL with the style scope (style wins a
- * pin-slot collision).
- *
- * <p>Scope-free config in v1 like dreams/exclusions: trip preferences
- * follow the player. Empty profiles are pruned on save.
- */
+// Per-monster user profiles: the preferences the optimizer cannot infer,
+// remembered per mob. Each profile carries PINS (slot -> item the player
+// always brings THERE), a free-text NOTE, and extra ITEMS unioned into
+// the Show-in-bank / Filter-bank sets (trip supplies no suggestion would
+// contain). Pins and filter items are SCOPED: "ALL" applies to every
+// style card, or a specific style ("MELEE"/"RANGED"/"MAGIC") applies to
+// that card only - a super combat for melee, a ranged potion for ranged.
+// The effective view overlays ALL with the style scope (style wins a
+// pin-slot collision).
+// <p>Scope-free config in v1 like dreams/exclusions: trip preferences
+// follow the player. Empty profiles are pruned on save.
 public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedStore {
     static final String CONFIG_GROUP = "loadoutlab";
     static final String KEY = "monsterProfiles";
 
-    /** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). Global
-     * before 0.4.1, which is why a main and a test account shared this list. */
+    // Per-character scope ("std"/"seasonal" plus ".<accountHash>"). Global
+    // before 0.4.1, which is why a main and a test account shared this list.
     String worldScope;
 
     String key() { return ScopedKeys.key(worldScope, KEY); }
@@ -38,12 +35,12 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         worldScope = scope;
         load();
     }
-    /** The every-style scope key. Style scopes use CombatStyle names. */
+    // The every-style scope key. Style scopes use CombatStyle names.
     public static final String ALL = "ALL";
 
-    /** Serialized form: scope -> slot-name -> id for pins; scope -> id ->
-     * display name for filter items (names captured at add time - id
-     * resolution later needs the client thread). */
+    // Serialized form: scope -> slot-name -> id for pins; scope -> id ->
+    // display name for filter items (names captured at add time - id
+    // resolution later needs the client thread).
     Stored stored(int monsterId) {
         return profiles.computeIfAbsent(profileIdOf(monsterId), id -> new Stored());
     }
@@ -54,21 +51,21 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         Map<String, Map<String, Integer>> pins;
         String note;
         Map<String, Map<Integer, String>> filterItems;
-        /** Per-mob simulated items (id -> add-time name) - counted as
-         * owned for THIS mob only. */
+        // Per-mob simulated items (id -> add-time name) - counted as
+        // owned for THIS mob only.
         Map<Integer, String> sims;
-        /** Pinned autocast spell name for the magic card ("" / null = auto). */
+        // Pinned autocast spell name for the magic card ("" / null = auto).
         String spell;
-        /** Pinned SPEC weapon id (0 / null = auto-pick). */
+        // Pinned SPEC weapon id (0 / null = auto-pick).
         Integer spec;
-        /** Per-mob exclusions: scope -> item ids the suggestions here must
-         * never contain (the global exclusion list handles "everywhere"). */
+        // Per-mob exclusions: scope -> item ids the suggestions here must
+        // never contain (the global exclusion list handles "everywhere").
         Map<String, Set<Integer>> exclusions;
-        /** Per-mob trip-supply overrides: TripSupplies category ->
-         * mode/option key ("DETECT_BEST", "NONE", "SANFEW_SERUM"...).
-         * Absent category = the wrench-panel default applies. */
+        // Per-mob trip-supply overrides: TripSupplies category ->
+        // mode/option key ("DETECT_BEST", "NONE", "SANFEW_SERUM"...).
+        // Absent category = the wrench-panel default applies.
         Map<String, String> supplies;
-        /** Degrades chip: skip degradable gear here (null = panel default). */
+        // Degrades chip: skip degradable gear here (null = panel default).
         Boolean skipDegradable;
     }
 
@@ -95,8 +92,8 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         load();
     }
 
-    /** Re-read from config - the active RuneLite profile may have changed. */
-    /** The reset-customisations control: every profile in this scope goes. */
+    // Re-read from config - the active RuneLite profile may have changed.
+    // The reset-customisations control: every profile in this scope goes.
     public synchronized void clear() {
         profiles.clear();
         save();
@@ -119,26 +116,26 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         }
     }
 
-    /** A read-only copy, Map.of() for nothing. */
+    // A read-only copy, Map.of() for nothing.
     static <K, V> Map<K, V> copyOf(Map<K, V> m) {
         return m == null || m.isEmpty() ? Map.of() : new LinkedHashMap<>(m);
     }
 
-    /** A profile field, or the fallback when the mob has no profile or the field is unset. */
+    // A profile field, or the fallback when the mob has no profile or the field is unset.
     <T> T read(int monsterId, Function<Stored, T> field, T fallback) {
         Stored profile = get(monsterId);
         T value = profile == null ? null : field.apply(profile);
         return value == null ? fallback : value;
     }
 
-    /** One scope's inner collection of a scoped field, or null. */
+    // One scope's inner collection of a scoped field, or null.
     <V> V inner(int monsterId, Function<Stored, Map<String, V>> field, String scope) {
         Map<String, V> scoped = read(monsterId, field, null);
         return scoped == null ? null : scoped.get(scope);
     }
 
-    /** A scoped field for the manage menus: scope -> the copied inner
-     * collection, the empties dropped (the copy says null); Map.of() for none. */
+    // A scoped field for the manage menus: scope -> the copied inner
+    // collection, the empties dropped (the copy says null); Map.of() for none.
     static <V, W> Map<String, W> byScope(Map<String, V> scoped, Function<V, W> copy) {
         if (scoped == null || scoped.isEmpty()) return Map.of();
         Map<String, W> out = new LinkedHashMap<>();
@@ -149,7 +146,7 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         return out;
     }
 
-    /** Effective pins for one style card: ALL overlaid by the style scope. */
+    // Effective pins for one style card: ALL overlaid by the style scope.
     public synchronized Map<GearSlot, Integer> pinsFor(int monsterId, String style) {
         Map<String, Map<String, Integer>> scoped = read(monsterId, p -> p.pins, Map.of());
         var pins = new EnumMap<GearSlot, Integer>(GearSlot.class);
@@ -169,7 +166,7 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         }
     }
 
-    /** Raw pins by scope, for the manage menu: scope -> slot -> id. */
+    // Raw pins by scope, for the manage menu: scope -> slot -> id.
     public synchronized Map<String, Map<GearSlot, Integer>> allPins(int monsterId) {
         return byScope(read(monsterId, p -> p.pins, null), slots -> {
             var pins = new EnumMap<GearSlot, Integer>(GearSlot.class);
@@ -193,7 +190,7 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         }
     }
 
-    /** The user's note for this monster ("" when none). */
+    // The user's note for this monster ("" when none).
     public synchronized String note(int monsterId) { return read(monsterId, p -> p.note, ""); }
 
     public synchronized void setNote(int monsterId, String note) {
@@ -202,7 +199,7 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         save();
     }
 
-    /** The pinned autocast spell for this monster ("" = auto-pick). */
+    // The pinned autocast spell for this monster ("" = auto-pick).
     public synchronized String pinnedSpell(int monsterId) { return read(monsterId, p -> p.spell, ""); }
 
     public synchronized void setPinnedSpell(int monsterId, String spellName) {
@@ -211,7 +208,7 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         save();
     }
 
-    /** The pinned SPEC weapon id for this monster (0 = auto-pick). */
+    // The pinned SPEC weapon id for this monster (0 = auto-pick).
     public synchronized int pinnedSpec(int monsterId) { return read(monsterId, p -> p.spec, 0); }
 
     public synchronized void setPinnedSpec(int monsterId, int itemId) {
@@ -221,13 +218,13 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
     }
 
 
-    /** Raw filter items by scope: scope -> id -> display name. */
+    // Raw filter items by scope: scope -> id -> display name.
     public synchronized Map<String, Map<Integer, String>> allFilterItems(int monsterId) {
         return byScope(read(monsterId, p -> p.filterItems, null), items -> items.isEmpty() ? null : copyOf(items));
     }
 
-    /** Effective per-mob exclusions for one style card: ALL plus the style
-     * scope. The caller unions in the global exclusion list. */
+    // Effective per-mob exclusions for one style card: ALL plus the style
+    // scope. The caller unions in the global exclusion list.
     public synchronized Set<Integer> exclusionsFor(int monsterId, String style) {
         Stored profile = get(monsterId);
         if (profile == null) return Set.of();
@@ -240,16 +237,16 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         return merged.isEmpty() ? Set.of() : merged;
     }
 
-    /** Raw per-mob exclusions by scope, for the manage menu. */
+    // Raw per-mob exclusions by scope, for the manage menu.
     public synchronized Map<String, Set<Integer>> allExclusions(int monsterId) {
         return byScope(read(monsterId, p -> p.exclusions, null),
             ids -> ids.isEmpty() ? null : new LinkedHashSet<>(ids));
     }
 
-    /** Per-mob sims: counted as owned for THIS mob only. */
+    // Per-mob sims: counted as owned for THIS mob only.
     public synchronized Set<Integer> simsFor(int monsterId) { return allSims(monsterId).keySet(); }
 
-    /** Raw per-mob sims (id -> add-time name), for the manage menu. */
+    // Raw per-mob sims (id -> add-time name), for the manage menu.
     public synchronized Map<Integer, String> allSims(int monsterId) {
         return copyOf(read(monsterId, p -> p.sims, null));
     }
@@ -269,14 +266,14 @@ public class MonsterProfileStore implements CommandEngine.MobProfiles, ScopedSto
         }
     }
 
-    /** Per-mob trip-supply overrides (category -> mode/option key);
-     * empty when the wrench-panel defaults apply untouched. */
+    // Per-mob trip-supply overrides (category -> mode/option key);
+    // empty when the wrench-panel defaults apply untouched.
     public synchronized Map<String, String> supplyOverrides(int monsterId) {
         return copyOf(read(monsterId, p -> p.supplies, null));
     }
 
-    /** Set one category's override; null/empty choice returns the category
-     * to the wrench-panel default. */
+    // Set one category's override; null/empty choice returns the category
+    // to the wrench-panel default.
     public synchronized void setSupplyOverride(int monsterId, String category, String choice) {
         if (choice == null || choice.isEmpty()) {
             Map<String, String> supplies = read(monsterId, p -> p.supplies, null);
