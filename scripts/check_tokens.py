@@ -6,13 +6,17 @@ stripped; tests, resources and the readme excluded) and declines automatic
 review above 200,000 tokens. This script estimates the bot's count so a
 breach is caught BEFORE the hub PR, not by the bot's comment on it.
 
-Calibration (2026-10-31, two PRs): the bot's figure sits 0.9-1.6% above a
-proper comment strip (a small lexer: strings kept whole, every // and block
-comment out) counted with tiktoken's o200k_base - 202k at 198,835 (0.7.1,
-plugin-hub #19484), 204k at 202,192 (0.8.0, #19799). The old regex strip
-undercounted a further 1.2% (it cut code after a "//" inside a string). So:
-bot ~= lexed o200k x 1.015, and THAT estimate is what the gate compares to
-the bot's 200,000. Without tiktoken a char/token estimate stands in, high.
+Calibration (2026-10-31, three pins of #19484/#19799): the bot does not see
+indentation. Slim 17 moved class bodies to column 0 (-4,949 o200k tokens on
+the raw text) and the bot's count barely moved, so it counts something like a
+re-printed source (a parser strips the comments and prints the tree back).
+Model: every line's leading whitespace dropped, comments out (a small lexer:
+strings kept whole), tiktoken o200k_base, times a factor. Readings: 0.7.1
+202k / 181,122 = 1.115; 0.8.0 204k / 184,711 = 1.104; 0.8.1 201,885 /
+183,520 = 1.100. The gate uses the worst, 1.115, and compares THAT to the
+bot's 200,000. Formatting tricks (dedent, joined lines) cannot move this
+model much; identifiers, keywords and punctuation can. Without tiktoken a
+char/token estimate stands in, high.
 
 Run directly, or via `./gradlew checkTokens` (and it's part of `preSubmit`).
 """
@@ -21,7 +25,7 @@ import os
 import sys
 
 CAP = 200_000          # the bot's line, in the BOT's tokens
-BOT_OVER_LEXED = 1.015 # the bot's count over our lexed o200k count (see above)
+BOT_OVER_LEXED = 1.115 # the bot's count over our lexed, de-indented o200k count (see above)
 WARN_AT = 195_000      # plan the next externalisation above this (bot tokens)
 CHARS_PER_TOKEN = 3.6  # fallback only; low = conservative
 
@@ -69,7 +73,8 @@ def main() -> int:
     per = []
     lexed = 0
     for p in files:
-        t = count(strip_comments(open(p, encoding="utf-8", errors="ignore").read()))
+        stripped = strip_comments(open(p, encoding="utf-8", errors="ignore").read())
+        t = count("\n".join(l.lstrip() for l in stripped.split("\n")))
         lexed += t
         per.append((t, os.path.relpath(p, ROOT)))
     total = round(lexed * BOT_OVER_LEXED)
