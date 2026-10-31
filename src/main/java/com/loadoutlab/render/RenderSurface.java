@@ -53,9 +53,7 @@ public class RenderSurface {
         String raid = str(mob, "raid");
         if (raid != null) return raid;
         String name = str(mob, "name");
-        if (name != null) {
-            for (var route : MOOD_ROUTES.entrySet()) if (name.startsWith(route.getKey())) return route.getValue();
-        }
+        if (name != null) for (var route : MOOD_ROUTES.entrySet()) if (name.startsWith(route.getKey())) return route.getValue();
         return null;
     }
 

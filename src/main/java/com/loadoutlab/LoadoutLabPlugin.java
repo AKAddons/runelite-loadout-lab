@@ -968,9 +968,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
         for (Source hold : Source.values()) if (hold.name().startsWith("CARGO_HOLD")) ledger.snapshot(hold).forEach((id, n) -> cargo.merge(id, n, Integer::sum));
         origins.put("cargo hold", cargo);
         origins.put("potion storage or scroll book", potionStorage);
-        if (config.useDwmsData()) {
-            for (var family : dwmsLink.families().entrySet()) origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
-        }
+        if (config.useDwmsData()) for (var family : dwmsLink.families().entrySet()) origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
         origins.values().removeIf(Map::isEmpty);
         return origins;
     }

@@ -705,11 +705,11 @@ public class LoadoutOptimizer {
         }
 
         Map<DpsResult, Long> rbr = new IdentityHashMap<>();
-        if (request.isRiskConstrained())  for (DpsResult result : results) rbr.put(result, riskGp(result.loadout, null, request.maxTradeables));
+        if (request.isRiskConstrained()) for (DpsResult result : results) rbr.put(result, riskGp(result.loadout, null, request.maxTradeables));
         // A defense-weighted run ranks its results by the same weighted
         // score the beam used; a pure run keeps the plain dps order.
         Map<DpsResult, Double> weighted = new IdentityHashMap<>();
-        if (incoming != null)  for (DpsResult result : results) weighted.put(result, beamScore(request, result, result.loadout, incoming));
+        if (incoming != null) for (DpsResult result : results) weighted.put(result, beamScore(request, result, result.loadout, incoming));
         results.sort(ranking(request, weighted, rbr));
         if (aa) results.replaceAll(r -> r.withAntifireAssumed(true));
         return limit(results, request);
@@ -989,7 +989,7 @@ public class LoadoutOptimizer {
             // +10% on standard spells), and the swaps strip prices every
             // eligible item - an owned weapon it rates above the worn one
             // must be a weapon the search saw (ISS-01M5PHE6WD81W8542RW71EXSHC).
-            if (slot == WEAPON)  for (GearItem item : rows.subList(limit, rows.size())) if (request.ownedItems.owns(item.id) || request.isDream(item.id)) cut.add(item);
+            if (slot == WEAPON) for (GearItem item : rows.subList(limit, rows.size())) if (request.ownedItems.owns(item.id) || request.isDream(item.id)) cut.add(item);
             // Defense-weighted runs keep a second tier: the best defensive
             // items by utility beyond the offensive cut, so the beam can
             // genuinely trade damage for safety.
@@ -1002,9 +1002,7 @@ public class LoadoutOptimizer {
         }
         rows.addAll(protectives);
         // Each rule's own 3 best, so one rule cannot crowd out another.
-        if (sr != null) for (SetRules.Rule r : sr.rules) {
-            if (r.names()) allowed.stream().filter(i -> SetRules.of(i, r.getStat()) > 0).sorted(byScore).limit(3).filter(Predicate.not(rows::contains)).forEach(rows::add);
-        }
+        if (sr != null) for (SetRules.Rule r : sr.rules) if (r.names()) allowed.stream().filter(i -> SetRules.of(i, r.getStat()) > 0).sorted(byScore).limit(3).filter(Predicate.not(rows::contains)).forEach(rows::add);
         if (slot != WEAPON) rows.add(0, null);
         return rows;
     }

@@ -710,9 +710,7 @@ public class ResultCards {
         JToggleButton sb = bankToggle("Show in bank", text("bank.show.tip"), "bank-show", () -> {
             List<Integer> ids = new ArrayList<>();
             Map gm = map(shown, "gear");
-            if (gm != null) {
-                for (Object slotItem : gm.values()) if (slotItem instanceof Map) ids.add(id((Map) slotItem, "id"));
-            }
+            if (gm != null) for (Object slotItem : gm.values()) if (slotItem instanceof Map) ids.add(id((Map) slotItem, "id"));
             Map qi = map(shown, "quiverAmmo");
             if (qi != null) ids.add(id(qi, "id"));
             for (Map carried : bench) ids.add(id(carried, "id"));

@@ -939,9 +939,7 @@ public class CommandEngine {
                     // view params (lens/tab hops since are not actions and
                     // must survive the jump) and a fresh history node.
                     Object entries = snapshot.get("entries");
-                    if (entries instanceof List) {
-                        for (Object en : (List<?>) entries) if (en instanceof Map) ((Map) en).put("params", state.paramsNode());
-                    }
+                    if (entries instanceof List) for (Object en : (List<?>) entries) if (en instanceof Map) ((Map) en).put("params", state.paramsNode());
                     link.publishPage(withHistory(snapshot));
                 } else {
                     // Older than the snapshot window (or pre-first-page):
