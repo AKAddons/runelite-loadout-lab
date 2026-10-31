@@ -66,15 +66,11 @@ public class MaxHits {
                 value *= Integer.parseInt(times.group(1));
                 continue;
             }
-            if (text.contains("attack") && text.contains("not") || text.contains("doesn't attack") || SPECIAL.matcher(text).find()) {
-                return; // a special, dragonfire or a non-attacker - not a regular max
-            }
+            if (text.contains("attack") && text.contains("not") || text.contains("doesn't attack") || SPECIAL.matcher(text).find()) return; // a special, dragonfire or a non-attacker - not a regular max
             boolean melee = MELEE.matcher(text).find();
             boolean ranged = RANGED.matcher(text).find();
             boolean magic = MAGIC.matcher(text).find();
-            if (!melee && !ranged && !magic && !GENERAL.matcher(text).find()) {
-                return; // a named attack we cannot place
-            }
+            if (!melee && !ranged && !magic && !GENERAL.matcher(text).find()) return; // a named attack we cannot place
             families[Family.MELEE.ordinal()] |= melee;
             families[Family.RANGED.ordinal()] |= ranged;
             families[Family.MAGIC.ordinal()] |= magic;

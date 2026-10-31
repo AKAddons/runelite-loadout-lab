@@ -35,6 +35,9 @@ public class SetRules {
 
         // Whether some total in [lo, hi] could still hold.
         boolean reachable(double lo, double hi) { return op.startsWith(">") ? holds(hi) : holds(lo); }
+
+        // This rule wants named items worn.
+        boolean names() { return op.startsWith(">") && stat.startsWith("has:"); }
     }
 
     @Builder.Default
@@ -200,6 +203,16 @@ public class SetRules {
     public static double total(Loadout loadout, String stat) {
         double sum = 0;
         for (GearItem item : loadout.getGear().values()) sum += of(item, stat);
+        return sum;
+    }
+
+    // How far this set has come on the rules that want named items worn: a met
+    // rule counts the same however far past it the set is, and more than any
+    // unmet count (a set holds 11 items), so two of one do not outrank
+    // one each of two rules. The beam keeps lines at every count.
+    int namedProgress(Loadout loadout) {
+        int sum = 0;
+        for (Rule r : rules) if (r.names()) sum += r.holds(total(loadout, r.stat)) ? 12 : (int) total(loadout, r.stat);
         return sum;
     }
 

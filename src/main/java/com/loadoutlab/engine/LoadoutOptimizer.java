@@ -117,15 +117,11 @@ public class LoadoutOptimizer {
                 }
                 Loadout trial = current.loadout.with(slot, item);
                 Set<String> after = coveredGods(trial);
-                if (!after.containsAll(before) || !after.contains(god)) {
-                    continue; // would uncover another route god
-                }
+                if (!after.containsAll(before) || !after.contains(god)) continue; // would uncover another route god
                 if (pass.risk != null && pass.risk.exceedsCap(trial, null)) continue;
                 if (request.setRules != null && !request.setRules.holds(trial)) continue;
                 DpsResult candidate = bestSpellResult(request, trial, pass.spells);
-                if (candidate == null || candidate.net < current.net - 1e-9) {
-                    continue; // protection is worn only when it costs nothing
-                }
+                if (candidate == null || candidate.net < current.net - 1e-9) continue; // protection is worn only when it costs nothing
                 current = candidate.withPurchaseCost(current.purchaseCost);
                 break;
             }
@@ -340,9 +336,7 @@ public class LoadoutOptimizer {
         Loadout worn = result.loadout;
         Loadout relocated = worn.with(AMMO, null).withQuiverAmmo(worn.get(AMMO));
         DpsResult moved = bestSpellResult(request, relocated, pass.spells);
-        if (moved == null || moved.net < result.net - 1e-9) {
-            return result; // relocation must be dps-neutral, or leave it
-        }
+        if (moved == null || moved.net < result.net - 1e-9) return result; // relocation must be dps-neutral, or leave it
         moved = moved.withPurchaseCost(result.purchaseCost);
         return fillSlot(data, request, moved, AMMO, pass, moved.net);
     }
@@ -634,15 +628,11 @@ public class LoadoutOptimizer {
                 if (dragonShield && slot == SHIELD) {
                     // Dragonfire gear mode: the shield MUST protect (no empty slot).
                     candidates = keep(candidates, DragonfireRules::isProtectiveShield);
-                    if (candidates.isEmpty()) {
-                        break; // no owned protection - this weapon line dies
-                    }
+                    if (candidates.isEmpty()) break; // no owned protection - this weapon line dies
                 }
                 if (required.containsKey(slot)) {
                     candidates = onlyIds(candidates, required.get(slot));
-                    if (candidates.isEmpty()) {
-                        break; // cannot comply on this line - it dies
-                    }
+                    if (candidates.isEmpty()) break; // cannot comply on this line - it dies
                 }
                 for (SearchState state : states) {
                     for (GearItem item : candidates) {
@@ -683,6 +673,14 @@ public class LoadoutOptimizer {
                 next.sort(comparingDouble(SearchState::getScore).reversed()
                     .thenComparingLong(SearchState::getRiskGp) .thenComparingInt(SearchState::getCost));
                 states = cutBeam(next, request.isRiskConstrained());
+                // A named item usually costs dps, so its lines fall below the
+                // cut: the best 8 at each count of named items worn stay on (next
+                // is score-sorted). With no rule naming items every line counts
+                // 0, so nothing past the cut stays; % only guards the array.
+                if (request.setRules != null) {
+                    int[] levels = new int[99];
+                    for (int i = 0; i < next.size(); i++) if (levels[request.setRules.namedProgress(Loadout.adopting(next.get(i).gear)) % 99]++ < 8 && i >= BEAM_WIDTH) states.add(next.get(i));
+                }
                 if (states.isEmpty()) break;
             }
 
@@ -700,15 +698,11 @@ public class LoadoutOptimizer {
         }
 
         Map<DpsResult, Long> rbr = new IdentityHashMap<>();
-        if (request.isRiskConstrained()) {
-            for (DpsResult result : results) rbr.put(result, riskGp(result.loadout, null, request.maxTradeables));
-        }
+        if (request.isRiskConstrained())  for (DpsResult result : results) rbr.put(result, riskGp(result.loadout, null, request.maxTradeables));
         // A defense-weighted run ranks its results by the same weighted
         // score the beam used; a pure run keeps the plain dps order.
         Map<DpsResult, Double> weighted = new IdentityHashMap<>();
-        if (incoming != null) {
-            for (DpsResult result : results) weighted.put(result, beamScore(request, result, result.loadout, incoming));
-        }
+        if (incoming != null)  for (DpsResult result : results) weighted.put(result, beamScore(request, result, result.loadout, incoming));
         results.sort(ranking(request, weighted, rbr));
         if (aa) results.replaceAll(r -> r.withAntifireAssumed(true));
         return limit(results, request);
@@ -923,6 +917,13 @@ public class LoadoutOptimizer {
         int tier = tier(request.monster);
         List<GearItem> protectives = new ArrayList<>();
         List<GearItem> rows = new ArrayList<>();
+        // Rules that name items (ISS-01M67DW3T4FRYM42ENDM6HAXGG, Andrew 2026-10-30:
+        // "LL: find a set when a rule names items the score cut drops"): an item
+        // can count toward "two Hueycoatl pieces worn" and score nothing for the
+        // style, and with none in any pool RuleBounds kills every line at once.
+        // Weapons stay out: a weapon line costs a whole beam, armour can carry these.
+        SetRules sr = slot == WEAPON ? null : request.setRules;
+        List<GearItem> allowed = new ArrayList<>();
         for (GearItem item : data.getGearItems(slot)) {
             if (slot == AMMO && fw != null && !compatible(item, fw)) continue;
             // Ornament/locked/degraded variants: identical stats to the base
@@ -958,6 +959,7 @@ public class LoadoutOptimizer {
             // darts carry no stats, and without them the atlatl's line had no
             // ammo and never scored a set (ISS-01M5PTESXPE03VZP9JB8X93KRF).
             boolean pairedAmmo = slot == AMMO && fw != null && strengthApplies(item, fw);
+            if (sr != null && allowedByMode(request, item)) allowed.add(item);
             if (slot != WEAPON && !protective && !ri && !defensiveCandidate && !pairedAmmo
                 && candidateScore(request, item, a2) <= 0) {
                 continue;
@@ -970,7 +972,8 @@ public class LoadoutOptimizer {
             rows.add(item);
         }
 
-        rows.sort(comparingDouble((GearItem item) -> candidateScore(request, item, a2)).reversed().thenComparingInt(GearItem::getPriceOrZero));
+        var byScore = comparingDouble((GearItem item) -> candidateScore(request, item, a2)).reversed().thenComparingInt(GearItem::getPriceOrZero);
+        rows.sort(byScore);
         rows = dedupe(rows, request);
         if (rows.size() > limit) {
             List<GearItem> cut = new ArrayList<>(rows.subList(0, limit));
@@ -979,9 +982,7 @@ public class LoadoutOptimizer {
             // +10% on standard spells), and the swaps strip prices every
             // eligible item - an owned weapon it rates above the worn one
             // must be a weapon the search saw (ISS-01M5PHE6WD81W8542RW71EXSHC).
-            if (slot == WEAPON) {
-                for (GearItem item : rows.subList(limit, rows.size())) if (request.ownedItems.owns(item.id) || request.isDream(item.id)) cut.add(item);
-            }
+            if (slot == WEAPON)  for (GearItem item : rows.subList(limit, rows.size())) if (request.ownedItems.owns(item.id) || request.isDream(item.id)) cut.add(item);
             // Defense-weighted runs keep a second tier: the best defensive
             // items by utility beyond the offensive cut, so the beam can
             // genuinely trade damage for safety.
@@ -993,6 +994,10 @@ public class LoadoutOptimizer {
             rows = cut;
         }
         rows.addAll(protectives);
+        // Each rule's own 3 best, so one rule cannot crowd out another.
+        if (sr != null) for (SetRules.Rule r : sr.rules) {
+            if (r.names()) allowed.stream().filter(i -> SetRules.of(i, r.getStat()) > 0).sorted(byScore).limit(3).filter(Predicate.not(rows::contains)).forEach(rows::add);
+        }
         if (slot != WEAPON) rows.add(0, null);
         return rows;
     }
@@ -1402,12 +1407,8 @@ public class LoadoutOptimizer {
 
     // The per-death fee this item pays no matter what is protected.
     static long alwaysDeathFee(GearItem item) {
-        if (item.tradeable && !isDestroyedOnDeath(item)) {
-            return 0; // priced by the kept-slot ranking instead
-        }
-        if (isConvertible(item)) {
-            return 0; // protectable - may ride a kept slot
-        }
+        if (item.tradeable && !isDestroyedOnDeath(item)) return 0; // priced by the kept-slot ranking instead
+        if (isConvertible(item)) return 0; // protectable - may ride a kept slot
         return costFor(item);
     }
 

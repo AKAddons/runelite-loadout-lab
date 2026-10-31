@@ -162,12 +162,8 @@ public class LoadoutData {
     static int versionTier(String version) {
         if (version == null || version.isEmpty()) return 1;
         String v = Names.lower(version);
-        if (v.contains("post-quest")) {
-            return 0;   // the everyday fight
-        }
-        if (v.contains("normal") || v.contains("serpentine")) {
-            return 1;   // normal mode / Zulrah's spawn form
-        }
+        if (v.contains("post-quest")) return 0;   // the everyday fight
+        if (v.contains("normal") || v.contains("serpentine")) return 1;   // normal mode / Zulrah's spawn form
         if (v.contains("awakened") || v.contains("enraged") || v.contains("entry mode")
             || v.contains("deep delve") || v.contains("quest")) {
             return 3;   // scaled/hard variants and quest-only rows: never the default

@@ -184,9 +184,7 @@ public class PvpRisk {
             // rule exists to prevent.
             GearItem item = i < slots.length ? loadout.get(slots[i]) : alreadyWorn(loadout, carriedSpecWeapon) ? null : carriedSpecWeapon;
             int fate = offerRebuild(item, values, count, pinnedIds, protectOnlyIds);
-            if (fate < 0) {
-                return true; // unpinned non-poolable must-protect: never kept
-            }
+            if (fate < 0) return true; // unpinned non-poolable must-protect: never kept
             frictionAt |= (fate & 1) << count;
             count += fate >> 1;
         }
@@ -196,9 +194,7 @@ public class PvpRisk {
             if ((frictionAt & (1 << i)) == 0) continue;
             int ahead = 0;
             for (int j = 0; j < count; j++) if (values[j] > values[i] || (values[j] == values[i] && j < i)) ahead++;
-            if (ahead >= keep) {
-                return true; // ranks outside the kept slots - lost, rebuild due
-            }
+            if (ahead >= keep) return true; // ranks outside the kept slots - lost, rebuild due
         }
         return false;
     }
@@ -235,17 +231,11 @@ public class PvpRisk {
     // (0 except the destroyed/fee classes). Shared classification for
     // assess() and the lean riskGp().
     static long poolValue(GearItem item) {
-        if (item == null) {
-            return -1; // costFor(null) == 0
-        }
-        if (isDestroyedOnDeath(item)) {
-            return -1; // always a charge, never poolable
-        }
+        if (item == null) return -1; // costFor(null) == 0
+        if (isDestroyedOnDeath(item)) return -1; // always a charge, never poolable
         if (item.tradeable) return item.getPriceOrZero();
         long cost = costFor(item);
-        if (cost <= 0) {
-            return -1; // costs nothing either way
-        }
+        if (cost <= 0) return -1; // costs nothing either way
         // Convertibles ride the kept-slot pool at component value PLUS the
         // rebuild friction (imbued rings: killer gets the base ring, the
         // victim still owes a re-imbue visit) - raising both their loss

@@ -13,9 +13,7 @@ public class FlyingRules {
     // False when a melee weapon cannot reach this monster.
     public static boolean canReach(MonsterStats monster, CombatStyle style, GearItem weapon) {
         if (style != CombatStyle.MELEE || monster == null || !monster.hasAttribute("flying")) return true;
-        if (weapon == null) {
-            return false; // fists reach even less far than swords
-        }
+        if (weapon == null) return false; // fists reach even less far than swords
         String category = weapon.category == null ? "" : weapon.category;
         return "Polearm".equals(category) || "Salamander".equals(category);
     }

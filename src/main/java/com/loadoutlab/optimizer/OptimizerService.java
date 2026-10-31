@@ -486,9 +486,7 @@ public class OptimizerService {
             List<DpsResult> cached = optimizeCache.get(key);
             if (cached != null) return new ArrayList<>(cached);
         }
-        if (requestSeq.get() != ticket) {
-            return null; // superseded - stop burning cores
-        }
+        if (requestSeq.get() != ticket) return null; // superseded - stop burning cores
         var local = new LoadoutOptimizer();
         List<DpsResult> best = local.optimize(ctx.dataset, req);
         polish(local, ctx.dataset, req, best);
@@ -770,9 +768,7 @@ public class OptimizerService {
         // Candidate pools depend on weight > 0, not its size: build once.
         CandidatePools pools = null;
         for (double alpha : SWEEP_ALPHAS) {
-            if (requestSeq.get() != ticket) {
-                return null; // superseded mid-sweep
-            }
+            if (requestSeq.get() != ticket) return null; // superseded mid-sweep
             OptimizationRequest weighted = ownedRequest.withDefenseWeight(alpha * d0 / i0);
             if (pools == null) pools = opt.preparePools(ctx.dataset, weighted);
             List<DpsResult> out = opt.optimize(ctx.dataset, weighted, pools);
@@ -895,9 +891,7 @@ public class OptimizerService {
             for (var entry : ladders.entrySet()) {
                 Ladder ladder = entry.getValue();
                 GearItem pinned = ob.get(0).loadout.get(entry.getKey());
-                if (pinned != null && request.isPinned(pinned.id)) {
-                    continue; // the player's own word for the slot: the strip may rate it, never replace it
-                }
+                if (pinned != null && request.isPinned(pinned.id)) continue; // the player's own word for the slot: the strip may rate it, never replace it
                 var worn = new Rung(null, ladder.baseDps, ladder.baseDtps, true, null);
                 for (Rung rung : ladder.up) {
                     if (rung.owned && rung.set != null && compareRungs(ctx.mode, rung, worn) > 0
@@ -1188,9 +1182,7 @@ public class OptimizerService {
                 if (base[j] == null) continue;
                 for (DpsResult swap : optimizer.slotSwaps(ctx.dataset, side.reqs.get(j), base[j], slot)) {
                     GearItem item = swap.loadout.get(slot);
-                    if (item.id == worn.id) {
-                        continue; // the strip's worn item: a member wearing another reads its own card
-                    }
+                    if (item.id == worn.id) continue; // the strip's worn item: a member wearing another reads its own card
                     items.putIfAbsent(item.id, item);
                     sums.computeIfAbsent(item.id, k -> new double[1])[0] += swap.net * weight[j];
                     // Each member's own number for the step: its card shows
@@ -1468,14 +1460,10 @@ public class OptimizerService {
         for (int j = 0; j < mobs.size(); j++) {
             DpsResult magic = ownedMagic(perMob.get(j));
             String spell = magic == null ? null : magic.getSpellName();
-            if (spell == null) {
-                continue; // no magic set, or a powered staff: casts on any book
-            }
+            if (spell == null) continue; // no magic set, or a powered staff: casts on any book
             autocast = true;
             String book = bookOf(ctx.dataset, spell);
-            if (book.isEmpty() || !usesMagic(perMob.get(j), magic)) {
-                continue; // this mob is fought another way: no say in the book
-            }
+            if (book.isEmpty() || !usesMagic(perMob.get(j), magic)) continue; // this mob is fought another way: no say in the book
             demanding.add(j);
             pd |= spellFor(ctx, mobs.get(j)) != null;
             double weight = kitWeight(mobs.get(j)) * magic.net;
@@ -1645,9 +1633,7 @@ public class OptimizerService {
                     bp = candidate;
                 }
             }
-            if (bp == null) {
-                break; // nothing left that helps
-            }
+            if (bp == null) break; // nothing left that helps
             carried.add(bp);
             current = bestTotal;
         }
@@ -1784,9 +1770,7 @@ public class OptimizerService {
             // strip it rather than let its bonuses feed a false roll.
             out = out.with(AMMO, null);
         }
-        if (!compatible(out.get(AMMO), out.getWeapon())) {
-            return null; // a projectile weapon carried without its ammo
-        }
+        if (!compatible(out.get(AMMO), out.getWeapon())) return null; // a projectile weapon carried without its ammo
         return out;
     }
 
@@ -1983,9 +1967,7 @@ public class OptimizerService {
             for (GearItem candidate : singleCandidates) {
                 if (used + 1 > slots || kit.singles.contains(candidate)) continue;
                 Set<Integer> affected = mbi.get(candidate.id);
-                if (affected == null || affected.isEmpty()) {
-                    continue; // in nobody's free best - it can help no one
-                }
+                if (affected == null || affected.isEmpty()) continue; // in nobody's free best - it can help no one
                 kit.singles.add(candidate);
                 double total = current;
                 for (int j : affected) {
@@ -2078,9 +2060,7 @@ public class OptimizerService {
     static Loadout withSwap(Loadout base, GearItem swap) {
         GearSlot slot = swap.slot;
         GearItem weapon = base.getWeapon();
-        if (slot == SHIELD && weapon != null && weapon.twoHanded) {
-            return null; // no shield under a 2h
-        }
+        if (slot == SHIELD && weapon != null && weapon.twoHanded) return null; // no shield under a 2h
         Loadout out = withSlot(base, slot, swap);
         return slot == WEAPON && swap.twoHanded ? withSlot(out, SHIELD, null) : out;
     }
@@ -2806,9 +2786,7 @@ public class OptimizerService {
                 } catch (ExecutionException e) {
                     continue; // one primary failed - the others still answer
                 }
-                if (outcome != null && (winner == null || outcome.score > winner.score + EPS)) {
-                    winner = outcome; // null = superseded mid-task
-                }
+                if (outcome != null && (winner == null || outcome.score > winner.score + EPS)) winner = outcome; // null = superseded mid-task
             }
         } catch (InterruptedException e) {
             // Cancellation of a superseded search is cooperative, via requestSeq
@@ -2818,9 +2796,7 @@ public class OptimizerService {
             return null;
         }
         if (requestSeq.get() != ticket) return null;
-        if (winner == null) {
-            return null; // unreachable with >= 2 shared styles; be safe
-        }
+        if (winner == null) return null; // unreachable with >= 2 shared styles; be safe
         Loadout base = sides.get(winner.style).shared;
         List<GearItem> carried = carriedOf(winner.kit);
         // Every (mob, style) answer, and the trip PLAN: the union of each
@@ -3035,7 +3011,9 @@ public class OptimizerService {
         if (l2 == null) return null;
         boolean dreamed = false;
         for (OptimizationRequest req : reqs) {
-            if (req.isExcluded(l2.id) || !req.requirementProfile.canEquip(l2.requirements)) return null;
+            // The set's rules stand: the ring may be the item a task asked for.
+            if (req.isExcluded(l2.id) || !req.requirementProfile.canEquip(l2.requirements)
+                || req.setRules != null && !req.setRules.holds(shared.with(RING, l2))) return null;
             dreamed |= req.isDream(l2.id);
         }
         if (owned != null && !owned.owns(l2.id) && !dreamed) return null;
@@ -3111,9 +3089,7 @@ public class OptimizerService {
     SpecPick arbitrateLightbearer( LoadoutData dataset, OptimizationRequest request, List<DpsResult> results,
         OwnedItems owned, Set<Integer> rt) {
         SpecPick spec = bestSpec(dataset, request, results.isEmpty() ? null : results.get(0), owned, rt, rt != null);
-        if (spec == null) {
-            return null; // no spec value in play - dps ring stands
-        }
+        if (spec == null) return null; // no spec value in play - dps ring stands
         DpsResult base = results.get(0);
         if (request.pinnedFor(RING) != null) return spec;
         Loadout vl = lightbearerSwap(dataset, base.loadout, singletonList(request), owned);
@@ -3354,9 +3330,7 @@ public class OptimizerService {
                     replacement = ammo;
                 }
             }
-            if (replacement == null && !compatible(null, weapon)) {
-                return null; // needs ammo that is not available
-            }
+            if (replacement == null && !compatible(null, weapon)) return null; // needs ammo that is not available
             if (replacement != null) ao[0] = replacement;
             out = withSlot(out, AMMO, replacement);
         }
