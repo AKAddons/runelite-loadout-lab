@@ -4,8 +4,6 @@ import lombok.*;
 import com.loadoutlab.data.*;
 import java.util.*;
 import static java.lang.Math.*;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonElement;
 
 // Special-attack definitions and expected-damage math.
 // <p>Every entry's cost/modifiers were verified against the OSRS Wiki

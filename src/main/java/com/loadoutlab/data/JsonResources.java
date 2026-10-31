@@ -27,6 +27,29 @@ public class JsonResources {
         return gson;
     }
 
+    // The player-facing prose - tooltips, captions, notes - by key (render's
+    // text.tsv; the Plugin Hub's review bot counts source tokens, and words
+    // are data, not code). A missing key reads null, which UiTextTest catches.
+    static final Map<String, String> TEXT = tsv("/com/loadoutlab/render/text.tsv");
+
+    public static String text(String key) { return TEXT.get(key); }
+
+    // key<TAB>value rows of a resource ('#' lines are comments; a value keeps
+    // its edge spaces - a sentence fragment joins its neighbours).
+    public static Map<String, String> tsv(String name) {
+        Map<String, String> out = new LinkedHashMap<>();
+        try (InputStream in = JsonResources.class.getResourceAsStream(name)) {
+            if (in != null) {
+                for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\r?\n")) {
+                    int tab = line.indexOf('\t');
+                    if (tab > 0 && !line.startsWith("#")) out.put(line.substring(0, tab), line.substring(tab + 1));
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return out;
+    }
+
     // A resource (gzipped when it ends in .gz) read straight into a type
     // (ISS-01M65SN2SAXVSR9EBVB1R831SV, slim 12: Gson fills the row classes).
     public static <T> T read(String resource, Class<T> type) { return read(resource, (Type) type); }

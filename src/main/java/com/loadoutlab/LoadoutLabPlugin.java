@@ -2,6 +2,7 @@ package com.loadoutlab;
 
 import com.loadoutlab.collection.*;
 import com.loadoutlab.data.*;
+import static com.loadoutlab.data.JsonResources.text;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.loadoutlab.engine.*;
@@ -302,7 +303,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
         var loader = new Thread(() -> {
             try {
                 stashUnits = StashUnits.load();
-            } catch (RuntimeException ex) { log.warn("STASH unit table unavailable; chart scans disabled", ex); }
+            } catch (RuntimeException ex) { log.warn(text("stash.unit"), ex); }
             LoadoutData loaded = new DataService().load();
             Set<Integer> degradable = Degradable.ids(loaded);
             invokeLater(() -> {
@@ -361,8 +362,8 @@ import static com.loadoutlab.engine.PlayerLevels.*;
                     boolean reach = ExtraDps.thrallDps(magic) > 0, book = ownsCanonical(ExtraDps.BOOK_OF_THE_DEAD);
                     seeds.put("thralls", detectThralls && members && reach && book);
                     // Why the seed is off - the chip's hover (ISS-01M66SMW3WR8JHTW6FQQC7MAP6).
-                    seeds.put("thrallsWhy", !detectThralls ? "off in the plugin settings (Thralls: None)" : !members ? "members only"
-                        : !reach ? "Magic 38 needed for a thrall" : !book ? "Book of the Dead not seen in your bank" : null);
+                    seeds.put("thrallsWhy", !detectThralls ? text("off.the") : !members ? "members only"
+                        : !reach ? text("magic.needed") : !book ? text("book.the") : null);
                     // Death Charge: Arceuus, Magic 90, A Kingdom Divided, and
                     // a blood + death + soul rune per cast - seed it only for
                     // a player who can actually cast it (wiki-verified).
@@ -461,12 +462,10 @@ import static com.loadoutlab.engine.PlayerLevels.*;
                         supplyDefaults.setChoice(category, choice);
                     }
 
-                    @Override
                     public void setTaskBracelet(String choice) {
                         configManager.setConfiguration("loadoutlab", "slayerTaskBracelet", choice);
                     }
 
-                    @Override
                     public void toggleAlwaysFilter(int ii) {
                         if (alwaysFilter.all().containsKey(ii)) {
                             alwaysFilter.remove(ii);
@@ -1419,7 +1418,7 @@ import static com.loadoutlab.engine.PlayerLevels.*;
             }
             try {
                 companionHost.mount(internalSurface.asFunction().apply( companionLink == null ? null : companionLink.lastPage()));
-            } catch (RuntimeException ex) { log.warn("renderer failed; keeping the previous content", ex); }
+            } catch (RuntimeException ex) { log.warn(text("renderer.failed"), ex); }
         });
     }
 

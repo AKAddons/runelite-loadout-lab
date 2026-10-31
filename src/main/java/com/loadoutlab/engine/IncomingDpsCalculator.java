@@ -2,6 +2,7 @@ package com.loadoutlab.engine;
 
 import lombok.*;
 import com.loadoutlab.data.*;
+import static com.loadoutlab.data.JsonResources.text;
 import java.util.*;
 import com.loadoutlab.engine.BossIncomingOverrides.*;
 import com.loadoutlab.data.MaxHits.Family;
@@ -628,7 +629,7 @@ public class IncomingDpsCalculator {
     public static Result calculate(MonsterStats monster, Loadout loadout, int defenceLevel, int ml, int antifireTier) {
         // Bracelet of ethereum (charged): revenants deal NO damage while it
         // is worn - an absolute rule that outranks every other model.
-        if (monster.isRevenantMonster() && wearsChargedEthereum(loadout)) return new Result(0, 0, null, List.of(), "Bracelet of ethereum blocks all revenant damage", FULL, List.of());
+        if (monster.isRevenantMonster() && wearsChargedEthereum(loadout)) return new Result(0, 0, null, List.of(), text("bracelet.ethereum"), FULL, List.of());
         // The wiki cannot price it yet: say why instead of a bare "?".
         String unpriced = BossIncomingOverrides.unpricedReason(monster);
         if (unpriced != null) return new Result(0, 0, null, List.of(), unpriced, NONE, List.of());

@@ -105,7 +105,6 @@ public interface LoadoutLabConfig extends Config {
 
         final String label;
 
-        @Override
         public String toString() { return label; }
     }
 

@@ -15,7 +15,6 @@ import static com.loadoutlab.engine.PvpRisk.*;
 import static com.loadoutlab.engine.RangedAmmo.*;
 import static com.loadoutlab.engine.UntradeableDeathCosts.*;
 import java.util.function.Predicate;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;

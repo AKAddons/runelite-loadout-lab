@@ -72,7 +72,7 @@ public class ResultCards {
         boolean skip = flag(mob, "skipDegradable");
         if (!degradableChip.getAsBoolean() || (n == 0 && !skip)) return null;
         JButton button = sigilButton("*" + n, skip, skip ? new Color(0xE6B45A) : new Color(0x968C78),
-            new Color(0xBE9646), skip ? text("degrade.skip") : n + " degrade or burn charges - click to skip them here");
+            new Color(0xBE9646), skip ? text("degrade.skip") : n + text("degrade.burn"));
         button.addActionListener(e -> commands.send("toggle-degradable"));
         return button;
     }
@@ -333,7 +333,7 @@ public class ResultCards {
             Icon sail = sailingIconSmall();
             if (sail != null) {
                 st = new JLabel(sail);
-                tipText(st, "Ship combat: fought from your boat");
+                tipText(st, text("ship.combat"));
             }
         }
         if (st != null) {
@@ -439,7 +439,7 @@ public class ResultCards {
         if (flag(mob, "naval")) {
             Icon sail = sailingIconSmall();
             nt = sail != null ? new JLabel(sail) : label("sea", SEA);
-            tipText(nt, "Ship combat: fought from your boat");
+            tipText(nt, text("ship.combat"));
         }
         int mobHp = id(mob, "hp");
         if (mobHp > 0 || nt != null) {
@@ -537,7 +537,7 @@ public class ResultCards {
             if (standDown != null) {
                 // Andrew 2026-10-19: Water Surge with thralls on is not a
                 // castable setup; the card says so and folds no thrall.
-                JLabel caveat = small("Thralls and Death Charge stand down: " + standDown, new Color(0xDCAA5A));
+                JLabel caveat = small(text("thralls.and") + standDown, new Color(0xDCAA5A));
                 tipText(caveat, text("standdown.tip"));
                 card.add(left(caveat));
             }
@@ -613,7 +613,7 @@ public class ResultCards {
         vr.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         JPanel sides = darker(new FlowLayout(FlowLayout.CENTER, 6, 0));
         sides.add(viewSide("Yours", !bis, "Your best owned set", () -> commands.set("viewingBis", false)));
-        sides.add(viewSide("BiS", bis, "The game-wide best set at your levels", () -> commands.set("viewingBis", true)));
+        sides.add(viewSide("BiS", bis, text("the.game"), () -> commands.set("viewingBis", true)));
         vr.add(sides, WEST);
         Map yoursNode = map(node, "yours");
         Map bisNode = map(node, "bis");
@@ -621,7 +621,7 @@ public class ResultCards {
             double mine = num(node, "tabDps");
             double ceiling = num(node, "bisTabDps");
             if (ceiling > 0) {
-                JLabel gap = small(format("%.0f%% of BiS", min(100.0, 100.0 * mine / ceiling)), MID);
+                JLabel gap = small(format(text("bis"), min(100.0, 100.0 * mine / ceiling)), MID);
                 tipText(gap, text("gap.tip"));
                 vr.add(gap, EAST);
             }
@@ -650,7 +650,7 @@ public class ResultCards {
             int pi = id(mob, "castingPouch");
             if (pi > 0 && (!runes.isEmpty() || !ur.isEmpty())) {
                 ir.add(smallItemCell(pi, (pi == 27281 || pi == 27509
-                        ? "Divine rune pouch" : "Rune pouch") + " - carries the trip's runes"));
+                        ? "Divine rune pouch" : "Rune pouch") + text("carries.the")));
             }
             card.add(Box.createVerticalStrut(4));
             card.add(left(ir));
@@ -687,7 +687,7 @@ public class ResultCards {
         }
         JPanel trioRow = darker(new FlowLayout(FlowLayout.CENTER, 4, 0));
         trioRow.add(trioButton(mob, "+", "mobSims", SIM_PALETTE, "Simmed for this mob", "remove-mob-sim", "sim-for-mob",
-            "Sim an item as owned for this mob"));
+            text("sim.item")));
         trioRow.add(trioButton(mob, "-", "mobExclusions", EXCLUDE_PALETTE,
             "Excluded for this mob", "remove-mob-exclusion", "exclude-for-mob", "Exclude an item for this mob"));
         trioRow.add(trioButton(mob, "~", "mobFilters", FILTER_PALETTE,
@@ -1135,7 +1135,7 @@ public class ResultCards {
         boolean any = db == null || db.isEmpty();
         String direct = any ? "standard" : db;
         books.add(pickCell(menu, cachedSprite(bookSprite(direct)),
-            any ? "Any book - nothing here needs one" : "Camp " + direct.toUpperCase(), !swapOn, 30,
+            any ? text("any.book") : "Camp " + direct.toUpperCase(), !swapOn, 30,
             () -> commands.set("spellbookSwap", false)));
         boolean needsSwap = !any && !"lunar".equalsIgnoreCase(db);
         books.add(pickCell(menu, cachedSprite(bookSprite("lunar")), needsSwap
@@ -1194,7 +1194,7 @@ public class ResultCards {
     // A stat line led by its game-sprite icon (async, 14px).
     // The ship damage line, sized for the stat column.
     static String shipDamageText(double dtps, int km) {
-        return km == 0 ? "no damage" : format(Locale.ROOT, "~%.1f max %d", dtps, km);
+        return km == 0 ? "no damage" : format(Locale.ROOT, text("max"), dtps, km);
     }
 
     // The damage-taken line and its tooltip. Coverage decides the text
@@ -1309,7 +1309,7 @@ public class ResultCards {
         for (Map option : all) {
             String name = str(option, "name");
             boolean owned = flag(option, "owned");
-            var item = new JMenuItem(format("%s - %.2f DPS (%s)%s", name,
+            var item = new JMenuItem(format(text("dps"), name,
                 num(option, "dps"), str(option, "delta"), owned ? " - yours" : ""));
             if (!owned) {
                 int id = id(option, "id");
@@ -1387,7 +1387,6 @@ public class ResultCards {
             setOpaque(false);
         }
 
-        @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = smooth(g);
             g2.setColor(fill);
@@ -1406,7 +1405,6 @@ public class ResultCards {
             setPreferredSize(new Dimension(8, height));
         }
 
-        @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = smooth(g);
             g2.setColor(color);
@@ -1449,7 +1447,7 @@ public class ResultCards {
         String gn = str(rung, worn ? "groupBase" : "groupDelta");
         String tip = name + (with == null ? "" : " with " + with)
             + (worn ? " - worn" : " " + change + (second == null ? "" : ", " + second))
-            + (gn == null ? "" : " (" + gn + ")") + (same ? " - same result here, better stats" : "")
+            + (gn == null ? "" : " (" + gn + ")") + (same ? text("same.result") : "")
             + (price.isEmpty() ? "" : " - " + price + " gp");
         cell.setBorder(owned ? createLineBorder(color) : createDashedBorder(color, 1f, 3f, 2f, false));
         if (worn) {
@@ -1468,7 +1466,7 @@ public class ResultCards {
                 boolean spec = "spec".equals(slot);
                 item(menu, spec ? "Pin as spec for this mob" : "Pin for this mob",
                     format(text("ladder.pin.tip"), name, slot), () -> commands.send("ladder-try", tryArgs));
-                tipText(cell, tip + " - yours. Right-click to pin it here");
+                tipText(cell, tip + text("yours.right"));
             } else {
                 // A click sims it for this mob, nothing more (Andrew
                 // 2026-10-22: "we are using "pin" for this mob instead of sim
@@ -1580,12 +1578,12 @@ public class ResultCards {
     // of runs fall between: XX:XX - XX:XX (P05-P95)"), Perfect and the notes.
     static String hover(String head, Map kill, String tail) {
         double heal = num(kill, "healDps");
-        String notes = (flag(kill, "approximate") ? "<br>Band approximate: this hit model has no per-attack form" : "")
-            + (heal > 0 ? format("<br>Heals ~%.1f/s off this set", heal) : "")
-            + (kill.containsKey("uptime") && num(kill, "uptime") < 1 ? format("<br>Boss hittable ~%.0f%% of the fight (special phases)", num(kill, "uptime") * 100) : "")
-            + (num(kill, "downtime") > 0 ? format("<br>+%s of %s", mmss(num(kill, "downtime")), str(kill, "downtimeNote")) : "") + tail;
-        if (Double.isInfinite(num(kill, "p50"))) return tip(head, "This set cannot outpace the heal, so it never kills", notes);
-        return tip(head, format("Median %s<br>Usually %s-%s<br>Perfect %s",
+        String notes = (flag(kill, "approximate") ? text("band.approximate") : "")
+            + (heal > 0 ? format(text("heals.off"), heal) : "")
+            + (kill.containsKey("uptime") && num(kill, "uptime") < 1 ? format(text("boss.hittable"), num(kill, "uptime") * 100) : "")
+            + (num(kill, "downtime") > 0 ? format(text("br.s"), mmss(num(kill, "downtime")), str(kill, "downtimeNote")) : "") + tail;
+        if (Double.isInfinite(num(kill, "p50"))) return tip(head, text("this.set"), notes);
+        return tip(head, format(text("median.usually"),
             mmss(num(kill, "p50")), mmss(num(kill, "p05")), mmss(num(kill, "p95")), mmss(num(kill, "perfect"))), notes);
     }
 
@@ -1598,19 +1596,19 @@ public class ResultCards {
     // the P50"): the DTPS over the kill's band.
     static String perKill(Map kill, double dtps) {
         double p50 = kill == null ? 0 : num(kill, "p50");
-        return p50 > 0 && !Double.isInfinite(p50) ? format(". ~%.0f-%.0f damage taken per kill", dtps * num(kill, "p05"), dtps * num(kill, "p95")) : "";
+        return p50 > 0 && !Double.isInfinite(p50) ? format(text("damage.taken"), dtps * num(kill, "p05"), dtps * num(kill, "p95")) : "";
     }
 
     // A group's Trip line ("TTK for moons of peril, barrows should be the
     // combined kill time of all 3 bosses"), each counted member on hover.
     static String[] tripLine(Map trip) {
         String never = str(trip, "never");
-        if (never != null) return new String[]{"Trip never", never + " never dies in the set shown, so the trip never ends"};
+        if (never != null) return new String[]{"Trip never", never + text("never.dies")};
         List<String> members = new ArrayList<>();
         for (Map member : list(trip, "members")) members.add(str(member, "name") + " " + mmss(num(member, "p50")));
         double damage = num(trip, "damageHigh");
         return new String[]{"Trip " + about(num(trip, "p50")), hover("", trip, "<br>" + join(", ", members)
-            + (damage > 0 ? format("<br>~%.0f-%.0f damage taken per trip", num(trip, "damageLow"), damage) : ""))};
+            + (damage > 0 ? format(text("damage.taken2"), num(trip, "damageLow"), damage) : ""))};
     }
 
     JLabel statIconLine(String text, String tooltip, Color color, int spriteId) {
@@ -1720,7 +1718,7 @@ public class ResultCards {
     JLabel sunfirePlate(boolean bis) {
         return optionPlate("Fire spell runes", new String[]{text("sunfire.on"), "fire runes"},
             new String[]{"Sunfire runes", "Fire runes"}, new int[]{28929, 554}, bis || flag(pageParams, "sunfireRunes") ? 0 : 1, bis,
-            "Sunfire runes when you own any", "detect-sunfire", i -> commands.set("sunfireRunes", i == 0));
+            text("sunfire.runes"), "detect-sunfire", i -> commands.set("sunfireRunes", i == 0));
     }
 
     // A plate that picks one of a few items: the picked item's image and
@@ -1826,7 +1824,7 @@ public class ResultCards {
                 spellIcon.setIcon(cachedSprite(shownSprite));
             } else seatSprite(spellIcon, SpriteID.TAB_MAGIC, 18);
             String lock = str(pageParams, "spellbookLock");
-            String lockText = flag(mob, "cureMe") ? " - lunar book (Cure Me)"
+            String lockText = flag(mob, "cureMe") ? text("lunar.book")
                 : lock == null || lock.isEmpty() ? "" : " - " + lock + " book";
             JLabel spellName = small((ss == null ? "Auto spell" : ss + (pinned ? " (pinned)" : "")) + lockText, TEXT);
             var openSpells = new MouseAdapter() {
@@ -1868,7 +1866,7 @@ public class ResultCards {
             };
             for (JLabel part : new JLabel[]{spellIcon, spellName}) {
                 sr.add(part);
-                tipText(part, "The autocast spell - click to pin one");
+                tipText(part, text("the.autocast"));
                 part.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                 part.addMouseListener(openSpells);
             }
@@ -2143,7 +2141,7 @@ public class ResultCards {
             // The same ledger the Wiki calc chip's tooltip wears (field
             // ask 2026-08-21) - one fact per row. The spec row shows even
             // at zero here: this cell IS the spec weapon.
-            tb = "<b>" + name + " (spec)</b>" + (sp ? " <font color='#969696'>pinned</font>" : "") + pn + "<br><br>"
+            tb = "<b>" + name + " (spec)</b>" + (sp ? text("font.color") : "") + pn + "<br><br>"
                 + ledger(num(card, "dps"), "what the wiki calc shows", num(sn, "dpsAdded"), true, td2);
         } else {
             tb = name + " (" + slot + ")" + (!bis && assumed && hasId(list2(mob, "requiredGear"), id)
@@ -2216,13 +2214,13 @@ public class ResultCards {
             item(menu, "Sim as owned", "Pretend you own " + name + " and recompute your side",
                 () -> commands.send("toggle-sim", Map.of("itemId", id, "label", name)));
         } else if (!"quiver".equals(slot)) {
-            item(menu, "Exclude for this mob", "Exclude " + name + " for this mob only (all sets)",
+            item(menu, "Exclude for this mob", "Exclude " + name + text("for.this"),
                 () -> commands.send("exclude-for-mob", Map.of("itemId", id, "scope", "ALL", "label", name)));
-            item(menu, "Sim for this mob (search)...", text("menu.simmob.tip"), searchItem("Sim for this mob", "sim-for-mob"));
+            item(menu, text("sim.for"), text("menu.simmob.tip"), searchItem("Sim for this mob", "sim-for-mob"));
             // The classic GLOBAL sibling (field report 2026-08-21: it fell
             // off in the merge-back - only the per-mob scope survived).
-            item(menu, "Sim for all mobs (search)...", text("menu.simall.tip"), searchItem("Sim as owned", "toggle-sim"));
-            item(menu, "Pin " + name, "Force this item into the " + slot + " slot for this mob (all sets)",
+            item(menu, text("sim.for2"), text("menu.simall.tip"), searchItem("Sim as owned", "toggle-sim"));
+            item(menu, "Pin " + name, "Force this item into the " + slot + text("slot.for"),
                 () -> commands.send("pin", Map.of("slot", slot, "itemId", id)));
             item(menu, "Pin another item (search)...", () -> picker.search("Pin in " + slot,
                 (pickedId, pickedName) -> commands.send("pin", Map.of("slot", slot, "itemId", pickedId))));

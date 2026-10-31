@@ -76,3 +76,86 @@ req.value	A number: 12 prayer, 100 ranged defence, 40 kg
 req.keys	stab,slash,crush,magic,ranged,def_stab,def_slash,def_crush,def_magic,def_ranged,str,ranged_str,magic_str,prayer,weight,god:saradomin,god:zamorak,god:bandos,god:armadyl,god:zaros,god:all
 ca.pick	Click to plan for it.
 ca.drop	Click to drop the task.
+# Slim 16 (2026-10-30): the rest of the card, surface, engine and model prose.
+slot.for	 slot for this mob (all sets)
+sim.for2	Sim for all mobs (search)...
+sim.for	Sim for this mob (search)...
+for.this	 for this mob only (all sets)
+font.color	 <font color='#969696'>pinned</font>
+the.autocast	The autocast spell - click to pin one
+lunar.book	 - lunar book (Cure Me)
+sunfire.runes	Sunfire runes when you own any
+damage.taken2	<br>~%.0f-%.0f damage taken per trip
+never.dies	 never dies in the set shown, so the trip never ends
+damage.taken	. ~%.0f-%.0f damage taken per kill
+median.usually	Median %s<br>Usually %s-%s<br>Perfect %s
+this.set	This set cannot outpace the heal, so it never kills
+br.s	<br>+%s of %s
+boss.hittable	<br>Boss hittable ~%.0f%% of the fight (special phases)
+heals.off	<br>Heals ~%.1f/s off this set
+band.approximate	<br>Band approximate: this hit model has no per-attack form
+yours.right	 - yours. Right-click to pin it here
+same.result	 - same result here, better stats
+dps	%s - %.2f DPS (%s)%s
+max	~%.1f max %d
+any.book	Any book - nothing here needs one
+sim.item	Sim an item as owned for this mob
+carries.the	 - carries the trip's runes
+bis	%.0f%% of BiS
+the.game	The game-wide best set at your levels
+thralls.and	Thralls and Death Charge stand down: 
+ship.combat	Ship combat: fought from your boat
+degrade.burn	 degrade or burn charges - click to skip them here
+perf.rebuild	perf: UI rebuild took {}ms ({} identical pages skipped since last)
+shortest.path	Shortest Path: walk to the nearest spawn
+run.with	Re-run with a fresh bank scan
+ask.for	Ask for a set with a stat at least or at most a number
+font.color2	 <font color='#e05050'>x</font></html>
+max.gear	Max gear swaps carried on the trip
+death.charge	 - Death Charge is cast from Arceuus
+thralls.are	 - thralls are cast from Arceuus
+sim.the	Sim the max cape, and the combos you can make with the capes you own
+loadout.lab	Loadout Lab UI: {} publishes coalesced into one rebuild
+font.color3	<font color='#969696'>&nbsp;&nbsp;
+table.cellpadding	<table cellpadding='1' cellspacing='0'>
+ward.arceuus	Ward of Arceuus (per cast) - a third less prayer drain
+thrall.cast	 thrall - cast from the book, any weapon
+divine.rune	Divine rune pouch (locked - kept)
+sinister.offering	Sinister Offering (Arceuus 92) instead of the bonecrusher
+demonic.offering	Demonic Offering (Arceuus 84) instead of the ash sanctifier
+via.spellbook	Via Spellbook Swap (Lunar home, adds swap + Vengeance runes)
+per.cast	 (per cast) - in place of the 
+weighted.dps	 (%.0f vs %.0f weighted dps)
+arceuus.for3	Arceuus for the group: Arceuus casts with %s on the magic cards outweigh %s's %s
+thralls.and2	; thralls and Death Charge stand down
+carries.more	 (it carries more of the group's magic than the 
+arceuus.casts	 - Arceuus casts with %s on the magic cards would lose (%.0f vs %.0f weighted dps)
+magic.sets2	 magic sets cast from Arceuus
+arceuus.for2	Arceuus for the raid - thralls and Death Charge stay up on every card,
+magic.sets	 magic sets cast from powered staves
+arceuus.for	Arceuus for the group - thralls and Death Charge stay up,
+retrieves.the	retrieves the ranged switch's arrows or bolts
+swaps.strip	swaps strip failed for {} {}
+keris.partisan	keris partisan of amascut
+minimum.hit	minimum hit a tenth of the max
+demonbane.spell	demonbane spell (Mark of Darkness)
+chance.free	chance of a free spear hit per cast
+fifth.landed	+8 on a fifth of landed hits
+second.hit	second hit at 40% of the roll (Bolt/Blast/Wave)
+accuracy.and	+10% accuracy and damage on standard spells
+burn.damage	~2 burn damage per landed hit
+ticks.faster	%.2f ticks faster on average
+guaranteed.hit	25% guaranteed hit, +1 damage
+accuracy.below	+25% accuracy below 25% hitpoints
+strength.level	+30% strength level at 5 stacks (sustained)
+only.the	only the 25% proc lands through the prayer
+melee.always	melee always deals its max hit
+max.hit	+2 max hit - the one item Salarin honours
+every.landed	every landed hit deals at least half its max
+melee.walks	melee walks between the four vents
+bracelet.ethereum	Bracelet of ethereum blocks all revenant damage
+renderer.failed	renderer failed; keeping the previous content
+book.the	Book of the Dead not seen in your bank
+magic.needed	Magic 38 needed for a thrall
+off.the	off in the plugin settings (Thralls: None)
+stash.unit	STASH unit table unavailable; chart scans disabled

@@ -23,14 +23,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * nobody hovers in a test, so this pins the two to each other both ways.
  */
 class UiTextTest {
-	private static final Path RENDER = Paths.get("src/main/java/com/loadoutlab/render");
+	// Every main source: since slim 16 the model and engine read the table too.
+	private static final Path RENDER = Paths.get("src/main/java/com/loadoutlab");
 
 	/** Every key the render sources ask Ui.text for, with the file naming it:
 	 * Ui.text("key"), or text("key") where Ui is statically imported. */
 	private static List<String[]> referencedKeys() throws IOException {
 		List<String[]> keys = new ArrayList<>();
 		Pattern call = Pattern.compile("(?<![\\w.])(?:Ui\\.)?text\\(\"([^\"]+)\"\\)");
-		try (Stream<Path> files = Files.list(RENDER)) {
+		try (Stream<Path> files = Files.walk(RENDER)) {
 			for (Path file : (Iterable<Path>) files.filter(p -> p.toString().endsWith(".java"))::iterator) {
 				Matcher m = call.matcher(new String(Files.readAllBytes(file), StandardCharsets.UTF_8));
 				while (m.find()) {

@@ -162,7 +162,7 @@ public class RenderSurface {
         // icon, so the ASCII glyph gate stays clean).
         if (flag(match, "naval")) {
             row.setForeground(SEA);
-            tipText(row, "Ship combat: fought from your boat");
+            tipText(row, text("ship.combat"));
             Icon sail = cards.sailingIconSmall();
             if (sail != null) {
                 row.setIcon(sail);
@@ -228,7 +228,7 @@ public class RenderSurface {
             if (repaintDebounce == null) {
                 repaintDebounce = once(50, e -> {
                     int burst = pendingRepaints.getAndSet(0);
-                    if (burst > 20) log.warn("Loadout Lab UI: {} publishes coalesced into one rebuild" + " - a publish loop upstream?", burst);
+                    if (burst > 20) log.warn(text("loadout.lab") + " - a publish loop upstream?", burst);
                     repaint();
                 });
             }
@@ -462,7 +462,6 @@ public class RenderSurface {
         tipText(stat, text("req.stat"));
         ImageIcon[] icons = new ImageIcon[REQ_NAMES.length];
         stat.setRenderer(new DefaultListCellRenderer() {
-            @Override
             public Component getListCellRendererComponent(JList<?> list, Object v, int i, boolean sel, boolean focus) {
                 super.getListCellRendererComponent(list, v, i, sel, focus);
                 int at = i >= 0 ? i : stat.getSelectedIndex();
@@ -580,7 +579,7 @@ public class RenderSurface {
         cb.setOpaque(false);
         cb.setForeground(LIGHT);
         cb.setFocusable(false);
-        tipText(cb, "Sim the max cape, and the combos you can make with the capes you own");
+        tipText(cb, text("sim.the"));
         cb.addActionListener(e -> send.run());
         JLabel max = small("Max", ACCENT);
         onClick(max, () -> {
@@ -955,7 +954,7 @@ public class RenderSurface {
                 // 2026-08-31; a chip that does nothing is noise).
                 if (("thralls".equals(entry[1])) && (f2pl || ln || ll2)) continue;
                 if ("thralls".equals(entry[1]) && standDown != null) {
-                    chipRow.add(disabledPill(entry[0], "Stands down: " + standDown + " - thralls are cast from Arceuus"));
+                    chipRow.add(disabledPill(entry[0], "Stands down: " + standDown + text("thralls.are")));
                     continue;
                 }
                 boolean on = flag(params, entry[1]);
@@ -996,7 +995,7 @@ public class RenderSurface {
             }
             int dc = id(params, "deathCharge");
             if (!f2pl && !ll2 && standDown != null) {
-                chipRow.add(disabledPill("D-charge", "Stands down: " + standDown + " - Death Charge is cast from Arceuus"));
+                chipRow.add(disabledPill("D-charge", "Stands down: " + standDown + text("death.charge")));
             } else if (!f2pl && !ll2) {
                 chipRow.add(pill(dc == 0 ? "D-charge" : dc == 1 ? "D-charge on" : "D-charge+",
                     dc > 0, (dc + 1) % 3 > 0, text("chip.dcharge.tip"), () -> commands.set("deathCharge", (dc + 1) % 3)));
@@ -1033,7 +1032,7 @@ public class RenderSurface {
             invSlider.setPreferredSize(new Dimension(88, 18));
             invSlider.setBackground(DARK_GRAY_COLOR);
             invSlider.setFocusable(false);
-            tipText(invSlider, "Max gear swaps carried on the trip");
+            tipText(invSlider, text("max.gear"));
             invSlider.addChangeListener(e -> {
                 il.setText("Inv " + invSlider.getValue());
                 // Recompute only when the drag settles, and only on a real
@@ -1073,7 +1072,7 @@ public class RenderSurface {
             for (String part : reqParts()) {
                 // A red x, so removing reads apart from the green "on" (Andrew 2026-10-27).
                 reqChips.add(pill("<html>" + reqLabel(part).replace("<", "&lt;").replace(">", "&gt;")
-                    + " <font color='#e05050'>x</font></html>", true, "Requirement - click to remove it", () -> {
+                    + text("font.color2"), true, "Requirement - click to remove it", () -> {
                     List<String> rest = reqParts();
                     rest.remove(part);
                     setRequirements(rest);
@@ -1085,7 +1084,7 @@ public class RenderSurface {
             // Opens at once, mid-compute too: the page republish waits on the
             // compute (Andrew 2026-10-27: "can't add a requirement mid search").
             JLabel[] plus = new JLabel[1];
-            plus[0] = pill("+ Requirement", reqOpen, "Ask for a set with a stat at least or at most a number", () -> {
+            plus[0] = pill("+ Requirement", reqOpen, text("ask.for"), () -> {
                 boolean open = !editor.isVisible();
                 editor.setVisible(open);
                 paintPill(plus[0], open);
@@ -1124,7 +1123,7 @@ public class RenderSurface {
             addMobButton.setOpaque(false);
             addMobButton.setForeground(LIGHT);
             addMobButton.setBorder(new RoundedBorder(DARKER_GRAY_HOVER_COLOR, 3, 10));
-            JButton reload = chip("Reload", "Re-run with a fresh bank scan", () -> commands.send("recompute"));
+            JButton reload = chip("Reload", text("run.with"), () -> commands.send("recompute"));
             reload.setContentAreaFilled(false);
             reload.setOpaque(false);
             reload.setForeground(DIM);
@@ -1138,7 +1137,7 @@ public class RenderSurface {
         // buttons so it can be displayed statically while loading").
         pathRow.removeAll();
         pathRow.setVisible(flag(page, "pathable"));
-        pathRow.add(chip("Path here", "Shortest Path: walk to the nearest spawn", () -> commands.send("path-to")));
+        pathRow.add(chip("Path here", text("shortest.path"), () -> commands.send("path-to")));
         if (!list(page, "entries").isEmpty()) {
             // The exact-setup cross-check (field ask 2026-08-21: it lives
             // with the link-outs, not the bank tools): opens the VIEWED
@@ -1183,7 +1182,7 @@ public class RenderSurface {
         root.revalidate();
         root.repaint();
         long rm = (System.nanoTime() - rebuildStart) / 1_000_000;
-        if (rm > 30) log.debug("perf: UI rebuild took {}ms ({} identical pages skipped since last)", rm, skippedIdentical);
+        if (rm > 30) log.debug(text("perf.rebuild"), rm, skippedIdentical);
         skippedIdentical = 0;
     }
 

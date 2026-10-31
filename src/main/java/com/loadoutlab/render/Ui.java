@@ -5,11 +5,9 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.plaf.basic.ComboPopup;
+import com.loadoutlab.data.JsonResources;
 import net.runelite.client.ui.*;
 import java.awt.image.BufferedImage;
-import java.nio.charset.StandardCharsets;
-import java.io.InputStream;
-import java.io.IOException;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.ActionListener;
@@ -25,23 +23,21 @@ class Ui {
     // in text.tsv beside this class and is read by key: the Plugin Hub's
     // review bot counts source tokens, and words are data, not code. A
     // missing key renders "null", which the key-resolution test catches.
-    static final Map<String, String> TEXT = tsv("text.tsv");
-
-    static String text(String key) { return TEXT.get(key); }
+    // The table itself sits in JsonResources (slim 16): the model's and
+    // engine's player-facing sentences read it too.
+    static String text(String key) { return JsonResources.text(key); }
 
     // The list opens as wide as its longest entry; the closed box keeps its width (the popup sizes from getSize).
     static <T> JComboBox<T> wideCombo(T[] items) {
         return new JComboBox<>(items) {
             boolean busy;
 
-            @Override
             public void doLayout() {
                 busy = true;
                 super.doLayout();
                 busy = false;
             }
 
-            @Override
             public Dimension getSize() {
                 Dimension d = super.getSize();
                 Object p = getUI().getAccessibleChild(this, 0);
@@ -51,21 +47,8 @@ class Ui {
         };
     }
 
-    // key<TAB>value rows of a resource beside this class ('#' lines are
-    // comments, values trimmed) - text.tsv and the mood routes share it.
-    static Map<String, String> tsv(String name) {
-        Map<String, String> out = new LinkedHashMap<>();
-        try (InputStream in = Ui.class.getResourceAsStream(name)) {
-            if (in != null) {
-                for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\n")) {
-                    int tab = line.indexOf('\t');
-                    if (tab > 0 && !line.startsWith("#")) out.put(line.substring(0, tab), line.substring(tab + 1).trim());
-                }
-            }
-        } catch (IOException ignored) {
-        }
-        return out;
-    }
+    // key<TAB>value rows of a resource beside this class - the mood routes.
+    static Map<String, String> tsv(String name) { return JsonResources.tsv("/com/loadoutlab/render/" + name); }
 
     // A panel on the standard dark ground.
     static JPanel panel(LayoutManager layout) {
@@ -240,8 +223,8 @@ class Ui {
     static String ledger(double set, String setNote, double specDps, boolean showSpec, double thrallsDps) {
         // One row template (ledger.line: label, right-aligned value, note cell).
         String row = text("ledger.line");
-        var sum = new StringBuilder("<table cellpadding='1' cellspacing='0'>");
-        sum.append(format(row, "set", format("%.3f", set), "<font color='#969696'>&nbsp;&nbsp;" + setNote + "</font>"));
+        var sum = new StringBuilder(text("table.cellpadding"));
+        sum.append(format(row, "set", format("%.3f", set), text("font.color3") + setNote + "</font>"));
         if (showSpec) sum.append(format(row, "+ spec", format("%.2f", specDps), ""));
         if (thrallsDps > 0) sum.append(format(row, "+ thralls", format("%.2f", thrallsDps), ""));
         return sum.append(format(row, "<b>= shown here</b>",

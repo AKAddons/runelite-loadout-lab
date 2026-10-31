@@ -1,7 +1,7 @@
 package com.loadoutlab.model;
 
-import com.google.gson.JsonObject;
 import com.loadoutlab.data.*;
+import static com.loadoutlab.data.JsonResources.text;
 import com.loadoutlab.engine.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1540,7 +1540,7 @@ public class CommandEngine {
         if (mode == null || mode.startsWith("DETECT") || stats == null || !LootContainers.drops(stats, holds)) return;
         boolean cast = spellKey.equals(mode) && arceuusReady.test(magic) && !arceuusBlocked(stats);
         if (cast || "NONE".equals(mode)) out.removeIf(r -> item.equals(r.get("name")));
-        if (cast) addUtilityRunes(out, spell, spell + " (per cast) - in place of the " + Names.lower(item));
+        if (cast) addUtilityRunes(out, spell, spell + text("per.cast") + Names.lower(item));
     }
 
     // Which combat achievement tasks the player has done, by the wiki's task
@@ -1697,7 +1697,7 @@ public class CommandEngine {
         // The Arceuus-access choice rides the same menu in the classic.
         out.add(catalogNode("arceuusAccess", "Arceuus access", defaults, List.of(
             Map.of("key", "DETECT_BEST", "name", "Direct (camp Arceuus)"), Map.of("key", "SPELLBOOK_SWAP",
-                "name", "Via Spellbook Swap (Lunar home, adds swap + Vengeance runes)"))));
+                "name", text("via.spellbook")))));
         // Combination runes are a PANEL preference now (field ask
         // 2026-08-22), defaulting to detection - a config toggle and a
         // panel control for one behaviour is the source-of-truth trap
@@ -1705,9 +1705,9 @@ public class CommandEngine {
         // The Arceuus offerings in place of the sanctifier and the bonecrusher
         // (ISS-01M5VJAHRWNHFRPPNK3J6B63SZ, Andrew 2026-10-26); Detect best keeps the item.
         out.add(catalogNode("ashes", "Demonic ashes", defaults, List.of(
-            Map.of("key", "DEMONIC_OFFERING", "name", "Demonic Offering (Arceuus 84) instead of the ash sanctifier"))));
+            Map.of("key", "DEMONIC_OFFERING", "name", text("demonic.offering")))));
         out.add(catalogNode("bones", "Bones", defaults, List.of(
-            Map.of("key", "SINISTER_OFFERING", "name", "Sinister Offering (Arceuus 92) instead of the bonecrusher"))));
+            Map.of("key", "SINISTER_OFFERING", "name", text("sinister.offering")))));
         out.add(catalogNode("comboRunes", "Combination runes", defaults, List.of(Map.of("key", "ALWAYS", "name", "Always combine"))));
         return out;
     }
@@ -1870,7 +1870,7 @@ public class CommandEngine {
         List<String> kept = new ArrayList<>();
         List<String> lost = new ArrayList<>();
         if (pouch == 27509) {
-            kept.add("Divine rune pouch (locked - kept)");
+            kept.add(text("divine.rune"));
         } else if (pouch == 24416) kept.add("Rune pouch (locked - kept)");
         if (cape) kept.add("Magic cape (kept)");
         if (utilityRunes) lost.add("Trip runes (lost)");
@@ -1986,7 +1986,7 @@ public class CommandEngine {
                 // The book the thrall is cast from (mrapw 2026-10-18: the
                 // kit had the runes but not the book; any weapon casts it).
                 out.add(map("id", BOOK_OF_THE_DEAD, "name", "Book of the Dead", "qty", 1,
-                    "why", tier + " thrall - cast from the book, any weapon"));
+                    "why", tier + text("thrall.cast")));
             }
         }
         int dc = intParam("deathCharge");
@@ -1994,7 +1994,7 @@ public class CommandEngine {
         if (!f2pl && !lc && dc > 0 && DefenceFloors.deathChargeWorks(stats)) addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
         // Ward of Arceuus where the drain is demonic (ISS-01M5VCXYGF51P5NJCDNC1QJZD1, Andrew 2026-10-25:
         // "ward of arceuss and the spectral spirit shield ... by default").
-        if (!sm && !lc && arceuusReady.test(73) && ward(stats)) addUtilityRunes(out, "Ward of Arceuus", "Ward of Arceuus (per cast) - a third less prayer drain");
+        if (!sm && !lc && arceuusReady.test(73) && ward(stats)) addUtilityRunes(out, "Ward of Arceuus", text("ward.arceuus"));
         if (flag("spellbookSwap")) {
             // Supplies only (field ask 2026-08-22): the trip carries the
             // runes to keep Vengeance up. Vengeance does return damage,

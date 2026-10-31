@@ -1,6 +1,6 @@
 package com.loadoutlab.engine;
 
-import java.util.Map;
+import java.util.*;
 
 // The page's compute settings, built fresh per compute by the page state
 // and carried through the plugin to the optimizer as one object (the
@@ -36,7 +36,7 @@ public class ComputeParams implements Cloneable {
     public String optimizeMode = "MAX_DPS";
     // The god chips: the trip's protection, worn when free, else carried
     // (ISS-01M67DQ9ATHSQSJA7QGDKAQGPT; the GWD route seeds them).
-    public java.util.List<String> gods = java.util.List.of();
+    public List<String> gods = List.of();
     // The elite Kourend & Kebos diary is done: Karuulm needs no boots
     // (ISS-01M5JJ0Z4M988DR0M0ZGJHD139).
     public boolean kourendElite;

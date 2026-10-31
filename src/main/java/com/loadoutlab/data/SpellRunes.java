@@ -1,6 +1,5 @@
 package com.loadoutlab.data;
 
-import com.google.gson.JsonObject;
 import java.util.*;
 
 import static com.loadoutlab.data.JsonResources.*;

@@ -162,14 +162,14 @@ public class DpsCalculator {
             // the separating. This is what puts the Scorching bow ahead of
             // a melee demonbane of near-identical per-attack dps.
             int reach = request.style == MELEE ? meleeReachPenaltyTicks(request.monster) : 0;
-            if (reach > 0 && result.dps > 0) counted("vent spacing", "melee walks between the four vents" + " (+" + reach + " ticks per kill)");
+            if (reach > 0 && result.dps > 0) counted("vent spacing", text("melee.walks") + " (+" + reach + " ticks per kill)");
             double interval = (result.attackSpeed + reach) * SECONDS_PER_TICK;
             if (isDemonbane(loadout.getWeapon())) {
                 int hp = max(1, request.monster.hitpoints);
                 counted("demonbane one-shot", "any landed hit destroys the vent");
                 result = result.withHitModel(result.accuracy * hp / interval, result.accuracy, result.accuracy * hp, hp, flat(result.accuracy, hp));
             } else if (result.dps > 0) {
-                counted("vent min-hit", "every landed hit deals at least half its max");
+                counted("vent min-hit", text("every.landed"));
                 result = result.withHitModel(result.expectedHit * 1.5 / interval,
                     result.accuracy, result.expectedHit * 1.5, result.maxHit, null);
                 distApprox = true;
@@ -199,7 +199,7 @@ public class DpsCalculator {
             // The one item Salarin honours (wiki): the elemental amulet's +2.
             if (wearing(loadout, M_ELEMENTAL_AMULET)) {
                 flat += 2;
-                counted("elemental amulet", "+2 max hit - the one item Salarin honours");
+                counted("elemental amulet", text("max.hit"));
             }
             counted("salarin", "strikes deal a flat " + flat + " - other gear does not matter");
             result = result.withHitModel( flat / (result.attackSpeed * SECONDS_PER_TICK), 1.0, flat, flat, flat(1.0, flat));
@@ -209,7 +209,7 @@ public class DpsCalculator {
         // certainty is why the core is THE spec-dump phase; SpecialAttack
         // mirrors the same rule so multi-hit specs price honestly.
         if (request.style == MELEE && isWardenCore(request.monster) && result.maxHit > 0) {
-            counted("warden core", "melee always deals its max hit");
+            counted("warden core", text("melee.always"));
             result = result.withHitModel( result.maxHit / (result.attackSpeed * SECONDS_PER_TICK),
                 1.0, result.maxHit, result.maxHit, flat(1.0, result.maxHit));
         }
@@ -221,7 +221,7 @@ public class DpsCalculator {
         if (request.style == MELEE && request.monster.hasAttribute("immune_melee")
             && request.monster.hasAttribute("prayer_immunity")) {
             if (fullVeracSet(loadout)) {
-                counted("verac's set", "only the 25% proc lands through the prayer");
+                counted("verac's set", text("only.the"));
                 double exp = 0.25 * normalExpectedHit(1.0, result.maxHit + 1);
                 result = result.withHitModel( exp / (result.attackSpeed * SECONDS_PER_TICK), 0.25, exp, result.maxHit + 1,
                     HitDist.mix(new double[]{1}, 0.25, roll(1.0, 0, result.maxHit + 1, 0)));
@@ -285,7 +285,7 @@ public class DpsCalculator {
             // multiplicatively with prayers"), strength only. Stacks build
             // per swing (even misses) and persist between kills with a 30s
             // idle decay, so sustained grinding sits at the 5-stack cap.
-            counted("soul stacks", "+30% strength level at 5 stacks (sustained)");
+            counted("soul stacks", text("strength.level"));
             effectiveStrength += levels.strength * 30 / 100;
         }
 
@@ -361,7 +361,7 @@ public class DpsCalculator {
         // accuracy x5/4 below a quarter of the target's hitpoints - the last
         // quarter of the kill goes at the boosted rate (ISS-01M5WV8S2V5HEVEZN4716KV5YD).
         if (expected > 0 && inToa(request) && wearing(loadout, M_KERIS_PARTISAN_OF_THE_SUN)) {
-            counted("keris partisan of the sun", "+25% accuracy below 25% hitpoints");
+            counted("keris partisan of the sun", text("accuracy.below"));
             double boosted = expectedHitWithFlatArmour(normalAccuracy(attackRoll * 5 / 4, defenceRoll), minHit, rm, fa);
             expected = 1 / (0.75 / expected + 0.25 / boosted);
             distApprox = true;
@@ -377,7 +377,7 @@ public class DpsCalculator {
         // The prayer-immune override in calculate() replaces this wholesale
         // when only the proc can land at all.
         if (fullVeracSet(loadout)) {
-            counted("verac's set", "25% guaranteed hit, +1 damage");
+            counted("verac's set", text("guaranteed.hit"));
             expected = 0.75 * expected + 0.25 * normalExpectedHit(1.0, mh + 1);
             dist = HitDist.mix(dist, 0.25, roll(1.0, 0, mh + 1, 0));
         }
@@ -411,7 +411,7 @@ public class DpsCalculator {
             // the chained hits that is acc/3 + acc^2 * 2/9 per attack
             // (matches the official calc's expected attack speed).
             double proc = accuracy / 3.0 + accuracy * accuracy * 2.0 / 9.0;
-            counted("bloodrager set", String.format("%.2f ticks faster on average", proc));
+            counted("bloodrager set", String.format(text("ticks.faster"), proc));
             es = speed - proc;
         }
         String stance = attackStance == 3 ? "accurate" : strengthStance == 3 ? "aggressive" : "controlled";
@@ -489,7 +489,7 @@ public class DpsCalculator {
             // a 10-damage burn - "roughly 2 burn damage per successful hit"
             // sustained (their own average; the 5-stack cap and target
             // death truncate a little in practice).
-            counted("eclipse set", "~2 burn damage per landed hit");
+            counted("eclipse set", text("burn.damage"));
             expected += accuracy * 2.0;
             dist = HitDist.mapped(dist, 1 - accuracy, d -> d + 2);
         }
@@ -560,7 +560,7 @@ public class DpsCalculator {
             // applyMagicDamageBonuses) exactly like theirs - a separate
             // multiplier here floors differently (verified 2026-08-21,
             // vector twinflame-firegiant: 44 vs their 42 max).
-            counted(wearing(loadout, M_TWINFLAME) ? "twinflame staff" : "smoke staff", "+10% accuracy and damage on standard spells");
+            counted(wearing(loadout, M_TWINFLAME) ? "twinflame staff" : "smoke staff", text("accuracy.and"));
             attackRoll = (long) floor(attackRoll * 1.10);
         }
         // The official calc applies flat armour to melee and ranged ONLY
@@ -590,7 +590,7 @@ public class DpsCalculator {
             // own - it is trunc(0.4 x the first hit's roll), truncated
             // PER ROLL. The old smooth 1.4x kept the fractions and ran
             // +6.3% hot on a Fire giant Water Wave.
-            counted("twinflame staff", "second hit at 40% of the roll (Bolt/Blast/Wave)");
+            counted("twinflame staff", text("second.hit"));
             long ts = 0;
             for (int k = sunfireMinHit; k <= mh; k++) ts += k * 2L / 5;
             expected += accuracy * ((double) ts / (mh - sunfireMinHit + 1));
@@ -600,7 +600,7 @@ public class DpsCalculator {
             // The staff's passive (official PlayerVsNPCCalc): a fifth of
             // LANDED hits carry +8 flat - entirely unmodelled here until
             // 2026-08-22, the other half of the sang-goblin gap.
-            counted("sanguinesti staff", "+8 on a fifth of landed hits");
+            counted("sanguinesti staff", text("fifth.landed"));
             expected += accuracy * 0.2 * 8;
             dist = HitDist.mix(dist, 0.2, HitDist.mapped(dist, 1 - accuracy, d -> d + 8));
         }
@@ -608,7 +608,7 @@ public class DpsCalculator {
         String sn = er.spell == null ? "" : er.spell.name;
         double f2 = frostweaverBonus(er, loadout);
         if (f2 > 0) {
-            counted("frostweaver set", "chance of a free spear hit per cast");
+            counted("frostweaver set", text("chance.free"));
             expected += f2;
             dist = HitDist.plus(dist, frost);
         }
@@ -839,7 +839,7 @@ public class DpsCalculator {
             || !request.spell.name.contains("Demonbane")) {
             return value;
         }
-        return demonbane(request, value, wearing(loadout, M_PURGING_STAFF) ? purging : plain, what, "demonbane spell (Mark of Darkness)");
+        return demonbane(request, value, wearing(loadout, M_PURGING_STAFF) ? purging : plain, what, text("demonbane.spell"));
     }
 
     int applyMagicDamageBonuses(OptimizationRequest request, Loadout loadout, int mh) {
@@ -880,7 +880,7 @@ public class DpsCalculator {
         // at least a tenth of the max hit - the official calc takes the
         // tenth here, after the weakness and BEFORE the tome step.
         if (request.sunfireRunes && request.spell != null && "fire".equals(request.spell.element)) {
-            counted("sunfire runes", "minimum hit a tenth of the max");
+            counted("sunfire runes", text("minimum.hit"));
             sunfireMinHit = (int) multiply(mh, 1, 10);
         }
         // The tome multiplies the whole max hit and roll, weakness included
@@ -907,7 +907,7 @@ public class DpsCalculator {
         return out;
     }
 
-    static final int M_AMULET_OF_AVARICE = bit("amulet of avarice"), M_BLACK_MASK = bit("black mask"), M_CHAOS_GAUNTLETS = bit("chaos gauntlets"), M_CONFLICTION_GAUNTLETS = bit("confliction gauntlets"), M_DUAL_MACUAHUITL = bit("dual macuahuitl"), M_ECLIPSE_ATLATL = bit("eclipse atlatl"), M_ELEMENTAL_AMULET = bit("elemental amulet"), M_KERIS = bit("keris"), M_KERIS_PARTISAN_OF_AMASCUT = bit("keris partisan of amascut"), M_KERIS_PARTISAN_OF_THE_SUN = bit("keris partisan of the sun"), M_OSMUMTEN_S_FANG = bit("osmumten's fang"), M_PURGING_STAFF = bit("purging staff"), M_SALVE_AMULET = bit("salve amulet"), M_SALVE_AMULET_E = bit("salve amulet (e)"), M_SALVE_AMULET_EI = bit("salve amulet(ei)"), M_SALVE_AMULET_I = bit("salve amulet(i)"), M_SANGUINESTI = bit("sanguinesti"), M_SCYTHE_OF_VITUR = bit("scythe of vitur"), M_SLAYER_S_STAFF_E = bit("slayer's staff (e)"), M_SOULREAPER_AXE = bit("soulreaper axe"), M_TUMEKEN = bit("tumeken"), M_TWINFLAME = bit("twinflame"), M_TWISTED_BOW = bit("twisted bow"), M_VOID_KNIGHT_GLOVES = bit("void knight gloves"), M_VOID_MAGE_HELM = bit("void mage helm"), M_VOID_MELEE_HELM = bit("void melee helm"), M_VOID_RANGER_HELM = bit("void ranger helm");
+    static final int M_AMULET_OF_AVARICE = bit("amulet of avarice"), M_BLACK_MASK = bit("black mask"), M_CHAOS_GAUNTLETS = bit("chaos gauntlets"), M_CONFLICTION_GAUNTLETS = bit("confliction gauntlets"), M_DUAL_MACUAHUITL = bit("dual macuahuitl"), M_ECLIPSE_ATLATL = bit("eclipse atlatl"), M_ELEMENTAL_AMULET = bit("elemental amulet"), M_KERIS = bit("keris"), M_KERIS_PARTISAN_OF_AMASCUT = bit(text("keris.partisan")), M_KERIS_PARTISAN_OF_THE_SUN = bit("keris partisan of the sun"), M_OSMUMTEN_S_FANG = bit("osmumten's fang"), M_PURGING_STAFF = bit("purging staff"), M_SALVE_AMULET = bit("salve amulet"), M_SALVE_AMULET_E = bit("salve amulet (e)"), M_SALVE_AMULET_EI = bit("salve amulet(ei)"), M_SALVE_AMULET_I = bit("salve amulet(i)"), M_SANGUINESTI = bit("sanguinesti"), M_SCYTHE_OF_VITUR = bit("scythe of vitur"), M_SLAYER_S_STAFF_E = bit("slayer's staff (e)"), M_SOULREAPER_AXE = bit("soulreaper axe"), M_TUMEKEN = bit("tumeken"), M_TWINFLAME = bit("twinflame"), M_TWISTED_BOW = bit("twisted bow"), M_VOID_KNIGHT_GLOVES = bit("void knight gloves"), M_VOID_MAGE_HELM = bit("void mage helm"), M_VOID_MELEE_HELM = bit("void melee helm"), M_VOID_RANGER_HELM = bit("void ranger helm");
 
     // Revenants: the avarice and wilderness-weapon conditionals key off
     // them (wiki calc: monster name starts with "Revenant").

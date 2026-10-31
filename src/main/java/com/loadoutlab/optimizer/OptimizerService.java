@@ -1,6 +1,7 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.*;
+import static com.loadoutlab.data.JsonResources.text;
 import com.loadoutlab.engine.*;
 import lombok.*;
 import java.util.*;
@@ -613,7 +614,7 @@ public class OptimizerService {
                 try {
                     ladders = adoptOwnedSteps(ctx, ownedRequest, ob, monster);
                 } catch (RuntimeException ex) {
-                    log.warn("swaps strip failed for {} {}", monster.name, style, ex);
+                    log.warn(text("swaps.strip"), monster.name, style, ex);
                 }
             }
             if (ownedSide && !ob.isEmpty()) preferAtHand(ctx, ownedRequest, ob, monster);
@@ -1349,7 +1350,7 @@ public class OptimizerService {
     // "retrieves the switch's arrows or bolts" on a carried Ava's device.
     static Map<Integer, String> avasNotes(List<GearItem> bench) {
         Map<Integer, String> notes = new HashMap<>();
-        for (GearItem g : bench) if (RangedAmmo.avasDevice(g)) notes.put(g.id, "retrieves the ranged switch's arrows or bolts");
+        for (GearItem g : bench) if (RangedAmmo.avasDevice(g)) notes.put(g.id, text("retrieves.the"));
         return notes;
     }
 
@@ -1484,16 +1485,16 @@ public class OptimizerService {
         }
         if (who.isEmpty()) {
             if (!ctx.p.thralls && ctx.p.deathCharge <= 0) return new GroupBook("", "", false);
-            return new GroupBook("arceuus", "Arceuus for the group - thralls and Death Charge stay up,"
-                + " magic sets cast from powered staves", autocast);
+            return new GroupBook("arceuus", text("arceuus.for")
+                + text("magic.sets"), autocast);
         }
         // Raids run Arceuus whenever they can (ISS-01M5TMC6SK50VPV8713B33SPPM,
         // Andrew 2026-10-25: "all raids should try to use arceuss+thralls until
         // its not possible"): thralls on every card outweigh one card's
         // autocast; only a spell you pinned moves the book.
         if (ctx.p.raid && (ctx.p.thralls || ctx.p.deathCharge > 0) && !pd) {
-            return new GroupBook("arceuus", "Arceuus for the raid - thralls and Death Charge stay up on every card,"
-                + " magic sets cast from Arceuus", autocast);
+            return new GroupBook("arceuus", text("arceuus.for2")
+                + text("magic.sets2"), autocast);
         }
         String best = null;
         double bestTotal = -1;
@@ -1523,7 +1524,7 @@ public class OptimizerService {
             for (int j : demanding) a2 += kitWeight(mobs.get(j)) * (arceuusMagicDps(ctx, mobs, j) + thrall);
             String favour = pd ? null : arceuusIfNotBeaten(a2, bestTotal, summons, who.get(best), what.get(best));
             if (favour != null) return new GroupBook("arceuus", favour, autocast);
-            edge = String.format(" - Arceuus casts with %s on the magic cards would lose (%.0f vs %.0f weighted dps)",
+            edge = String.format(text("arceuus.casts"),
                 summons, a2, bestTotal);
         }
         boolean recompute = false;
@@ -1532,10 +1533,10 @@ public class OptimizerService {
             if (magic != null && magic.getSpellName() != null && !best.equals(bookOf(ctx.dataset, magic.getSpellName()))) recompute = true;
         }
         var others = new StringBuilder();
-        for (String book : who.keySet()) if (!book.equals(best)) others.append(others.length() == 0 ? " (it carries more of the group's magic than the " : " or ") .append(book);
+        for (String book : who.keySet()) if (!book.equals(best)) others.append(others.length() == 0 ? text("carries.more") : " or ") .append(book);
         if (others.length() > 0) others.append(" book would)");
         return new GroupBook(best, who.get(best) + " wants " + what.get(best) + " - the group runs the " + best
-            + " book" + others + edge + "; thralls and Death Charge stand down", recompute);
+            + " book" + others + edge + text("thralls.and2"), recompute);
     }
 
     // The Arceuus side of the group's book, or null when the autocast book
@@ -1546,8 +1547,8 @@ public class OptimizerService {
     // should be the winner").
     static String arceuusIfNotBeaten(double at2, double at3, String summons, String who, String what) {
         if (at2 + EPS < at3) return null;
-        return String.format("Arceuus for the group: Arceuus casts with %s on the magic cards outweigh %s's %s"
-            + " (%.0f vs %.0f weighted dps)", summons, who, what, at2, at3);
+        return String.format(text("arceuus.for3")
+            + text("weighted.dps"), summons, who, what, at2, at3);
     }
 
     // The mob's best magic set under the Arceuus lock - a powered staff or
