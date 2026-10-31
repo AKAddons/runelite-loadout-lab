@@ -19,23 +19,23 @@ class F2pAssumptionsTest {
 	@DisplayName("the F2P prayer ceiling is the 1.15 tier, by name")
 	void f2pPrayerCeiling() {
 		PrayerBonuses f2p = PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.F2P);
-		assertEquals("Incredible Reflexes + Ultimate Strength", f2p.nameFor(CombatStyle.MELEE));
-		assertEquals("Eagle Eye", f2p.nameFor(CombatStyle.RANGED));
-		assertEquals("Mystic Might", f2p.nameFor(CombatStyle.MAGIC));
+		assertEquals("Incredible Reflexes + Ultimate Strength", f2p.nameFor(Style.MELEE));
+		assertEquals("Eagle Eye", f2p.nameFor(Style.RANGED));
+		assertEquals("Mystic Might", f2p.nameFor(Style.MAGIC));
 	}
 
 	@Test
 	@DisplayName("F2P boosts: attack+strength potions for melee, nothing for ranged/magic")
 	void f2pBoosts() {
-		assertEquals(BoostProfile.F2P_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, OwnedItems.EMPTY, true, false));
-		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.RANGED, OwnedItems.EMPTY, true, false));
-		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MAGIC, OwnedItems.EMPTY, true, false));
-		assertEquals(BoostProfile.F2P_COMBAT, BoostSelector.ceilingFor(CombatStyle.MELEE, true));
+		assertEquals(BoostProfile.F2P_COMBAT, BoostSelector.bestFor(Style.MELEE, OwnedItems.EMPTY, true, false));
+		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(Style.RANGED, OwnedItems.EMPTY, true, false));
+		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(Style.MAGIC, OwnedItems.EMPTY, true, false));
+		assertEquals(BoostProfile.F2P_COMBAT, BoostSelector.ceilingFor(Style.MELEE, true));
 		// Members with an EMPTY bank now assume nothing either (2026-08-25):
 		// this line used to expect SUPER_COMBAT, which was the same defect the
 		// ironman field report caught. The F2P assertions above are unaffected -
 		// F2P_COMBAT is a mode ceiling, not an owned item.
-		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MELEE, OwnedItems.EMPTY, false, false));
+		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(Style.MELEE, OwnedItems.EMPTY, false, false));
 	}
 
 	@Test
@@ -53,13 +53,13 @@ class F2pAssumptionsTest {
 	void lowTierPrayersAreNamed() {
 		PlayerLevels low = new PlayerLevels(99, 99, 99, 99, 99, 16, 99);
 		PrayerBonuses prayers = PrayerBonuses.bestAvailable(low, PrayerUnlocks.ALL);
-		assertEquals("Improved Reflexes + Superhuman Strength", prayers.nameFor(CombatStyle.MELEE));
-		assertEquals("Sharp Eye", prayers.nameFor(CombatStyle.RANGED));
-		assertEquals("Mystic Will", prayers.nameFor(CombatStyle.MAGIC));
+		assertEquals("Improved Reflexes + Superhuman Strength", prayers.nameFor(Style.MELEE));
+		assertEquals("Sharp Eye", prayers.nameFor(Style.RANGED));
+		assertEquals("Mystic Will", prayers.nameFor(Style.MAGIC));
 
 		PlayerLevels mid = new PlayerLevels(99, 99, 99, 99, 99, 27, 99);
 		PrayerBonuses midPrayers = PrayerBonuses.bestAvailable(mid, PrayerUnlocks.ALL);
-		assertEquals("Hawk Eye", midPrayers.nameFor(CombatStyle.RANGED));
-		assertEquals("Mystic Lore", midPrayers.nameFor(CombatStyle.MAGIC));
+		assertEquals("Hawk Eye", midPrayers.nameFor(Style.RANGED));
+		assertEquals("Mystic Lore", midPrayers.nameFor(Style.MAGIC));
 	}
 }

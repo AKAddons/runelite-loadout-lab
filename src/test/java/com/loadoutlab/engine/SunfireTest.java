@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SunfireTest {
 	private static LoadoutData data;
-	private static MonsterStats araxxor;
+	private static Monster araxxor;
 
 	@BeforeAll
 	static void load() {
@@ -38,7 +38,7 @@ class SunfireTest {
 			.findFirst().orElseThrow(AssertionError::new);
 	}
 
-	private static GearItem item(String nameLower, String versionLower) {
+	private static Gear item(String nameLower, String versionLower) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower)
 				&& (versionLower == null ? g.isStandardGear() : g.getVersionLower().equals(versionLower)))
@@ -52,16 +52,16 @@ class SunfireTest {
 		"tormented bracelet", "ancestral hat", "ancestral robe top", "ancestral robe bottom"};
 
 	private static DpsResult cast(SpellStats spell, boolean sunfire, boolean fireTome) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		for (String name : MAGIC_SET) {
-			GearItem piece = item(name, null);
+			Gear piece = item(name, null);
 			gear.put(piece.getSlot(), piece);
 		}
 		if (fireTome) {
 			gear.put(GearSlot.SHIELD, item("tome of fire", "charged"));
 		}
 		OptimizationRequest request = new OptimizationRequest(
-			araxxor, CombatStyle.MAGIC, PlayerLevels.MAXED,
+			araxxor, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), spell, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1).withSunfireRunes(sunfire);

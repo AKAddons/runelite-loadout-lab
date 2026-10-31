@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -34,7 +34,7 @@ class BisMaxCapeSimTest {
 	}
 
 	private static String capeName(OptimizerService.StyleResult result) {
-		GearItem cape = result.overallBest.getLoadout().get(GearSlot.CAPE);
+		Gear cape = result.overallBest.getLoadout().get(GearSlot.CAPE);
 		return cape == null ? "none" : cape.getNameLower();
 	}
 
@@ -60,14 +60,14 @@ class BisMaxCapeSimTest {
 
 	private static void assertCeilingCapes(RequirementProfile profile, OwnedItems owned, boolean simMaxCape)
 		throws Exception {
-		MonsterStats elf = data.searchMonsters("elf warrior", 1).get(0);
+		Monster elf = data.searchMonsters("elf warrior", 1).get(0);
 		RequirementProfile simmed = profile;
 		ComputeParams p = new ComputeParams();
 		p.simMaxCape = simMaxCape;
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			service.bestPerStyle(elf, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				simmed, owned, 1, p, Collections.emptyMap(), Collections.emptySet(),
 				Collections.emptyMap(), null, 0, Collections.<Integer>emptySet(), result -> {
@@ -75,8 +75,8 @@ class BisMaxCapeSimTest {
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
-			assertEquals("dizana's max cape", capeName(out.get().get(CombatStyle.RANGED)));
-			assertEquals("infernal max cape", capeName(out.get().get(CombatStyle.MELEE)));
+			assertEquals("dizana's max cape", capeName(out.get().get(Style.RANGED)));
+			assertEquals("infernal max cape", capeName(out.get().get(Style.MELEE)));
 		} finally {
 			service.shutdown();
 		}

@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +42,8 @@ class SimmedMaxCapeWearTest {
 	@Test
 	@DisplayName("the waiver lets a 70s player wear the fire max cape and nothing else above them")
 	void waiverCoversOnlyTheSimmedCapes() {
-		GearItem cape = data.getGear(FIRE_MAX_CAPE);
-		GearItem fang = data.getGearItems().stream().filter(g -> g.getNameLower().equals("osmumten's fang")).findFirst().get();
+		Gear cape = data.getGear(FIRE_MAX_CAPE);
+		Gear fang = data.getGearItems().stream().filter(g -> g.getNameLower().equals("osmumten's fang")).findFirst().get();
 		assertFalse(seventies().canWear(cape), "no waiver: 99s required");
 		RequirementProfile simmed = seventies().waiving(Set.of(FIRE_MAX_CAPE));
 		assertTrue(simmed.canWear(cape));
@@ -53,13 +53,13 @@ class SimmedMaxCapeWearTest {
 	@Test
 	@DisplayName("a 70s player owning the fire max cape under the sim's waiver wears it in the best melee set")
 	void optimizerWearsTheSimmedCape() {
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		PlayerLevels levels = new PlayerLevels(70, 70, 70, 70, 70, 70, 70);
-		OptimizationRequest request = new OptimizationRequest(graardor, CombatStyle.MELEE, levels,
+		OptimizationRequest request = new OptimizationRequest(graardor, Style.MELEE, levels,
 			PrayerBonuses.bestAvailable(levels), null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(Map.of(FIRE_MAX_CAPE, 1, 4151, 1), true), seventies().waiving(Set.of(FIRE_MAX_CAPE)), 1);
 		List<DpsResult> best = new LoadoutOptimizer().optimize(data, request);
-		GearItem cape = best.get(0).getLoadout().get(GearSlot.CAPE);
+		Gear cape = best.get(0).getLoadout().get(GearSlot.CAPE);
 		assertEquals(FIRE_MAX_CAPE, cape == null ? -1 : cape.getId());
 	}
 }

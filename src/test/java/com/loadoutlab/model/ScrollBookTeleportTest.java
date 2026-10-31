@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +48,7 @@ class ScrollBookTeleportTest {
 		engine.setSupplyDefaults(() -> Map.of("bossTeleport", "DETECT_BEST"));
 		engine.setUnlocks(v -> false);
 		engine.setInScrollBook(inBook);
-		MonsterStats cerberus = data.searchMonsters("cerberus", 1).get(0);
+		Monster cerberus = data.searchMonsters("cerberus", 1).get(0);
 		engine.execute("select", Map.of("id", cerberus.getId()));
 		engine.onResults(cerberus, Map.of());
 		try {

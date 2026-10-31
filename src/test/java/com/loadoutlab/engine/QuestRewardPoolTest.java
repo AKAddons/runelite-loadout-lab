@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.Map;
 import java.util.Set;
 import org.junit.Assert;
@@ -21,7 +21,7 @@ public class QuestRewardPoolTest {
 	private static final int BARROWS_GLOVES = 7462;
 
 	private static LoadoutData data;
-	private static MonsterStats graardor;
+	private static Monster graardor;
 
 	@BeforeClass
 	public static void load() {
@@ -31,7 +31,7 @@ public class QuestRewardPoolTest {
 	}
 
 	private static OptimizationRequest owned(Map<Integer, Integer> owned, int budgetGp) {
-		return TestRequests.of(graardor, CombatStyle.MELEE, PlayerLevels.MAXED,
+		return TestRequests.of(graardor, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, budgetGp,
 			budgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
@@ -39,7 +39,7 @@ public class QuestRewardPoolTest {
 	}
 
 	private static String handsName(DpsResult result) {
-		GearItem hands = result.getLoadout().get(GearSlot.HANDS);
+		Gear hands = result.getLoadout().get(GearSlot.HANDS);
 		return hands == null ? "" : hands.getName();
 	}
 
@@ -69,7 +69,7 @@ public class QuestRewardPoolTest {
 		// price was never charged.
 		DpsResult best = new LoadoutOptimizer()
 			.optimize(data, owned(Map.of(WHIP, 1), 1)).get(0);
-		GearItem head = best.getLoadout().get(GearSlot.HEAD);
+		Gear head = best.getLoadout().get(GearSlot.HEAD);
 		Assert.assertNotNull(head);
 		Assert.assertEquals("Helm of Neitiznot", head.getName());
 		Assert.assertTrue("spent " + best.getPurchaseCost(), best.getPurchaseCost() <= 1);

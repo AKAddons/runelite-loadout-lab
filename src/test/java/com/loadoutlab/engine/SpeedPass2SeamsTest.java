@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.EnumMap;
 import java.util.List;
@@ -29,14 +29,14 @@ class SpeedPass2SeamsTest {
 		data = new DataService().load();
 	}
 
-	private static GearItem weapon(String nameLower, String versionLower) {
+	private static Gear weapon(String nameLower, String versionLower) {
 		return data.getGearItems(GearSlot.WEAPON).stream()
 			.filter(g -> g.nameLower.equals(nameLower) && (versionLower == null || versionLower.equals(g.versionLower)))
 			.findFirst().get();
 	}
 
-	private static Loadout wielding(GearItem item) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+	private static Loadout wielding(Gear item) {
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, item);
 		return new Loadout(gear);
 	}
@@ -44,12 +44,12 @@ class SpeedPass2SeamsTest {
 	@Test
 	@DisplayName("one calculator re-cuts its rule lists when the monster changes: a lance on a dragon, then Graardor, then the dragon")
 	void ruleCutFollowsTheMonster() {
-		MonsterStats dragon = data.searchMonsters("vorkath", 1).get(0);
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster dragon = data.searchMonsters("vorkath", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		Loadout lance = wielding(weapon("dragon hunter lance", null));
 		DpsCalculator shared = new DpsCalculator();
-		for (MonsterStats mob : List.of(dragon, graardor, dragon)) {
-			OptimizationRequest request = new OptimizationRequest(mob, CombatStyle.MELEE, PlayerLevels.MAXED,
+		for (Monster mob : List.of(dragon, graardor, dragon)) {
+			OptimizationRequest request = new OptimizationRequest(mob, Style.MELEE, PlayerLevels.MAXED,
 				PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, false, false, OwnedItems.EMPTY,
 				RequirementProfile.MAXED, 10);
 			DpsResult fresh = new DpsCalculator().calculate(request, lance);
@@ -66,9 +66,9 @@ class SpeedPass2SeamsTest {
 		Loadout lance = wielding(weapon("dragon hunter lance", null));
 		DpsCalculator shared = new DpsCalculator();
 		int met = 0;
-		for (MonsterStats mob : data.monsters) {
+		for (Monster mob : data.monsters) {
 			if (met == 100) break;
-			OptimizationRequest request = new OptimizationRequest(mob, CombatStyle.MELEE, PlayerLevels.MAXED,
+			OptimizationRequest request = new OptimizationRequest(mob, Style.MELEE, PlayerLevels.MAXED,
 				PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, false, false, OwnedItems.EMPTY,
 				RequirementProfile.MAXED, 10);
 			DpsResult fresh = new DpsCalculator().calculate(request, lance);
@@ -93,9 +93,9 @@ class SpeedPass2SeamsTest {
 		assertEquals("magic: ", bare.attack, "a nameless spell");
 		assertEquals("amulet of ", bare.amulet, "an elementless spell");
 		SpellStats spell = data.spells.stream().filter(s -> s.name.equals("Fire Surge")).findFirst().get();
-		MonsterStats mob = data.searchMonsters("general graardor", 1).get(0);
+		Monster mob = data.searchMonsters("general graardor", 1).get(0);
 		Loadout staff = wielding(weapon("staff of fire", null));
-		OptimizationRequest request = new OptimizationRequest(mob, CombatStyle.MAGIC, PlayerLevels.MAXED,
+		OptimizationRequest request = new OptimizationRequest(mob, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, spell, 0, CandidateMode.ALL_STANDARD, false, false, OwnedItems.EMPTY,
 			RequirementProfile.MAXED, 10);
 		DpsResult result = new DpsCalculator().calculate(request, staff);

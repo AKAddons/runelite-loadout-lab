@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -105,7 +105,7 @@ class PvpWorldTest {
 		engine.setSupplyDefaults(() -> Map.of(
 			com.loadoutlab.data.TripSupplies.FOOD, "DETECT_BEST"));
 		engine.setMagicLevel(99);
-		MonsterStats mob = data.searchMonsters("general graardor", 1).get(0);
+		Monster mob = data.searchMonsters("general graardor", 1).get(0);
 		state.setParam("pvpWorld", mode);
 		engine.execute("select", Map.of("id", mob.getId()));
 		assertEquals(mode, state.paramsNode().get("pvpWorld"), "a selection keeps the world mode");

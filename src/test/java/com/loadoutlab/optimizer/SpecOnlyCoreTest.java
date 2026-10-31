@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.MonsterMechanics;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -30,16 +30,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SpecOnlyCoreTest {
 	private static LoadoutData data;
-	private static List<MonsterStats> meleeRows;
-	private static MonsterStats core;
+	private static List<Monster> meleeRows;
+	private static Monster core;
 
 	@BeforeAll
 	static void load() {
 		data = new DataService().load();
-		List<MonsterStats> toa = MonsterGroups.load(data).stream().filter(g -> g.getName().equals("Tombs of Amascut"))
+		List<Monster> toa = MonsterGroups.load(data).stream().filter(g -> g.getName().equals("Tombs of Amascut"))
 			.findFirst().orElseThrow().getMobs();
 		meleeRows = new ArrayList<>();
-		for (MonsterStats mob : toa) {
+		for (Monster mob : toa) {
 			String label = mob.label();
 			if (label.contains("Ba-Ba") || label.contains("Kephri") || label.contains("Melee only")
 				|| label.contains("Final stand") || label.contains("Core")) {
@@ -49,7 +49,7 @@ class SpecOnlyCoreTest {
 		core = meleeRows.stream().filter(m -> m.label().contains("Core")).findFirst().orElseThrow();
 	}
 
-	private static GearItem item(String name) {
+	private static Gear item(String name) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name));
@@ -60,7 +60,7 @@ class SpecOnlyCoreTest {
 	void weights() {
 		assertEquals(0.0, MonsterMechanics.kitWeight(core), 1e-9, "no say in the shared kit");
 		assertEquals(4500.0, MonsterMechanics.specWeight(core), 1e-9, "the dagger dump still counts");
-		MonsterStats baba = meleeRows.get(0);
+		Monster baba = meleeRows.get(0);
 		assertEquals(MonsterMechanics.specWeight(baba), MonsterMechanics.kitWeight(baba), 1e-9, "every other row: the same weight both ways");
 	}
 
@@ -76,12 +76,12 @@ class SpecOnlyCoreTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			OptimizerService.RosterResult roster = ServiceCalls.runRoster(service, meleeRows, owned, 12, Collections.emptyMap());
-			OptimizerService.StyleResult baba = roster.perMob.get(0).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult baba = roster.perMob.get(0).get(Style.MELEE);
 			assertNotNull(baba);
 			assertTrue(baba.owned.get(0).getLoadout().getWeapon().getNameLower().contains("fang"),
 				"Ba-Ba wears " + baba.owned.get(0).getLoadout().getWeapon().getName() + " at " + baba.owned.get(0).getDps());
 			int coreIndex = meleeRows.indexOf(core);
-			OptimizerService.StyleResult coreMelee = roster.perMob.get(coreIndex).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult coreMelee = roster.perMob.get(coreIndex).get(Style.MELEE);
 			assertNotNull(coreMelee.specWeapon, "the Core card carries the dump");
 			assertTrue(coreMelee.specWeapon.getNameLower().contains("dragon dagger"), coreMelee.specWeapon.getName());
 		} finally {

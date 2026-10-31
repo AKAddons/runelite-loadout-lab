@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class RevenantConditionalsTest {
 	private static LoadoutData data;
-	private static MonsterStats revDemon;
+	private static Monster revDemon;
 
 	@BeforeAll
 	static void load() {
@@ -28,8 +28,8 @@ class RevenantConditionalsTest {
 		revDemon = data.searchMonsters("revenant demon", 1).get(0);
 	}
 
-	private static GearItem byName(String name, String version) {
-		for (GearItem item : data.getGearItems()) {
+	private static Gear byName(String name, String version) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals(name)
 				&& (version == null || version.equalsIgnoreCase(item.getVersionLower()))) {
 				return item;
@@ -38,15 +38,15 @@ class RevenantConditionalsTest {
 		throw new AssertionError("corpus is missing: " + name + " (" + version + ")");
 	}
 
-	private static Loadout worn(GearItem... items) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (GearItem item : items) {
+	private static Loadout worn(Gear... items) {
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
+		for (Gear item : items) {
 			gear.put(item.getSlot(), item);
 		}
 		return new Loadout(gear);
 	}
 
-	private static OptimizationRequest request(MonsterStats monster, CombatStyle style) {
+	private static OptimizationRequest request(Monster monster, Style style) {
 		return new OptimizationRequest(monster, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
@@ -56,9 +56,9 @@ class RevenantConditionalsTest {
 	@Test
 	@DisplayName("the wilderness weapon buff needs a wilderness monster AND the charged version")
 	void revWeaponBuffGates() {
-		OptimizationRequest atRevs = request(revDemon, CombatStyle.RANGED);
+		OptimizationRequest atRevs = request(revDemon, Style.RANGED);
 		OptimizationRequest atGoblin =
-			request(data.searchMonsters("goblin", 1).get(0), CombatStyle.RANGED);
+			request(data.searchMonsters("goblin", 1).get(0), Style.RANGED);
 
 		Loadout charged = worn(byName("craw's bow", "charged"));
 		Loadout uncharged = worn(byName("craw's bow", "uncharged"));
@@ -76,7 +76,7 @@ class RevenantConditionalsTest {
 	@DisplayName("a charged craw's bow at revenants outputs more dps than the raw stats say")
 	void crawsBowBuffShowsUpInDps() {
 		Loadout charged = worn(byName("craw's bow", "charged"));
-		DpsResult atRevs = new DpsCalculator().calculate(request(revDemon, CombatStyle.RANGED), charged);
+		DpsResult atRevs = new DpsCalculator().calculate(request(revDemon, Style.RANGED), charged);
 		assertNotNull(atRevs);
 
 		// The same loadout against the same defensive stat sheet without
@@ -85,7 +85,7 @@ class RevenantConditionalsTest {
 		// and damage the charged bow must clear the strongest unbuffed
 		// owned-tier bow in the corpus at revs - the meta this models.
 		Loadout msb = worn(byName("magic shortbow", null), byName("amethyst arrow", null));
-		DpsResult msbAtRevs = new DpsCalculator().calculate(request(revDemon, CombatStyle.RANGED), msb);
+		DpsResult msbAtRevs = new DpsCalculator().calculate(request(revDemon, Style.RANGED), msb);
 		assertNotNull(msbAtRevs);
 		assertTrue(atRevs.getDps() > msbAtRevs.getDps() * 1.4,
 			"buffed craw's should dominate: craws=" + atRevs.getDps() + " msb=" + msbAtRevs.getDps());
@@ -102,8 +102,8 @@ class RevenantConditionalsTest {
 		Loadout avarice = worn(byName("magic shortbow", null), byName("amethyst arrow", null),
 			byName("amulet of avarice", null));
 
-		DpsResult withFury = new DpsCalculator().calculate(request(revDemon, CombatStyle.RANGED), base);
-		DpsResult withAvarice = new DpsCalculator().calculate(request(revDemon, CombatStyle.RANGED), avarice);
+		DpsResult withFury = new DpsCalculator().calculate(request(revDemon, Style.RANGED), base);
+		DpsResult withAvarice = new DpsCalculator().calculate(request(revDemon, Style.RANGED), avarice);
 		assertTrue(withAvarice.getDps() > withFury.getDps(),
 			"avarice=" + withAvarice.getDps() + " fury=" + withFury.getDps());
 	}
@@ -115,11 +115,11 @@ class RevenantConditionalsTest {
 		// the small glove dps gain must beat the zero-offense bracelet.
 		OwnedItems owned = new OwnedItems(java.util.Map.of(
 			861, 1, 21326, 100, 7462, 1, 21816, 1), true);
-		OptimizationRequest base = new OptimizationRequest(revDemon, CombatStyle.RANGED,
+		OptimizationRequest base = new OptimizationRequest(revDemon, Style.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false, owned, RequirementProfile.MAXED, 1);
 
-		GearItem dpsHands = new LoadoutOptimizer()
+		Gear dpsHands = new LoadoutOptimizer()
 			.optimize(data, base)
 			.get(0).getLoadout().get(GearSlot.HANDS);
 		assertNotNull(dpsHands);

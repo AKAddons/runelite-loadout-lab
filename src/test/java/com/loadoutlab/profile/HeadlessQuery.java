@@ -1,11 +1,11 @@
 package com.loadoutlab.profile;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.PvpRisk;
 import com.loadoutlab.optimizer.OptimizerService;
@@ -78,19 +78,19 @@ public final class HeadlessQuery {
 			: PlayerProfile.fromJson(Files.readString(profilePath));
 
 		LoadoutData data = new DataService().load();
-		java.util.List<MonsterStats> hits = data.searchMonsters(monsterName.toString(), 1);
+		java.util.List<Monster> hits = data.searchMonsters(monsterName.toString(), 1);
 		if (hits.isEmpty()) {
 			return "No monster matches '" + monsterName + "'";
 		}
-		MonsterStats monster = hits.get(0);
+		Monster monster = hits.get(0);
 
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-			java.util.Map<CombatStyle, java.util.Set<Integer>> excludedByStyle =
-				new java.util.EnumMap<>(CombatStyle.class);
-			for (CombatStyle style : CombatStyle.concreteValues()) {
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			java.util.Map<Style, java.util.Set<Integer>> excludedByStyle =
+				new java.util.EnumMap<>(Style.class);
+			for (Style style : Style.concreteValues()) {
 				excludedByStyle.put(style, excluded);
 			}
 			boolean inWilderness = wilderness
@@ -114,10 +114,10 @@ public final class HeadlessQuery {
 		}
 	}
 
-	private static String render(MonsterStats monster,
-		Map<CombatStyle, OptimizerService.StyleResult> results, int lowRisk) {
+	private static String render(Monster monster,
+		Map<Style, OptimizerService.StyleResult> results, int lowRisk) {
 		StringBuilder sb = new StringBuilder("=== vs ").append(monster.label()).append(" ===\n");
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
+		for (Style style : new Style[]{Style.MELEE, Style.RANGED, Style.MAGIC}) {
 			OptimizerService.StyleResult result = results.get(style);
 			sb.append("\n[").append(style).append("]\n");
 			if (result == null || result.owned.isEmpty()) {
@@ -127,7 +127,7 @@ public final class HeadlessQuery {
 				sb.append(String.format("  yours: %.2f dps (max %d, %.0f%% acc)  assumes: %s%n",
 					best.getDps(), best.getMaxHit(), best.getAccuracy() * 100, result.boostLabel));
 				for (GearSlot slot : GearSlot.values()) {
-					GearItem item = best.getLoadout().get(slot);
+					Gear item = best.getLoadout().get(slot);
 					if (item != null) {
 						sb.append(String.format("    %-7s %s%n", slot, item.label()));
 					}

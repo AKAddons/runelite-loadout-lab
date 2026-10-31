@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import org.junit.Assert;
@@ -14,7 +14,7 @@ import org.junit.Test;
 /** Zulrah demands a recoil source; the optimizer must actually bring one. */
 public class RequiredUtilityTest {
 	private static LoadoutData data;
-	private static MonsterStats zulrah;
+	private static Monster zulrah;
 	private static final java.util.Set<Integer> RECOIL_IDS =
 		java.util.Set.of(2550, 20655, 20657, 28945);
 
@@ -32,7 +32,7 @@ public class RequiredUtilityTest {
 	}
 
 	private static boolean hasRecoil(DpsResult result) {
-		for (GearItem item : result.getLoadout().getGear().values()) {
+		for (Gear item : result.getLoadout().getGear().values()) {
 			if (item != null && RECOIL_IDS.contains(item.getId())) {
 				return true;
 			}
@@ -42,7 +42,7 @@ public class RequiredUtilityTest {
 
 	@Test
 	public void theGameBestZulrahSetCarriesARecoilSource() {
-		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.RANGED,
+		OptimizationRequest req = TestRequests.of(zulrah, Style.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		Assert.assertTrue(hasRecoil(best(req)));
@@ -52,19 +52,19 @@ public class RequiredUtilityTest {
 	public void anUnchargedSufferingCountsAsAccessToTheRecoilForm() {
 		// Own tbow + arrows + an UNCHARGED suffering (i): the set must show
 		// the Recoil-charged form (20657) in the ring slot.
-		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.RANGED,
+		OptimizationRequest req = TestRequests.of(zulrah, Style.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(data.canonicalizeOwned(Map.of(20997, 1, 11212, 200, 19710, 1)), true), 1);
 		DpsResult result = best(req);
-		GearItem ring = result.getLoadout().get(GearSlot.RING);
+		Gear ring = result.getLoadout().get(GearSlot.RING);
 		Assert.assertNotNull(ring);
 		Assert.assertEquals(20657, ring.getId());
 	}
 
 	@Test
 	public void owningNoRecoilSourceLeavesTheSetUnchanged() {
-		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.RANGED,
+		OptimizationRequest req = TestRequests.of(zulrah, Style.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(data.canonicalizeOwned(Map.of(20997, 1, 11212, 200)), true), 1);
@@ -73,7 +73,7 @@ public class RequiredUtilityTest {
 
 	@Test
 	public void nonZulrahMonstersAreUntouchedByTheRecoilRule() {
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		Assert.assertFalse(RequiredUtility.requiresRecoil(graardor));
 		Assert.assertTrue(RequiredUtility.requiresRecoil(zulrah));
 	}

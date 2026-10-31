@@ -20,19 +20,19 @@ class PreferAtHandTest {
 
     private static int id(String name) {
         for (GearSlot slot : GearSlot.values()) {
-            for (GearItem item : data.getGearItems(slot)) if (item.getNameLower().equals(name)) return item.getId();
+            for (Gear item : data.getGearItems(slot)) if (item.getNameLower().equals(name)) return item.getId();
         }
         throw new AssertionError(name);
     }
 
-    private static GearItem boots(String mob, Set<Integer> atHand, Map<Integer, Integer> bank) throws Exception {
-        MonsterStats monster = data.getMonsters().stream().filter(m -> m.getName().equalsIgnoreCase(mob))
+    private static Gear boots(String mob, Set<Integer> atHand, Map<Integer, Integer> bank) throws Exception {
+        Monster monster = data.getMonsters().stream().filter(m -> m.getName().equalsIgnoreCase(mob))
             .findFirst().orElseThrow(AssertionError::new);
-        var done = new CompletableFuture<Map<CombatStyle, OptimizerService.StyleResult>>();
+        var done = new CompletableFuture<Map<Style, OptimizerService.StyleResult>>();
         ServiceCalls.bestPerStyle(new OptimizerService(data), monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
             new PrayerUnlocks(true, true, true, true, true), RequirementProfile.MAXED, new OwnedItems(bank, true, atHand), 1,
             false, false, "", Set.of(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Set.of(), 0, done::complete);
-        return done.get(5, TimeUnit.MINUTES).get(CombatStyle.RANGED).owned.get(0).getLoadout().get(GearSlot.FEET);
+        return done.get(5, TimeUnit.MINUTES).get(Style.RANGED).owned.get(0).getLoadout().get(GearSlot.FEET);
     }
 
     @Test

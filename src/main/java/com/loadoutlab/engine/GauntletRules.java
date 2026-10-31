@@ -9,19 +9,19 @@ import com.loadoutlab.data.*;
 // is "Crystalline ..." and every Corrupted Gauntlet mob "Corrupted ...".
 public class GauntletRules {
 
-    // "crystal" inside the Gauntlet, "corrupted" inside the Corrupted
-    // Gauntlet, null anywhere else.
-    public static String family(MonsterStats monster) {
-        String name = monster.nameLower;
-        if (name.startsWith("corrupted ")) return "corrupted";
-        if (name.startsWith("crystalline ")) return "crystal";
-        return null;
-    }
+// "crystal" inside the Gauntlet, "corrupted" inside the Corrupted
+// Gauntlet, null anywhere else.
+static String family(Monster monster) {
+    String name = monster.nameLower;
+    if (name.startsWith("corrupted ")) return "corrupted";
+    if (name.startsWith("crystalline ")) return "crystal";
+    return null;
+}
 
-    // Only the family's raid-crafted tiers exist inside.
-    public static boolean allowed(String family, GearItem item) {
-        String name = item.nameLower;
-        if (!name.startsWith(family + " ")) return false;
-        return name.endsWith("(basic)") || name.endsWith("(attuned)") || name.endsWith("(perfected)");
-    }
+// Only the family's raid-crafted tiers exist inside.
+static boolean allowed(String family, Gear item) {
+    String name = item.nameLower;
+    if (!name.startsWith(family + " ")) return false;
+    return name.endsWith("(basic)") || name.endsWith("(attuned)") || name.endsWith("(perfected)");
+}
 }

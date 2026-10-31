@@ -4,7 +4,7 @@ import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MobLocations;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +48,7 @@ class ShortestPathLinkTest {
 		}, link);
 		engine.setStoreOps(new TestStoreOps());
 		engine.setPathLink(() -> available, walked::add);
-		MonsterStats mob = data.searchMonsters(query, 1).get(0);
+		Monster mob = data.searchMonsters(query, 1).get(0);
 		engine.execute("select", Map.of("id", mob.getId()));
 		flush();
 		boolean pending = Boolean.TRUE.equals(link.published.get("pathable"));

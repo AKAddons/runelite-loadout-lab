@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.NavalCombat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +40,7 @@ class ThrallBookTest {
 		}
 	}
 
-	private List<Integer> utilityIds(MonsterStats mob, boolean thralls) {
+	private List<Integer> utilityIds(Monster mob, boolean thralls) {
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
@@ -69,7 +69,7 @@ class ThrallBookTest {
 		return ids;
 	}
 
-	private static MonsterStats land() {
+	private static Monster land() {
 		return data.searchMonsters("general graardor", 1).get(0);
 	}
 
@@ -90,7 +90,7 @@ class ThrallBookTest {
 	@Test
 	@DisplayName("a sea mob never carries the book - thralls cannot be cast on a boat")
 	void noBookAtSea() {
-		MonsterStats sea = data.getMonsters().stream()
+		Monster sea = data.getMonsters().stream()
 			.filter(m -> NavalCombat.isNaval(m.getName())).findFirst().orElseThrow(AssertionError::new);
 		assertFalse(utilityIds(sea, true).contains(BOOK_OF_THE_DEAD));
 	}

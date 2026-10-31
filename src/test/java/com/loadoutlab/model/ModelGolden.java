@@ -3,8 +3,8 @@ package com.loadoutlab.model;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.optimizer.OptimizerService;
 import com.loadoutlab.optimizer.ServiceCalls;
@@ -51,11 +51,11 @@ public final class ModelGolden {
 		LoadoutData data = new DataService().load();
 		PlayerProfile profile = FixtureBank.profile(data);
 		for (String name : MOBS) {
-			MonsterStats mob = data.searchMonsters(name, 1).get(0);
+			Monster mob = data.searchMonsters(name, 1).get(0);
 			System.out.println("##### " + mob.label());
 			System.out.println(Json.write(RenderModel.page(List.of(single(data, profile, mob)))));
 		}
-		MonsterStats wildy = data.searchMonsters(WILDERNESS_MOB, 1).get(0);
+		Monster wildy = data.searchMonsters(WILDERNESS_MOB, 1).get(0);
 		System.out.println("##### " + wildy.label() + " | low-risk");
 		System.out.println(Json.write(RenderModel.page(
 			List.of(single(data, profile, wildy, LOW_RISK_TRADEABLES)))));
@@ -75,20 +75,20 @@ public final class ModelGolden {
 	}
 
 	private static Map<String, Object> single(LoadoutData data, PlayerProfile profile,
-		MonsterStats mob) throws Exception {
+		Monster mob) throws Exception {
 		return single(data, profile, mob, -1);
 	}
 
 	private static Map<String, Object> single(LoadoutData data, PlayerProfile profile,
-		MonsterStats mob, int maxTradeables) throws Exception {
+		Monster mob, int maxTradeables) throws Exception {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, mob,
 				profile.realLevels, profile.boostedLevels, profile.prayerUnlocks,
 				profile.requirements, profile.ownedItems(), profile.owned.hashCode(),
-				false, false, "", new EnumMap<>(CombatStyle.class), maxTradeables,
+				false, false, "", new EnumMap<>(Style.class), maxTradeables,
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 				Collections.emptySet(), 0,
 				Collections.emptyMap(), null, 0, Collections.emptySet(),
@@ -110,7 +110,7 @@ public final class ModelGolden {
 	}
 
 	private static Map<String, Object> roster(LoadoutData data, PlayerProfile profile,
-		List<MonsterStats> mobs, int bench) throws Exception {
+		List<Monster> mobs, int bench) throws Exception {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);

@@ -1,7 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import java.util.List;
@@ -28,7 +28,7 @@ class PinTest {
 
 	private static OptimizationRequest ranged(CandidateMode mode, OwnedItems owned) {
 		return new OptimizationRequest(
-			data.searchMonsters("goblin", 1).get(0), CombatStyle.RANGED,
+			data.searchMonsters("goblin", 1).get(0), Style.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			mode, true, false, owned, RequirementProfile.MAXED, 1);
 	}
@@ -42,7 +42,7 @@ class PinTest {
 			ranged(CandidateMode.OWNED_ONLY, owned)
 				.withPinnedItems(Map.of(GearSlot.HANDS, 21183)));
 		assertFalse(results.isEmpty());
-		GearItem hands = results.get(0).getLoadout().get(GearSlot.HANDS);
+		Gear hands = results.get(0).getLoadout().get(GearSlot.HANDS);
 		assertNotNull(hands);
 		assertEquals("bracelet of slaughter", hands.getNameLower(),
 			"got: " + hands.getNameLower());
@@ -56,7 +56,7 @@ class PinTest {
 			ranged(CandidateMode.OWNED_ONLY, owned)
 				.withPinnedItems(Map.of(GearSlot.HANDS, 21183)));
 		assertFalse(results.isEmpty());
-		GearItem hands = results.get(0).getLoadout().get(GearSlot.HANDS);
+		Gear hands = results.get(0).getLoadout().get(GearSlot.HANDS);
 		assertNotNull(hands);
 		assertEquals("bracelet of slaughter", hands.getNameLower());
 	}
@@ -66,8 +66,8 @@ class PinTest {
 	void pinnedSalveSurvivesLowRisk() {
 		MonsterStatsHolder rev = new MonsterStatsHolder();
 		rev.monster = data.searchMonsters("revenant demon", 1).get(0);
-		GearItem salve = null;
-		for (GearItem item : data.getGearItems()) {
+		Gear salve = null;
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals("salve amulet(ei)")) {
 				salve = item;
 			}
@@ -75,7 +75,7 @@ class PinTest {
 		assertNotNull(salve);
 
 		OptimizationRequest constrained = new OptimizationRequest(
-			rev.monster, CombatStyle.RANGED, PlayerLevels.MAXED,
+			rev.monster, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY,
 			RequirementProfile.MAXED, 1)
@@ -84,7 +84,7 @@ class PinTest {
 
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data, constrained);
 		assertFalse(results.isEmpty());
-		GearItem neck = results.get(0).getLoadout().get(GearSlot.NECK);
+		Gear neck = results.get(0).getLoadout().get(GearSlot.NECK);
 		assertNotNull(neck);
 		assertEquals("salve amulet(ei)", neck.getNameLower(),
 			"the pin must override the rebuild veto and the cap, got: " + neck.getNameLower());
@@ -97,12 +97,12 @@ class PinTest {
 			ranged(CandidateMode.ALL_STANDARD, OwnedItems.EMPTY)
 				.withPinnedItems(Map.of(GearSlot.WEAPON, 861)));
 		assertFalse(results.isEmpty());
-		GearItem weapon = results.get(0).getLoadout().get(GearSlot.WEAPON);
+		Gear weapon = results.get(0).getLoadout().get(GearSlot.WEAPON);
 		assertEquals("magic shortbow", weapon.getNameLower(),
 			"got: " + weapon.getNameLower());
 	}
 
 	private static final class MonsterStatsHolder {
-		com.loadoutlab.data.MonsterStats monster;
+		com.loadoutlab.data.Monster monster;
 	}
 }

@@ -3,7 +3,7 @@ package com.loadoutlab.model;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -77,7 +77,7 @@ class LadderTryTest {
 			new CompanionLink());
 		engine.setStoreOps(ops);
 		engine.setOwnedCheck(id -> owned);
-		MonsterStats mob = data.searchMonsters("abyssal demon", 1).get(0);
+		Monster mob = data.searchMonsters("abyssal demon", 1).get(0);
 		assertTrue(engine.execute("select", Map.of("id", mob.getId())));
 		return engine;
 	}

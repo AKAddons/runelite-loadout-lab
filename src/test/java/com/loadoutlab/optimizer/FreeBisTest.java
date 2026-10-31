@@ -3,7 +3,7 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.*;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * inventory budget, so the bench size never moves the ceiling.
  */
 class FreeBisTest {
-	private static OptimizerService.RosterResult roster(LoadoutData data, List<MonsterStats> mobs, int bench) throws Exception {
+	private static OptimizerService.RosterResult roster(LoadoutData data, List<Monster> mobs, int bench) throws Exception {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
@@ -44,7 +44,7 @@ class FreeBisTest {
 	@DisplayName("the Zulrah roster's BiS per style is the same at Inventory 1, 4 and 8")
 	void benchNeverMovesTheCeiling() throws Exception {
 		LoadoutData data = new DataService().load();
-		List<MonsterStats> mobs = null;
+		List<Monster> mobs = null;
 		for (MonsterGroups.MonsterGroup g : MonsterGroups.load(data)) {
 			if (g.getName().toLowerCase().contains("zulrah")) mobs = g.getMobs();
 		}

@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +31,7 @@ class RosterReorderTest {
 
 	private static List<String> labels(PageState state) {
 		List<String> out = new ArrayList<>();
-		for (MonsterStats mob : state.rosterMobs()) {
+		for (Monster mob : state.rosterMobs()) {
 			out.add(mob.label());
 		}
 		return out;
@@ -83,8 +83,8 @@ class RosterReorderTest {
 			link);
 		engine.setStoreOps(new TestStoreOps());
 		assertTrue(engine.execute("select", Map.of("query", "Tombs of Amascut")));
-		List<MonsterStats> mobs = state.rosterMobs();
-		List<Map<com.loadoutlab.engine.CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> perMob = new ArrayList<>();
+		List<Monster> mobs = state.rosterMobs();
+		List<Map<com.loadoutlab.engine.Style, com.loadoutlab.optimizer.OptimizerService.StyleResult>> perMob = new ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++) {
 			perMob.add(Map.of());
 		}

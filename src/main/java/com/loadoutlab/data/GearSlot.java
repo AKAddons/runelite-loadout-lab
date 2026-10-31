@@ -6,19 +6,19 @@ import lombok.Getter;
 
 @Getter
 public enum GearSlot {
-    HEAD("head"), CAPE("cape"), NECK("neck"), AMMO("ammo"), WEAPON("weapon"), BODY("body"), SHIELD("shield"),
-    LEGS("legs"), HANDS("hands"), FEET("feet"), RING("ring");
+HEAD("head"), CAPE("cape"), NECK("neck"), AMMO("ammo"), WEAPON("weapon"), BODY("body"), SHIELD("shield"),
+LEGS("legs"), HANDS("hands"), FEET("feet"), RING("ring");
 
-    public final String jsonName;
+public final String jsonName;
 
-    GearSlot(String jsonName) { this.jsonName = jsonName; }
+GearSlot(String jsonName) { this.jsonName = jsonName; }
 
 
-    public static GearSlot fromJson(String value) {
-        if (value == null) return null;
+static GearSlot fromJson(String value) {
+    if (value == null) return null;
 
-        String normalized = Names.lower(value);
-        for (GearSlot slot : values()) if (slot.jsonName.equals(normalized)) return slot;
-        return null;
-    }
+    String normalized = Names.lower(value);
+    for (GearSlot slot : values()) if (slot.jsonName.equals(normalized)) return slot;
+    return null;
+}
 }

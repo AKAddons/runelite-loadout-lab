@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +49,7 @@ class ThrallsReseedTest {
 		engine.setAssumptionSeeder(() -> new LinkedHashMap<>(seeds));
 	}
 
-	private MonsterStats mob(String name) {
+	private Monster mob(String name) {
 		return data.searchMonsters(name, 1).get(0);
 	}
 
@@ -88,7 +88,7 @@ class ThrallsReseedTest {
 	void whyOnThePage() throws Exception {
 		seeds.put("thralls", false);
 		seeds.put("thrallsWhy", "Book of the Dead not seen in your bank");
-		MonsterStats graardor = mob("general graardor");
+		Monster graardor = mob("general graardor");
 		engine.execute("select", Map.of("id", graardor.getId()));
 		engine.onResults(graardor, Map.of());
 		SwingUtilities.invokeAndWait(() -> {

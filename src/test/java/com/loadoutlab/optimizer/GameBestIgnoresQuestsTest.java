@@ -3,8 +3,8 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -31,7 +31,7 @@ class GameBestIgnoresQuestsTest {
 	@DisplayName("game-best hands at 70/70/70 with no quests done are Barrows gloves, not a quest-free fallback")
 	void barrowsGlovesInTheCeiling() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats goblin = data.searchMonsters("Goblin", 1).get(0);
+		Monster goblin = data.searchMonsters("Goblin", 1).get(0);
 		EnumMap<Skill, Integer> levels = new EnumMap<>(Skill.class);
 		for (Skill skill : Skill.values()) {
 			levels.put(skill, 99);
@@ -45,7 +45,7 @@ class GameBestIgnoresQuestsTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, goblin, player, player, PrayerUnlocks.ALL, noQuests,
 				new OwnedItems(owned, true), 1, false, false, "", Collections.emptySet(), -1,
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Collections.emptySet(), 0, results -> {
@@ -53,7 +53,7 @@ class GameBestIgnoresQuestsTest {
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS));
-			assertEquals(7462, out.get().get(CombatStyle.MELEE).overallBest.getLoadout().get(GearSlot.HANDS).getId(),
+			assertEquals(7462, out.get().get(Style.MELEE).overallBest.getLoadout().get(GearSlot.HANDS).getId(),
 				"Barrows gloves: RFD is not a wall on the ceiling; Ferocious stays out on levels");
 		} finally {
 			service.shutdown();

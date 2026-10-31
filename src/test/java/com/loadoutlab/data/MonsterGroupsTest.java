@@ -89,7 +89,7 @@ class MonsterGroupsTest {
 		// P3 is ONE enraged Warden - the one left alive after P2 (Andrew
 		// 2026-09-02); both carry the same stats, so a single row.
 		assertEquals(12, byName("Tombs of Amascut").getMobs().size());
-		java.util.List<MonsterStats> enraged = byName("Tombs of Amascut").getMobs().stream()
+		java.util.List<Monster> enraged = byName("Tombs of Amascut").getMobs().stream()
 			.filter(m -> "Enraged".equals(m.getVersion()))
 			.collect(java.util.stream.Collectors.toList());
 		assertEquals(1, enraged.size());
@@ -125,12 +125,12 @@ class MonsterGroupsTest {
 		// bats" (2026-08-06): rows display the name players actually use.
 		// getName() stays the in-game name, so name-keyed rules (the
 		// nibbler barrage note, TzHaar handling) keep firing.
-		MonsterStats bat = byName("Inferno").getMobs().stream()
+		Monster bat = byName("Inferno").getMobs().stream()
 			.filter(m -> "Jal-MejRah".equals(m.getName())).findFirst().orElseThrow();
 		assertTrue(bat.label().startsWith("Bat"), "was: " + bat.label());
 		assertEquals("Jal-MejRah", bat.getName());
 
-		MonsterStats nibbler = byName("Inferno").getMobs().stream()
+		Monster nibbler = byName("Inferno").getMobs().stream()
 			.filter(m -> "Jal-Nib".equals(m.getName())).findFirst().orElseThrow();
 		assertTrue(nibbler.label().startsWith("Nibbler"));
 
@@ -166,7 +166,7 @@ class MonsterGroupsTest {
 		assertEquals("Fossil Island Wyverns",
 			MonsterGroups.search(groups, "fossil wyverns", 5).get(0).getName());
 		List<String> wyverns = new ArrayList<>();
-		for (MonsterStats m : byName("Fossil Island Wyverns").getMobs()) {
+		for (Monster m : byName("Fossil Island Wyverns").getMobs()) {
 			wyverns.add(m.getName());
 		}
 		assertEquals(List.of("Spitting Wyvern", "Taloned Wyvern", "Long-tailed Wyvern", "Ancient Wyvern"), wyverns);
@@ -180,7 +180,7 @@ class MonsterGroupsTest {
 		MonsterGroups.MonsterGroup tds = byName("Tormented Demons");
 		assertEquals(3, tds.getMobs().size());
 		java.util.Set<Integer> ids = new java.util.HashSet<>();
-		for (MonsterStats phase : tds.getMobs()) {
+		for (Monster phase : tds.getMobs()) {
 			assertTrue(ids.add(phase.getId()), "synthetic ids must be distinct");
 			assertEquals("Tormented Demon", phase.getName(),
 				"the NAME survives - name-keyed TD rules keep applying");
@@ -188,10 +188,10 @@ class MonsterGroupsTest {
 			assertTrue(phase.hasAttribute("demon"));
 		}
 		// Each phase is immune to exactly its shielded style.
-		com.loadoutlab.engine.CombatStyle[] styles = {
-			com.loadoutlab.engine.CombatStyle.MELEE,
-			com.loadoutlab.engine.CombatStyle.RANGED,
-			com.loadoutlab.engine.CombatStyle.MAGIC};
+		com.loadoutlab.engine.Style[] styles = {
+			com.loadoutlab.engine.Style.MELEE,
+			com.loadoutlab.engine.Style.RANGED,
+			com.loadoutlab.engine.Style.MAGIC};
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
 				assertEquals(i == j, com.loadoutlab.engine.Immunity
@@ -206,7 +206,7 @@ class MonsterGroupsTest {
 		// synthetic style-immune phases of one sheet, demon attribute kept.
 		MonsterGroups.MonsterGroup gorillas = byName("Demonic gorillas");
 		assertEquals(3, gorillas.getMobs().size());
-		for (MonsterStats phase : gorillas.getMobs()) {
+		for (Monster phase : gorillas.getMobs()) {
 			assertEquals("Demonic gorilla", phase.getName());
 			assertTrue(phase.hasAttribute("demon"));
 		}
@@ -215,9 +215,9 @@ class MonsterGroupsTest {
 		// A synthetic phase's profile id maps back to its real monster,
 		// so pins/exclusions/notes set on the plain mob follow it into
 		// the group (transitive exclusions).
-		for (MonsterStats phase : tds.getMobs()) {
-			assertTrue(phase.getId() >= MonsterStats.SYNTHETIC_ID_BASE);
-			assertTrue(phase.profileId() < MonsterStats.SYNTHETIC_ID_BASE);
+		for (Monster phase : tds.getMobs()) {
+			assertTrue(phase.getId() >= Monster.SYNTHETIC_ID_BASE);
+			assertTrue(phase.profileId() < Monster.SYNTHETIC_ID_BASE);
 			assertEquals(MonsterGroups.resolve(data, "Tormented Demon", null).getId(),
 				phase.profileId());
 		}
@@ -240,31 +240,31 @@ class MonsterGroupsTest {
 				.filter(m -> m.getName().equals("Nylocas Vasilias")).count());
 		}
 		// A Vasilias form takes damage ONLY from its own style.
-		MonsterStats meleeForm = byName("Theatre of Blood (Hard)").getMobs().stream()
+		Monster meleeForm = byName("Theatre of Blood (Hard)").getMobs().stream()
 			.filter(m -> m.getVersion().contains("Melee form")).findFirst().orElseThrow(AssertionError::new);
 		assertFalse(com.loadoutlab.engine.Immunity.styleImmune(
-			meleeForm, com.loadoutlab.engine.CombatStyle.MELEE));
+			meleeForm, com.loadoutlab.engine.Style.MELEE));
 		assertTrue(com.loadoutlab.engine.Immunity.styleImmune(
-			meleeForm, com.loadoutlab.engine.CombatStyle.RANGED));
+			meleeForm, com.loadoutlab.engine.Style.RANGED));
 		assertTrue(com.loadoutlab.engine.Immunity.styleImmune(
-			meleeForm, com.loadoutlab.engine.CombatStyle.MAGIC));
+			meleeForm, com.loadoutlab.engine.Style.MAGIC));
 		// The P2 Wardens are single-style; KQ crawling is melee-only.
-		MonsterStats elidinis = byName("Tombs of Amascut").getMobs().stream()
+		Monster elidinis = byName("Tombs of Amascut").getMobs().stream()
 			.filter(m -> m.getVersion().contains("magic only")).findFirst().orElseThrow(AssertionError::new);
 		assertTrue(com.loadoutlab.engine.Immunity.styleImmune(
-			elidinis, com.loadoutlab.engine.CombatStyle.MELEE));
+			elidinis, com.loadoutlab.engine.Style.MELEE));
 		assertFalse(com.loadoutlab.engine.Immunity.styleImmune(
-			elidinis, com.loadoutlab.engine.CombatStyle.MAGIC));
-		MonsterStats crawling = byName("Kalphite Queen").getMobs().stream()
+			elidinis, com.loadoutlab.engine.Style.MAGIC));
+		Monster crawling = byName("Kalphite Queen").getMobs().stream()
 			.filter(m -> m.getVersion().contains("melee only")).findFirst().orElseThrow(AssertionError::new);
 		assertFalse(com.loadoutlab.engine.Immunity.styleImmune(
-			crawling, com.loadoutlab.engine.CombatStyle.MELEE));
+			crawling, com.loadoutlab.engine.Style.MELEE));
 		assertTrue(com.loadoutlab.engine.Immunity.styleImmune(
-			crawling, com.loadoutlab.engine.CombatStyle.RANGED));
+			crawling, com.loadoutlab.engine.Style.RANGED));
 		assertEquals("Kalphite Queen",
 			MonsterGroups.search(groups, "kq", 5).get(0).getName());
 		// Akkha cycles prayers leaving exactly ONE style live per phase.
-		java.util.List<MonsterStats> akkha = byName("Tombs of Amascut").getMobs().stream()
+		java.util.List<Monster> akkha = byName("Tombs of Amascut").getMobs().stream()
 			.filter(m -> m.getName().equals("Akkha"))
 			.collect(java.util.stream.Collectors.toList());
 		// ...and makes his final stand melee-only at 20% hp with Protect from
@@ -273,10 +273,10 @@ class MonsterGroupsTest {
 		assertEquals(4, akkha.size());
 		assertEquals("Final stand (melee only)", akkha.get(3).getVersion());
 		assertFalse(com.loadoutlab.engine.Immunity.styleImmune(
-			akkha.get(3), com.loadoutlab.engine.CombatStyle.MELEE));
-		for (MonsterStats phase : akkha) {
+			akkha.get(3), com.loadoutlab.engine.Style.MELEE));
+		for (Monster phase : akkha) {
 			int immune = 0;
-			for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues()) {
+			for (com.loadoutlab.engine.Style style : com.loadoutlab.engine.Style.concreteValues()) {
 				if (com.loadoutlab.engine.Immunity.styleImmune(phase, style)) {
 					immune++;
 				}
@@ -311,7 +311,7 @@ class MonsterGroupsTest {
 	void toaStipulations() {
 		int weighted = 0;
 		int dagger = 0;
-		for (MonsterStats mob : byName("Tombs of Amascut").getMobs()) {
+		for (Monster mob : byName("Tombs of Amascut").getMobs()) {
 			if ("3".equals(mob.attributeValue("weight:"))) {
 				weighted++;
 				assertTrue(mob.getVersion().startsWith("P2"), mob.label());

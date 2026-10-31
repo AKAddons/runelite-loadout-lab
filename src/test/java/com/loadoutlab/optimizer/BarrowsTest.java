@@ -1,12 +1,12 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class BarrowsTest {
 	private static LoadoutData data;
-	private static List<MonsterStats> brothers;
+	private static List<Monster> brothers;
 
 	@BeforeAll
 	static void load() {
@@ -45,7 +45,7 @@ class BarrowsTest {
 			"tormented bracelet", "eternal boots", "rune crossbow", "runite bolts", "rada's blessing 4", "dragon dagger"};
 		for (String[] names : new String[][]{base, extra}) {
 			for (String n : names) {
-				GearItem item = data.getGearItems().stream().filter(g -> g.getNameLower().equals(n) && g.isStandardGear())
+				Gear item = data.getGearItems().stream().filter(g -> g.getNameLower().equals(n) && g.isStandardGear())
 					.findFirst().orElseThrow(() -> new AssertionError("missing " + n));
 				owned.put(item.getId(), 1);
 			}
@@ -62,7 +62,7 @@ class BarrowsTest {
 		}
 	}
 
-	private static GearItem shown(OptimizerService.RosterResult r, int mob, CombatStyle style, GearSlot slot) {
+	private static Gear shown(OptimizerService.RosterResult r, int mob, Style style, GearSlot slot) {
 		OptimizerService.StyleResult sr = r.perMob.get(mob).get(style);
 		return sr == null || sr.owned.isEmpty() ? null : sr.owned.get(0).getLoadout().get(slot);
 	}
@@ -72,8 +72,8 @@ class BarrowsTest {
 	void theHiltIsTheDefaultShield() throws Exception {
 		OptimizerService.RosterResult r = roster(bank("ghommal's hilt 2"));
 		for (int j = 0; j < r.mobs.size(); j++) {
-			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.MAGIC}) {
-				GearItem shield = shown(r, j, style, GearSlot.SHIELD);
+			for (Style style : new Style[]{Style.MELEE, Style.MAGIC}) {
+				Gear shield = shown(r, j, style, GearSlot.SHIELD);
 				assertNotNull(shield, r.mobs.get(j).getName() + " " + style);
 				assertEquals("ghommal's hilt 2", shield.getNameLower(), r.mobs.get(j).getName() + " " + style);
 			}
@@ -85,7 +85,7 @@ class BarrowsTest {
 	void noHiltNoRule() throws Exception {
 		OptimizerService.RosterResult r = roster(bank());
 		for (int j = 0; j < r.mobs.size(); j++) {
-			GearItem shield = shown(r, j, CombatStyle.MELEE, GearSlot.SHIELD);
+			Gear shield = shown(r, j, Style.MELEE, GearSlot.SHIELD);
 			assertNotNull(shield);
 			assertEquals("dragon defender", shield.getNameLower(), r.mobs.get(j).getName());
 		}
@@ -96,7 +96,7 @@ class BarrowsTest {
 	void blessingNotBolts() throws Exception {
 		OptimizerService.RosterResult r = roster(bank());
 		for (int j = 0; j < r.mobs.size(); j++) {
-			GearItem ammo = shown(r, j, CombatStyle.MAGIC, GearSlot.AMMO);
+			Gear ammo = shown(r, j, Style.MAGIC, GearSlot.AMMO);
 			assertNotNull(ammo, r.mobs.get(j).getName());
 			assertEquals("rada's blessing 4", ammo.getNameLower(), r.mobs.get(j).getName());
 		}

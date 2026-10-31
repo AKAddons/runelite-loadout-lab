@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ToaInvocationTest {
 	private static LoadoutData data;
-	private static MonsterStats enraged;
+	private static Monster enraged;
 
 	@BeforeAll
 	static void load() {
@@ -36,8 +36,8 @@ class ToaInvocationTest {
 		assertTrue(MonsterMechanics.isToaInvocationScaled(enraged));
 	}
 
-	private static GearItem byName(String nameLower, String versionLower) {
-		for (GearItem g : data.getGearItems()) {
+	private static Gear byName(String nameLower, String versionLower) {
+		for (Gear g : data.getGearItems()) {
 			if (g.getNameLower().equals(nameLower)
 				&& (versionLower == null || g.getVersionLower().equals(versionLower))) {
 				return g;
@@ -46,9 +46,9 @@ class ToaInvocationTest {
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static OptimizationRequest req(MonsterStats monster, CandidateMode mode,
+	private static OptimizationRequest req(Monster monster, CandidateMode mode,
 		OwnedItems owned) {
-		return TestRequests.of(monster, CombatStyle.RANGED, PlayerLevels.MAXED,
+		return TestRequests.of(monster, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			mode, true, false, owned, 1);
 	}
@@ -56,7 +56,7 @@ class ToaInvocationTest {
 	@Test
 	@DisplayName("the defence roll scales by exactly (250+invocation)/250, truncated")
 	void defenceRollScalesExactly() {
-		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> gear =
+		java.util.EnumMap<com.loadoutlab.data.GearSlot, Gear> gear =
 			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
 		gear.put(com.loadoutlab.data.GearSlot.WEAPON, byName("bow of faerdhinen", "charged"));
 		Loadout bofa = new Loadout(gear);
@@ -76,7 +76,7 @@ class ToaInvocationTest {
 	@DisplayName("the field report both ways: blowpipe wins invocation 0, bowfa wins 300")
 	void bowfaOvertakesTheBlowpipeAtRealRaidLevels() {
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (GearItem g : new GearItem[]{
+		for (Gear g : new Gear[]{
 			byName("toxic blowpipe", "charged"), byName("bow of faerdhinen", "charged"),
 			byName("crystal helm", "active"), byName("crystal body", "active"),
 			byName("crystal legs", "active"),
@@ -105,10 +105,10 @@ class ToaInvocationTest {
 	@Test
 	@DisplayName("the group's synthetic warden phases scale too (profileId mapping)")
 	void syntheticVariantsScale() {
-		MonsterStats p2 = MonsterGroups.load(data).stream()
+		Monster p2 = MonsterGroups.load(data).stream()
 			.filter(g -> "Tombs of Amascut".equals(g.getName()))
 			.flatMap(g -> g.getMobs().stream())
-			.filter(m -> m.getId() >= MonsterStats.SYNTHETIC_ID_BASE)
+			.filter(m -> m.getId() >= Monster.SYNTHETIC_ID_BASE)
 			.findFirst().orElseThrow();
 		assertTrue(MonsterMechanics.isToaInvocationScaled(p2),
 			"immuneVariant rows carry synthetic ids - profileId maps them back");
@@ -119,12 +119,12 @@ class ToaInvocationTest {
 	@Test
 	@DisplayName("non-ToA monsters and level 0 are no-ops; re-applying replaces, never compounds")
 	void scalingIsScopedAndSetNotCompounded() {
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		assertSame(goblin, MonsterMechanics.atToaInvocation(goblin, 300),
 			"a goblin has no raid level");
 		assertSame(enraged, MonsterMechanics.atToaInvocation(enraged, 0),
 			"level 0 on an unfactored row stays the same instance");
-		MonsterStats rescaled = enraged.withToaInvocation(300).withToaInvocation(150);
+		Monster rescaled = enraged.withToaInvocation(300).withToaInvocation(150);
 		assertEquals(150, rescaled.getToaInvocationLevel(), "SET semantics");
 		assertEquals(0, MonsterMechanics.atToaInvocation(
 				enraged.withToaInvocation(300), 0).getToaInvocationLevel(),

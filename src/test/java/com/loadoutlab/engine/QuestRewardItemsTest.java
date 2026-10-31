@@ -1,7 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.StatBlock;
 import java.util.HashSet;
@@ -11,8 +11,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class QuestRewardItemsTest {
-	private static GearItem gear(String name) {
-		return new GearItem(1, name, "", GearSlot.HANDS, "", 0, false, true,
+	private static Gear gear(String name) {
+		return new Gear(1, name, "", GearSlot.HANDS, "", 0, false, true,
 			false, true, null, StatBlock.ZERO, StatBlock.ZERO, StatBlock.ZERO, null);
 	}
 
@@ -41,7 +41,7 @@ public class QuestRewardItemsTest {
 	@Test
 	public void everyCuratedEntryResolvesToARealCorpusItemName() {
 		Set<String> corpus = new HashSet<>();
-		for (GearItem item : new DataService().load().getGearItems()) {
+		for (Gear item : new DataService().load().getGearItems()) {
 			corpus.add(item.getName().toLowerCase(Locale.ROOT));
 		}
 		for (String name : QuestRewardItems.QUEST_BY_NAME.keySet()) {

@@ -1,10 +1,10 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.*;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -39,23 +39,23 @@ class WeaponPinStyleTest {
 	}
 
 	private static String weapon(OptimizerService.StyleResult result) {
-		GearItem weapon = result.owned.get(0).getLoadout().get(GearSlot.WEAPON);
+		Gear weapon = result.owned.get(0).getLoadout().get(GearSlot.WEAPON);
 		return weapon == null ? "none" : weapon.getNameLower();
 	}
 
 	@Test
 	@DisplayName("a trident pinned for every style: magic wears it, ranged still builds with the bow of faerdhinen")
 	void pinKeepsToItsStyle() throws Exception {
-		MonsterStats warden = data.searchMonsters("tumeken's warden", 1).get(0);
+		Monster warden = data.searchMonsters("tumeken's warden", 1).get(0);
 		int trident = id("trident of the seas", "charged");
 		int bowfa = id("bow of faerdhinen", "charged");
 		OwnedItems owned = new OwnedItems(Map.of(trident, 1, bowfa, 1), true);
-		Map<CombatStyle, Map<GearSlot, Integer>> pins = new EnumMap<>(CombatStyle.class);
-		for (CombatStyle style : CombatStyle.values()) { pins.put(style, Map.of(GearSlot.WEAPON, trident)); }
+		Map<Style, Map<GearSlot, Integer>> pins = new EnumMap<>(Style.class);
+		for (Style style : Style.values()) { pins.put(style, Map.of(GearSlot.WEAPON, trident)); }
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			service.bestPerStyle(warden, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, owned, 1, new ComputeParams(), Collections.emptyMap(), Collections.emptySet(),
 				pins, null, 0, Collections.<Integer>emptySet(), result -> {
@@ -63,8 +63,8 @@ class WeaponPinStyleTest {
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
-			assertEquals("trident of the seas", weapon(out.get().get(CombatStyle.MAGIC)));
-			OptimizerService.StyleResult ranged = out.get().get(CombatStyle.RANGED);
+			assertEquals("trident of the seas", weapon(out.get().get(Style.MAGIC)));
+			OptimizerService.StyleResult ranged = out.get().get(Style.RANGED);
 			assertFalse(ranged.owned.isEmpty(), "ranged still builds");
 			assertEquals("bow of faerdhinen", weapon(ranged));
 		} finally {

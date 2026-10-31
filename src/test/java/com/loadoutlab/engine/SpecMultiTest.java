@@ -1,7 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +26,7 @@ class SpecMultiTest {
 	}
 
 	private static SpecialAttack spec(String nameLower) {
-		GearItem item = data.getGearItems().stream().filter(g -> g.getNameLower().equals(nameLower))
+		Gear item = data.getGearItems().stream().filter(g -> g.getNameLower().equals(nameLower))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 		SpecialAttack spec = SpecialAttack.match(item);
 		assertNotNull(spec, nameLower + " has no special attack on record");

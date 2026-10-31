@@ -15,12 +15,12 @@ import java.util.function.BooleanSupplier;
 // source stays under the Plugin Hub bot's token budget.
 public class Commands {
 
-    // A Command from two lambdas plus a label - the shape every factory returns.
-    public static Command of(String description, BooleanSupplier apply, BooleanSupplier revert) {
-        return new Command() {
-            public boolean apply() { return apply.getAsBoolean(); }
-            public boolean revert() { return revert.getAsBoolean(); }
-            public String getDescription() { return description; }
-        };
-    }
+// A Command from two lambdas plus a label - the shape every factory returns.
+public static Command of(String description, BooleanSupplier apply, BooleanSupplier revert) {
+    return new Command() {
+        public boolean apply() { return apply.getAsBoolean(); }
+        public boolean revert() { return revert.getAsBoolean(); }
+        public String getDescription() { return description; }
+    };
+}
 }

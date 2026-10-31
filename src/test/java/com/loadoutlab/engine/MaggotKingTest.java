@@ -3,7 +3,7 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,8 +26,8 @@ public class MaggotKingTest {
 		return data;
 	}
 
-	private static MonsterStats version(String version) {
-		for (MonsterStats monster : data().getMonsters()) {
+	private static Monster version(String version) {
+		for (Monster monster : data().getMonsters()) {
 			if ("Maggot King".equalsIgnoreCase(monster.getName())
 				&& version.equalsIgnoreCase(monster.getVersion())) {
 				return monster;
@@ -38,15 +38,15 @@ public class MaggotKingTest {
 
 	@Test
 	public void theFarPhaseIsMeleeImmuneTheOthersAreNot() {
-		MonsterStats far = version("Far");
+		Monster far = version("Far");
 		Assert.assertTrue("Far is out of melee reach",
-			com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.MELEE));
-		Assert.assertFalse(com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.RANGED));
-		Assert.assertFalse(com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.MAGIC));
+			com.loadoutlab.engine.Immunity.styleImmune(far, Style.MELEE));
+		Assert.assertFalse(com.loadoutlab.engine.Immunity.styleImmune(far, Style.RANGED));
+		Assert.assertFalse(com.loadoutlab.engine.Immunity.styleImmune(far, Style.MAGIC));
 		Assert.assertFalse("he closes in - Nearby takes melee",
-			com.loadoutlab.engine.Immunity.styleImmune(version("Nearby"), CombatStyle.MELEE));
+			com.loadoutlab.engine.Immunity.styleImmune(version("Nearby"), Style.MELEE));
 		Assert.assertFalse("the punish window takes melee",
-			com.loadoutlab.engine.Immunity.styleImmune(version("Roaring"), CombatStyle.MELEE));
+			com.loadoutlab.engine.Immunity.styleImmune(version("Roaring"), Style.MELEE));
 	}
 
 	/** The version cache-collision (field report 2026-08-20, grZ + Andrew):
@@ -62,9 +62,9 @@ public class MaggotKingTest {
 		try {
 			Assert.assertNotNull("Nearby answers melee",
 				singleStyles(service, version("Nearby"))
-					.get(CombatStyle.MELEE).overallBest);
+					.get(Style.MELEE).overallBest);
 			com.loadoutlab.optimizer.OptimizerService.StyleResult far =
-				singleStyles(service, version("Far")).get(CombatStyle.MELEE);
+				singleStyles(service, version("Far")).get(Style.MELEE);
 			Assert.assertTrue("Far melee owned must stay empty on a warm cache",
 				far == null || far.owned == null || far.owned.isEmpty());
 			Assert.assertTrue("Far melee BiS must stay empty on a warm cache",
@@ -74,17 +74,17 @@ public class MaggotKingTest {
 		}
 	}
 
-	private static java.util.Map<CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>
-		singleStyles(com.loadoutlab.optimizer.OptimizerService service, MonsterStats mob)
+	private static java.util.Map<Style, com.loadoutlab.optimizer.OptimizerService.StyleResult>
+		singleStyles(com.loadoutlab.optimizer.OptimizerService service, Monster mob)
 		throws Exception {
 		java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
-		java.util.concurrent.atomic.AtomicReference<java.util.Map<CombatStyle,
+		java.util.concurrent.atomic.AtomicReference<java.util.Map<Style,
 			com.loadoutlab.optimizer.OptimizerService.StyleResult>> out =
 			new java.util.concurrent.atomic.AtomicReference<>();
 		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, mob,
 			PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 			RequirementProfile.MAXED, OwnedItems.EMPTY, 0,
-			false, false, "", new java.util.EnumMap<>(CombatStyle.class), -1,
+			false, false, "", new java.util.EnumMap<>(Style.class), -1,
 			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 			java.util.Collections.emptySet(), 0,
 			java.util.Collections.emptyMap(), null, 0, java.util.Collections.emptySet(),
@@ -102,7 +102,7 @@ public class MaggotKingTest {
 			if ("Maggot King".equals(group.getName())) {
 				Assert.assertEquals(3, group.getMobs().size());
 				long meleeImmune = group.getMobs().stream()
-					.filter(m -> com.loadoutlab.engine.Immunity.styleImmune(m, CombatStyle.MELEE))
+					.filter(m -> com.loadoutlab.engine.Immunity.styleImmune(m, Style.MELEE))
 					.count();
 				Assert.assertEquals("exactly the Far phase is out of reach",
 					1, meleeImmune);

@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AvasDeviceTest {
 	private static LoadoutData data;
-	private static List<MonsterStats> barrows;
+	private static List<Monster> barrows;
 
 	@BeforeAll
 	static void load() {
@@ -53,10 +53,10 @@ class AvasDeviceTest {
 		try {
 			OptimizerService.RosterResult result = ServiceCalls.runRoster(service, barrows, owned, 3, Collections.emptyMap());
 			boolean rode = false;
-			for (Map<CombatStyle, OptimizerService.StyleResult> styles : result.perMob) {
+			for (Map<Style, OptimizerService.StyleResult> styles : result.perMob) {
 				for (OptimizerService.StyleResult r : styles.values()) {
 					if (r == null || !r.ownedKitBacked) continue;
-					for (GearItem g : r.bench) {
+					for (Gear g : r.bench) {
 						if (g.getId() == assembler) {
 							rode = true;
 							assertTrue(r.bench.size() <= 3, "within three swaps: " + r.bench);

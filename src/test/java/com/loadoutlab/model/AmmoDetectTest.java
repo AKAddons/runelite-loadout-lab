@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +48,7 @@ class AmmoDetectTest {
 			link);
 		engine.setRangedLevel(99);
 		engine.setOwnedCheck(bank::contains);
-		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
+		Monster shark = data.searchMonsters("hammerhead shark", 1).get(0);
 		engine.execute("select", Map.of("id", shark.getId()));
 		engine.onResults(shark, Map.of());
 		try {
@@ -173,7 +173,7 @@ class AmmoDetectTest {
 			},
 			link);
 		engine.setMagicLevel(99);
-		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
+		Monster shark = data.searchMonsters("hammerhead shark", 1).get(0);
 		engine.execute("select", Map.of("id", shark.getId()));
 		engine.onResults(shark, Map.of());
 		try {
@@ -187,7 +187,7 @@ class AmmoDetectTest {
 			"thrall resurrections cannot be cast on a boat (confirmed 2026-08-31)");
 
 		// The land path keeps its fold.
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		engine.execute("select", Map.of("id", graardor.getId()));
 		engine.onResults(graardor, Map.of());
 		try {
@@ -218,7 +218,7 @@ class AmmoDetectTest {
 		engine.setSupplyDefaults(() -> Map.of(
 			com.loadoutlab.data.TripSupplies.SHIP_REPAIR_KIT, "DETECT_BEST",
 			com.loadoutlab.data.TripSupplies.FOOD, "DETECT_BEST"));
-		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
+		Monster shark = data.searchMonsters("hammerhead shark", 1).get(0);
 		engine.execute("select", Map.of("id", shark.getId()));
 		engine.onResults(shark, Map.of());
 		try {
@@ -251,7 +251,7 @@ class AmmoDetectTest {
 			engine.setOwnedCheck(id -> id == 31982); // a rosewood kit banked
 			engine.setSupplyDefaults(() -> Map.of(
 				com.loadoutlab.data.TripSupplies.SHIP_REPAIR_KIT, "DETECT_BEST"));
-			MonsterStats mob = data.searchMonsters(mobName, 1).get(0);
+			Monster mob = data.searchMonsters(mobName, 1).get(0);
 			engine.execute("select", Map.of("id", mob.getId()));
 			engine.onResults(mob, Map.of());
 			try {

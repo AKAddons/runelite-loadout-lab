@@ -3,7 +3,7 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.*;
 import java.util.Collections;
 import java.util.Map;
@@ -27,18 +27,18 @@ class CeilingAntifireTest {
 	@DisplayName("the game-best card at Vorkath assumes a super antifire: no protective shield")
 	void ceilingAssumesSuperAntifire() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
+		Monster vorkath = data.searchMonsters("vorkath", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, vorkath, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(Map.of(4151, 1), true), 7,
 				false, false, "", Collections.emptySet(), -1,
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Collections.emptySet(), 0,
 				results -> { out.set(results); done.countDown(); });
 			assertTrue(done.await(120, TimeUnit.SECONDS));
-			OptimizerService.StyleResult melee = out.get().get(CombatStyle.MELEE);
+			OptimizerService.StyleResult melee = out.get().get(Style.MELEE);
 			assertNotNull(melee);
 			assertNotNull(melee.overallBest, "a game-best melee set must exist");
 			var shield = melee.overallBest.getLoadout().get(GearSlot.SHIELD);

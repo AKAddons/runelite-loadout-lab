@@ -6,19 +6,19 @@ import java.util.*;
 import lombok.Getter;
 
 public class GearRequirements {
-    public static final GearRequirements NONE = new GearRequirements(Map.of(), Set.of());
+static final GearRequirements NONE = new GearRequirements(Map.of(), Set.of());
 
-    final Map<String, Integer> skills;
-    @Getter
-    final Set<String> quests;
+final Map<String, Integer> skills;
+@Getter
+final Set<String> quests;
 
-    public GearRequirements(Map<String, Integer> skills, Set<String> quests) {
-        this.skills = new LinkedHashMap<>(skills == null ? Map.of() : skills);
-        this.quests = new LinkedHashSet<>(quests == null ? Set.of() : quests);
-    }
+GearRequirements(Map<String, Integer> skills, Set<String> quests) {
+    this.skills = new LinkedHashMap<>(skills == null ? Map.of() : skills);
+    this.quests = new LinkedHashSet<>(quests == null ? Set.of() : quests);
+}
 
-    public Map<String, Integer> getSkills() { return skills; }
+public Map<String, Integer> getSkills() { return skills; }
 
 
-    public boolean isEmpty() { return skills.isEmpty() && quests.isEmpty(); }
+public boolean isEmpty() { return skills.isEmpty() && quests.isEmpty(); }
 }

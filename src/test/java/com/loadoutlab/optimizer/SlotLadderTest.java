@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -53,15 +53,15 @@ class SlotLadderTest {
 	private static boolean withSpec;
 
 	private static OptimizerService.StyleResult run(String mob, String mode, String... owned) throws Exception {
-		return run(CombatStyle.MELEE, mob, mode, owned);
+		return run(Style.MELEE, mob, mode, owned);
 	}
 
-	private static OptimizerService.StyleResult run(CombatStyle style, String mob, String mode, String... owned)
+	private static OptimizerService.StyleResult run(Style style, String mob, String mode, String... owned)
 		throws Exception {
 		return run(style, data.searchMonsters(mob, 1).get(0), mode, Map.of(), java.util.Set.of(), owned);
 	}
 
-	private static OptimizerService.StyleResult run(CombatStyle style, MonsterStats monster, String mode,
+	private static OptimizerService.StyleResult run(Style style, Monster monster, String mode,
 		Map<GearSlot, Integer> pins, java.util.Set<Integer> dreams, String... owned) throws Exception {
 		Map<Integer, Integer> bank = new HashMap<>();
 		for (String name : owned) {
@@ -70,7 +70,7 @@ class SlotLadderTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ComputeParams p = new ComputeParams();
 			p.specWeapon = withSpec;
 			p.optimizeMode = mode;
@@ -162,7 +162,7 @@ class SlotLadderTest {
 	@Test
 	@DisplayName("a bowfa's swaps reach the twisted bow - the arrows come with it")
 	void bowfaToTwistedBow() throws Exception {
-		OptimizerService.StyleResult ranged = run(CombatStyle.RANGED, "zulrah", "MAX_DPS",
+		OptimizerService.StyleResult ranged = run(Style.RANGED, "zulrah", "MAX_DPS",
 			"bow of faerdhinen", "crystal helm", "crystal body", "crystal legs", "dragon arrow");
 		assertTrue(ranged.owned.get(0).getLoadout().getWeapon().getNameLower().startsWith("bow of faerdhinen"));
 		OptimizerService.Ladder weapon = ranged.ladder.get(GearSlot.WEAPON);
@@ -182,7 +182,7 @@ class SlotLadderTest {
 	@Test
 	@DisplayName("a twisted bow's swaps reach down to the owned bowfa")
 	void twistedBowToBowfa() throws Exception {
-		OptimizerService.StyleResult ranged = run(CombatStyle.RANGED, "zulrah", "MAX_DPS",
+		OptimizerService.StyleResult ranged = run(Style.RANGED, "zulrah", "MAX_DPS",
 			"twisted bow", "dragon arrow", "bow of faerdhinen");
 		assertEquals("twisted bow", ranged.owned.get(0).getLoadout().getWeapon().getNameLower());
 		OptimizerService.Ladder weapon = ranged.ladder.get(GearSlot.WEAPON);
@@ -197,7 +197,7 @@ class SlotLadderTest {
 		Map<GearSlot, Integer> pins = new java.util.EnumMap<>(GearSlot.class);
 		pins.put(GearSlot.WEAPON, id("osmumten's fang"));
 		pins.putAll(extraPins);
-		return run(CombatStyle.MELEE, data.searchMonsters("ba-ba", 1).get(0).withToaInvocation(300), mode, pins,
+		return run(Style.MELEE, data.searchMonsters("ba-ba", 1).get(0).withToaInvocation(300), mode, pins,
 			java.util.Set.of(id("osmumten's fang"), id("ghrazi rapier")),
 			"neitiznot faceguard", "fire cape", "amulet of torture", "rada's blessing 4", "bandos chestplate",
 			"dragon defender", "blood moon tassets", "ferocious gloves", "primordial boots", "berserker ring (i)",
@@ -222,13 +222,13 @@ class SlotLadderTest {
 	@DisplayName("a body tied on DPS but with better stats is a 'same' step up")
 	void tiedBetterStatsStepUp() throws Exception {
 		OptimizerService.StyleResult melee = baba("MAX_DPS", Map.of());
-		GearItem bandos = melee.owned.get(0).getLoadout().get(GearSlot.BODY);
+		Gear bandos = melee.owned.get(0).getLoadout().get(GearSlot.BODY);
 		assertEquals("Bandos chestplate", bandos.getName());
 		double worn = melee.owned.get(0).getDps();
 		OptimizerService.Ladder body = melee.ladder.get(GearSlot.BODY);
 		OptimizerService.Rung same = body.up.stream().filter(r -> Math.abs(r.dps - worn) < 1e-9).findFirst()
 			.orElseThrow(() -> new AssertionError("no equal-DPS step up: " + names(body.up)));
-		assertTrue(same.item.roughScore(CombatStyle.MELEE) >= bandos.roughScore(CombatStyle.MELEE), same.item.getName());
+		assertTrue(same.item.roughScore(Style.MELEE) >= bandos.roughScore(Style.MELEE), same.item.getName());
 		Map<?, ?> node = (Map<?, ?>) ((List<?>) com.loadoutlab.model.RenderModel.ladderNode(body).get("up")).get(0);
 		assertEquals(Boolean.TRUE, node.get("same"), "the card says it is the same result here");
 	}
@@ -248,7 +248,7 @@ class SlotLadderTest {
 	@Test
 	@DisplayName("Balanced steps carry both the DPS change and the damage-taken change")
 	void balancedShowsBoth() {
-		GearItem torva = data.getGear(id("torva platebody"));
+		Gear torva = data.getGear(id("torva platebody"));
 		OptimizerService.Ladder ladder = new OptimizerService.Ladder(OptimizerService.OptimizeMode.BALANCED,
 			8.0, 2.0, List.of(new OptimizerService.Rung(torva, 8.5, 1.8, false, null)), List.of());
 		Map<String, Object> node = com.loadoutlab.model.RenderModel.ladderNode(ladder);
@@ -289,8 +289,8 @@ class SlotLadderTest {
 		// Andrew 2026-10-22: "evaluate the weapon + shield as one slot because
 		// it competes directly against the 2h options" - scored alone, an
 		// empty shield slot skewed the strip toward two-handers.
-		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
-		OptimizerService.StyleResult melee = run(CombatStyle.MELEE, demon, "MAX_DPS",
+		Monster demon = data.searchMonsters("abyssal demon", 1).get(0);
+		OptimizerService.StyleResult melee = run(Style.MELEE, demon, "MAX_DPS",
 			Map.of(GearSlot.WEAPON, id("saradomin sword")), java.util.Set.of(),
 			"saradomin sword", "abyssal whip", "dragon defender", "fighter torso");
 		assertTrue(melee.owned.get(0).getLoadout().getWeapon().isTwoHanded(), "the pinned two-hander is worn");

@@ -1,12 +1,12 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * may have traded away.
  */
 class GroupLadderMatchesCardTest {
-	private static GearItem item(LoadoutData data, String name) {
+	private static Gear item(LoadoutData data, String name) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name));
@@ -37,8 +37,8 @@ class GroupLadderMatchesCardTest {
 	@DisplayName("ToA at 300 with twelve slots and a three-style bank: every group strip's base for a member is that member's card dps")
 	void stripBaseIsTheCardsNumber() throws Exception {
 		LoadoutData data = new DataService().load();
-		List<MonsterStats> toa = new ArrayList<>();
-		for (MonsterStats mob : MonsterGroups.load(data).stream().filter(g -> g.getName().equals("Tombs of Amascut"))
+		List<Monster> toa = new ArrayList<>();
+		for (Monster mob : MonsterGroups.load(data).stream().filter(g -> g.getName().equals("Tombs of Amascut"))
 			.findFirst().orElseThrow().getMobs()) {
 			toa.add(mob.withToaInvocation(300));
 		}
@@ -59,7 +59,7 @@ class GroupLadderMatchesCardTest {
 			OptimizerService.RosterResult roster = ServiceCalls.runRoster(service, toa, owned, 12, Collections.emptyMap());
 			int checked = 0;
 			for (int j = 0; j < toa.size(); j++) {
-				for (CombatStyle style : CombatStyle.concreteValues()) {
+				for (Style style : Style.concreteValues()) {
 					OptimizerService.StyleResult sr = roster.perMob.get(j).get(style);
 					if (sr == null || sr.owned.isEmpty() || sr.ladder == null) {
 						continue;

@@ -1,6 +1,6 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 
 /** Style-level immunity, independent of the weapon - a test probe of the
  * immunity data (it left main source in slim 5: nothing there asked it). */
@@ -8,7 +8,7 @@ public final class Immunity {
     private Immunity() {
     }
 
-    public static boolean styleImmune(MonsterStats monster, CombatStyle style) {
+    public static boolean styleImmune(Monster monster, Style style) {
         if (monster == null) return false;
         // Data-driven immunity (synthetic group variants - the tormented
         // demon shield phases): the attribute wins before the id lists.

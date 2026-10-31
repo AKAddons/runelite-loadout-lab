@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class WildernessToggleTest {
 	private static LoadoutData data;
-	private static MonsterStats hellhound;
-	private static MonsterStats revDemon;
+	private static Monster hellhound;
+	private static Monster revDemon;
 
 	@BeforeAll
 	static void load() {
@@ -33,18 +33,18 @@ class WildernessToggleTest {
 		revDemon = data.searchMonsters("revenant demon", 1).get(0);
 	}
 
-	private static OptimizationRequest request(MonsterStats monster) {
-		return new OptimizationRequest(monster, CombatStyle.MELEE,
+	private static OptimizationRequest request(Monster monster) {
+		return new OptimizationRequest(monster, Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 			null, 0, CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 	}
 
 	private static Loadout ursine() {
-		for (GearItem item : data.getGearItems()) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals("ursine chainmace")
 				&& "charged".equals(item.getVersionLower())) {
-				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+				EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 				gear.put(GearSlot.WEAPON, item);
 				return new Loadout(gear);
 			}

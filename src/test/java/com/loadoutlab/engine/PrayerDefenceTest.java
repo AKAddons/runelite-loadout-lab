@@ -1,11 +1,11 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static com.loadoutlab.engine.CombatStyle.*;
+import static com.loadoutlab.engine.Style.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -16,11 +16,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * wiki's Zeal page.
  */
 class PrayerDefenceTest {
-	private static void levels(CombatStyle style, String prayer, int defence, int magic) {
+	private static void levels(Style style, String prayer, int defence, int magic) {
 		assertArrayEquals(new int[]{defence, magic}, PrayerBonuses.defending(style, prayer, 99, 99), style + " " + prayer);
 	}
 
-	private static OptimizationRequest request(MonsterStats mob, CombatStyle style) {
+	private static OptimizationRequest request(Monster mob, Style style) {
 		return new OptimizationRequest(mob, style, PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 			null, 0, CandidateMode.ALL_STANDARD, false, false, OwnedItems.EMPTY, RequirementProfile.MAXED, 10);
 	}
@@ -49,7 +49,7 @@ class PrayerDefenceTest {
 	@Test
 	@DisplayName("the defense-weighted beam builds its constants at the levels the request's prayer gives")
 	void beamUsesThePrayer() {
-		MonsterStats moon = new DataService().load().searchMonsters("blood moon", 1).get(0);
+		Monster moon = new DataService().load().searchMonsters("blood moon", 1).get(0);
 		OptimizationRequest melee = request(moon, MELEE);
 		assertEquals("Zeal", melee.prayers.nameFor(MELEE), "maxed with every unlock");
 		assertEquals(123, IncomingDpsCalculator.Prepared.of(melee).defenceLevel, "Zeal: +25% Defence");

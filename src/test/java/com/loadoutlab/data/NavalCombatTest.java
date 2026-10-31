@@ -27,7 +27,7 @@ class NavalCombatTest {
 		assertFalse(NavalCombat.NAVAL.isEmpty());
 		StringBuilder missing = new StringBuilder();
 		for (String name : NavalCombat.NAVAL) {
-			List<MonsterStats> hits = data.searchMonsters(name, 1);
+			List<Monster> hits = data.searchMonsters(name, 1);
 			if (hits.isEmpty() || !hits.get(0).getName().equalsIgnoreCase(name)) {
 				missing.append("\n  ").append(name)
 					.append(hits.isEmpty() ? " (no hit)" : " (top hit: " + hits.get(0).getName() + ")");

@@ -1,12 +1,12 @@
 package com.loadoutlab.profile;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.PlayerLevels;
@@ -82,7 +82,7 @@ public final class RosterGolden {
 		}
 	}
 
-	private static String run(LoadoutData data, List<MonsterStats> mobs,
+	private static String run(LoadoutData data, List<Monster> mobs,
 		PlayerProfile profile, int bench) throws Exception {
 		OptimizerService service = new OptimizerService(data);
 		try {
@@ -112,8 +112,8 @@ public final class RosterGolden {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < roster.mobs.size(); i++) {
 			sb.append("--- ").append(roster.mobs.get(i).label()).append('\n');
-			Map<CombatStyle, OptimizerService.StyleResult> perStyle = roster.perMob.get(i);
-			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
+			Map<Style, OptimizerService.StyleResult> perStyle = roster.perMob.get(i);
+			for (Style style : new Style[]{Style.MELEE, Style.RANGED, Style.MAGIC}) {
 				OptimizerService.StyleResult result = perStyle == null ? null : perStyle.get(style);
 				sb.append("  [").append(style).append("] ");
 				if (result == null || result.owned == null || result.owned.isEmpty()) {
@@ -125,7 +125,7 @@ public final class RosterGolden {
 					best.getDps(), best.getMaxHit(), best.getAccuracy() * 100, result.boostLabel));
 				sb.append("      worn:");
 				for (GearSlot slot : GearSlot.values()) {
-					GearItem item = best.getLoadout().get(slot);
+					Gear item = best.getLoadout().get(slot);
 					if (item != null) {
 						sb.append(' ').append(item.label()).append(',');
 					}
@@ -139,7 +139,7 @@ public final class RosterGolden {
 						result.specWeapon.label(), result.specDpsAdded, result.specExpectedDamage));
 				}
 				sb.append("      inventory:");
-				for (GearItem carried : result.bench == null ? List.<GearItem>of() : result.bench) {
+				for (Gear carried : result.bench == null ? List.<Gear>of() : result.bench) {
 					sb.append(' ').append(carried.label()).append(',');
 				}
 				sb.append('\n');

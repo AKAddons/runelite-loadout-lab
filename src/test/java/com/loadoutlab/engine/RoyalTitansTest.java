@@ -1,11 +1,11 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.List;
 import org.junit.Assert;
@@ -29,12 +29,12 @@ public class RoyalTitansTest {
 		return data;
 	}
 
-	private static MonsterStats farTitan(String name) {
+	private static Monster farTitan(String name) {
 		for (MonsterGroups.MonsterGroup group : MonsterGroups.load(data())) {
 			if (!"Royal Titans".equals(group.getName())) {
 				continue;
 			}
-			for (MonsterStats mob : group.getMobs()) {
+			for (Monster mob : group.getMobs()) {
 				if (mob.getName().toLowerCase().contains(name)
 					&& mob.label().contains("Out of reach")) {
 					return mob;
@@ -46,21 +46,21 @@ public class RoyalTitansTest {
 
 	@Test
 	public void farFormsAreMeleeImmuneNearFormsAreNot() {
-		MonsterStats far = farTitan("branda");
-		Assert.assertTrue(com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.MELEE));
-		Assert.assertFalse(com.loadoutlab.engine.Immunity.styleImmune(far, CombatStyle.RANGED));
-		MonsterStats near = data().searchMonsters("branda the fire queen", 1).get(0);
+		Monster far = farTitan("branda");
+		Assert.assertTrue(com.loadoutlab.engine.Immunity.styleImmune(far, Style.MELEE));
+		Assert.assertFalse(com.loadoutlab.engine.Immunity.styleImmune(far, Style.RANGED));
+		Monster near = data().searchMonsters("branda the fire queen", 1).get(0);
 		Assert.assertFalse("the near-phase base row keeps melee",
-			com.loadoutlab.engine.Immunity.styleImmune(near, CombatStyle.MELEE));
-		Assert.assertTrue(com.loadoutlab.engine.Immunity.styleImmune(farTitan("eldric"), CombatStyle.MELEE));
+			com.loadoutlab.engine.Immunity.styleImmune(near, Style.MELEE));
+		Assert.assertTrue(com.loadoutlab.engine.Immunity.styleImmune(farTitan("eldric"), Style.MELEE));
 	}
 
 	@Test
 	public void outOfReachGrantsSixTimesRangedAccuracyOnly() {
-		MonsterStats near = data().searchMonsters("branda the fire queen", 1).get(0);
-		MonsterStats far = farTitan("branda");
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (GearItem g : data().getGearItems()) {
+		Monster near = data().searchMonsters("branda the fire queen", 1).get(0);
+		Monster far = farTitan("branda");
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
+		for (Gear g : data().getGearItems()) {
 			if (g.getNameLower().equals("twisted bow") && g.isStandardGear()) {
 				gear.put(GearSlot.WEAPON, g);
 			}
@@ -79,8 +79,8 @@ public class RoyalTitansTest {
 			atFar.getAccuracy() > atNear.getAccuracy() * 2);
 	}
 
-	private static DpsResult calc(MonsterStats mob, Loadout loadout) {
-		OptimizationRequest request = TestRequests.of(mob, CombatStyle.RANGED,
+	private static DpsResult calc(Monster mob, Loadout loadout) {
+		OptimizationRequest request = TestRequests.of(mob, Style.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		DpsResult result = new DpsCalculator().calculate(request, loadout);
@@ -93,7 +93,7 @@ public class RoyalTitansTest {
 		for (MonsterGroups.MonsterGroup group : MonsterGroups.load(data())) {
 			if ("Royal Titans".equals(group.getName())) {
 				Assert.assertEquals(6, group.getMobs().size());
-				List<MonsterStats> mobs = group.getMobs();
+				List<Monster> mobs = group.getMobs();
 				long far = mobs.stream().filter(m -> m.label().contains("Out of reach")).count();
 				Assert.assertEquals(2, far);
 				return;

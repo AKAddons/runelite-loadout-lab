@@ -1,9 +1,9 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,11 +20,11 @@ public class VampyreRulesTest {
 		return data;
 	}
 
-	private static MonsterStats monster(String query) {
+	private static Monster monster(String query) {
 		return data().searchMonsters(query, 1).get(0);
 	}
 
-	private static GearItem byName(String name) {
+	private static Gear byName(String name) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getName().equalsIgnoreCase(name))
 			.findFirst()
@@ -33,21 +33,21 @@ public class VampyreRulesTest {
 
 	@Test
 	public void regularWeaponsCannotDamageVyrewatchSentinels() {
-		MonsterStats sentinel = monster("vyrewatch sentinel");
+		Monster sentinel = monster("vyrewatch sentinel");
 		Assert.assertTrue(sentinel.hasAttribute("vampyre3"));
-		Assert.assertFalse(VampyreRules.canDamage(sentinel, CombatStyle.MELEE, byName("Abyssal whip")));
-		Assert.assertTrue(VampyreRules.canDamage(sentinel, CombatStyle.MELEE, byName("Blisterwood flail")));
-		Assert.assertTrue(VampyreRules.canDamage(sentinel, CombatStyle.MELEE, byName("Ivandis flail")));
+		Assert.assertFalse(VampyreRules.canDamage(sentinel, Style.MELEE, byName("Abyssal whip")));
+		Assert.assertTrue(VampyreRules.canDamage(sentinel, Style.MELEE, byName("Blisterwood flail")));
+		Assert.assertTrue(VampyreRules.canDamage(sentinel, Style.MELEE, byName("Ivandis flail")));
 	}
 
 	@Test
 	public void optimizerNeverSuggestsNonVyreWeaponsAgainstSentinels() {
-		MonsterStats sentinel = monster("vyrewatch sentinel");
+		Monster sentinel = monster("vyrewatch sentinel");
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1); // abyssal whip - must NOT be suggested
 		OptimizationRequest request = new OptimizationRequest(
 			sentinel,
-			CombatStyle.MELEE,
+			Style.MELEE,
 			PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 			null,
@@ -64,10 +64,10 @@ public class VampyreRulesTest {
 
 	@Test
 	public void gameBestAgainstSentinelsUsesAVyreWeapon() {
-		MonsterStats sentinel = monster("vyrewatch sentinel");
+		Monster sentinel = monster("vyrewatch sentinel");
 		OptimizationRequest request = new OptimizationRequest(
 			sentinel,
-			CombatStyle.MELEE,
+			Style.MELEE,
 			PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 			null,
@@ -82,7 +82,7 @@ public class VampyreRulesTest {
 		Assert.assertFalse(results.isEmpty());
 		String weapon = results.get(0).getLoadout().getWeapon().getName().toLowerCase();
 		Assert.assertTrue("expected a vyre-baneful weapon, got: " + weapon,
-			VampyreRules.canDamage(sentinel, CombatStyle.MELEE, results.get(0).getLoadout().getWeapon()));
+			VampyreRules.canDamage(sentinel, Style.MELEE, results.get(0).getLoadout().getWeapon()));
 	}
 
 	@Test
@@ -90,15 +90,15 @@ public class VampyreRulesTest {
 		// Vs guaranteed-hit monsters all accuracy gear ties on DPS; the
 		// attack-roll tie-break must still pick the strongest gear, and the
 		// Avernic treads combos (wrongly non-standard upstream) must be in.
-		MonsterStats td = data().searchMonsters("tormented demon", 1).get(0);
+		Monster td = data().searchMonsters("tormented demon", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(
-			td, CombatStyle.RANGED, PlayerLevels.MAXED,
+			td, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 		DpsResult best = new LoadoutOptimizer().optimize(data(), request).get(0);
-		GearItem feet = best.getLoadout().get(com.loadoutlab.data.GearSlot.FEET);
-		GearItem hands = best.getLoadout().get(com.loadoutlab.data.GearSlot.HANDS);
+		Gear feet = best.getLoadout().get(com.loadoutlab.data.GearSlot.FEET);
+		Gear hands = best.getLoadout().get(com.loadoutlab.data.GearSlot.HANDS);
 		Assert.assertNotNull(feet);
 		Assert.assertTrue("expected avernic treads, got " + feet.getName(),
 			feet.getName().toLowerCase().startsWith("avernic treads"));
@@ -111,21 +111,21 @@ public class VampyreRulesTest {
 	 * (ISS-01M5RM2A7FFR9XWKATPX877TDD - VampyreParityTest pins the maths). */
 	@Test
 	public void juvinatesNeedSilverAVampyrebaneWeaponOrEfaritaysAid() {
-		MonsterStats juvinate = monster("vampyre juvinate");
+		Monster juvinate = monster("vampyre juvinate");
 		Assert.assertTrue(juvinate.hasAttribute("vampyre2"));
-		Assert.assertTrue(VampyreRules.immune(juvinate, CombatStyle.MELEE, wearing("Abyssal whip")));
-		Assert.assertFalse(VampyreRules.immune(juvinate, CombatStyle.MELEE, wearing("Abyssal whip", "Efaritay's aid")));
-		Assert.assertFalse(VampyreRules.immune(juvinate, CombatStyle.MELEE, wearing("Blisterwood flail")));
-		Assert.assertFalse(VampyreRules.immune(juvinate, CombatStyle.MELEE, wearing("Silverlight")));
+		Assert.assertTrue(VampyreRules.immune(juvinate, Style.MELEE, wearing("Abyssal whip")));
+		Assert.assertFalse(VampyreRules.immune(juvinate, Style.MELEE, wearing("Abyssal whip", "Efaritay's aid")));
+		Assert.assertFalse(VampyreRules.immune(juvinate, Style.MELEE, wearing("Blisterwood flail")));
+		Assert.assertFalse(VampyreRules.immune(juvinate, Style.MELEE, wearing("Silverlight")));
 		// Tier 1 and normal monsters: anything lands.
-		Assert.assertFalse(VampyreRules.immune(monster("feral vampyre"), CombatStyle.MELEE, wearing("Abyssal whip")));
-		Assert.assertFalse(VampyreRules.immune(monster("goblin"), CombatStyle.MELEE, wearing("Abyssal whip")));
+		Assert.assertFalse(VampyreRules.immune(monster("feral vampyre"), Style.MELEE, wearing("Abyssal whip")));
+		Assert.assertFalse(VampyreRules.immune(monster("goblin"), Style.MELEE, wearing("Abyssal whip")));
 	}
 
 	private static Loadout wearing(String... names) {
-		Map<com.loadoutlab.data.GearSlot, GearItem> gear = new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+		Map<com.loadoutlab.data.GearSlot, Gear> gear = new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
 		for (String name : names) {
-			GearItem item = byName(name);
+			Gear item = byName(name);
 			gear.put(item.getSlot(), item);
 		}
 		return new Loadout(gear);

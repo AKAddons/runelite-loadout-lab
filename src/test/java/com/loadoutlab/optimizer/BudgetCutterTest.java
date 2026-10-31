@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class BudgetCutterTest {
     private static LoadoutData data;
-    private static MonsterStats vardorvis;
+    private static Monster vardorvis;
     private static SetRules budget;
 
     @BeforeAll
@@ -31,8 +31,8 @@ class BudgetCutterTest {
         budget = CombatAchievements.byId(493).rulesFor(List.of(vardorvis));
     }
 
-    private static List<GearItem> rows(String name) {
-        List<GearItem> found = new ArrayList<>();
+    private static List<Gear> rows(String name) {
+        List<Gear> found = new ArrayList<>();
         for (GearSlot slot : GearSlot.values()) {
             found.addAll(data.getGearItems(slot).stream().filter(g -> g.name.equals(name)).collect(Collectors.toList()));
         }
@@ -40,20 +40,20 @@ class BudgetCutterTest {
         return found;
     }
 
-    private static GearItem item(String name) { return rows(name).get(0); }
+    private static Gear item(String name) { return rows(name).get(0); }
 
-    private static GearItem item(String name, String version) {
+    private static Gear item(String name, String version) {
         return rows(name).stream().filter(g -> g.version.equals(version)).findFirst()
             .orElseThrow(() -> new AssertionError(name + " " + version));
     }
 
-    private static Loadout wearing(GearItem... items) {
-        EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-        for (GearItem g : items) gear.put(g.slot, g);
+    private static Loadout wearing(Gear... items) {
+        EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
+        for (Gear g : items) gear.put(g.slot, g);
         return new Loadout(gear);
     }
 
-    private static OptimizationRequest request(MonsterStats mob, CombatStyle style, SetRules rules) {
+    private static OptimizationRequest request(Monster mob, Style style, SetRules rules) {
         OptimizationRequest request = new OptimizationRequest(mob, style, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
             CandidateMode.ALL_STANDARD, false, false, OwnedItems.EMPTY, RequirementProfile.MAXED, 10);
         return rules == null ? request : request.withSetRules(rules);
@@ -77,15 +77,15 @@ class BudgetCutterTest {
     @DisplayName("the Lightbearer comes into a set only when the set still keeps the request's rules")
     void swapObeysTheRules() {
         Loadout whip = wearing(item("Abyssal whip"));
-        Loadout free = OptimizerService.lightbearerSwap(data, whip, List.of(request(vardorvis, CombatStyle.MELEE, null)), null);
+        Loadout free = OptimizerService.lightbearerSwap(data, whip, List.of(request(vardorvis, Style.MELEE, null)), null);
         assertNotNull(free, "no rules: the ring comes in");
         assertEquals("Lightbearer", free.get(GearSlot.RING).name);
         assertNull(OptimizerService.lightbearerSwap(data, whip,
-            List.of(request(vardorvis, CombatStyle.MELEE, tooDearForTheLightbearer())), null), "over a price rule");
+            List.of(request(vardorvis, Style.MELEE, tooDearForTheLightbearer())), null), "over a price rule");
         assertNull(OptimizerService.lightbearerSwap(data, whip,
-            List.of(request(vardorvis, CombatStyle.MELEE, SetRules.of(List.of(), Set.of("Lightbearer"), null))), null), "banned by name");
+            List.of(request(vardorvis, Style.MELEE, SetRules.of(List.of(), Set.of("Lightbearer"), null))), null), "banned by name");
         SetRules roomy = SetRules.of(List.of(new SetRules.Rule("price", "<=", 2_000_000_000d)), Set.of(), null);
-        assertNotNull(OptimizerService.lightbearerSwap(data, whip, List.of(request(vardorvis, CombatStyle.MELEE, roomy)), null),
+        assertNotNull(OptimizerService.lightbearerSwap(data, whip, List.of(request(vardorvis, Style.MELEE, roomy)), null),
             "a rule it fits does not keep it out");
     }
 
@@ -93,11 +93,11 @@ class BudgetCutterTest {
     @DisplayName("a group's Lightbearer stays out when any one member's rules break it")
     void rosterVariantObeysEveryMember() {
         Loadout whip = wearing(item("Abyssal whip"));
-        MonsterStats other = data.searchMonsters("general graardor", 1).get(0);
+        Monster other = data.searchMonsters("general graardor", 1).get(0);
         assertNotNull(OptimizerService.lightbearerVariant(data, whip,
-            List.of(request(vardorvis, CombatStyle.MELEE, null), request(other, CombatStyle.MELEE, null)), null));
+            List.of(request(vardorvis, Style.MELEE, null), request(other, Style.MELEE, null)), null));
         assertNull(OptimizerService.lightbearerVariant(data, whip,
-            List.of(request(vardorvis, CombatStyle.MELEE, null), request(other, CombatStyle.MELEE, tooDearForTheLightbearer())), null));
+            List.of(request(vardorvis, Style.MELEE, null), request(other, Style.MELEE, tooDearForTheLightbearer())), null));
     }
 
     @Test
@@ -117,11 +117,11 @@ class BudgetCutterTest {
                 ComputeParams p = new ComputeParams();
                 p.setRules = budget;
                 p.optimizeMode = mode;
-                var done = new CompletableFuture<Map<CombatStyle, OptimizerService.StyleResult>>();
+                var done = new CompletableFuture<Map<Style, OptimizerService.StyleResult>>();
                 service.bestPerStyle(vardorvis, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
                     owned, 1, p, Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
                     Collections.<Integer>emptySet(), done::complete);
-                Map<CombatStyle, OptimizerService.StyleResult> styles = done.get(5, TimeUnit.MINUTES);
+                Map<Style, OptimizerService.StyleResult> styles = done.get(5, TimeUnit.MINUTES);
                 assertEquals(3, styles.size(), mode);
                 for (var e : styles.entrySet()) {
                     Loadout best = e.getValue().overallBest.getLoadout();
@@ -129,7 +129,7 @@ class BudgetCutterTest {
                     for (DpsResult yours : e.getValue().owned) {
                         mine++;
                         assertTrue(budget.holds(yours.getLoadout()), mode + " " + e.getKey() + " yours: " + describe(yours.getLoadout()));
-                        GearItem hands = yours.getLoadout().get(GearSlot.HANDS);
+                        Gear hands = yours.getLoadout().get(GearSlot.HANDS);
                         assertFalse(hands != null && hands.name.equals("Ferocious gloves"), mode + " " + e.getKey() + " yours wears the 8m gloves: " + describe(yours.getLoadout()));
                     }
                 }
@@ -145,26 +145,26 @@ class BudgetCutterTest {
     @Test
     @DisplayName("a capped price plus anything costs int max, not a wrapped negative the card shows as free")
     void cappedCostStaysCapped() {
-        GearItem obligator = item("Obligator", "Charged");
+        Gear obligator = item("Obligator", "Charged");
         assertEquals(Integer.MAX_VALUE, obligator.getPriceOrZero(), "its 2.4b price caps at load");
-        GearItem amulet = item("Amulet of fury");
+        Gear amulet = item("Amulet of fury");
         assertTrue(amulet.getPriceOrZero() > 0);
         Loadout set = wearing(obligator, amulet);
         assertEquals(Integer.MAX_VALUE, set.cost);
-        assertEquals(Integer.MAX_VALUE, new DpsCalculator().calculate(request(vardorvis, CombatStyle.MELEE, null), set).purchaseCost);
+        assertEquals(Integer.MAX_VALUE, new DpsCalculator().calculate(request(vardorvis, Style.MELEE, null), set).purchaseCost);
         assertFalse(budget.holds(set), "the price rule never read it as free");
     }
 
     @Test
     @DisplayName("Zulrah's forced recoil on a capped set stays at int max too")
     void recoilOnACappedSet() {
-        MonsterStats zulrah = data.searchMonsters("zulrah", 1).get(0);
+        Monster zulrah = data.searchMonsters("zulrah", 1).get(0);
         // The free recoils out, so the priced Ring of recoil is the one that comes in.
         Set<Integer> free = new HashSet<>();
         for (String name : List.of("Ring of suffering (i)", "Ring of suffering", "Echo boots")) {
-            for (GearItem row : rows(name)) free.add(row.id);
+            for (Gear row : rows(name)) free.add(row.id);
         }
-        OptimizationRequest request = request(zulrah, CombatStyle.MAGIC, null).withExcludedItems(free);
+        OptimizationRequest request = request(zulrah, Style.MAGIC, null).withExcludedItems(free);
         Loadout set = wearing(item("Trident of the Swamp", "Charged"), item("3rd Age druidic robe top"));
         DpsResult shown = new DpsCalculator().calculate(request, set);
         assertEquals(Integer.MAX_VALUE, shown.purchaseCost, "the robe top's price caps");
@@ -182,9 +182,9 @@ class BudgetCutterTest {
         for (String ring : List.of("Berserker ring", "Seers ring", "Archers ring", "Warrior ring", "Ring of the gods")) {
             int base = item(ring).getPriceOrZero();
             assertTrue(base > 0, ring + " has a price");
-            List<GearItem> imbued = rows(ring + " (i)");
+            List<Gear> imbued = rows(ring + " (i)");
             assertTrue(imbued.size() >= 2, ring + ": the Soul Wars and Emir's Arena rows too");
-            for (GearItem row : imbued) assertEquals(base, (int) SetRules.of(row, "price"), row.name + " " + row.version);
+            for (Gear row : imbued) assertEquals(base, (int) SetRules.of(row, "price"), row.name + " " + row.version);
         }
     }
 
@@ -197,10 +197,10 @@ class BudgetCutterTest {
     @Test
     @DisplayName("every slayer helmet, plain, imbued or recoloured, and the imbued black mask count as the cheapest black mask")
     void slayerHelmetsCountTheBlackMask() {
-        int mask = rows("Black mask").stream().filter(g -> g.tradeable).mapToInt(GearItem::getPriceOrZero).min().getAsInt();
+        int mask = rows("Black mask").stream().filter(g -> g.tradeable).mapToInt(Gear::getPriceOrZero).min().getAsInt();
         assertTrue(mask > 0);
         for (String name : List.of("Slayer helmet", "Slayer helmet (i)", "Hydra slayer helmet", "Hydra slayer helmet (i)", "Black mask (i)")) {
-            for (GearItem row : rows(name)) assertEquals(mask, (int) SetRules.of(row, "price"), row.name + " " + row.version);
+            for (Gear row : rows(name)) assertEquals(mask, (int) SetRules.of(row, "price"), row.name + " " + row.version);
         }
     }
 
@@ -231,7 +231,7 @@ class BudgetCutterTest {
         for (String name : List.of("Fire cape", "Barrows gloves", "Crystal bow (i)", "Salve amulet(i)", "Imbued Guthix cape")) {
             assertEquals(0, (int) SetRules.of(item(name), "price"), name);
         }
-        GearItem fury = item("Amulet of fury");
+        Gear fury = item("Amulet of fury");
         assertEquals(fury.getPriceOrZero(), (int) SetRules.of(fury, "price"));
     }
 
@@ -240,7 +240,7 @@ class BudgetCutterTest {
     @Test
     @DisplayName("only the price rule reads it: budgets, risk and the card still see an imbued ring as unpriced")
     void marketPriceUntouched() {
-        GearItem ring = rows("Berserker ring (i)").get(0);
+        Gear ring = rows("Berserker ring (i)").get(0);
         assertNull(ring.estimatedPrice);
         assertEquals(0, ring.getPriceOrZero());
         assertEquals(0, wearing(ring).cost);

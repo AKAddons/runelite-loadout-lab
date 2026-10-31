@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -26,14 +26,14 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TwinflameSpellPickTest {
 	private static LoadoutData data;
-	private static MonsterStats guthan;
-	private static GearItem staff;
+	private static Monster guthan;
+	private static Gear staff;
 
 	@BeforeAll
 	static void load() {
 		data = new DataService().load();
 		guthan = data.searchMonsters("guthan", 1).get(0);
-		for (GearItem g : data.getGearItems()) {
+		for (Gear g : data.getGearItems()) {
 			if (g.getNameLower().contains("twinflame") && g.isStandardGear()) {
 				staff = g;
 			}
@@ -57,7 +57,7 @@ class TwinflameSpellPickTest {
 		Map<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
 		pins.put(GearSlot.WEAPON, staff.getId());
 		OptimizationRequest request = TestRequests.of(guthan,
-			CombatStyle.MAGIC, PlayerLevels.MAXED,
+			Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), 1)
@@ -70,7 +70,7 @@ class TwinflameSpellPickTest {
 			"the doubled tier must win under a twinflame, picked: " + spell);
 
 		// And the pick genuinely out-damages the surge it used to recommend.
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, staff);
 		SpellStats surge = data.getSpells().stream()
 			.filter(s -> "Wind Surge".equals(s.getName())).findFirst().orElseThrow();
@@ -85,7 +85,7 @@ class TwinflameSpellPickTest {
 	@DisplayName("without a twinflame the surge tier still wins - no over-correction")
 	void plainStaffStillPicksSurge() {
 		OptimizationRequest request = TestRequests.of(guthan,
-			CombatStyle.MAGIC, PlayerLevels.MAXED,
+			Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);

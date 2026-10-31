@@ -1,9 +1,9 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DragonfireHonestyTest {
 	private static LoadoutData data;
-	private static MonsterStats vorkath;
+	private static Monster vorkath;
 
 	@BeforeAll
 	static void load() {
@@ -36,8 +36,8 @@ class DragonfireHonestyTest {
 		assertTrue(DragonfireRules.breathesFire(vorkath));
 	}
 
-	private static GearItem byName(String nameLower, String versionLower) {
-		for (GearItem item : data.getGearItems()) {
+	private static Gear byName(String nameLower, String versionLower) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals(nameLower)
 				&& (versionLower == null || versionLower.equals(item.getVersionLower()))) {
 				return item;
@@ -46,9 +46,9 @@ class DragonfireHonestyTest {
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static OptimizationRequest owning(CombatStyle style, GearItem... items) {
+	private static OptimizationRequest owning(Style style, Gear... items) {
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (GearItem item : items) {
+		for (Gear item : items) {
 			owned.put(item.getId(), 1);
 		}
 		return new OptimizationRequest(vorkath, style, PlayerLevels.MAXED,
@@ -60,8 +60,8 @@ class DragonfireHonestyTest {
 	@Test
 	@DisplayName("no protective shield owned: the 2h Shadow comes back, flagged antifire-assumed")
 	void unsatisfiableConstraintFallsBackHonestly() {
-		GearItem shadow = byName("tumeken's shadow", "charged");
-		List<DpsResult> results = new LoadoutOptimizer().optimize(data, owning(CombatStyle.MAGIC, shadow));
+		Gear shadow = byName("tumeken's shadow", "charged");
+		List<DpsResult> results = new LoadoutOptimizer().optimize(data, owning(Style.MAGIC, shadow));
 		assertFalse(results.isEmpty(), "the shadow line must not die");
 		assertEquals("tumeken's shadow", results.get(0).getLoadout().getWeapon().getNameLower());
 		assertTrue(results.get(0).isAntifireAssumed(),
@@ -71,10 +71,10 @@ class DragonfireHonestyTest {
 	@Test
 	@DisplayName("a protective shield owned: the constraint applies and nothing is assumed")
 	void satisfiableConstraintStaysHonest() {
-		GearItem sang = byName("sanguinesti staff", "charged");
-		GearItem antiDragon = byName("anti-dragon shield", null);
+		Gear sang = byName("sanguinesti staff", "charged");
+		Gear antiDragon = byName("anti-dragon shield", null);
 		List<DpsResult> results = new LoadoutOptimizer().optimize(
-			data, owning(CombatStyle.MAGIC, sang, antiDragon));
+			data, owning(Style.MAGIC, sang, antiDragon));
 		assertFalse(results.isEmpty());
 		DpsResult best = results.get(0);
 		assertNotNull(best.getLoadout().get(com.loadoutlab.data.GearSlot.SHIELD),
@@ -87,9 +87,9 @@ class DragonfireHonestyTest {
 	@Test
 	@DisplayName("an explicit antifire potion is the user's own assumption - not flagged")
 	void explicitPotionIsNotFlagged() {
-		GearItem shadow = byName("tumeken's shadow", "charged");
+		Gear shadow = byName("tumeken's shadow", "charged");
 		List<DpsResult> results = new LoadoutOptimizer().optimize(
-			data, owning(CombatStyle.MAGIC, shadow).withAntifirePotion(true));
+			data, owning(Style.MAGIC, shadow).withAntifirePotion(true));
 		assertFalse(results.isEmpty());
 		assertEquals("tumeken's shadow", results.get(0).getLoadout().getWeapon().getNameLower());
 		assertFalse(results.get(0).isAntifireAssumed());

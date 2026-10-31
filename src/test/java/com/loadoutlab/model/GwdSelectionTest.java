@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +36,7 @@ class GwdSelectionTest {
 			(mob, p, onDone) -> {
 			},
 			link);
-		MonsterStats mob = data.searchMonsters(name, 1).get(0);
+		Monster mob = data.searchMonsters(name, 1).get(0);
 		assertTrue(engine.execute("select", Map.of("id", mob.getId())));
 		return new Object[]{state, engine, link, mob};
 	}

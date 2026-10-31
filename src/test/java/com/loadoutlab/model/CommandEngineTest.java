@@ -2,8 +2,8 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +57,7 @@ class CommandEngineTest {
 	@Test
 	@DisplayName("select finds the mob and triggers a compute with the state's params")
 	void selectComputes() {
-		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		AtomicReference<Monster> computed = new AtomicReference<>();
 		AtomicReference<Boolean> taskFlag = new AtomicReference<>();
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
@@ -99,7 +99,7 @@ class CommandEngineTest {
 			link);
 		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
 		assertEquals(1, computes.get());
-		MonsterStats mob = data.searchMonsters("zulrah", 1).get(0);
+		Monster mob = data.searchMonsters("zulrah", 1).get(0);
 		engine.onResults(mob, Map.of());
 		link.published = null;
 
@@ -273,7 +273,7 @@ class CommandEngineTest {
 			(mob, p, onDone) -> computes.incrementAndGet(),
 			link);
 		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
-		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
+		Monster demon = data.searchMonsters("abyssal demon", 1).get(0);
 		engine.onResults(demon, Map.of());
 		flushEdt();
 		Map<String, Object> pageA = link.published;
@@ -348,7 +348,7 @@ class CommandEngineTest {
 
 		// A view-param flip is undoable too, and the published page
 		// carries the history node.
-		MonsterStats mob = data.searchMonsters("vorkath", 1).get(0);
+		Monster mob = data.searchMonsters("vorkath", 1).get(0);
 		engine.onResults(mob, Map.of());
 		assertTrue(engine.execute("set-param", Map.of("param", "viewingBis", "value", true)));
 		assertTrue(engine.execute("undo", Map.of()));
@@ -369,8 +369,8 @@ class CommandEngineTest {
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, p, onDone) -> {
 			}, link);
-		MonsterStats mob = data.searchMonsters("zulrah", 1).get(0);
-		engine.onResults(mob, Map.<CombatStyle, OptimizerService.StyleResult>of());
+		Monster mob = data.searchMonsters("zulrah", 1).get(0);
+		engine.onResults(mob, Map.<Style, OptimizerService.StyleResult>of());
 
 		flushEdt();
 		assertNotNull(link.published);

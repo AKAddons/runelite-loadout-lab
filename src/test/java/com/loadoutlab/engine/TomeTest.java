@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TomeTest {
 	private static LoadoutData data;
-	private static MonsterStats drake;
+	private static Monster drake;
 
 	@BeforeAll
 	static void load() {
@@ -41,7 +41,7 @@ class TomeTest {
 	}
 
 	private static void own(Map<Integer, Integer> owned, String nameLower, String versionLower) {
-		GearItem item = data.getGearItems().stream()
+		Gear item = data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower)
 				&& (versionLower == null ? g.isStandardGear() : g.getVersionLower().equals(versionLower)))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower + " " + versionLower));
@@ -67,7 +67,7 @@ class TomeTest {
 			own(owned, parts[0], parts.length > 1 ? parts[1] : null);
 		}
 		OptimizationRequest request = new OptimizationRequest(
-			drake, CombatStyle.MAGIC, PlayerLevels.MAXED,
+			drake, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1);

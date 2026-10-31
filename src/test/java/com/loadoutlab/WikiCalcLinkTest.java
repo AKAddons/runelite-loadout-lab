@@ -2,8 +2,8 @@ package com.loadoutlab;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.LoadoutOptimizer;
 import com.loadoutlab.engine.OptimizationRequest;
@@ -38,8 +38,8 @@ class WikiCalcLinkTest {
 	@Test
 	@DisplayName("a melee result maps to their document: version 10, ids, enums, deltas")
 	void meleePayloadShape() {
-		MonsterStats monster = data.searchMonsters("general graardor", 1).get(0);
-		OptimizationRequest request = TestRequests.of(monster, CombatStyle.MELEE,
+		Monster monster = data.searchMonsters("general graardor", 1).get(0);
+		OptimizationRequest request = TestRequests.of(monster, Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
 			0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD, false, false,
 			OwnedItems.EMPTY, 1);
@@ -96,8 +96,8 @@ class WikiCalcLinkTest {
 		// Their harness note (2026-08-06): an ammo-slot dart is a
 		// hand-thrown weapon; field report 2026-08-21: the cow payload
 		// carried a dartless blowpipe (the blessing owns the ammo slot).
-		MonsterStats monster = data.searchMonsters("cow", 1).get(0);
-		OptimizationRequest request = TestRequests.of(monster, CombatStyle.RANGED,
+		Monster monster = data.searchMonsters("cow", 1).get(0);
+		OptimizationRequest request = TestRequests.of(monster, Style.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
 			0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD, false, false,
 			OwnedItems.EMPTY, 1);
@@ -128,8 +128,8 @@ class WikiCalcLinkTest {
 		// (Longrange fallback) - exactly 4/5 of our dps. A powered
 		// staff's attackType wears the autocast prefix but carries no
 		// spell name; the payload must land stance Accurate.
-		MonsterStats monster = data.searchMonsters("cow", 1).get(0);
-		OptimizationRequest request = TestRequests.of(monster, CombatStyle.MAGIC,
+		Monster monster = data.searchMonsters("cow", 1).get(0);
+		OptimizationRequest request = TestRequests.of(monster, Style.MAGIC,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
 			0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD, false, false,
 			OwnedItems.EMPTY, 1);
@@ -152,10 +152,10 @@ class WikiCalcLinkTest {
 		// The everyday Duke displays version '' but the official data
 		// keys 'Post-quest, Awake' - a display version makes their
 		// import fall back to the Awakened row (field 2026-08-21).
-		MonsterStats duke = data.searchMonsters("duke sucellus", 1).get(0);
+		Monster duke = data.searchMonsters("duke sucellus", 1).get(0);
 		assertEquals("", duke.getVersion(), "display stays clean");
 		assertEquals("Post-quest, Awake", duke.getWikiVersion());
-		OptimizationRequest request = TestRequests.of(duke, CombatStyle.MELEE,
+		OptimizationRequest request = TestRequests.of(duke, Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
 			0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD, false, false,
 			OwnedItems.EMPTY, 1);
@@ -187,11 +187,11 @@ class WikiCalcLinkTest {
 	@Test
 	@DisplayName("the payload carries the invocation and maps synthetic ids to real rows")
 	void invocationAndSyntheticIds() {
-		MonsterStats warden = data.searchMonsters("tumeken's warden", 8).stream()
+		Monster warden = data.searchMonsters("tumeken's warden", 8).stream()
 			.filter(m -> "Enraged".equals(m.getVersion()))
 			.findFirst().orElseThrow();
-		MonsterStats at300 = warden.withToaInvocation(300);
-		OptimizationRequest request = TestRequests.of(at300, CombatStyle.RANGED,
+		Monster at300 = warden.withToaInvocation(300);
+		OptimizationRequest request = TestRequests.of(at300, Style.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 			null, 0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, 1);
@@ -209,8 +209,8 @@ class WikiCalcLinkTest {
 
 		// A synthetic group phase exports its REAL id - the calc only
 		// knows real rows.
-		MonsterStats synthetic = warden.immuneVariant(
-			com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + warden.getId() * 10 + 1,
+		Monster synthetic = warden.immuneVariant(
+			com.loadoutlab.data.Monster.SYNTHETIC_ID_BASE + warden.getId() * 10 + 1,
 			"P2 (test)", "immune_melee");
 		Map<String, Object> syntheticPayload = WikiCalcLink.payload(synthetic, best, -1,
 			"Rigour", PlayerLevels.MAXED, PlayerLevels.MAXED, false, false);

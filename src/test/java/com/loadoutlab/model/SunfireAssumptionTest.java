@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellRunes;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ class SunfireAssumptionTest {
 	void seededFromOwnership() {
 		AtomicReference<Boolean> seen = new AtomicReference<>();
 		CommandEngine engine = engine(seen, true);
-		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
+		Monster araxxor = data.searchMonsters("araxxor", 1).get(0);
 		engine.execute("select", Map.of("id", araxxor.getId()));
 		assertEquals(Boolean.TRUE, seen.get(), "owned sunfire runes are assumed");
 
@@ -59,7 +59,7 @@ class SunfireAssumptionTest {
 		CommandEngine engine = engine(seen, false);
 		engine.setCounts(() -> Map.of("simmedItems",
 			List.of(Map.of("id", SUNFIRE_RUNE, "name", "Sunfire rune"))));
-		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
+		Monster araxxor = data.searchMonsters("araxxor", 1).get(0);
 		engine.execute("select", Map.of("id", araxxor.getId()));
 		assertEquals(Boolean.TRUE, seen.get(), "a sim is 'count this as owned'");
 		engine.execute("set-param", Map.of("param", "sunfireRunes", "value", false));
@@ -72,7 +72,7 @@ class SunfireAssumptionTest {
 	void toggleAndDetect() {
 		AtomicReference<Boolean> seen = new AtomicReference<>();
 		CommandEngine engine = engine(seen, true);
-		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
+		Monster araxxor = data.searchMonsters("araxxor", 1).get(0);
 		engine.execute("select", Map.of("id", araxxor.getId()));
 		engine.execute("set-param", Map.of("param", "sunfireRunes", "value", false));
 		assertEquals(Boolean.FALSE, seen.get(), "the manual pick reaches the compute");

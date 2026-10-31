@@ -12,89 +12,89 @@ import java.util.*;
 // they give the boss off what lands, and a note. Gson fills the rows;
 // the defaults a key can leave out are the field initialisers.
 public class BossIncomingOverrides {
-    static final String RESOURCE = "boss_incoming.json";
+static final String RESOURCE = "boss_incoming.json";
 
-    @Getter
-    public static class Attack {
-        public String style;
-        public int maxHit, speedTicks, hits = 1;
-        double share, leak;
-        boolean prayable = true, avoidable, flicked, chain;
-        // Null in the data = 0 when prayable, 1 when not.
-        Double prayerFactor;
-        public String name = "";
-        Map<String, int[]> layers;
-        Heal heal;
+@Getter
+static class Attack {
+    String style;
+    int maxHit, speedTicks, hits = 1;
+    double share, leak;
+    boolean prayable = true, avoidable, flicked, chain;
+    // Null in the data = 0 when prayable, 1 when not.
+    Double prayerFactor;
+    String name = "";
+    Map<String, int[]> layers;
+    Heal heal;
+}
+
+// The boss heals factor x the damage landed, at least min, at most max.
+static class Heal {
+    double factor, min, max = Double.POSITIVE_INFINITY;
+}
+
+@Getter
+public static class BossOverride {
+    List<Attack> attacks = List.of();
+    String note = "";
+    // The share of the fight the boss can be hit; 1 = always.
+    public double uptime = 1;
+    // A fixed time the fight adds whatever you hit with (Hespori's
+    // flower rounds), in seconds, and what it is.
+    public double downtime;
+    public String downtimeNote = "";
+    transient boolean heals;
+}
+
+static final Map<String, BossOverride> OVERRIDES = new HashMap<>();
+static final Map<String, String> UNPRICED = new HashMap<>();
+
+static {
+    Map<String, JsonElement> root = JsonResources.read(RESOURCE, new TypeToken<Map<String, JsonElement>>() { }.getType());
+    for (var entry : root.entrySet()) {
+        if ("_unpriced".equals(entry.getKey())) {
+            for (var why : entry.getValue().getAsJsonObject().entrySet()) UNPRICED.put(Names.lower(why.getKey()), why.getValue().getAsString());
+        } else if (!entry.getKey().startsWith("_")) OVERRIDES.put(Names.lower(entry.getKey()), parse(entry.getValue().getAsJsonObject()));
     }
+}
 
-    // The boss heals factor x the damage landed, at least min, at most max.
-    public static class Heal {
-        double factor, min, max = Double.POSITIVE_INFINITY;
+static BossOverride parse(JsonObject json) {
+    BossOverride o = JsonResources.gson().fromJson(json, BossOverride.class);
+    for (Attack a : o.attacks) {
+        a.style = Names.lower(a.style);
+        a.hits = Math.max(1, a.hits);
+        if (a.prayerFactor == null) a.prayerFactor = a.prayable ? 0.0 : 1.0;
+        o.heals |= a.heal != null;
     }
+    return o;
+}
 
-    @Getter
-    public static class BossOverride {
-        List<Attack> attacks = List.of();
-        String note = "";
-        // The share of the fight the boss can be hit; 1 = always.
-        public double uptime = 1;
-        // A fixed time the fight adds whatever you hit with (Hespori's
-        // flower rounds), in seconds, and what it is.
-        public double downtime;
-        public String downtimeNote = "";
-        transient boolean heals;
+
+static BossOverride overridesFor(Monster monster) { return lookup(OVERRIDES, monster); }
+
+static boolean heals(Monster monster) {
+    BossOverride override = overridesFor(monster);
+    return override != null && override.heals;
+}
+
+static String unpricedReason(Monster monster) { return lookup(UNPRICED, monster); }
+
+static final BossOverride NONE = new BossOverride();
+
+// The boss's override, or the no-op one: its uptime, downtime and note.
+public static BossOverride of(Monster monster) {
+    BossOverride override = overridesFor(monster);
+    return override == null ? NONE : override;
+}
+
+static <T> T lookup(Map<String, T> map, Monster monster) {
+    if (monster == null) return null;
+    String version = monster.version;
+    if (version != null && !version.isEmpty()) {
+        T byForm = map.get((monster.nameLower + "|" + version).toLowerCase(Locale.ROOT));
+        if (byForm != null) return byForm;
     }
+    return map.get(monster.nameLower);
+}
 
-    static final Map<String, BossOverride> OVERRIDES = new HashMap<>();
-    static final Map<String, String> UNPRICED = new HashMap<>();
-
-    static {
-        Map<String, JsonElement> root = JsonResources.read(RESOURCE, new TypeToken<Map<String, JsonElement>>() { }.getType());
-        for (var entry : root.entrySet()) {
-            if ("_unpriced".equals(entry.getKey())) {
-                for (var why : entry.getValue().getAsJsonObject().entrySet()) UNPRICED.put(Names.lower(why.getKey()), why.getValue().getAsString());
-            } else if (!entry.getKey().startsWith("_")) OVERRIDES.put(Names.lower(entry.getKey()), parse(entry.getValue().getAsJsonObject()));
-        }
-    }
-
-    static BossOverride parse(JsonObject json) {
-        BossOverride o = JsonResources.gson().fromJson(json, BossOverride.class);
-        for (Attack a : o.attacks) {
-            a.style = Names.lower(a.style);
-            a.hits = Math.max(1, a.hits);
-            if (a.prayerFactor == null) a.prayerFactor = a.prayable ? 0.0 : 1.0;
-            o.heals |= a.heal != null;
-        }
-        return o;
-    }
-
-
-    public static BossOverride overridesFor(MonsterStats monster) { return lookup(OVERRIDES, monster); }
-
-    public static boolean heals(MonsterStats monster) {
-        BossOverride override = overridesFor(monster);
-        return override != null && override.heals;
-    }
-
-    public static String unpricedReason(MonsterStats monster) { return lookup(UNPRICED, monster); }
-
-    static final BossOverride NONE = new BossOverride();
-
-    // The boss's override, or the no-op one: its uptime, downtime and note.
-    public static BossOverride of(MonsterStats monster) {
-        BossOverride override = overridesFor(monster);
-        return override == null ? NONE : override;
-    }
-
-    static <T> T lookup(Map<String, T> map, MonsterStats monster) {
-        if (monster == null) return null;
-        String version = monster.version;
-        if (version != null && !version.isEmpty()) {
-            T byForm = map.get((monster.nameLower + "|" + version).toLowerCase(Locale.ROOT));
-            if (byForm != null) return byForm;
-        }
-        return map.get(monster.nameLower);
-    }
-
-    public static Set<String> names() { return Collections.unmodifiableSet(OVERRIDES.keySet()); }
+static Set<String> names() { return Collections.unmodifiableSet(OVERRIDES.keySet()); }
 }

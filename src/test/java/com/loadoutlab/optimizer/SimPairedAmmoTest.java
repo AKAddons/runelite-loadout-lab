@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
@@ -46,10 +46,10 @@ class SimPairedAmmoTest {
 	@DisplayName("simming only the crossbows, the Gemstone Crab's ranged card wears them with ascension bolts")
 	void simmedCrossbowsFire() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats crab = data.searchMonsters("gemstone crab", 1).get(0);
+		Monster crab = data.searchMonsters("gemstone crab", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String n : new String[]{"toxic blowpipe", "masori body (f)", "masori chaps (f)", "necklace of anguish", "zaryte vambraces"}) {
-			GearItem item = data.getGearItems().stream().filter(g -> g.getNameLower().equals(n) && g.isStandardGear())
+			Gear item = data.getGearItems().stream().filter(g -> g.getNameLower().equals(n) && g.isStandardGear())
 				.findFirst().orElseThrow(() -> new AssertionError("missing " + n));
 			owned.put(item.getId(), 1);
 		}
@@ -65,7 +65,7 @@ class SimPairedAmmoTest {
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS));
-			DpsResult best = out.get().perMob.get(0).get(CombatStyle.RANGED).owned.get(0);
+			DpsResult best = out.get().perMob.get(0).get(Style.RANGED).owned.get(0);
 			assertEquals("Ascension crossbows", best.getLoadout().getWeapon().getName());
 			assertTrue(best.getLoadout().get(GearSlot.AMMO).getNameLower().contains("ascension bolts"),
 				best.getLoadout().get(GearSlot.AMMO).getName());

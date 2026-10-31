@@ -1,7 +1,7 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,7 +31,7 @@ class StaffFamilyFoldTest {
 		data = new DataService().load();
 	}
 
-	private static GearItem item(String name) {
+	private static Gear item(String name) {
 		return data.getGearItems(GearSlot.WEAPON).stream()
 			.filter(g -> g.getNameLower().equals(name) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name));
@@ -41,7 +41,7 @@ class StaffFamilyFoldTest {
 		return new OptimizerService.Rung(item(name), 5.0, 0, owned, null);
 	}
 
-	private static List<String> fold(GearItem worn, OptimizerService.Rung... rungs) {
+	private static List<String> fold(Gear worn, OptimizerService.Rung... rungs) {
 		return OptimizerService.foldStaffFamilies(List.of(rungs), worn).stream()
 			.map(r -> r.item.getNameLower()).collect(Collectors.toList());
 	}

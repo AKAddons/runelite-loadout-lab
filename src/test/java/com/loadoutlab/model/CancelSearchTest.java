@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,7 +55,7 @@ class CancelSearchTest {
 			},
 			link);
 		engine.setStoreOps(new TestStoreOps());
-		MonsterStats cerberus = data.searchMonsters("cerberus", 1).get(0);
+		Monster cerberus = data.searchMonsters("cerberus", 1).get(0);
 		assertTrue(engine.execute("select", Map.of("id", cerberus.getId())));
 		flush();
 		assertNotNull(state.mob(), "a search is in flight");

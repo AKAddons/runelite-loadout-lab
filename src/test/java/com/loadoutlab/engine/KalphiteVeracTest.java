@@ -1,11 +1,11 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class KalphiteVeracTest {
 	private static LoadoutData data;
-	private static MonsterStats airborne;
+	private static Monster airborne;
 
 	@BeforeAll
 	static void load() {
@@ -40,8 +40,8 @@ class KalphiteVeracTest {
 	}
 
 	private static Loadout verac(boolean full) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (GearItem g : data.getGearItems()) {
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
+		for (Gear g : data.getGearItems()) {
 			String n = g.getNameLower();
 			if (!g.isStandardGear()) {
 				continue;
@@ -63,7 +63,7 @@ class KalphiteVeracTest {
 	}
 
 	private static OptimizationRequest req() {
-		return TestRequests.of(airborne, CombatStyle.MELEE,
+		return TestRequests.of(airborne, Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 	}
@@ -90,8 +90,8 @@ class KalphiteVeracTest {
 	@Test
 	@DisplayName("a whip is still simply immune")
 	void whipStaysImmune() {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (GearItem g : data.getGearItems()) {
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
+		for (Gear g : data.getGearItems()) {
 			if (g.getNameLower().equals("abyssal whip")) {
 				gear.put(GearSlot.WEAPON, g);
 			}
@@ -103,7 +103,7 @@ class KalphiteVeracTest {
 	@DisplayName("the optimizer assembles the set on its own when the pieces are owned")
 	void optimizerAssemblesTheSet() {
 		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
-		for (GearItem g : data.getGearItems()) {
+		for (Gear g : data.getGearItems()) {
 			String n = g.getNameLower();
 			if (g.isStandardGear() && (n.startsWith("verac's") || n.equals("abyssal whip")
 				|| n.equals("bandos chestplate") || n.equals("bandos tassets"))) {
@@ -111,7 +111,7 @@ class KalphiteVeracTest {
 			}
 		}
 		OptimizationRequest request = TestRequests.of(airborne,
-			CombatStyle.MELEE, PlayerLevels.MAXED,
+			Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false, new OwnedItems(owned, true), 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);

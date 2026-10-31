@@ -5,8 +5,8 @@ import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterDefences;
 import com.loadoutlab.data.MonsterOffence;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.IncomingDpsCalculator;
 import com.loadoutlab.engine.Loadout;
@@ -47,7 +47,7 @@ class IncomingPrayerTest {
 		service.shutdown();
 	}
 
-	private static OptimizerService.ComputeContext context(Map<CombatStyle, String> prayerPicks) {
+	private static OptimizerService.ComputeContext context(Map<Style, String> prayerPicks) {
 		ComputeParams p = new ComputeParams();
 		p.prayerPicks = prayerPicks;
 		return service.buildContext(PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
@@ -58,12 +58,12 @@ class IncomingPrayerTest {
 	@Test
 	@DisplayName("Blood Moon's damage taken on a melee card is the calculator's at Defence 123 under Zeal, 118 under a Chivalry pick, 99 prayerless")
 	void meleeCards() {
-		MonsterStats moon = data.searchMonsters("blood moon", 1).get(0);
-		double zeal = OptimizerService.incomingFor(moon, NAKED, context(Map.of()), CombatStyle.MELEE).totalDps;
+		Monster moon = data.searchMonsters("blood moon", 1).get(0);
+		double zeal = OptimizerService.incomingFor(moon, NAKED, context(Map.of()), Style.MELEE).totalDps;
 		double chivalry = OptimizerService.incomingFor(moon, NAKED,
-			context(Map.of(CombatStyle.MELEE, "Chivalry")), CombatStyle.MELEE).totalDps;
+			context(Map.of(Style.MELEE, "Chivalry")), Style.MELEE).totalDps;
 		double none = OptimizerService.incomingFor(moon, NAKED,
-			context(Map.of(CombatStyle.MELEE, "NONE")), CombatStyle.MELEE).totalDps;
+			context(Map.of(Style.MELEE, "NONE")), Style.MELEE).totalDps;
 		assertEquals(IncomingDpsCalculator.calculate(moon, NAKED, 123, 99, 0).totalDps, zeal, 1e-12);
 		assertEquals(IncomingDpsCalculator.calculate(moon, NAKED, 118, 99, 0).totalDps, chivalry, 1e-12);
 		assertEquals(IncomingDpsCalculator.calculate(moon, NAKED, 99, 99, 0).totalDps, none, 1e-12);
@@ -73,11 +73,11 @@ class IncomingPrayerTest {
 	@Test
 	@DisplayName("a mage's spells on a magic card roll against Augury's Magic and Defence: 99 and 99 read 123 and 123")
 	void auguryCard() {
-		MonsterStats mage = new MonsterStats(1, "Test mage", "", 300, 255, 1, 1, 200, 0,
+		Monster mage = new Monster(1, "Test mage", "", 300, 255, 1, 1, 200, 0,
 			MonsterDefences.ZERO, new MonsterOffence(1, 1, 1, 200, 0, 0, 0, 0, 0, 0, 4, List.of("Magic")),
 			Collections.emptyList(), false, "", 0);
 		// Unprayed: Protect from Magic blocks a lone magic style outright.
-		double augury = OptimizerService.incomingFor(mage, NAKED, context(Map.of()), CombatStyle.MAGIC).unprayedDps;
+		double augury = OptimizerService.incomingFor(mage, NAKED, context(Map.of()), Style.MAGIC).unprayedDps;
 		assertEquals(IncomingDpsCalculator.calculate(mage, NAKED, 123, 123, 0).unprayedDps, augury, 1e-12);
 		assertTrue(augury < IncomingDpsCalculator.calculate(mage, NAKED, 99, 99, 0).unprayedDps);
 	}

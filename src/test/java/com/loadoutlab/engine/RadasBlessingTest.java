@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +25,7 @@ class RadasBlessingTest {
 	private static final int RADAS_3 = 22945;
 	private static final int HOLY_BLESSING = 20220;
 	private static LoadoutData data;
-	private static MonsterStats goblin;
+	private static Monster goblin;
 
 	@BeforeAll
 	static void load() {
@@ -34,13 +34,13 @@ class RadasBlessingTest {
 	}
 
 	private static void own(Map<Integer, Integer> owned, String nameLower) {
-		GearItem item = data.getGearItems().stream()
+		Gear item = data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 		owned.put(item.getId(), 1);
 	}
 
-	private static GearItem ammoOf(int... blessings) {
+	private static Gear ammoOf(int... blessings) {
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String name : new String[]{"rune scimitar", "rune full helm", "rune platebody", "rune platelegs"}) {
 			own(owned, name);
@@ -49,7 +49,7 @@ class RadasBlessingTest {
 			owned.put(id, 1);
 		}
 		OptimizationRequest request = new OptimizationRequest(
-			goblin, CombatStyle.MELEE, PlayerLevels.MAXED,
+			goblin, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1);
@@ -61,7 +61,7 @@ class RadasBlessingTest {
 	@Test
 	@DisplayName("with Rada's blessing 3 and a holy blessing owned, the set carries Rada's")
 	void radasWinsTheTie() {
-		GearItem ammo = ammoOf(RADAS_3, HOLY_BLESSING);
+		Gear ammo = ammoOf(RADAS_3, HOLY_BLESSING);
 		assertNotNull(ammo, "a blessing rides the ammo slot");
 		assertEquals(RADAS_3, ammo.getId(), "got " + ammo.getName());
 	}
@@ -69,7 +69,7 @@ class RadasBlessingTest {
 	@Test
 	@DisplayName("with only the holy blessing owned, it still rides")
 	void holyAloneStillRides() {
-		GearItem ammo = ammoOf(HOLY_BLESSING);
+		Gear ammo = ammoOf(HOLY_BLESSING);
 		assertNotNull(ammo);
 		assertEquals(HOLY_BLESSING, ammo.getId(), "got " + ammo.getName());
 	}

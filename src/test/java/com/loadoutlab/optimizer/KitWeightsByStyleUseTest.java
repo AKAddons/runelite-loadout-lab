@@ -3,8 +3,8 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.OwnedItems;
@@ -51,7 +51,7 @@ class KitWeightsByStyleUseTest {
 		service.shutdown();
 	}
 
-	private static MonsterStats member(MonsterGroups.MonsterGroup group, String name, String label) {
+	private static Monster member(MonsterGroups.MonsterGroup group, String name, String label) {
 		return group.getMobs().stream()
 			.filter(m -> m.getName().equals(name) && m.label().contains(label)).findFirst()
 			.orElseThrow(() -> new AssertionError("no " + name + " " + label));
@@ -62,8 +62,8 @@ class KitWeightsByStyleUseTest {
 	void magicKitFollowsTheMagedMob() throws Exception {
 		MonsterGroups.MonsterGroup toa = MonsterGroups.load(data).stream()
 			.filter(g -> g.getName().equals("Tombs of Amascut")).findFirst().orElseThrow();
-		MonsterStats akkha = member(toa, "Akkha", "Magic only");
-		MonsterStats core = member(toa, "Tumeken's Warden", "Core");
+		Monster akkha = member(toa, "Akkha", "Magic only");
+		Monster core = member(toa, "Tumeken's Warden", "Core");
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String name : new String[]{"trident of the seas", "purging staff", "ancestral hat", "ancestral robe top",
 			"ancestral robe bottom", "occult necklace", "tormented bracelet", "eternal boots", "imbued zamorak cape",
@@ -90,13 +90,13 @@ class KitWeightsByStyleUseTest {
 		assertTrue(done.await(180, TimeUnit.SECONDS), "roster compute timed out");
 		OptimizerService.RosterResult roster = out.get();
 
-		OptimizerService.StyleResult coreMelee = roster.perMob.get(1).get(CombatStyle.MELEE);
-		OptimizerService.StyleResult coreMagic = roster.perMob.get(1).get(CombatStyle.MAGIC);
+		OptimizerService.StyleResult coreMelee = roster.perMob.get(1).get(Style.MELEE);
+		OptimizerService.StyleResult coreMagic = roster.perMob.get(1).get(Style.MAGIC);
 		assertNotNull(coreMelee);
 		assertTrue(coreMelee.owned.get(0).getDps() > coreMagic.owned.get(0).getDps(),
 			"the Core is a melee fight: " + coreMelee.owned.get(0).getDps() + " vs magic " + coreMagic.owned.get(0).getDps());
 
-		DpsResult akkhaMagic = roster.perMob.get(0).get(CombatStyle.MAGIC).owned.get(0);
+		DpsResult akkhaMagic = roster.perMob.get(0).get(Style.MAGIC).owned.get(0);
 		assertTrue(akkhaMagic.getLoadout().getWeapon().getNameLower().contains("trident"),
 			"the magic kit follows Akkha, the mob that gets maged: " + akkhaMagic.getLoadout().getWeapon().getName()
 				+ " / " + akkhaMagic.getSpellName() + " = " + akkhaMagic.getDps());

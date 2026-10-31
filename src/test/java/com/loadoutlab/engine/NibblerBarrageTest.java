@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class NibblerBarrageTest {
 	private static LoadoutData data;
-	private static MonsterStats nibbler;
+	private static Monster nibbler;
 
 	@BeforeAll
 	static void load() {
@@ -28,7 +28,7 @@ class NibblerBarrageTest {
 		assertEquals(7691, nibbler.getId());
 	}
 
-	private static OptimizationRequest req(CombatStyle style) {
+	private static OptimizationRequest req(Style style) {
 		return TestRequests.of(nibbler, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -37,7 +37,7 @@ class NibblerBarrageTest {
 	@Test
 	@DisplayName("the magic autocast is locked to the barrages")
 	void magicLockedToBarrages() {
-		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req(CombatStyle.MAGIC));
+		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req(Style.MAGIC));
 		assertFalse(out.isEmpty());
 		String spell = out.get(0).getSpellName();
 		assertNotNull(spell);
@@ -48,8 +48,8 @@ class NibblerBarrageTest {
 	@Test
 	@DisplayName("the trio multiplier makes the barrage the row's best answer")
 	void barrageWinsTheRow() {
-		DpsResult magic = new LoadoutOptimizer().optimize(data, req(CombatStyle.MAGIC)).get(0);
-		DpsResult ranged = new LoadoutOptimizer().optimize(data, req(CombatStyle.RANGED)).get(0);
+		DpsResult magic = new LoadoutOptimizer().optimize(data, req(Style.MAGIC)).get(0);
+		DpsResult ranged = new LoadoutOptimizer().optimize(data, req(Style.RANGED)).get(0);
 		assertTrue(magic.getDps() > ranged.getDps(),
 			"one cast hits all three - the barrage must out-rank single-target ranged: "
 				+ magic.getDps() + " vs " + ranged.getDps());

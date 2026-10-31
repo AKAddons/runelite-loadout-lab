@@ -1,11 +1,11 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterDefences;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.Collections;
 import java.util.EnumMap;
 import org.junit.Assert;
@@ -20,17 +20,17 @@ import org.junit.Test;
  * "rolls damage"), a defence tie is not weaker.
  */
 public class ObligatorTest {
-	private static MonsterStats dummy(int size, int stab, int slash, int crush) {
-		return new MonsterStats(-50 - size, "Obligator Dummy", "", 300, 2000, size, 150, 1, 0,
+	private static Monster dummy(int size, int stab, int slash, int crush) {
+		return new Monster(-50 - size, "Obligator Dummy", "", 300, 2000, size, 150, 1, 0,
 			new MonsterDefences(stab, slash, crush, 100, 0, 60, 60, 60), null,
 			Collections.emptyList(), false, "", 0);
 	}
 
-	private static DpsResult swing(MonsterStats target) {
+	private static DpsResult swing(Monster target) {
 		LoadoutData data = new DataService().load();
-		EnumMap<GearSlot, GearItem> worn = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> worn = new EnumMap<>(GearSlot.class);
 		worn.put(GearSlot.WEAPON, data.getGear(34715));
-		OptimizationRequest request = new OptimizationRequest(target, CombatStyle.MELEE, PlayerLevels.MAXED,
+		OptimizationRequest request = new OptimizationRequest(target, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, false, false, OwnedItems.EMPTY,
 			RequirementProfile.MAXED, 10);
 		return new DpsCalculator().calculate(request, new Loadout(worn));
@@ -74,8 +74,8 @@ public class ObligatorTest {
 		// sweep), so the unpinned search must reach it - the raw-stat
 		// shortlist used to cut it before the damage step.
 		LoadoutData data = new DataService().load();
-		MonsterStats cerberus = data.searchMonsters("cerberus", 1).get(0);
-		OptimizationRequest request = TestRequests.of(cerberus, CombatStyle.MELEE, PlayerLevels.MAXED,
+		Monster cerberus = data.searchMonsters("cerberus", 1).get(0);
+		OptimizationRequest request = TestRequests.of(cerberus, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD,
 			true, false, OwnedItems.EMPTY, 1);
 		String weapon = new LoadoutOptimizer().optimize(data, request).get(0).getLoadout().getWeapon().getName();

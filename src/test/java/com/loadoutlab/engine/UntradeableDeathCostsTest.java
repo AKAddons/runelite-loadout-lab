@@ -1,6 +1,6 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.StatBlock;
 import org.junit.Assert;
@@ -9,8 +9,8 @@ import org.junit.Test;
 public class UntradeableDeathCostsTest {
 	private static final StatBlock COMBAT = new StatBlock(0, 0, 0, 0, 0, 4, 0, 0, 2);
 
-	private static GearItem gear(String name, boolean tradeable, StatBlock bonuses) {
-		return new GearItem(1, name, "", GearSlot.CAPE, "", 0, false, true,
+	private static Gear gear(String name, boolean tradeable, StatBlock bonuses) {
+		return new Gear(1, name, "", GearSlot.CAPE, "", 0, false, true,
 			tradeable, true, null, StatBlock.ZERO, StatBlock.ZERO, bonuses, null);
 	}
 

@@ -2,8 +2,8 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -33,7 +33,7 @@ public class SpecValueTest {
 	@Test
 	public void defenceDrainIsValuedOnRangedSetsNotOnlyMelee() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
+		Monster vorkath = data.searchMonsters("vorkath", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(25886, 1);  // bow of faerdhinen - a ranged main with NO spec,
 		                      // so the warhammer is the only spec candidate
@@ -52,15 +52,15 @@ public class SpecValueTest {
 	}
 
 	private static OptimizerService.StyleResult rangedResult(OptimizerService service,
-		MonsterStats monster, Map<Integer, Integer> owned) throws Exception {
+		Monster monster, Map<Integer, Integer> owned) throws Exception {
 		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true), owned.hashCode(),
 			false, false, "", java.util.Collections.emptySet(), -1,
 			OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0,
 			results -> { out.set(results); done.countDown(); });
 		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
-		return out.get().get(CombatStyle.RANGED);
+		return out.get().get(Style.RANGED);
 	}
 }

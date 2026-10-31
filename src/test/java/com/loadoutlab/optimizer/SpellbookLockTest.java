@@ -2,8 +2,8 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -29,7 +29,7 @@ class SpellbookLockTest {
 	@DisplayName("a Lunar lock leaves the magic card to the powered staves: the trident wins over a standard-book staff of fire that would otherwise outcast it")
 	void lunarLock() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats zulrah = data.searchMonsters("Zulrah", 1).get(0);
+		Monster zulrah = data.searchMonsters("Zulrah", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(11905, 1); // trident of the seas
 		owned.put(1387, 1); // staff of fire
@@ -44,10 +44,10 @@ class SpellbookLockTest {
 		}
 	}
 
-	private static int weapon(OptimizerService service, MonsterStats monster, Map<Integer, Integer> owned,
+	private static int weapon(OptimizerService service, Monster monster, Map<Integer, Integer> owned,
 		String lock, Integer... excluded) throws Exception {
 		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, lock,
 			java.util.Set.of(excluded), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Collections.emptySet(), 0,
@@ -56,6 +56,6 @@ class SpellbookLockTest {
 				done.countDown();
 			});
 		assertTrue(done.await(120, TimeUnit.SECONDS));
-		return out.get().get(CombatStyle.MAGIC).owned.get(0).getLoadout().getWeapon().getId();
+		return out.get().get(Style.MAGIC).owned.get(0).getLoadout().getWeapon().getId();
 	}
 }

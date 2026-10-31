@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class QuiverAmmoTest {
 	private static LoadoutData data;
-	private static MonsterStats target;
+	private static Monster target;
 
 	@BeforeAll
 	static void load() {
@@ -28,8 +28,8 @@ class QuiverAmmoTest {
 		target = data.searchMonsters("general graardor", 1).get(0);
 	}
 
-	private static GearItem byName(String nameLower) {
-		for (GearItem g : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		for (Gear g : data.getGearItems()) {
 			if (g.getNameLower().equals(nameLower) && g.isStandardGear()) {
 				return g;
 			}
@@ -38,13 +38,13 @@ class QuiverAmmoTest {
 	}
 
 	private static OptimizationRequest req() {
-		return TestRequests.of(target, CombatStyle.RANGED, PlayerLevels.MAXED,
+		return TestRequests.of(target, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 	}
 
 	private static Loadout worn(String weapon, String ammo, String cape) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName(weapon));
 		if (ammo != null) {
 			gear.put(GearSlot.AMMO, byName(ammo));
@@ -64,10 +64,10 @@ class QuiverAmmoTest {
 		assertNotNull(base);
 
 		DpsResult filled = new LoadoutOptimizer().fillDpsNeutralSlots(data, request, base);
-		GearItem carried = filled.getLoadout().getQuiverAmmo();
+		Gear carried = filled.getLoadout().getQuiverAmmo();
 		assertNotNull(carried, "the arrows must ride the quiver");
 		assertEquals("Amethyst arrow", carried.getName());
-		GearItem slot = filled.getLoadout().get(GearSlot.AMMO);
+		Gear slot = filled.getLoadout().get(GearSlot.AMMO);
 		assertTrue(slot == null || slot.getBonuses().getRangedStrength() == 0,
 			"the freed slot holds a passive item (blessing), never firing ammo: "
 				+ (slot == null ? "empty" : slot.label()));
@@ -93,7 +93,7 @@ class QuiverAmmoTest {
 		DpsResult moved = new LoadoutOptimizer().relocateQuiverAmmo(data, request, base);
 		assertEquals("Amethyst arrow", moved.getLoadout().getQuiverAmmo().getName(),
 			"the arrows must ride the quiver");
-		GearItem slot = moved.getLoadout().get(GearSlot.AMMO);
+		Gear slot = moved.getLoadout().get(GearSlot.AMMO);
 		assertTrue(slot == null || slot.getBonuses().getRangedStrength() == 0,
 			"the freed slot holds a passive, never firing ammo: "
 				+ (slot == null ? "empty" : slot.label()));
@@ -119,8 +119,8 @@ class QuiverAmmoTest {
 		Loadout start = worn("magic shortbow (i)", "amethyst arrow", "blessed dizana's quiver");
 		DpsResult base = new DpsCalculator().calculate(request, start);
 
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(start.getGear());
-		GearItem arrows = gear.remove(GearSlot.AMMO);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(start.getGear());
+		Gear arrows = gear.remove(GearSlot.AMMO);
 		Loadout relocated = Loadout.adopting(gear).withQuiverAmmo(arrows);
 		DpsResult reShown = new DpsCalculator().calculate(request, relocated);
 		assertNotNull(reShown);
@@ -141,8 +141,8 @@ class QuiverAmmoTest {
 		DpsResult base = new DpsCalculator().calculate(request, start);
 		assertNotNull(base);
 
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(start.getGear());
-		GearItem arrows = gear.remove(GearSlot.AMMO);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(start.getGear());
+		Gear arrows = gear.remove(GearSlot.AMMO);
 		Loadout relocated = Loadout.adopting(gear).withQuiverAmmo(arrows);
 		DpsResult reShown = new DpsCalculator().calculate(request, relocated);
 		assertNotNull(reShown);

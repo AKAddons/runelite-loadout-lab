@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.TripSupplies;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,15 +58,15 @@ class CannonKitTest {
 			// A real group select: the group data flags a raid, the engine
 			// sets the param - the same path RaidSelectionTest proves.
 			engine.execute("select", Map.of("query", group));
-			List<MonsterStats> mobs = state.rosterMobs();
-			List<Map<com.loadoutlab.engine.CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> empty =
+			List<Monster> mobs = state.rosterMobs();
+			List<Map<com.loadoutlab.engine.Style, com.loadoutlab.optimizer.OptimizerService.StyleResult>> empty =
 				new ArrayList<>();
 			for (int i = 0; i < mobs.size(); i++) {
 				empty.add(Map.of());
 			}
 			engine.onRosterResults(mobs, empty);
 		} else {
-			MonsterStats mob = data.searchMonsters(mobQuery, 1).get(0);
+			Monster mob = data.searchMonsters(mobQuery, 1).get(0);
 			engine.execute("select", Map.of("id", mob.getId()));
 			engine.onResults(mob, Map.of());
 		}

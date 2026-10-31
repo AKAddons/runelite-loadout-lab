@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +22,7 @@ public class RatBoneRulesTest {
 		return data;
 	}
 
-	private static OptimizationRequest request(MonsterStats monster, CombatStyle style) {
+	private static OptimizationRequest request(Monster monster, Style style) {
 		return new OptimizationRequest(
 			monster, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -30,21 +30,21 @@ public class RatBoneRulesTest {
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 	}
 
-	private static DpsResult calculate(MonsterStats monster, CombatStyle style, int weaponId) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+	private static DpsResult calculate(Monster monster, Style style, int weaponId) {
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, data().getGear(weaponId));
 		return new DpsCalculator().calculate(request(monster, style), new Loadout(gear));
 	}
 
 	@Test
 	public void boneStaffCannotBeUsedAgainstNonRats() {
-		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
-		Assert.assertNull(calculate(goblin, CombatStyle.MAGIC, 28796));
+		Monster goblin = data().searchMonsters("goblin", 1).get(0);
+		Assert.assertNull(calculate(goblin, Style.MAGIC, 28796));
 		// And a player who owns one is never told to bring it.
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(28796, 1);
 		OptimizationRequest ownedMagic = new OptimizationRequest(
-			goblin, CombatStyle.MAGIC, PlayerLevels.MAXED,
+			goblin, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 5);
@@ -55,15 +55,15 @@ public class RatBoneRulesTest {
 
 	@Test
 	public void boneStaffHitsThirtyEightAgainstScurriusAtMaxed() {
-		MonsterStats scurrius = data().searchMonsters("scurrius", 1).get(0);
+		Monster scurrius = data().searchMonsters("scurrius", 1).get(0);
 		Assert.assertTrue(scurrius.hasAttribute("rat"));
 		// Prayer-less, to match the wiki's max-hit table exactly.
 		OptimizationRequest request = new OptimizationRequest(
-			scurrius, CombatStyle.MAGIC, PlayerLevels.MAXED,
+			scurrius, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, data().getGear(28796));
 		DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));
 		Assert.assertNotNull(result);
@@ -73,8 +73,8 @@ public class RatBoneRulesTest {
 
 	@Test
 	public void boneMaceGetsTheRatBonusOnlyAgainstRats() {
-		MonsterStats scurrius = data().searchMonsters("scurrius", 1).get(0);
-		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
+		Monster scurrius = data().searchMonsters("scurrius", 1).get(0);
+		Monster goblin = data().searchMonsters("goblin", 1).get(0);
 		Assert.assertEquals(10, RatBoneRules.flatMaxHitBonus(scurrius, data().getGear(28792)));
 		Assert.assertEquals(0, RatBoneRules.flatMaxHitBonus(goblin, data().getGear(28792)));
 		Assert.assertFalse(RatBoneRules.canUse(goblin, data().getGear(28792)));
@@ -82,8 +82,8 @@ public class RatBoneRulesTest {
 
 	@Test
 	public void gameBestMagicAgainstNonRatsIsNeverTheBoneStaff() {
-		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
-		List<DpsResult> results = new LoadoutOptimizer().optimize(data(), request(goblin, CombatStyle.MAGIC));
+		Monster goblin = data().searchMonsters("goblin", 1).get(0);
+		List<DpsResult> results = new LoadoutOptimizer().optimize(data(), request(goblin, Style.MAGIC));
 		Assert.assertFalse(results.isEmpty());
 		Assert.assertNotEquals(28796, results.get(0).getLoadout().getWeapon().getId());
 	}

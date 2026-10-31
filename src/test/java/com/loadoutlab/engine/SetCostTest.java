@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SetCostTest {
 	private static LoadoutData data;
-	private static MonsterStats target;
+	private static Monster target;
 
 	@BeforeAll
 	static void load() {
@@ -30,7 +30,7 @@ class SetCostTest {
 
 	private static DpsResult best(OwnedItems owned, CandidateMode mode) {
 		OptimizationRequest request = TestRequests.of(target,
-			CombatStyle.MELEE, PlayerLevels.MAXED,
+			Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			mode, true, false, owned, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);

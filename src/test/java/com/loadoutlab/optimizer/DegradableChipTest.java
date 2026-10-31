@@ -6,8 +6,8 @@ import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.Degradable;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -35,7 +35,7 @@ class DegradableChipTest {
 	@DisplayName("skipping degradable gear drops blood moon tassets for dragon platelegs on the gemstone crab; allowing brings the tassets back")
 	void chip() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats crab = data.searchMonsters("Gemstone Crab", 1).get(0);
+		Monster crab = data.searchMonsters("Gemstone Crab", 1).get(0);
 		MonsterProfileStore store = new MonsterProfileStore(InMemoryConfigManager.create(), new Gson());
 		store.setDegradableIds(Degradable.ids(data));
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -54,10 +54,10 @@ class DegradableChipTest {
 		}
 	}
 
-	private static int legs(OptimizerService service, MonsterStats monster, Map<Integer, Integer> owned,
+	private static int legs(OptimizerService service, Monster monster, Map<Integer, Integer> owned,
 		Set<Integer> excluded) throws Exception {
 		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
 			excluded, -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Collections.emptySet(), 0,
@@ -66,6 +66,6 @@ class DegradableChipTest {
 				done.countDown();
 			});
 		assertTrue(done.await(120, TimeUnit.SECONDS));
-		return out.get().get(CombatStyle.MELEE).owned.get(0).getLoadout().get(GearSlot.LEGS).getId();
+		return out.get().get(Style.MELEE).owned.get(0).getLoadout().get(GearSlot.LEGS).getId();
 	}
 }

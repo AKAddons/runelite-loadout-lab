@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -78,9 +78,9 @@ public class CrystalSetTest {
 	@Test
 	public void crystalArmourDoesNotScaleTheBladeOfSaeldor() {
 		LoadoutData data = new DataService().load();
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(
-			graardor, CombatStyle.MELEE, PlayerLevels.MAXED,
+			graardor, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
@@ -117,9 +117,9 @@ public class CrystalSetTest {
 	}
 
 	private static OptimizationRequest request(LoadoutData data, boolean onTask) {
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		return new OptimizationRequest(
-			graardor, CombatStyle.RANGED, PlayerLevels.MAXED,
+			graardor, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, onTask,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
@@ -127,18 +127,18 @@ public class CrystalSetTest {
 
 	private static DpsResult calc(LoadoutData data, OptimizationRequest request,
 		String weapon, String armourVersion, String[] armour) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName(data, weapon, null));
 		if (armour != null) {
 			for (String name : armour) {
-				GearItem item = byName(data, name, armourVersion);
+				Gear item = byName(data, name, armourVersion);
 				gear.put(item.getSlot(), item);
 			}
 		}
 		return new DpsCalculator().calculate(request, new Loadout(gear));
 	}
 
-	private static GearItem byName(LoadoutData data, String name, String version) {
+	private static Gear byName(LoadoutData data, String name, String version) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getName().equalsIgnoreCase(name))
 			.filter(g -> version == null ? g.isStandardGear() : version.equalsIgnoreCase(g.getVersion()))

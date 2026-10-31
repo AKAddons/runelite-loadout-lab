@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellRunes;
 import com.loadoutlab.data.SpellStats;
 import java.util.HashMap;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SpellRuneWiringTest {
 	private static LoadoutData data;
-	private static MonsterStats zulrah;
+	private static Monster zulrah;
 
 	@BeforeAll
 	static void load() {
@@ -32,7 +32,7 @@ class SpellRuneWiringTest {
 
 	private static OptimizationRequest request(CandidateMode mode, OwnedItems owned) {
 		return new OptimizationRequest(
-			zulrah, CombatStyle.MAGIC, PlayerLevels.MAXED,
+			zulrah, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			mode, true, false,
 			owned, RequirementProfile.MAXED, 1);

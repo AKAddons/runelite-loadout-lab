@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.StatBlock;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,22 +28,22 @@ class IncomingHygieneTest {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats mob(String name, String version) {
+	private static Monster mob(String name, String version) {
 		return data.getMonsters().stream()
 			.filter(m -> m.getName().equals(name) && (version == null || m.getVersion().equals(version)))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name + " " + version
 				+ "; has " + data.getMonsters().stream().filter(m -> m.getName().equals(name))
-					.map(MonsterStats::getVersion).collect(java.util.stream.Collectors.toList())));
+					.map(Monster::getVersion).collect(java.util.stream.Collectors.toList())));
 	}
 
 	private static Loadout armour(int each) {
-		GearItem body = new GearItem(1, "Test platebody", "", GearSlot.BODY, "", 0,
+		Gear body = new Gear(1, "Test platebody", "", GearSlot.BODY, "", 0,
 			false, true, true, true, 0, StatBlock.ZERO,
 			new StatBlock(each, each, each, each, each, 0, 0, 0, 0), StatBlock.ZERO, null);
 		return new Loadout(Map.of(GearSlot.BODY, body));
 	}
 
-	private static IncomingDpsCalculator.Result hit(MonsterStats mob) {
+	private static IncomingDpsCalculator.Result hit(Monster mob) {
 		return IncomingDpsCalculator.calculate(mob, armour(100), 90, 90, 0);
 	}
 

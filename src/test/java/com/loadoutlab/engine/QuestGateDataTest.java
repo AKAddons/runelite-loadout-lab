@@ -1,11 +1,11 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearRequirements;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.RequiredGear;
 import java.util.List;
 import java.util.Set;
@@ -33,7 +33,7 @@ class QuestGateDataTest {
 
 	/** The row by name: the base item first, else a cosmetic variant (the
 	 * trimmed bodies and crested shields are variants of their base). */
-	private static GearItem item(String name) {
+	private static Gear item(String name) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name))
 			.min(java.util.Comparator.comparing(g -> data.isVariant(g.getId())))
@@ -85,16 +85,16 @@ class QuestGateDataTest {
 	void iceGloves() {
 		Set<Integer> gloves = Set.of(item("ice gloves").getId(), item("smiths gloves (i)").getId());
 		for (String boss : List.of("flambeed", "fareed")) {
-			MonsterStats mob = data.searchMonsters(boss, 1).get(0);
+			Monster mob = data.searchMonsters(boss, 1).get(0);
 			RequiredGear.Rule rule = RequiredGear.rulesFor(mob).stream().filter(r -> r.slot == GearSlot.HANDS)
 				.findFirst().orElseThrow(() -> new AssertionError(boss + " has no hands rule"));
 			assertEquals(gloves, rule.ids(data), boss + " names both gloves");
-			OptimizationRequest request = new OptimizationRequest(mob, CombatStyle.MELEE, PlayerLevels.MAXED,
+			OptimizationRequest request = new OptimizationRequest(mob, Style.MELEE, PlayerLevels.MAXED,
 				PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD, true, false,
 				OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 			List<DpsResult> best = new LoadoutOptimizer().optimize(data, request);
 			assertFalse(best.isEmpty(), boss + " has a melee set");
-			GearItem hands = best.get(0).getLoadout().get(GearSlot.HANDS);
+			Gear hands = best.get(0).getLoadout().get(GearSlot.HANDS);
 			assertTrue(hands != null && gloves.contains(hands.getId()),
 				boss + "'s melee set wears " + (hands == null ? "nothing" : hands.getName()));
 		}

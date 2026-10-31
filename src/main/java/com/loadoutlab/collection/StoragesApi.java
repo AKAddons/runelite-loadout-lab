@@ -20,40 +20,40 @@ import java.util.function.IntUnaryOperator;
 // <p>This class is the pure, testable part; the plugin gathers the
 // snapshots and posts on the client thread (ids canonicalize there).
 public class StoragesApi {
-    public static final String NAMESPACE = "loadoutlab";
-    public static final String REQUEST_NAME = "storages-request";
-    public static final String RESPONSE_NAME = "storages-response";
-    static final int VERSION = 1;
-    static final String SOURCE = "Loadout Lab";
+public static final String NAMESPACE = "loadoutlab";
+public static final String REQUEST_NAME = "storages-request";
+public static final String RESPONSE_NAME = "storages-response";
+static final int VERSION = 1;
+static final String SOURCE = "Loadout Lab";
 
 
-    // The validated requester name from a storages-request payload,
-    // or null when the request carries no usable source.
-    public static String requester(Map data) {
-        if (data == null) return null;
-        Object source = data.get("source");
-        return source instanceof String && !((String) source).isEmpty() ? (String) source : null;
+// The validated requester name from a storages-request payload,
+// or null when the request carries no usable source.
+public static String requester(Map data) {
+    if (data == null) return null;
+    Object source = data.get("source");
+    return source instanceof String && !((String) source).isEmpty() ? (String) source : null;
+}
+
+// One storage entry for the response: items canonicalized (variants
+// that collapse to one id sum), non-positive entries dropped.
+// Returns null when nothing survives - empty storages are omitted,
+// matching the DWMS side of the contract.
+public static Map storage(String category, String name, long lastUpdated,
+    Map<Integer, Integer> items, IntUnaryOperator canonicalize) {
+    Map<Integer, Long> canonical = new LinkedHashMap<>();
+    for (var e : items.entrySet()) {
+        if (e.getKey() <= 0 || e.getValue() <= 0) continue;
+        canonical.merge(canonicalize.applyAsInt(e.getKey()), (long) e.getValue(), Long::sum);
     }
+    if (canonical.isEmpty()) return null;
+    List<Map> itemList = new ArrayList<>(canonical.size());
+    for (var e : canonical.entrySet()) itemList.add(JsonResources.map("id", e.getKey(), "quantity", e.getValue()));
+    return JsonResources.map("category", category, "name", name, "lastUpdated", lastUpdated, "items", itemList);
+}
 
-    // One storage entry for the response: items canonicalized (variants
-    // that collapse to one id sum), non-positive entries dropped.
-    // Returns null when nothing survives - empty storages are omitted,
-    // matching the DWMS side of the contract.
-    public static Map storage(String category, String name, long lastUpdated,
-        Map<Integer, Integer> items, IntUnaryOperator canonicalize) {
-        Map<Integer, Long> canonical = new LinkedHashMap<>();
-        for (var e : items.entrySet()) {
-            if (e.getKey() <= 0 || e.getValue() <= 0) continue;
-            canonical.merge(canonicalize.applyAsInt(e.getKey()), (long) e.getValue(), Long::sum);
-        }
-        if (canonical.isEmpty()) return null;
-        List<Map> itemList = new ArrayList<>(canonical.size());
-        for (var e : canonical.entrySet()) itemList.add(JsonResources.map("id", e.getKey(), "quantity", e.getValue()));
-        return JsonResources.map("category", category, "name", name, "lastUpdated", lastUpdated, "items", itemList);
-    }
-
-    // The response envelope addressed back to the requester.
-    public static Map response(String target, List<Map> storages) {
-        return JsonResources.map("source", SOURCE, "target", target, "version", VERSION, "storages", storages);
-    }
+// The response envelope addressed back to the requester.
+public static Map response(String target, List<Map> storages) {
+    return JsonResources.map("source", SOURCE, "target", target, "version", VERSION, "storages", storages);
+}
 }

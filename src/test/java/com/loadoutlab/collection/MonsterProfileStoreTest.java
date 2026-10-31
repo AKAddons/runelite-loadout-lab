@@ -41,8 +41,8 @@ class MonsterProfileStoreTest {
 	@DisplayName("a pin made on a phase-variant card is the real monster's pin, seen from every variant")
 	void variantPinsLandOnTheRealMonster() {
 		int demon = 13600;
-		int rangedPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + demon * 10 + 2;
-		int magicPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + demon * 10 + 4;
+		int rangedPhase = com.loadoutlab.data.Monster.SYNTHETIC_ID_BASE + demon * 10 + 2;
+		int magicPhase = com.loadoutlab.data.Monster.SYNTHETIC_ID_BASE + demon * 10 + 4;
 		store.setPinnedSpell(rangedPhase, "Fire Surge");
 		store.pin(rangedPhase, ALL, GearSlot.WEAPON, 24424);
 		store.setPinnedSpec(magicPhase, 13652);
@@ -58,8 +58,8 @@ class MonsterProfileStoreTest {
 	void strandedVariantProfilesFoldOnLoad() {
 		int demon = 13600;
 		int gorilla = 7144;
-		int demonPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + demon * 10 + 2;
-		int gorillaPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + gorilla * 10 + 1;
+		int demonPhase = com.loadoutlab.data.Monster.SYNTHETIC_ID_BASE + demon * 10 + 2;
+		int gorillaPhase = com.loadoutlab.data.Monster.SYNTHETIC_ID_BASE + gorilla * 10 + 1;
 		configManager.setConfiguration("loadoutlab", SCOPE + ".monsterProfiles",
 			"{\"" + demonPhase + "\":{\"spell\":\"Fire Surge\"},\"" + demon + "\":{\"note\":\"bring brews\"},"
 				+ "\"" + gorillaPhase + "\":{\"spell\":\"Fire Wave\"}}");

@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +24,7 @@ class NavalMarkerTest {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats byName(String name) {
+	private static Monster byName(String name) {
 		return data.searchMonsters(name, 1).get(0);
 	}
 

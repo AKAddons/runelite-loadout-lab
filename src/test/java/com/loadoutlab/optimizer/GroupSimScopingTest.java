@@ -4,8 +4,8 @@ import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSearchTestSupport;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -29,8 +29,8 @@ public class GroupSimScopingTest {
 	@Test
 	public void perMobSimReachesTheRosterAnswer() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster vorkath = data.searchMonsters("vorkath", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		int whip = 4151;
 		int rapier = GearSearchTestSupport.searchGear(data, "ghrazi rapier", 1).get(0).getId();
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -53,9 +53,9 @@ public class GroupSimScopingTest {
 					Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptySet(),
 					roster -> { out.set(roster); done.countDown(); });
 				Assert.assertTrue("timed out", done.await(90, TimeUnit.SECONDS));
-				List<Map<CombatStyle, OptimizerService.StyleResult>> perMob = out.get().perMob;
-				OptimizerService.StyleResult vsGoblin = perMob.get(1).get(CombatStyle.MELEE);
-				OptimizerService.StyleResult vsVorkath = perMob.get(0).get(CombatStyle.MELEE);
+				List<Map<Style, OptimizerService.StyleResult>> perMob = out.get().perMob;
+				OptimizerService.StyleResult vsGoblin = perMob.get(1).get(Style.MELEE);
+				OptimizerService.StyleResult vsVorkath = perMob.get(0).get(Style.MELEE);
 				System.out.println("maxSwaps=" + maxSwaps
 					+ " goblin weapon=" + name(vsGoblin)
 					+ " vorkath weapon=" + name(vsVorkath));

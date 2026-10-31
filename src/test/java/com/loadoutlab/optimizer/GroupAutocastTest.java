@@ -2,8 +2,8 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -49,16 +49,16 @@ class GroupAutocastTest {
 		for (int rune : new int[]{21880, 560, 565, 566, 554, 556, 555, 557}) {
 			owned.put(rune, 10000);
 		}
-		List<MonsterStats> brothers = List.of(data.searchMonsters("ahrim the blighted", 1).get(0),
+		List<Monster> brothers = List.of(data.searchMonsters("ahrim the blighted", 1).get(0),
 			data.searchMonsters("dharok the wretched", 1).get(0));
 		OptimizerService service = new OptimizerService(data);
 		try {
 			OptimizerService.RosterResult roster = ServiceCalls.runRoster(service, brothers, owned, 0, Map.of());
-			OptimizerService.StyleResult magic = roster.perMob.get(0).get(CombatStyle.MAGIC);
+			OptimizerService.StyleResult magic = roster.perMob.get(0).get(Style.MAGIC);
 			String weapon = magic.owned.get(0).getLoadout().getWeapon().getName();
 
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> alone = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> alone = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, brothers.get(0), PlayerLevels.MAXED, PlayerLevels.MAXED,
 				PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true), owned.hashCode() + 7, false, false, "",
 				Set.of(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Collections.emptySet(), 0,
@@ -67,7 +67,7 @@ class GroupAutocastTest {
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS), "single-mob compute timed out");
-			String aloneWeapon = alone.get().get(CombatStyle.MAGIC).owned.get(0).getLoadout().getWeapon().getName();
+			String aloneWeapon = alone.get().get(Style.MAGIC).owned.get(0).getLoadout().getWeapon().getName();
 			assertEquals(aloneWeapon, weapon, "the group wears Ahrim's own winner");
 			if (!weapon.toLowerCase().contains("trident")) {
 				assertNotNull(magic.owned.get(0).getSpellName(), "with its autocast");

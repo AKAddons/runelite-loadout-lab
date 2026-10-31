@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,14 +31,14 @@ class SmokeStaffNoSecondHitTest {
 	@DisplayName("a smoke battlestaff's Earth Wave gets the +10% but no second hit; the Twinflame's does, so it hits harder")
 	void onlyTheTwinflameSplits() {
 		LoadoutData data = new DataService().load();
-		MonsterStats giant = data.searchMonsters("fire giant", 1).get(0);
+		Monster giant = data.searchMonsters("fire giant", 1).get(0);
 		SpellStats wave = data.getSpells().stream().filter(s -> s.getName().equals("Earth Wave")).findFirst()
 			.orElseThrow(() -> new AssertionError("no Earth Wave"));
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (int rune : new int[]{554, 555, 556, 557, 560, 565, 566, 21880}) {
 			owned.put(rune, 10000);
 		}
-		OptimizationRequest request = new OptimizationRequest(giant, CombatStyle.MAGIC, PlayerLevels.MAXED,
+		OptimizationRequest request = new OptimizationRequest(giant, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL), null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 3).withSpell(wave);
 
@@ -60,7 +60,7 @@ class SmokeStaffNoSecondHitTest {
 	}
 
 	private static DpsResult cast(LoadoutData data, OptimizationRequest request, String staffName) {
-		GearItem staff = data.getGearItems(GearSlot.WEAPON).stream()
+		Gear staff = data.getGearItems(GearSlot.WEAPON).stream()
 			.filter(g -> g.getNameLower().equals(staffName) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + staffName));
 		DpsResult result = new DpsCalculator().calculate(request, new Loadout(Map.of(GearSlot.WEAPON, staff)));

@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SalarinTest {
 	private static LoadoutData data;
-	private static MonsterStats salarin;
+	private static Monster salarin;
 
 	@BeforeAll
 	static void load() {
@@ -28,7 +28,7 @@ class SalarinTest {
 		assertEquals(304, salarin.getId());
 	}
 
-	private static OptimizationRequest req(CombatStyle style) {
+	private static OptimizationRequest req(Style style) {
 		return TestRequests.of(salarin, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -37,14 +37,14 @@ class SalarinTest {
 	@Test
 	@DisplayName("melee and ranged never land")
 	void meleeAndRangedAreImmune() {
-		assertTrue(new LoadoutOptimizer().optimize(data, req(CombatStyle.MELEE)).isEmpty());
-		assertTrue(new LoadoutOptimizer().optimize(data, req(CombatStyle.RANGED)).isEmpty());
+		assertTrue(new LoadoutOptimizer().optimize(data, req(Style.MELEE)).isEmpty());
+		assertTrue(new LoadoutOptimizer().optimize(data, req(Style.RANGED)).isEmpty());
 	}
 
 	@Test
 	@DisplayName("the magic answer is a Strike at a flat 12, plus the elemental amulet's 2")
 	void magicIsAFlatStrike() {
-		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req(CombatStyle.MAGIC));
+		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req(Style.MAGIC));
 		assertFalse(out.isEmpty(), "strikes must survive the elemental prune");
 		DpsResult best = out.get(0);
 		assertNotNull(best.getSpellName());

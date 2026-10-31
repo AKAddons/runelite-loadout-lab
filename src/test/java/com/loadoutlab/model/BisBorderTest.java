@@ -3,9 +3,9 @@ package com.loadoutlab.model;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.WildernessMonsters;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -43,11 +43,11 @@ class BisBorderTest {
 	}
 
 	private static OptimizerService.StyleResult magicAtFrostNagua(Map<Integer, Integer> owned) throws Exception {
-		MonsterStats mob = data.searchMonsters("frost nagua", 1).get(0);
+		Monster mob = data.searchMonsters("frost nagua", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			com.loadoutlab.engine.ComputeParams p = new com.loadoutlab.engine.ComputeParams();
 			p.inWilderness = WildernessMonsters.isExclusive(mob);
 			service.bestPerStyle(mob, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
@@ -58,7 +58,7 @@ class BisBorderTest {
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS), "compute finished");
-			return out.get().get(CombatStyle.MAGIC);
+			return out.get().get(Style.MAGIC);
 		} finally {
 			service.shutdown();
 		}

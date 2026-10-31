@@ -13,29 +13,29 @@ import com.loadoutlab.data.*;
 // </ul>
 // Not modeled: the Unshielded-phase bonus for crush/heavy/spell attacks.
 public class TormentedDemonRules {
-    static final String[] ABYSSAL = {
-        "abyssal whip", "abyssal tentacle", "abyssal dagger", "abyssal bludgeon", };
+static final String[] ABYSSAL = {
+    "abyssal whip", "abyssal tentacle", "abyssal dagger", "abyssal bludgeon", };
 
 
-    public static boolean applies(MonsterStats monster) {
-        return monster != null && "Tormented Demon".equalsIgnoreCase(monster.name);
-    }
+static boolean applies(Monster monster) {
+    return monster != null && "Tormented Demon".equalsIgnoreCase(monster.name);
+}
 
-    // The flat 20% reduction, bypassed by demonbane and abyssal weapons.
-    public static double damageFactor(MonsterStats monster, CombatStyle style, GearItem weapon, String spellName) {
-        if (!applies(monster)) return 1.0;
-        return bypassesReduction(style, weapon, spellName) ? 1.0 : 0.8;
-    }
+// The flat 20% reduction, bypassed by demonbane and abyssal weapons.
+static double damageFactor(Monster monster, Style style, Gear weapon, String spellName) {
+    if (!applies(monster)) return 1.0;
+    return bypassesReduction(style, weapon, spellName) ? 1.0 : 0.8;
+}
 
-    static boolean bypassesReduction(CombatStyle style, GearItem weapon, String spellName) {
-        if (style == CombatStyle.MAGIC) return spellName != null && spellName.contains("Demonbane");
-        // The demonbane weapon vocabulary lives on GearItem (one list with
-        // MonsterMechanics and the optimizer's demon bump); a melee name
-        // can never be the weapon of a RANGED attack, so one flag serves
-        // both remaining styles.
-        if (weapon == null) return false;
-        if (weapon.demonbane) return true;
-        for (String abyssal : ABYSSAL) if (weapon.nameLower.startsWith(abyssal)) return true;
-        return false;
-    }
+static boolean bypassesReduction(Style style, Gear weapon, String spellName) {
+    if (style == Style.MAGIC) return spellName != null && spellName.contains("Demonbane");
+    // The demonbane weapon vocabulary lives on Gear (one list with
+    // MonsterMechanics and the optimizer's demon bump); a melee name
+    // can never be the weapon of a RANGED attack, so one flag serves
+    // both remaining styles.
+    if (weapon == null) return false;
+    if (weapon.demonbane) return true;
+    for (String abyssal : ABYSSAL) if (weapon.nameLower.startsWith(abyssal)) return true;
+    return false;
+}
 }

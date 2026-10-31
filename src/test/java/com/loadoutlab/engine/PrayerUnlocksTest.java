@@ -40,6 +40,6 @@ public class PrayerUnlocksTest {
 		Assert.assertEquals(1.25, all.getMeleeAccuracy(), 1e-9);
 		Assert.assertEquals(1.25, all.getMagicAccuracy(), 1e-9);
 		Assert.assertEquals(4.0, all.getMagicDamagePercent(), 1e-9);
-		Assert.assertEquals("Augury", all.nameFor(CombatStyle.MAGIC));
+		Assert.assertEquals("Augury", all.nameFor(Style.MAGIC));
 	}
 }

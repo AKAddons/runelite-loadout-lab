@@ -1,9 +1,9 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
@@ -19,9 +19,9 @@ public class SlayerInvariantTest {
 	@Test
 	public void slayerTaskNeverLowersTheAnswer() {
 		LoadoutData data = new DataService().load();
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (GearItem g : data.getGearItems()) {
+		for (Gear g : data.getGearItems()) {
 			String n = g.getName().toLowerCase();
 			if (!n.contains("twisted bow") && !n.contains("dragon knife")
 				&& !n.contains("masori") && !n.contains("scorching")) {
@@ -34,9 +34,9 @@ public class SlayerInvariantTest {
 			onTask >= offTask - 1e-9);
 	}
 
-	private static double best(LoadoutData data, MonsterStats monster, Map<Integer, Integer> owned, boolean task) {
+	private static double best(LoadoutData data, Monster monster, Map<Integer, Integer> owned, boolean task) {
 		OptimizationRequest request = new OptimizationRequest(
-			monster, CombatStyle.RANGED, PlayerLevels.MAXED,
+			monster, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, task,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1);

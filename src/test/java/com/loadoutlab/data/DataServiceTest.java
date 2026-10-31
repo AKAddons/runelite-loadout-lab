@@ -22,7 +22,7 @@ public class DataServiceTest {
 	@Test
 	public void monsterOffensiveSheetIsParsed() {
 		LoadoutData data = new DataService().load();
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		MonsterOffence off = graardor.getOffence();
 		Assert.assertEquals(280, off.getAttackLevel());
 		Assert.assertEquals(350, off.getStrengthLevel());
@@ -36,7 +36,7 @@ public class DataServiceTest {
 	@Test
 	public void impossiblePvpVariantsAreNotStandardGear() {
 		LoadoutData data = new DataService().load();
-		GearItem vesta = data.getGear(22616);
+		Gear vesta = data.getGear(22616);
 		Assert.assertNotNull(vesta);
 		Assert.assertFalse(vesta.isStandardGear());
 	}
@@ -49,7 +49,7 @@ public class DataServiceTest {
 		// style, +50 str and +50 prayer, so it dominates the neck slot
 		// outright and was being shown as BiS (field report 2026-08-05).
 		LoadoutData data = new DataService().load();
-		GearItem amulet = data.getGear(21433);
+		Gear amulet = data.getGear(21433);
 		Assert.assertNotNull(amulet);
 		Assert.assertFalse("a discontinued event item must never be recommended",
 			amulet.isStandardGear());
@@ -65,7 +65,7 @@ public class DataServiceTest {
 		// Wristbands of the Arena (2026-10-06 refresh): a never-released
 		// tournament-world test item with Barrows glove stats.
 		for (int id : new int[]{26749, 26753, 26759, 26755, 26757, 26751, 26723, 26725, 26727, 26729}) {
-			GearItem piece = data.getGear(id);
+			Gear piece = data.getGear(id);
 			Assert.assertNotNull("calamity row missing: " + id, piece);
 			Assert.assertFalse("PvP Arena exclusive gear must never be recommended: "
 				+ piece.label(), piece.isStandardGear());
@@ -79,7 +79,7 @@ public class DataServiceTest {
 		// breaks Verzik's shield and is destroyed if it leaves the Theatre
 		// (wiki); it is never a DPS pick, inside the raid included.
 		LoadoutData data = new DataService().load();
-		GearItem staff = data.getGear(22516);
+		Gear staff = data.getGear(22516);
 		Assert.assertNotNull("Dawnbringer row missing", staff);
 		Assert.assertFalse("the Dawnbringer must never be recommended: " + staff.label(),
 			staff.isStandardGear());
@@ -95,7 +95,7 @@ public class DataServiceTest {
 		// NONSTANDARD_OVERRIDES).
 		LoadoutData data = new DataService().load();
 		for (int id : new int[]{33800, 33801}) {
-			GearItem item = data.getGear(id);
+			Gear item = data.getGear(id);
 			Assert.assertNotNull("missing gear id " + id, item);
 			Assert.assertFalse(item.getName() + " must not be standard gear",
 				item.isStandardGear());
@@ -111,7 +111,7 @@ public class DataServiceTest {
 		// standard (see scripts/refresh_data.py STANDARD_OVERRIDES).
 		LoadoutData data = new DataService().load();
 		for (int id : new int[]{30750, 30753, 30756, 31106}) {
-			GearItem item = data.getGear(id);
+			Gear item = data.getGear(id);
 			Assert.assertNotNull("missing gear id " + id, item);
 			Assert.assertTrue(item.getName() + " must be standard gear",
 				item.isStandardGear());
@@ -124,7 +124,7 @@ public class DataServiceTest {
 		// Blood Moon Rises wave (June 2026): the Maggot King and the
 		// Necklace of rupture, which outclasses the Necklace of anguish.
 		Assert.assertFalse(data.searchMonsters("maggot king", 5).isEmpty());
-		GearItem rupture = data.getGear(33639);
+		Gear rupture = data.getGear(33639);
 		Assert.assertNotNull(rupture);
 		Assert.assertTrue(rupture.getBonuses().getRangedStrength()
 			> data.getGear(19547).getBonuses().getRangedStrength());
@@ -136,7 +136,7 @@ public class DataServiceTest {
 		// Main-game 'Echo boots' (Colosseum recoil boots) must NOT be
 		// caught by the leagues echo filter.
 		Assert.assertNotNull(data.getGear(28945));
-		for (GearItem item : data.getGearItems()) {
+		for (Gear item : data.getGearItems()) {
 			String name = item.getName().toLowerCase();
 			Assert.assertFalse("leagues-only gear must not be suggestible: " + item.getName(),
 				name.startsWith("echo venator") || name.startsWith("echo virtus")
@@ -161,11 +161,11 @@ public class DataServiceTest {
 	public void combatIdenticalMonsterSpawnsCollapseToOneEntry() {
 		LoadoutData data = new DataService().load();
 		// Four Tormented Demon spawns share one stat block -> one unlabeled entry.
-		java.util.List<MonsterStats> tds = data.searchMonsters("tormented demon", 10);
+		java.util.List<Monster> tds = data.searchMonsters("tormented demon", 10);
 		Assert.assertEquals(1, tds.size());
 		Assert.assertEquals("", tds.get(0).getVersion());
 		// Dusk's two forms have different stats -> both stay, labeled.
-		java.util.List<MonsterStats> dusks = data.searchMonsters("dusk", 10).stream()
+		java.util.List<Monster> dusks = data.searchMonsters("dusk", 10).stream()
 			.filter(m -> m.getName().equals("Dusk")).collect(java.util.stream.Collectors.toList());
 		Assert.assertEquals(2, dusks.size());
 		Assert.assertFalse(dusks.get(0).getVersion().isEmpty());
@@ -219,8 +219,8 @@ public class DataServiceTest {
 	@Test
 	public void loadsEquipmentRequirements() {
 		LoadoutData data = new DataService().load();
-		GearItem whip = data.getGear(4151);
-		GearItem bandosChestplate = data.getGear(11832);
+		Gear whip = data.getGear(4151);
+		Gear bandosChestplate = data.getGear(11832);
 		Assert.assertNotNull(whip);
 		Assert.assertNotNull(bandosChestplate);
 		Assert.assertEquals(70, whip.getRequirements().getSkills().get("attack").intValue());
@@ -235,7 +235,7 @@ public class DataServiceTest {
 		LoadoutData data = new DataService().load();
 		java.util.Set<Integer> ids = new java.util.HashSet<>();
 		java.util.Set<String> names = new java.util.HashSet<>();
-		for (GearItem item : data.getGearItems()) {
+		for (Gear item : data.getGearItems()) {
 			ids.add(item.getId());
 			names.add(item.getNameLower());
 		}

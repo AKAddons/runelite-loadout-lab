@@ -2,8 +2,8 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -54,11 +54,11 @@ class RaidBoostPickerTest {
 
 	private static String boostLabel(OptimizerService service, LoadoutData data, String name)
 		throws Exception {
-		MonsterStats mob = data.searchMonsters(name, 1).get(0);
+		Monster mob = data.searchMonsters(name, 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1); // abyssal whip: a melee set exists, no potions banked
 		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> got = new AtomicReference<>();
+		AtomicReference<Map<Style, OptimizerService.StyleResult>> got = new AtomicReference<>();
 		ServiceCalls.bestPerStyle(service, mob, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true),
 			owned.hashCode(), false, false, "", Collections.emptySet(), -1,
@@ -68,7 +68,7 @@ class RaidBoostPickerTest {
 				done.countDown();
 			});
 		assertTrue(done.await(120, TimeUnit.SECONDS));
-		String label = got.get().get(CombatStyle.MELEE).boostLabel;
+		String label = got.get().get(Style.MELEE).boostLabel;
 		return label == null ? "" : label;
 	}
 }

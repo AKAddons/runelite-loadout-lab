@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
@@ -19,9 +19,9 @@ public class SpellbookLockTest {
 
 	@Test
 	public void lockRestrictsAutoSpellToTheChosenBook() {
-		MonsterStats td = data().searchMonsters("tormented demon", 1).get(0);
+		Monster td = data().searchMonsters("tormented demon", 1).get(0);
 		OptimizationRequest base = new OptimizationRequest(
-			td, CombatStyle.MAGIC, PlayerLevels.MAXED,
+			td, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
@@ -48,7 +48,7 @@ public class SpellbookLockTest {
 
 	@Test
 	public void purgingStaffAutocastsAncientsAndNoSpellMeansNoResult() {
-		MonsterStats graardor = data().searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data().searchMonsters("general graardor", 1).get(0);
 		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
 		data().getGearItems().stream().filter(g -> g.getName().equalsIgnoreCase("Purging staff"))
 			.findFirst().ifPresent(g -> owned.put(g.getId(), 1));
@@ -60,7 +60,7 @@ public class SpellbookLockTest {
 		owned.put(566, 1000);   // soul
 		owned.put(21880, 1000); // wrath
 		OptimizationRequest ancientLock = new OptimizationRequest(
-			graardor, CombatStyle.MAGIC, PlayerLevels.MAXED,
+			graardor, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1)
@@ -85,9 +85,9 @@ public class SpellbookLockTest {
 		// eye of ayak, sending it down the autocast path. A powered staff
 		// result carries no spell name.
 		com.loadoutlab.data.LoadoutData data = new com.loadoutlab.data.DataService().load();
-		com.loadoutlab.data.MonsterStats zulrah = data.searchMonsters("zulrah", 1).get(0);
+		com.loadoutlab.data.Monster zulrah = data.searchMonsters("zulrah", 1).get(0);
 		java.util.Map<Integer, Integer> owned = java.util.Map.of(31113, 1); // eye of ayak (charged)
-		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.MAGIC,
+		OptimizationRequest req = TestRequests.of(zulrah, Style.MAGIC,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new com.loadoutlab.engine.OwnedItems(data.canonicalizeOwned(owned), true), 1);

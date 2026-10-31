@@ -1,10 +1,10 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class LightbearerLadderTest {
 	private static LoadoutData data;
-	private static MonsterStats cerberus;
+	private static Monster cerberus;
 
 	@BeforeAll
 	static void load() {
@@ -46,7 +46,7 @@ class LightbearerLadderTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			service.bestPerStyle(cerberus, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 7, p, Collections.emptyMap(),
 				Collections.emptySet(), Collections.emptyMap(), null, 0, Collections.<Integer>emptySet(), r -> {
@@ -54,7 +54,7 @@ class LightbearerLadderTest {
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
-			return out.get().get(CombatStyle.MELEE);
+			return out.get().get(Style.MELEE);
 		} finally {
 			service.shutdown();
 		}
@@ -82,7 +82,7 @@ class LightbearerLadderTest {
 		OptimizerService.Ladder ring = melee.ladder.get(GearSlot.RING);
 		assertNotNull(ring, "a ring ladder");
 		assertTrue(ring.spec, "priced with the spec");
-		GearItem worn = melee.owned.get(0).loadout.get(GearSlot.RING);
+		Gear worn = melee.owned.get(0).loadout.get(GearSlot.RING);
 		List<String> names = new ArrayList<>();
 		for (OptimizerService.Rung r : steps(ring)) names.add(r.item.getNameLower());
 		String other = worn.getNameLower().equals("lightbearer") ? "ultor ring" : "lightbearer";

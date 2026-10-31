@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.HashMap;
 import java.util.List;
@@ -36,15 +36,15 @@ public class PinnedSpellLegalityTest {
 	}
 
 	private static void own(Map<Integer, Integer> owned, String nameLower) {
-		GearItem item = data().getGearItems().stream()
+		Gear item = data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 		owned.put(item.getId(), 1);
 	}
 
-	private static OptimizationRequest ownedMagicRequest(MonsterStats mob, Map<Integer, Integer> owned) {
+	private static OptimizationRequest ownedMagicRequest(Monster mob, Map<Integer, Integer> owned) {
 		return new OptimizationRequest(
-			mob, CombatStyle.MAGIC, PlayerLevels.MAXED,
+			mob, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1);
@@ -52,7 +52,7 @@ public class PinnedSpellLegalityTest {
 
 	@Test
 	public void aPinnedBarrageNeverRidesAPoweredStaff() {
-		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
+		Monster thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		own(owned, "trident of the seas");
 		own(owned, "ancient staff");
@@ -69,7 +69,7 @@ public class PinnedSpellLegalityTest {
 
 	@Test
 	public void noAutocastCapableWeaponMeansNoResultNotAnIllegalPair() {
-		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
+		Monster thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		own(owned, "trident of the seas");
 		// Harmonised autocasts the standard book only - it must not
@@ -84,7 +84,7 @@ public class PinnedSpellLegalityTest {
 
 	@Test
 	public void aStandardPinStillPricesNormally() {
-		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
+		Monster thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		own(owned, "kodai wand");
 

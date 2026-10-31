@@ -2,7 +2,7 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.*;
 import java.util.Collections;
 import java.util.Map;
@@ -25,11 +25,11 @@ class ThrowingComputeTest {
 	@DisplayName("a compute whose request the engine rejects still calls back, empty")
 	void throwingComputeStillAnswers() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			// A null requirement profile blows up inside the candidate pool,
 			// on the worker thread - the shape of any unexpected engine throw.
 			ServiceCalls.bestPerStyle(service, graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,

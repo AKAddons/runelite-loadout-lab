@@ -1,7 +1,7 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.model.RenderModel;
@@ -30,10 +30,10 @@ class GroupLadderNodeTest {
 	@SuppressWarnings("unchecked")
 	void ownNumbersGroupRanking() {
 		LoadoutData data = new DataService().load();
-		List<GearItem> weapons = data.getGearItems(GearSlot.WEAPON);
-		GearItem worn = weapons.get(0);
-		GearItem step = weapons.get(1);
-		GearItem far = weapons.get(2);
+		List<Gear> weapons = data.getGearItems(GearSlot.WEAPON);
+		Gear worn = weapons.get(0);
+		Gear step = weapons.get(1);
+		Gear far = weapons.get(2);
 		OptimizerService.Rung up = new OptimizerService.Rung(step, 5.5, 0, true, null);
 		up.perMob = new double[]{7.0, 5.0};
 		OptimizerService.Rung farRung = new OptimizerService.Rung(far, 3.0, 0, false, null);
@@ -69,7 +69,7 @@ class GroupLadderNodeTest {
 	@SuppressWarnings("unchecked")
 	void furtherStepsRideSeparately() {
 		LoadoutData data = new DataService().load();
-		List<GearItem> weapons = data.getGearItems(GearSlot.WEAPON);
+		List<Gear> weapons = data.getGearItems(GearSlot.WEAPON);
 		OptimizerService.Rung near = new OptimizerService.Rung(weapons.get(1), 5.2, 0, false, null);
 		OptimizerService.Rung far = new OptimizerService.Rung(weapons.get(2), 6.0, 0, false, null);
 		OptimizerService.Rung farther = new OptimizerService.Rung(weapons.get(3), 7.5, 0, true, null);
@@ -95,7 +95,7 @@ class GroupLadderNodeTest {
 	@SuppressWarnings("unchecked")
 	void magicWeaponLadderHasTwoKinds() {
 		LoadoutData data = new DataService().load();
-		List<GearItem> weapons = data.getGearItems(GearSlot.WEAPON);
+		List<Gear> weapons = data.getGearItems(GearSlot.WEAPON);
 		OptimizerService.Rung staff = new OptimizerService.Rung(weapons.get(1), 5.5, 0, true, null);
 		OptimizerService.Rung trident = new OptimizerService.Rung(weapons.get(2), 4.8, 0, true, null);
 		OptimizerService.Ladder ladder = new OptimizerService.Ladder(OptimizerService.OptimizeMode.MAX_DPS, 5.0, 0,

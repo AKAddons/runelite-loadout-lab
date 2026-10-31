@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -18,7 +18,7 @@ public class DragonfireRulesTest {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats monster(String name) {
+	private static Monster monster(String name) {
 		return data.searchMonsters(name, 1).get(0);
 	}
 
@@ -34,12 +34,12 @@ public class DragonfireRulesTest {
 
 	@Test
 	public void gearModeForcesAProtectiveShieldAndBansTwoHanders() {
-		OptimizationRequest req = TestRequests.of(monster("vorkath"), CombatStyle.RANGED,
+		OptimizationRequest req = TestRequests.of(monster("vorkath"), Style.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
 		Assert.assertFalse(out.isEmpty());
-		GearItem shield = out.get(0).getLoadout().get(GearSlot.SHIELD);
+		Gear shield = out.get(0).getLoadout().get(GearSlot.SHIELD);
 		Assert.assertNotNull("gear mode must fill the shield slot", shield);
 		Assert.assertTrue(shield.label() + " is not dragonfire-protective",
 			DragonfireRules.isProtectiveShield(shield));
@@ -48,7 +48,7 @@ public class DragonfireRulesTest {
 
 	@Test
 	public void thePotionToggleLiftsTheConstraintAndNeverCostsDps() {
-		OptimizationRequest gear = TestRequests.of(monster("green dragon"), CombatStyle.MELEE,
+		OptimizationRequest gear = TestRequests.of(monster("green dragon"), Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		double shielded = new LoadoutOptimizer().optimize(data, gear).get(0).getDps();
@@ -58,11 +58,11 @@ public class DragonfireRulesTest {
 
 	@Test
 	public void nonDragonsAreUnaffectedByTheShieldRule() {
-		OptimizationRequest req = TestRequests.of(monster("general graardor"), CombatStyle.MELEE,
+		OptimizationRequest req = TestRequests.of(monster("general graardor"), Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
-		GearItem shield = out.get(0).getLoadout().get(GearSlot.SHIELD);
+		Gear shield = out.get(0).getLoadout().get(GearSlot.SHIELD);
 		Assert.assertTrue(shield == null || !DragonfireRules.isProtectiveShield(shield)
 			|| out.get(0).getLoadout().getWeapon().isTwoHanded() == false);
 	}

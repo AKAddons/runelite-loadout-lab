@@ -3,7 +3,7 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,7 +17,7 @@ import org.junit.Test;
  */
 public class DreamAndBudgetTest {
 	private static LoadoutData data;
-	private static MonsterStats zulrah;
+	private static Monster zulrah;
 
 	@BeforeClass
 	public static void load() {
@@ -28,7 +28,7 @@ public class DreamAndBudgetTest {
 	}
 
 	private static OptimizationRequest owned(Map<Integer, Integer> owned, int budgetGp) {
-		return TestRequests.of(zulrah, CombatStyle.RANGED, PlayerLevels.MAXED,
+		return TestRequests.of(zulrah, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, budgetGp,
 			budgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,

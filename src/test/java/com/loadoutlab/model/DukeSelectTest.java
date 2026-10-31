@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,7 +22,7 @@ class DukeSelectTest {
 		data = new DataService().load();
 	}
 
-	private static CommandEngine engine(AtomicReference<MonsterStats> computed) {
+	private static CommandEngine engine(AtomicReference<Monster> computed) {
 		PageState state = new PageState();
 		return new CommandEngine(data, state,
 			(mob, p, onDone) -> computed.set(mob),
@@ -32,7 +32,7 @@ class DukeSelectTest {
 	@Test
 	@DisplayName("a versioned dropdown pick selects exactly its row")
 	void versionedPickSelectsItsRow() {
-		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		AtomicReference<Monster> computed = new AtomicReference<>();
 		CommandEngine engine = engine(computed);
 		assertTrue(engine.execute("select",
 			Map.of("id", 12191, "version", "Awakened")));
@@ -44,7 +44,7 @@ class DukeSelectTest {
 	@Test
 	@DisplayName("a bare shared id selects the search-ranked everyday row")
 	void bareIdPrefersTheEverydayRow() {
-		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		AtomicReference<Monster> computed = new AtomicReference<>();
 		CommandEngine engine = engine(computed);
 		assertTrue(engine.execute("select", Map.of("id", 12191)));
 		assertEquals("", computed.get().getVersion(),

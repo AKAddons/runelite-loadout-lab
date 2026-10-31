@@ -1,12 +1,12 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the element amulets, which tie a crowd of glories at +10. */
 class BoltGearPoolTest {
 	private static LoadoutData data;
-	private static MonsterStats goblin;
+	private static Monster goblin;
 
 	@BeforeAll
 	static void load() {
@@ -65,8 +65,8 @@ class BoltGearPoolTest {
 		return owned;
 	}
 
-	private static GearItem byName(String nameLower) {
-		for (GearItem g : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		for (Gear g : data.getGearItems()) {
 			if (g.getNameLower().equals(nameLower)) {
 				return g;
 			}
@@ -74,12 +74,12 @@ class BoltGearPoolTest {
 		throw new AssertionError("missing from the gear data: " + nameLower);
 	}
 
-	private static GearItem slot(Map<Integer, Integer> owned, String spellName, GearSlot slot) throws Exception {
+	private static Gear slot(Map<Integer, Integer> owned, String spellName, GearSlot slot) throws Exception {
 		SpellStats spell = data.getSpells().stream().filter(s -> s.getName().equals(spellName)).findFirst().orElseThrow();
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, goblin, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
 				Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Collections.emptySet(), 0,
@@ -88,7 +88,7 @@ class BoltGearPoolTest {
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS));
-			return out.get().get(CombatStyle.MAGIC).owned.get(0).getLoadout().get(slot);
+			return out.get().get(Style.MAGIC).owned.get(0).getLoadout().get(slot);
 		} finally {
 			service.shutdown();
 		}

@@ -1,7 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import java.util.List;
@@ -29,7 +29,7 @@ class PoisonTierTest {
 	@DisplayName("poison tiers parse from corpus versions, unpoisoned included")
 	void tiersParse() {
 		int[] tiers = new int[4];
-		for (GearItem item : data.getGearItems()) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals("dragon dagger")) {
 				tiers[item.poisonTier()]++;
 			}
@@ -45,13 +45,13 @@ class PoisonTierTest {
 		OwnedItems owned = new OwnedItems(
 			Map.of(1215, 1, 1231, 1, 5680, 1, 5698, 1), true);
 		OptimizationRequest request = new OptimizationRequest(
-			data.searchMonsters("goblin", 1).get(0), CombatStyle.MELEE,
+			data.searchMonsters("goblin", 1).get(0), Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false, owned, RequirementProfile.MAXED, 1);
 
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
 		assertFalse(results.isEmpty());
-		GearItem weapon = results.get(0).getLoadout().get(GearSlot.WEAPON);
+		Gear weapon = results.get(0).getLoadout().get(GearSlot.WEAPON);
 		assertEquals("dragon dagger", weapon.getNameLower());
 		assertEquals(3, weapon.poisonTier(),
 			"expected the p++ tier, got version: " + weapon.getVersionLower());

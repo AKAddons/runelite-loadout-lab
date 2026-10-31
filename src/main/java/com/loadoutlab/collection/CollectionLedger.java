@@ -22,122 +22,122 @@ import net.runelite.client.config.ConfigManager;
 // forms mapping to the engine's canonical gear ids via equipment aliases)
 // happens at query time once the data pipeline vendors the alias table.
 public class CollectionLedger implements ScopedStore {
-    static final String CONFIG_GROUP = "loadoutlab";
-    static final TypeToken<Map<Integer, Integer>> MAP_TYPE = new TypeToken<Map<Integer, Integer>>() {};
+static final String CONFIG_GROUP = "loadoutlab";
+static final TypeToken<Map<Integer, Integer>> MAP_TYPE = new TypeToken<Map<Integer, Integer>>() {};
 
-    // Ledger sources, each persisted under its own key.
-    @lombok.RequiredArgsConstructor
-    public enum Source {
-        EQUIPMENT("equipment", net.runelite.api.InventoryID.EQUIPMENT.getId()),
-        INVENTORY("inventory", net.runelite.api.InventoryID.INVENTORY.getId()), BANK("bank", net.runelite.api.InventoryID.BANK.getId()),
-        // Seen when the bag is opened or checked; vital for UIM accounts.
-        // The classic InventoryID enum lacks the newer containers; the
-        // gameval ids are the authoritative modern constants.
-        LOOTING_BAG("lootingBag", InventoryID.LOOTING_BAG),
-        // POH costume storage: one shared container covering the armour
-        // case, wardrobes, treasure chest, and cape rack, seen when a
-        // costume storage interface is opened.
-        POH_COSTUMES("pohCostumes", InventoryID.POH_COSTUMES),
-        // Not container-backed: filled units' default items, read from
-        // the STASH chart (see LoadoutLabPlugin.scanStashChart). The -1
-        // container sentinel makes the per-tick drain's null-container
-        // check clear a stray dirty flag, and keeps STASH out of the
-        // {@link #forContainer} reverse lookup.
-        STASH("stash", -1),
-        // The rune pouch: varbit-backed (RunePouchScan), never a container.
-        RUNE_POUCH("runePouch", -1),
-        // Sailing boat cargo holds, one container per boat slot.
-        CARGO_HOLD_1("cargoHold1", InventoryID.SAILING_BOAT_1_CARGOHOLD), CARGO_HOLD_2("cargoHold2", InventoryID.SAILING_BOAT_2_CARGOHOLD),
-        CARGO_HOLD_3("cargoHold3", InventoryID.SAILING_BOAT_3_CARGOHOLD), CARGO_HOLD_4("cargoHold4", InventoryID.SAILING_BOAT_4_CARGOHOLD),
-        CARGO_HOLD_5("cargoHold5", InventoryID.SAILING_BOAT_5_CARGOHOLD);
+// Ledger sources, each persisted under its own key.
+@lombok.RequiredArgsConstructor
+public enum Source {
+    EQUIPMENT("equipment", net.runelite.api.InventoryID.EQUIPMENT.getId()),
+    INVENTORY("inventory", net.runelite.api.InventoryID.INVENTORY.getId()), BANK("bank", net.runelite.api.InventoryID.BANK.getId()),
+    // Seen when the bag is opened or checked; vital for UIM accounts.
+    // The classic InventoryID enum lacks the newer containers; the
+    // gameval ids are the authoritative modern constants.
+    LOOTING_BAG("lootingBag", InventoryID.LOOTING_BAG),
+    // POH costume storage: one shared container covering the armour
+    // case, wardrobes, treasure chest, and cape rack, seen when a
+    // costume storage interface is opened.
+    POH_COSTUMES("pohCostumes", InventoryID.POH_COSTUMES),
+    // Not container-backed: filled units' default items, read from
+    // the STASH chart (see LoadoutLabPlugin.scanStashChart). The -1
+    // container sentinel makes the per-tick drain's null-container
+    // check clear a stray dirty flag, and keeps STASH out of the
+    // {@link #forContainer} reverse lookup.
+    STASH("stash", -1),
+    // The rune pouch: varbit-backed (RunePouchScan), never a container.
+    RUNE_POUCH("runePouch", -1),
+    // Sailing boat cargo holds, one container per boat slot.
+    CARGO_HOLD_1("cargoHold1", InventoryID.SAILING_BOAT_1_CARGOHOLD), CARGO_HOLD_2("cargoHold2", InventoryID.SAILING_BOAT_2_CARGOHOLD),
+    CARGO_HOLD_3("cargoHold3", InventoryID.SAILING_BOAT_3_CARGOHOLD), CARGO_HOLD_4("cargoHold4", InventoryID.SAILING_BOAT_4_CARGOHOLD),
+    CARGO_HOLD_5("cargoHold5", InventoryID.SAILING_BOAT_5_CARGOHOLD);
 
-        final String key;
-        final int containerId;
+    final String key;
+    final int containerId;
 
-        // The item-container id this source is scanned from, or -1 when
-        // the source is not container-backed (STASH).
-        public int containerId() { return containerId; }
+    // The item-container id this source is scanned from, or -1 when
+    // the source is not container-backed (STASH).
+    public int containerId() { return containerId; }
 
-        // Reverse lookup: the source scanned from {@code containerId}, or
-        // null when no source uses it. Callers pass an UNMASKED container
-        // id (the 0x8000 modified-container bit already stripped).
-        public static Source forContainer(int containerId) {
-            // Guard the STASH sentinel: without it, -1 would resolve to
-            // STASH instead of "no such container".
-            return containerId < 0 ? null : Arrays.stream(values()).filter(s -> s.containerId == containerId).findFirst().orElse(null);
-        }
-
-        // The persisted config-key segment; also the storage name in the
-        // storages-response PluginMessage (see StoragesApi).
-        public String key() { return key; }
+    // Reverse lookup: the source scanned from {@code containerId}, or
+    // null when no source uses it. Callers pass an UNMASKED container
+    // id (the 0x8000 modified-container bit already stripped).
+    public static Source forContainer(int containerId) {
+        // Guard the STASH sentinel: without it, -1 would resolve to
+        // STASH instead of "no such container".
+        return containerId < 0 ? null : Arrays.stream(values()).filter(s -> s.containerId == containerId).findFirst().orElse(null);
     }
 
-    final ConfigManager configManager;
-    final Gson gson;
+    // The persisted config-key segment; also the storage name in the
+    // storages-response PluginMessage (see StoragesApi).
+    public String key() { return key; }
+}
 
-    // "std" or "seasonal" - set on login before any update/load.
-    String worldScope = "std";
+final ConfigManager configManager;
+final Gson gson;
 
-    final Map<Source, Map<Integer, Integer>> snapshots = new HashMap<>();
+// "std" or "seasonal" - set on login before any update/load.
+String worldScope = "std";
 
-    // Cached fingerprint of the merged view; recomputed lazily.
-    transient Integer fingerprint;
+final Map<Source, Map<Integer, Integer>> snapshots = new HashMap<>();
 
-    public CollectionLedger(ConfigManager configManager, Gson gson) {
-        this.configManager = configManager;
-        this.gson = gson;
-        for (Source s : Source.values()) snapshots.put(s, new HashMap<>());
+// Cached fingerprint of the merged view; recomputed lazily.
+transient Integer fingerprint;
+
+public CollectionLedger(ConfigManager configManager, Gson gson) {
+    this.configManager = configManager;
+    this.gson = gson;
+    for (Source s : Source.values()) snapshots.put(s, new HashMap<>());
+}
+
+// Point the ledger at a world scope ("std" or "seasonal") and load that
+// scope's persisted snapshots, replacing in-memory state.
+public void loadScope(String scope) {
+    worldScope = scope;
+    for (Source s : Source.values()) {
+        // One-time adoption of pre-account-scoping data ("std.*"): the
+        // FIRST character to load it takes it and the legacy entry is
+        // removed. Copying instead of moving is what let a second account
+        // open on the main's scanned bank (field report 2026-08-26).
+        // A corrupt entry starts that snapshot fresh rather than failing.
+        int dot = scope.indexOf('.');
+        String legacy = (dot > 0 ? scope.substring(0, dot) : scope) + ".collection." + s.key;
+        Map<Integer, Integer> loaded = ScopedKeys.parse(gson,
+            ScopedKeys.adopt(configManager, CONFIG_GROUP, key(s), legacy), MAP_TYPE.getType());
+        snapshots.put(s, loaded != null ? loaded : new HashMap<>());
     }
+    fingerprint = null;
+}
 
-    // Point the ledger at a world scope ("std" or "seasonal") and load that
-    // scope's persisted snapshots, replacing in-memory state.
-    public void loadScope(String scope) {
-        worldScope = scope;
-        for (Source s : Source.values()) {
-            // One-time adoption of pre-account-scoping data ("std.*"): the
-            // FIRST character to load it takes it and the legacy entry is
-            // removed. Copying instead of moving is what let a second account
-            // open on the main's scanned bank (field report 2026-08-26).
-            // A corrupt entry starts that snapshot fresh rather than failing.
-            int dot = scope.indexOf('.');
-            String legacy = (dot > 0 ? scope.substring(0, dot) : scope) + ".collection." + s.key;
-            Map<Integer, Integer> loaded = ScopedKeys.parse(gson,
-                ScopedKeys.adopt(configManager, CONFIG_GROUP, key(s), legacy), MAP_TYPE.getType());
-            snapshots.put(s, loaded != null ? loaded : new HashMap<>());
-        }
-        fingerprint = null;
-    }
+// Replace one source's snapshot. Persists only when the content actually
+// changed; returns true in that case (callers use it to invalidate caches).
+public boolean update(Source source, Map<Integer, Integer> items) {
+    Map<Integer, Integer> next = new HashMap<>(items);
+    if (next.equals(snapshots.get(source))) return false;
+    snapshots.put(source, next);
+    configManager.setConfiguration(CONFIG_GROUP, key(source), gson.toJson(next, MAP_TYPE.getType()));
+    fingerprint = null;
+    return true;
+}
 
-    // Replace one source's snapshot. Persists only when the content actually
-    // changed; returns true in that case (callers use it to invalidate caches).
-    public boolean update(Source source, Map<Integer, Integer> items) {
-        Map<Integer, Integer> next = new HashMap<>(items);
-        if (next.equals(snapshots.get(source))) return false;
-        snapshots.put(source, next);
-        configManager.setConfiguration(CONFIG_GROUP, key(source), gson.toJson(next, MAP_TYPE.getType()));
-        fingerprint = null;
-        return true;
-    }
+// One source's current snapshot, read-only (itemId → quantity).
+public Map<Integer, Integer> snapshot(Source source) { return Collections.unmodifiableMap(snapshots.get(source)); }
 
-    // One source's current snapshot, read-only (itemId → quantity).
-    public Map<Integer, Integer> snapshot(Source source) { return Collections.unmodifiableMap(snapshots.get(source)); }
+// Merged itemId → total quantity across all sources.
+public Map<Integer, Integer> owned() {
+    Map<Integer, Integer> merged = new HashMap<>();
+    snapshots.values().forEach(snap -> snap.forEach((id, n) -> merged.merge(id, n, Integer::sum)));
+    return merged;
+}
 
-    // Merged itemId → total quantity across all sources.
-    public Map<Integer, Integer> owned() {
-        Map<Integer, Integer> merged = new HashMap<>();
-        snapshots.values().forEach(snap -> snap.forEach((id, n) -> merged.merge(id, n, Integer::sum)));
-        return merged;
-    }
+// True once a bank snapshot exists (this session or any previous one).
+public boolean bankKnown() { return !snapshots.get(Source.BANK).isEmpty(); }
 
-    // True once a bank snapshot exists (this session or any previous one).
-    public boolean bankKnown() { return !snapshots.get(Source.BANK).isEmpty(); }
+// Stable fingerprint of the merged view - the optimizer cache key
+// component. Changes iff ownership actually changed.
+public int fingerprint() {
+    if (fingerprint == null) fingerprint = owned().hashCode();
+    return fingerprint;
+}
 
-    // Stable fingerprint of the merged view - the optimizer cache key
-    // component. Changes iff ownership actually changed.
-    public int fingerprint() {
-        if (fingerprint == null) fingerprint = owned().hashCode();
-        return fingerprint;
-    }
-
-    String key(Source s) { return worldScope + ".collection." + s.key; }
+public String key(Source s) { return worldScope + ".collection." + s.key; }
 }

@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TwinflameStaffTest {
 	private static LoadoutData data;
-	private static MonsterStats dharok;
+	private static Monster dharok;
 	private static final DpsCalculator calc = new DpsCalculator();
 
 	@BeforeAll
@@ -33,9 +33,9 @@ class TwinflameStaffTest {
 	}
 
 	private static Loadout wielding(int weaponId) {
-		GearItem weapon = data.getGear(weaponId);
+		Gear weapon = data.getGear(weaponId);
 		assertNotNull(weapon, "corpus is missing item " + weaponId);
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, weapon);
 		return new Loadout(gear);
 	}
@@ -46,7 +46,7 @@ class TwinflameStaffTest {
 	}
 
 	private static OptimizationRequest request() {
-		return new OptimizationRequest(dharok, CombatStyle.MAGIC, PlayerLevels.MAXED,
+		return new OptimizationRequest(dharok, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);

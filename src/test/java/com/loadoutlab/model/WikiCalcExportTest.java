@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,7 +32,7 @@ class WikiCalcExportTest {
 		}
 	}
 
-	private static MonsterStats exported(String query, int invocation) throws Exception {
+	private static Monster exported(String query, int invocation) throws Exception {
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, p, onDone) -> {
@@ -40,13 +40,13 @@ class WikiCalcExportTest {
 			new CaptureLink());
 		engine.setStoreOps(new TestStoreOps());
 		assertTrue(engine.execute("select", Map.of("query", query)));
-		MonsterStats mob = state.mob();
+		Monster mob = state.mob();
 		assertNotNull(mob, query + " selected");
 		state.setParam("toaInvocation", invocation);
 		engine.onResults(mob, WildernessReportTest.styles(data, mob));
 		javax.swing.SwingUtilities.invokeAndWait(() -> {
 		});
-		AtomicReference<MonsterStats> got = new AtomicReference<>();
+		AtomicReference<Monster> got = new AtomicReference<>();
 		engine.setWikiCalcOpener((m, shown, dartId, assumes, onTask, inWilderness) -> got.set(m));
 		// The helper computes with an empty bank: the game-best side is the one with a set.
 		assertTrue(engine.execute("wiki-calc", Map.of("bis", true)), "the link fires");

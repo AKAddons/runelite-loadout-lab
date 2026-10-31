@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +36,7 @@ class DetectAntifireTest {
 		engine.setAntifireResolver(mobs -> 2);
 		engine.setStoreOps(new TestStoreOps());
 		engine.setOwnedCheck(id -> true);
-		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
+		Monster vorkath = data.searchMonsters("vorkath", 1).get(0);
 		engine.execute("select", Map.of("id", vorkath.getId()));
 		assertEquals(2, state.paramsNode().get("antifireMode"), "selection seeds the detected tier");
 		engine.execute("set-param", Map.of("param", "antifireMode", "value", 0));
@@ -57,7 +57,7 @@ class DetectAntifireTest {
 		engine.setAntifireResolver(mobs -> 2);
 		engine.setStoreOps(new TestStoreOps());
 		engine.setOwnedCheck(id -> true);
-		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
+		Monster vorkath = data.searchMonsters("vorkath", 1).get(0);
 		engine.execute("select", Map.of("id", vorkath.getId()));
 		Map<?, ?> potion = antifireSupply(engine, link, vorkath);
 		assertNotNull(potion, "the super antifire must ride the supplies");
@@ -67,7 +67,7 @@ class DetectAntifireTest {
 		assertNull(antifireSupply(engine, link, vorkath), "shield mode brings no potion");
 	}
 
-	private static Map<?, ?> antifireSupply(CommandEngine engine, CaptureLink link, MonsterStats mob) {
+	private static Map<?, ?> antifireSupply(CommandEngine engine, CaptureLink link, Monster mob) {
 		engine.onResults(mob, Map.of());
 		try {
 			javax.swing.SwingUtilities.invokeAndWait(() -> {

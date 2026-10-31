@@ -83,9 +83,9 @@ class RaidSelectionTest {
 			},
 			link);
 		engine.execute("select", Map.of("query", "Chambers of Xeric"));
-		List<com.loadoutlab.data.MonsterStats> mobs = state.rosterMobs();
+		List<com.loadoutlab.data.Monster> mobs = state.rosterMobs();
 		assertNotNull(mobs, "the group select must set a roster");
-		List<Map<com.loadoutlab.engine.CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> empty =
+		List<Map<com.loadoutlab.engine.Style, com.loadoutlab.optimizer.OptimizerService.StyleResult>> empty =
 			new java.util.ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++) {
 			empty.add(Map.of());

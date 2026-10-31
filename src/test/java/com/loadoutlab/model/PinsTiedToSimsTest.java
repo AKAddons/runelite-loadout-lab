@@ -5,7 +5,7 @@ import com.loadoutlab.collection.MonsterProfileStore;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.testsupport.InMemoryConfigManager;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -99,7 +99,7 @@ class PinsTiedToSimsTest {
 			}
 		});
 		engine.setOwnedCheck(item -> owned.contains(item) || globalSims.contains(item));
-		MonsterStats baba = data.searchMonsters("ba-ba", 1).get(0);
+		Monster baba = data.searchMonsters("ba-ba", 1).get(0);
 		babaId = baba.getId();
 		assertTrue(engine.execute("select", Map.of("id", babaId)));
 	}

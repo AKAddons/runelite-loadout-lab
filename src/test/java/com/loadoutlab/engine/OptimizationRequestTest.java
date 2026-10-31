@@ -12,7 +12,7 @@ import org.junit.Test;
 public class OptimizationRequestTest {
 	private static OptimizationRequest base() {
 		return TestRequests.of(
-			null, CombatStyle.MELEE, PlayerLevels.MAXED,
+			null, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, 1);

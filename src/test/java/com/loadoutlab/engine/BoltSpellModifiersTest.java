@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class BoltSpellModifiersTest {
 	private static LoadoutData data;
-	private static MonsterStats goblin;
+	private static Monster goblin;
 
 	@BeforeAll
 	static void load() {
@@ -29,8 +29,8 @@ class BoltSpellModifiersTest {
 		goblin = data.searchMonsters("Goblin", 1).iterator().next();
 	}
 
-	private static GearItem byName(String nameLower) {
-		for (GearItem g : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		for (Gear g : data.getGearItems()) {
 			if (g.getNameLower().equals(nameLower)) {
 				return g;
 			}
@@ -47,7 +47,7 @@ class BoltSpellModifiersTest {
 	@Test
 	@DisplayName("Salarin honours the elemental amulet alone: strikes stay a flat 12 for every other item, 14 with it")
 	void salarin() {
-		MonsterStats salarin = data.searchMonsters("Salarin", 1).iterator().next();
+		Monster salarin = data.searchMonsters("Salarin", 1).iterator().next();
 		assertEquals(12, maxHitVs(salarin, "Fire Strike"));
 		assertEquals(12, maxHitVs(salarin, "Fire Strike", "occult necklace"), "spell damage items do nothing");
 		assertEquals(14, maxHitVs(salarin, "Fire Strike", "elemental amulet"), "the sole exception (wiki)");
@@ -59,14 +59,14 @@ class BoltSpellModifiersTest {
 		return maxHitVs(goblin, spellName, extras);
 	}
 
-	private static int maxHitVs(MonsterStats monster, String spellName, String... extras) {
-		OptimizationRequest request = TestRequests.of(monster, CombatStyle.MAGIC, PlayerLevels.MAXED,
+	private static int maxHitVs(Monster monster, String spellName, String... extras) {
+		OptimizationRequest request = TestRequests.of(monster, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, spell(spellName), 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
-		EnumMap<GearSlot, GearItem> worn = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> worn = new EnumMap<>(GearSlot.class);
 		worn.put(GearSlot.WEAPON, byName("staff of fire"));
 		for (String extra : extras) {
-			GearItem item = byName(extra);
+			Gear item = byName(extra);
 			worn.put(item.getSlot(), item);
 		}
 		return new DpsCalculator().calculate(request, new Loadout(worn)).getMaxHit();

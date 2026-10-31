@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -25,12 +25,12 @@ class SeekingArrowsTest {
 	}
 
 	private static DpsResult shoot(String bow, String ammo) {
-		MonsterStats mob = data.searchMonsters("goblin", 1).get(0);
-		OptimizationRequest request = TestRequests.of(mob, CombatStyle.RANGED, PlayerLevels.MAXED,
+		Monster mob = data.searchMonsters("goblin", 1).get(0);
+		OptimizationRequest request = TestRequests.of(mob, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		for (String name : new String[]{bow, ammo}) {
-			GearItem item = data.getGearItems().stream()
+			Gear item = data.getGearItems().stream()
 				.filter(g -> g.getNameLower().equals(name) && g.isStandardGear())
 				.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + name));
 			gear.put(item.getSlot(), item);

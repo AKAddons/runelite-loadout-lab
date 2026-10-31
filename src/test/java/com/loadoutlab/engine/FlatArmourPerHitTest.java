@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,18 +28,18 @@ public class FlatArmourPerHitTest {
 		return data;
 	}
 
-	private static GearItem byName(String nameLower) {
+	private static Gear byName(String nameLower) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 	}
 
 	private static DpsResult macuahuitlVs(String monster) {
-		MonsterStats mob = data().searchMonsters(monster, 1).get(0);
-		OptimizationRequest request = TestRequests.of(mob, CombatStyle.MELEE,
+		Monster mob = data().searchMonsters(monster, 1).get(0);
+		OptimizationRequest request = TestRequests.of(mob, Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName("dual macuahuitl"));
 		DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));
 		Assert.assertNotNull(result);
@@ -65,7 +65,7 @@ public class FlatArmourPerHitTest {
 
 	@Test
 	public void eclipseMoonChargesTheArmourOnBothHitsplats() {
-		MonsterStats mob = data().searchMonsters("eclipse moon", 1).get(0);
+		Monster mob = data().searchMonsters("eclipse moon", 1).get(0);
 		int armour = mob.getDefensive().getFlatArmour();
 		Assert.assertTrue("eclipse forms carry positive flat armour", armour > 0);
 		DpsResult result = macuahuitlVs("eclipse moon");

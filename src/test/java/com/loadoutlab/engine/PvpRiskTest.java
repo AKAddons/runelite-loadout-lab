@@ -1,6 +1,6 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.StatBlock;
 import java.util.HashMap;
@@ -12,32 +12,32 @@ public class PvpRiskTest {
 	/** The retired risksRebuild() overloads: the friction-only case
 	 * of risksUnprotected(), i.e. no protect-only flags. They had no
 	 * production callers, so they live here as delegates instead. */
-	private static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots) {
+	private static boolean risksRebuild(Loadout loadout, Gear carriedSpecWeapon, int keptSlots) {
 		return risksRebuild(loadout, carriedSpecWeapon, keptSlots, java.util.Collections.emptySet());
 	}
 
-	private static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots,
+	private static boolean risksRebuild(Loadout loadout, Gear carriedSpecWeapon, int keptSlots,
 		java.util.Set<Integer> pinnedIds) {
 		return PvpRisk.risksUnprotected(loadout, carriedSpecWeapon, keptSlots, pinnedIds,
 			java.util.Collections.emptySet());
 	}
 
-	private static GearItem item(int id, GearSlot slot, boolean tradeable, int price) {
-		return new GearItem(id, "Item" + id, "", slot, "", 0, false, true,
+	private static Gear item(int id, GearSlot slot, boolean tradeable, int price) {
+		return new Gear(id, "Item" + id, "", slot, "", 0, false, true,
 			tradeable, true, price, StatBlock.ZERO, StatBlock.ZERO, StatBlock.ZERO, null);
 	}
 
 	private static final StatBlock SOME_DEFENCE =
 		new StatBlock(0, 0, 0, 0, 0, 0, 0, 0, 2);
 
-	private static GearItem untradeable(int id, String name, GearSlot slot, StatBlock bonuses) {
-		return new GearItem(id, name, "", slot, "", 0, false, true,
+	private static Gear untradeable(int id, String name, GearSlot slot, StatBlock bonuses) {
+		return new Gear(id, name, "", slot, "", 0, false, true,
 			false, true, null, StatBlock.ZERO, StatBlock.ZERO, bonuses, null);
 	}
 
-	private static Loadout worn(GearItem... items) {
-		Map<GearSlot, GearItem> gear = new HashMap<>();
-		for (GearItem g : items) {
+	private static Loadout worn(Gear... items) {
+		Map<GearSlot, Gear> gear = new HashMap<>();
+		for (Gear g : items) {
 			gear.put(g.getSlot(), g);
 		}
 		return new Loadout(gear);
@@ -62,7 +62,7 @@ public class PvpRiskTest {
 	public void avariceSkullsTheWearerSoDefaultProtectionVanishes() {
 		// The amulet of avarice keeps the wearer permanently skulled:
 		// keep-3 becomes keep-0, keep-4 (Protect Item) becomes keep-1.
-		GearItem avarice = new GearItem(9, "Amulet of avarice", "", GearSlot.NECK, "", 0,
+		Gear avarice = new Gear(9, "Amulet of avarice", "", GearSlot.NECK, "", 0,
 			false, true, true, true, 500_000, StatBlock.ZERO, StatBlock.ZERO, StatBlock.ZERO, null);
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100),
@@ -156,7 +156,7 @@ public class PvpRiskTest {
 		// Without the spec weapon: everything kept.
 		Assert.assertEquals(0, PvpRisk.assess(loadout, null, 3).riskGp);
 		// A pricey carried spec weapon takes a kept slot; the 60 is lost.
-		GearItem spec = item(9, GearSlot.WEAPON, true, 500);
+		Gear spec = item(9, GearSlot.WEAPON, true, 500);
 		PvpRisk.Assessment risk = PvpRisk.assess(loadout, spec, 3);
 		Assert.assertEquals(60, risk.riskGp);
 		Assert.assertEquals("Item9", risk.kept.get(0).getName());
@@ -210,7 +210,7 @@ public class PvpRiskTest {
 	@Test
 	public void anUntradeableCarriedSpecWeaponAddsItsFeeToo() {
 		Loadout loadout = worn(item(1, GearSlot.WEAPON, true, 100));
-		GearItem spec = untradeable(9, "Void knight mace", GearSlot.WEAPON, SOME_DEFENCE);
+		Gear spec = untradeable(9, "Void knight mace", GearSlot.WEAPON, SOME_DEFENCE);
 		PvpRisk.Assessment risk = PvpRisk.assess(loadout, spec, 3);
 		Assert.assertEquals(20_000L, risk.riskGp);
 		Assert.assertEquals("Void knight mace", risk.untradeableCharges.get(0).item.getName());
@@ -275,8 +275,8 @@ public class PvpRiskTest {
 			untradeable(6, "Slayer helmet (i)", GearSlot.HEAD, SOME_DEFENCE),
 			untradeable(7, "Rune defender", GearSlot.SHIELD, SOME_DEFENCE),
 			untradeable(8, "Amulet of the damned", GearSlot.NECK, SOME_DEFENCE));
-		GearItem spec = item(9, GearSlot.WEAPON, true, 500_000);
-		for (GearItem carried : new GearItem[]{null, spec}) {
+		Gear spec = item(9, GearSlot.WEAPON, true, 500_000);
+		for (Gear carried : new Gear[]{null, spec}) {
 			for (int kept : new int[]{0, 1, 3, 4, 10}) {
 				Assert.assertEquals(
 					PvpRisk.assess(loadout, carried, kept).riskGp,
@@ -291,7 +291,7 @@ public class PvpRiskTest {
 
 	/** The assess()-derived meaning of risksRebuild - the lean production
 	 * implementation must agree with this everywhere, ties included. */
-	private static boolean rebuildViaAssess(Loadout loadout, GearItem spec, int kept,
+	private static boolean rebuildViaAssess(Loadout loadout, Gear spec, int kept,
 		java.util.Set<Integer> pinnedIds) {
 		PvpRisk.Assessment fates = PvpRisk.assess(loadout, spec, kept);
 		for (PvpRisk.Charge charge : fates.untradeableCharges) {
@@ -300,7 +300,7 @@ public class PvpRiskTest {
 				return true;
 			}
 		}
-		for (GearItem lost : fates.lost) {
+		for (Gear lost : fates.lost) {
 			if (UntradeableDeathCosts.frictionFor(lost) > 0
 				&& !pinnedIds.contains(lost.getId())) {
 				return true;
@@ -317,8 +317,8 @@ public class PvpRiskTest {
 		// outside the kept slots, pins, the avarice skull, and value TIES at
 		// the kept boundary (stable order decides which of two equals wins
 		// the slot).
-		GearItem tieA = item(21, GearSlot.BODY, true, 110_000);
-		GearItem tieRing = untradeable(3, "warrior ring (i)", GearSlot.RING, SOME_DEFENCE);
+		Gear tieA = item(21, GearSlot.BODY, true, 110_000);
+		Gear tieRing = untradeable(3, "warrior ring (i)", GearSlot.RING, SOME_DEFENCE);
 		// warrior ring (i) pools at 60k component + 50k friction = 110k -
 		// an exact tie with tieA; body precedes ring in slot order.
 		Loadout[] loadouts = {
@@ -330,7 +330,7 @@ public class PvpRiskTest {
 				item(4, GearSlot.LEGS, true, 20_000_000), tieRing),
 			worn(item(1, GearSlot.WEAPON, true, 200_000), tieA, tieRing),
 			worn(item(1, GearSlot.WEAPON, true, 100),
-				new GearItem(9, "Amulet of avarice", "", GearSlot.NECK, "", 0, false,
+				new Gear(9, "Amulet of avarice", "", GearSlot.NECK, "", 0, false,
 					true, true, true, 500_000, StatBlock.ZERO, StatBlock.ZERO,
 					StatBlock.ZERO, null),
 				untradeable(6, "Slayer helmet (i)", GearSlot.HEAD, SOME_DEFENCE)),
@@ -340,14 +340,14 @@ public class PvpRiskTest {
 				untradeable(8, "Amulet of the damned", GearSlot.NECK, SOME_DEFENCE)),
 			worn(item(1, GearSlot.WEAPON, true, 100)),
 		};
-		GearItem specTradeable = item(9, GearSlot.WEAPON, true, 500_000);
-		GearItem specFriction = untradeable(10, "salve amulet(i)", GearSlot.WEAPON, SOME_DEFENCE);
+		Gear specTradeable = item(9, GearSlot.WEAPON, true, 500_000);
+		Gear specFriction = untradeable(10, "salve amulet(i)", GearSlot.WEAPON, SOME_DEFENCE);
 		java.util.List<java.util.Set<Integer>> pinSets = java.util.List.of(
 			java.util.Collections.emptySet(),
 			java.util.Set.of(2, 3),
 			java.util.Set.of(6, 10));
 		for (Loadout loadout : loadouts) {
-			for (GearItem spec : new GearItem[]{null, specTradeable, specFriction}) {
+			for (Gear spec : new Gear[]{null, specTradeable, specFriction}) {
 				// kept=2 lands ON the tieA/tieRing boundary: exactly one of
 				// the two 110k equals wins the slot, by stable pool order.
 				for (int kept : new int[]{0, 1, 2, 3, 4}) {

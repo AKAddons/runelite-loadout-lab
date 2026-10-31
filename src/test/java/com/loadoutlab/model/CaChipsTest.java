@@ -3,7 +3,7 @@ package com.loadoutlab.model;
 import com.loadoutlab.data.CombatAchievements;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.*;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +44,7 @@ class CaChipsTest {
         SetRules smasher = CombatAchievements.byId(161).getRules();
         assertEquals(java.util.Set.of("verac's flail"), smasher.getWeapons());
         assertTrue(smasher.getBanned().contains("ring of recoil") && smasher.getBanned().contains("echo boots"));
-        assertEquals(java.util.Set.of(CombatStyle.MAGIC), CombatAchievements.byId(72).getRules().getStyles());
+        assertEquals(java.util.Set.of(Style.MAGIC), CombatAchievements.byId(72).getRules().getStyles());
         SetRules.Rule weight = CombatAchievements.byId(631).getRules().getRules().get(0);
         assertEquals(List.of("weight", "<", 40.0), List.of(weight.getStat(), weight.getOp(), weight.getValue()));
         SetRules fit = CombatAchievements.byId(641).getRules();
@@ -90,12 +90,12 @@ class CaChipsTest {
         assertEquals("", state.paramsNode().get("caPicks"), "a new search clears the task");
     }
 
-    private static MonsterStats mob(String name) {
+    private static Monster mob(String name) {
         return data.getMonsters().stream().filter(m -> m.getName().equalsIgnoreCase(name))
             .findFirst().orElseThrow(AssertionError::new);
     }
 
-    private static List<DpsResult> best(String monster, CombatStyle style, SetRules rules) {
+    private static List<DpsResult> best(String monster, Style style, SetRules rules) {
         OptimizationRequest request = new OptimizationRequest(mob(monster), style, PlayerLevels.MAXED,
             PrayerBonuses.bestAvailable(PlayerLevels.MAXED, new PrayerUnlocks(true, true, true, true, true)),
             null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, RequirementProfile.MAXED, 3)
@@ -107,14 +107,14 @@ class CaChipsTest {
     @DisplayName("Mage of the Ruins: the style lock leaves melee with no set and magic with one")
     void styleLock() {
         SetRules mage = CombatAchievements.byId(72).getRules();
-        assertTrue(best("Crazy archaeologist", CombatStyle.MELEE, mage).isEmpty());
-        assertFalse(best("Crazy archaeologist", CombatStyle.MAGIC, mage).isEmpty());
+        assertTrue(best("Crazy archaeologist", Style.MELEE, mage).isEmpty());
+        assertFalse(best("Crazy archaeologist", Style.MAGIC, mage).isEmpty());
     }
 
     @Test
     @DisplayName("Trying to fit in: magic casts with no weapon, since no Vampyrium weapon is a staff")
     void manualMagic() {
-        List<DpsResult> results = best("Maggot King", CombatStyle.MAGIC, CombatAchievements.byId(641).getRules());
+        List<DpsResult> results = best("Maggot King", Style.MAGIC, CombatAchievements.byId(641).getRules());
         assertFalse(results.isEmpty());
         assertNull(results.get(0).getLoadout().getWeapon());
     }

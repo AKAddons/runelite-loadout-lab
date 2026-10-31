@@ -3,7 +3,7 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -22,13 +22,13 @@ public class ExclusionTest {
 
 	@Test
 	public void excludingDragonDartsDropsTheBlowpipeToTheNextOwnedTier() {
-		MonsterStats hydra = data().searchMonsters("alchemical hydra", 1).get(0);
+		Monster hydra = data().searchMonsters("alchemical hydra", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(12926, 1);   // toxic blowpipe
 		owned.put(11230, 500); // dragon darts - the protected rares
 		owned.put(25849, 500); // amethyst darts - the everyday ammo
 		OptimizationRequest request = new OptimizationRequest(
-			hydra, CombatStyle.RANGED, PlayerLevels.MAXED,
+			hydra, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1);
@@ -44,9 +44,9 @@ public class ExclusionTest {
 
 	@Test
 	public void excludedItemsNeverAppearInAnySlot() {
-		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
+		Monster goblin = data().searchMonsters("goblin", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(
-			goblin, CombatStyle.MELEE, PlayerLevels.MAXED,
+			goblin, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);

@@ -1,10 +1,10 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
 import com.loadoutlab.engine.PrayerUnlocks;
@@ -35,8 +35,8 @@ public class LightbearerArbitrationTest {
 		data = new DataService().load();
 	}
 
-	private static GearItem byName(String nameLower) {
-		for (GearItem g : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		for (Gear g : data.getGearItems()) {
 			// The charged version: an uncharged one is its variant now
 			// (ISS-01M5QQV2TGQ5X730T0JJ75S1RD) and no pin can wear it.
 			if (g.getNameLower().equals(nameLower) && g.isStandardGear() && !data.isVariant(g.getId())) {
@@ -46,16 +46,16 @@ public class LightbearerArbitrationTest {
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static OptimizerService.StyleResult melee(MonsterStats monster,
+	private static OptimizerService.StyleResult melee(Monster monster,
 		Map<Integer, Integer> owned) throws Exception {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, monster,
 				PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1,
-				false, false, "", new java.util.EnumMap<>(CombatStyle.class), -1,
+				false, false, "", new java.util.EnumMap<>(Style.class), -1,
 				com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 				false, false, Collections.emptySet(), 0,
 				Collections.emptyMap(), null, Collections.emptySet(),
@@ -64,7 +64,7 @@ public class LightbearerArbitrationTest {
 					done.countDown();
 				});
 			Assert.assertTrue("compute timed out", done.await(120, TimeUnit.SECONDS));
-			return out.get().get(CombatStyle.MELEE);
+			return out.get().get(Style.MELEE);
 		} finally {
 			service.shutdown();
 		}
@@ -81,24 +81,24 @@ public class LightbearerArbitrationTest {
 		// the melee card read as "the pin doesn't take") - specs compete
 		// cross-style, so the ranged pin must ride the MELEE card too. This
 		// is the user's exact scenario (a simmed Tonalztics of ralos).
-		MonsterStats rex = data.searchMonsters("dagannoth rex", 1).get(0);
+		Monster rex = data.searchMonsters("dagannoth rex", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(byName("abyssal whip").getId(), 1);
 		int tonalId = byName("tonalztics of ralos").getId();
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, rex,
 				PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1,
-				false, false, "", new java.util.EnumMap<>(CombatStyle.class), -1,
+				false, false, "", new java.util.EnumMap<>(Style.class), -1,
 				com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 				false, false, Collections.singleton(tonalId), 0,
 				Collections.emptyMap(), null, tonalId, Collections.emptySet(),
 				results -> { out.set(results); done.countDown(); });
 			Assert.assertTrue("timed out", done.await(120, TimeUnit.SECONDS));
-			OptimizerService.StyleResult melee = out.get().get(CombatStyle.MELEE);
+			OptimizerService.StyleResult melee = out.get().get(Style.MELEE);
 			Assert.assertNotNull("the melee card must carry the cross-style pin",
 				melee.specWeapon);
 			Assert.assertEquals("the pinned Tonalztics rides the melee spec slot too",
@@ -115,7 +115,7 @@ public class LightbearerArbitrationTest {
 		// was more clear"). A pin is the player's explicit choice - it must
 		// display with its honest number, even ~0.00, not vanish. A goblin
 		// dies before any spec fires, so a pinned DDS adds ~0 here.
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String n : new String[]{"abyssal whip", "dragon dagger"}) {
 			owned.put(byName(n).getId(), 1);
@@ -124,17 +124,17 @@ public class LightbearerArbitrationTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, goblin,
 				PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1,
-				false, false, "", new java.util.EnumMap<>(CombatStyle.class), -1,
+				false, false, "", new java.util.EnumMap<>(Style.class), -1,
 				com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 				false, false, Collections.emptySet(), 0,
 				Collections.emptyMap(), null, daggerId, Collections.emptySet(),
 				results -> { out.set(results); done.countDown(); });
 			Assert.assertTrue("timed out", done.await(120, TimeUnit.SECONDS));
-			OptimizerService.StyleResult melee = out.get().get(CombatStyle.MELEE);
+			OptimizerService.StyleResult melee = out.get().get(Style.MELEE);
 			Assert.assertNotNull("the pinned spec must still show", melee.specWeapon);
 			Assert.assertEquals(daggerId, melee.specWeapon.getId());
 			Assert.assertTrue("its honest ~0 value is displayed, not hidden",
@@ -149,7 +149,7 @@ public class LightbearerArbitrationTest {
 		// Ring of dueling and the Lightbearer are both stat-less: equal set
 		// dps, so the doubled regen's extra claws are pure profit and the
 		// Lightbearer MUST take the slot at a long fight.
-		MonsterStats nex = data.searchMonsters("nex", 1).get(0);
+		Monster nex = data.searchMonsters("nex", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String n : new String[]{"abyssal whip", "dragon claws",
 			"ring of dueling", "lightbearer"}) {
@@ -157,7 +157,7 @@ public class LightbearerArbitrationTest {
 		}
 		OptimizerService.StyleResult melee = melee(nex, owned);
 		Assert.assertNotNull(melee);
-		GearItem ring = melee.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
+		Gear ring = melee.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
 		Assert.assertNotNull("a ring must be worn", ring);
 		Assert.assertTrue("doubled regen with no dps cost must take the slot, was: "
 			+ ring.label(), ring.getNameLower().contains("lightbearer"));
@@ -168,7 +168,7 @@ public class LightbearerArbitrationTest {
 	public void aDpsRingKeepsTheSlotWhenSpecValueIsTiny() throws Exception {
 		// A goblin dies before a second spec fires - the Berserker ring's
 		// strength is worth more than regen nobody uses.
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String n : new String[]{"abyssal whip", "dragon claws",
 			"berserker ring (i)", "lightbearer"}) {
@@ -176,7 +176,7 @@ public class LightbearerArbitrationTest {
 		}
 		OptimizerService.StyleResult melee = melee(goblin, owned);
 		Assert.assertNotNull(melee);
-		GearItem ring = melee.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
+		Gear ring = melee.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
 		Assert.assertNotNull(ring);
 		Assert.assertTrue("no spec value, no swap - the dps ring stands, was: "
 			+ ring.label(), ring.getNameLower().contains("berserker"));
@@ -192,30 +192,30 @@ public class LightbearerArbitrationTest {
 		// specs at floored bosses).
 		com.loadoutlab.data.MonsterDefences def =
 			new com.loadoutlab.data.MonsterDefences(150, 150, 150, 100, 0, 60, 60, 60);
-		com.loadoutlab.data.MonsterStats unfloored = new com.loadoutlab.data.MonsterStats(
+		com.loadoutlab.data.Monster unfloored = new com.loadoutlab.data.Monster(
 			-42, "Drain Dummy", "", 500, 800, 3, 350, 200, 0,
 			def, null, java.util.Collections.emptyList(), false, "", 0);
-		com.loadoutlab.data.MonsterStats floored = new com.loadoutlab.data.MonsterStats(
+		com.loadoutlab.data.Monster floored = new com.loadoutlab.data.Monster(
 			8372, "Verzik Dummy", "", 500, 800, 3, 350, 200, 0,
 			def, null, java.util.Collections.emptyList(), false, "", 0);
 
 		OptimizerService service = new OptimizerService(data);
 		try {
 			double[] added = new double[2];
-			com.loadoutlab.data.MonsterStats[] dummies = {unfloored, floored};
+			com.loadoutlab.data.Monster[] dummies = {unfloored, floored};
 			for (int i = 0; i < 2; i++) {
 				com.loadoutlab.engine.OptimizationRequest request =
 					com.loadoutlab.engine.TestRequests.of(dummies[i],
-						CombatStyle.MELEE, PlayerLevels.MAXED,
+						Style.MELEE, PlayerLevels.MAXED,
 						com.loadoutlab.engine.PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 						null, 0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD,
 						true, false, OwnedItems.EMPTY, 1);
-				java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> worn =
+				java.util.EnumMap<com.loadoutlab.data.GearSlot, Gear> worn =
 					new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
 				worn.put(com.loadoutlab.data.GearSlot.WEAPON, byName("abyssal whip"));
 				com.loadoutlab.engine.DpsResult main = new com.loadoutlab.engine.DpsCalculator()
 					.calculate(request, new com.loadoutlab.engine.Loadout(worn));
-				java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> specWorn =
+				java.util.EnumMap<com.loadoutlab.data.GearSlot, Gear> specWorn =
 					new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
 				specWorn.put(com.loadoutlab.data.GearSlot.WEAPON, byName("dragon warhammer"));
 				com.loadoutlab.engine.DpsResult specBase = new com.loadoutlab.engine.DpsCalculator()
@@ -239,25 +239,25 @@ public class LightbearerArbitrationTest {
 		// P(landed) = 1-(1-p)^attempts is budget-bound - exactly where the
 		// Lightbearer's extra specs buy real drain probability. v1 priced
 		// ONE attempt, making drain value blind to regen.
-		com.loadoutlab.data.MonsterStats dummy = new com.loadoutlab.data.MonsterStats(
+		com.loadoutlab.data.Monster dummy = new com.loadoutlab.data.Monster(
 			-42, "Drain Dummy", "", 500, 800, 3, 350, 200, 0,
 			new com.loadoutlab.data.MonsterDefences(150, 150, 150, 100, 0, 60, 60, 60),
 			null, java.util.Collections.emptyList(), false, "", 0);
 		com.loadoutlab.engine.OptimizationRequest request =
 			com.loadoutlab.engine.TestRequests.of(dummy,
-				CombatStyle.MELEE, PlayerLevels.MAXED,
+				Style.MELEE, PlayerLevels.MAXED,
 				com.loadoutlab.engine.PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 				null, 0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD,
 				true, false, OwnedItems.EMPTY, 1);
 
-		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> worn =
+		java.util.EnumMap<com.loadoutlab.data.GearSlot, Gear> worn =
 			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
 		worn.put(com.loadoutlab.data.GearSlot.WEAPON, byName("abyssal whip"));
 		com.loadoutlab.engine.DpsResult main = new com.loadoutlab.engine.DpsCalculator()
 			.calculate(request, new com.loadoutlab.engine.Loadout(worn));
 		Assert.assertNotNull(main);
 
-		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> specWorn =
+		java.util.EnumMap<com.loadoutlab.data.GearSlot, Gear> specWorn =
 			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
 		specWorn.put(com.loadoutlab.data.GearSlot.WEAPON, byName("dragon warhammer"));
 		com.loadoutlab.engine.DpsResult specBase = new com.loadoutlab.engine.DpsCalculator()

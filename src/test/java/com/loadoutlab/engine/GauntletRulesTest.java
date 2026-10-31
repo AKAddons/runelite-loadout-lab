@@ -1,9 +1,9 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +30,13 @@ class GauntletRulesTest {
 	}
 
 	private static void assertGauntletOnly(String mobName, String family) {
-		MonsterStats mob = data.searchMonsters(mobName, 1).get(0);
+		Monster mob = data.searchMonsters(mobName, 1).get(0);
 		// A stacked mainland bank that must be IGNORED inside.
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (int id : new int[]{4151, 29589, 29591, 21326, 29594, 19553, 13239, 22981, 11832, 11834}) {
 			owned.put(id, 1);
 		}
-		for (CombatStyle style : CombatStyle.concreteValues()) {
+		for (Style style : Style.concreteValues()) {
 			OptimizationRequest request = new OptimizationRequest(mob, style,
 				PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
 				CandidateMode.OWNED_ONLY, true, false,
@@ -45,14 +45,14 @@ class GauntletRulesTest {
 			if (best.isEmpty() || best.get(0) == null) {
 				continue; // a style with no in-raid answer is honest
 			}
-			for (GearItem item : best.get(0).getLoadout().getGear().values()) {
+			for (Gear item : best.get(0).getLoadout().getGear().values()) {
 				if (item == null) {
 					continue;
 				}
 				assertTrue(GauntletRules.allowed(family, item),
 					mobName + " " + style + " recommended mainland gear: " + item.getNameLower());
 			}
-			GearItem weapon = best.get(0).getLoadout().getWeapon();
+			Gear weapon = best.get(0).getLoadout().getWeapon();
 			assertNotNull(weapon, mobName + " " + style + " has no in-raid weapon");
 		}
 	}

@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -27,19 +27,19 @@ class KerisProcTest {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats mob(String name, String version) {
+	private static Monster mob(String name, String version) {
 		return data.getMonsters().stream()
 			.filter(m -> m.getName().equalsIgnoreCase(name) && (version.isEmpty() || m.getVersion().equalsIgnoreCase(version)))
 			.findFirst().orElseThrow(AssertionError::new);
 	}
 
-	private static DpsResult wielding(String weapon, MonsterStats mob) {
-		GearItem item = data.getGearItems().stream()
+	private static DpsResult wielding(String weapon, Monster mob) {
+		Gear item = data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(weapon) && g.isStandardGear())
 			.findFirst().orElseThrow(AssertionError::new);
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, item);
-		OptimizationRequest request = new OptimizationRequest(mob, CombatStyle.MELEE, PlayerLevels.MAXED,
+		OptimizationRequest request = new OptimizationRequest(mob, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, new PrayerUnlocks(true, true, true, true, true)),
 			null, 0, CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);

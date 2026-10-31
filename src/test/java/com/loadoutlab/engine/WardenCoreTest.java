@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class WardenCoreTest {
 	private static LoadoutData data;
-	private static MonsterStats core;
+	private static Monster core;
 
 	@BeforeAll
 	static void load() {
@@ -35,8 +35,8 @@ class WardenCoreTest {
 			+ " (field report 2026-08-06)");
 	}
 
-	private static GearItem byName(String nameLower) {
-		for (GearItem item : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}
@@ -45,14 +45,14 @@ class WardenCoreTest {
 	}
 
 	private static Loadout wielding(String nameLower) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName(nameLower));
 		return new Loadout(gear);
 	}
 
-	private static OptimizationRequest req(MonsterStats monster) {
+	private static OptimizationRequest req(Monster monster) {
 		return TestRequests.of(monster,
-			CombatStyle.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
+			Style.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 	}
 
@@ -85,7 +85,7 @@ class WardenCoreTest {
 	@Test
 	@DisplayName("the always-max rule stays at the core - a goblin still rolls normally")
 	void ruleIsScopedToTheCore() {
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		DpsResult base = new DpsCalculator().calculate(req(goblin), wielding("dragon dagger"));
 		assertNotNull(base);
 		SpecialAttack spec = SpecialAttack.match(byName("dragon dagger"));

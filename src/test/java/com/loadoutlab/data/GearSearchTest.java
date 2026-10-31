@@ -19,7 +19,7 @@ class GearSearchTest {
 	@Test
 	@DisplayName("an exact item name is the first result")
 	void exactNameFirst() {
-		List<GearItem> results = GearSearchTestSupport.searchGear(data, "abyssal whip", 10);
+		List<Gear> results = GearSearchTestSupport.searchGear(data, "abyssal whip", 10);
 		assertFalse(results.isEmpty());
 		assertEquals("abyssal whip", results.get(0).getNameLower());
 	}
@@ -27,12 +27,12 @@ class GearSearchTest {
 	@Test
 	@DisplayName("prefix matches rank ahead of substring matches and the limit holds")
 	void prefixBeforeContainsWithinLimit() {
-		List<GearItem> results = GearSearchTestSupport.searchGear(data, "abyssal w", 5);
+		List<Gear> results = GearSearchTestSupport.searchGear(data, "abyssal w", 5);
 		assertFalse(results.isEmpty());
 		assertTrue(results.size() <= 5);
 		assertTrue(results.get(0).labelLower().startsWith("abyssal w"),
 			"first result should be a prefix match, got: " + results.get(0).label());
-		for (GearItem item : results) {
+		for (Gear item : results) {
 			assertTrue(item.labelLower().contains("abyssal w"));
 		}
 	}
@@ -40,7 +40,7 @@ class GearSearchTest {
 	@Test
 	@DisplayName("a numeric query matches the item id exactly")
 	void idQueryMatches() {
-		List<GearItem> results = GearSearchTestSupport.searchGear(data, "4151", 5);
+		List<Gear> results = GearSearchTestSupport.searchGear(data, "4151", 5);
 		assertFalse(results.isEmpty());
 		assertEquals(4151, results.get(0).getId());
 	}
@@ -56,8 +56,8 @@ class GearSearchTest {
 	@Test
 	@DisplayName("queries are case-insensitive")
 	void caseInsensitive() {
-		List<GearItem> lower = GearSearchTestSupport.searchGear(data, "dragon dagger", 5);
-		List<GearItem> upper = GearSearchTestSupport.searchGear(data, "DRAGON Dagger", 5);
+		List<Gear> lower = GearSearchTestSupport.searchGear(data, "dragon dagger", 5);
+		List<Gear> upper = GearSearchTestSupport.searchGear(data, "DRAGON Dagger", 5);
 		assertFalse(lower.isEmpty());
 		assertEquals(lower.get(0).getId(), upper.get(0).getId());
 		assertEquals("dragon dagger",

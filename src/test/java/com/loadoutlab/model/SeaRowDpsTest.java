@@ -2,9 +2,9 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.NavalCombat;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +34,9 @@ class SeaRowDpsTest {
 		}
 	}
 
-	private static List<MonsterStats> twoSeaMobs() {
-		List<MonsterStats> out = new ArrayList<>();
-		for (MonsterStats m : data.getMonsters()) {
+	private static List<Monster> twoSeaMobs() {
+		List<Monster> out = new ArrayList<>();
+		for (Monster m : data.getMonsters()) {
 			if (NavalCombat.isNaval(m.getName())
 				&& (out.isEmpty() || out.get(0).getDefence() != m.getDefence())) {
 				out.add(m);
@@ -49,7 +49,7 @@ class SeaRowDpsTest {
 		return out;
 	}
 
-	private static Map<String, Object> entryFor(List<MonsterStats> mobs, String operator) {
+	private static Map<String, Object> entryFor(List<Monster> mobs, String operator) {
 		PageState state = new PageState();
 		state.setParam("cannonCount", 1);
 		state.setParam("cannon1Material", "dragon");
@@ -63,7 +63,7 @@ class SeaRowDpsTest {
 			link);
 		engine.setRangedLevel(99);
 		engine.setSailingLevel(99);
-		List<Map<CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> results = new ArrayList<>();
+		List<Map<Style, com.loadoutlab.optimizer.OptimizerService.StyleResult>> results = new ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++) {
 			results.add(Map.of());
 		}
@@ -88,7 +88,7 @@ class SeaRowDpsTest {
 	@Test
 	@DisplayName("every sea mob in the roster carries its own cannon dps; the lensed one matches the ship total")
 	void eachSeaMobPriced() {
-		List<MonsterStats> mobs = twoSeaMobs();
+		List<Monster> mobs = twoSeaMobs();
 		Map<String, Object> entry = entryFor(mobs, "crew1");
 		double first = shipDps(entry, 0);
 		double second = shipDps(entry, 1);
@@ -102,8 +102,8 @@ class SeaRowDpsTest {
 	@Test
 	@DisplayName("a land mob carries no cannon dps, and a manned cannon zeroes the rows")
 	void landAndManned() {
-		List<MonsterStats> sea = twoSeaMobs();
-		MonsterStats land = data.searchMonsters("general graardor", 1).get(0);
+		List<Monster> sea = twoSeaMobs();
+		Monster land = data.searchMonsters("general graardor", 1).get(0);
 		Map<String, Object> mixed = entryFor(List.of(sea.get(0), land), "crew1");
 		assertTrue(shipDps(mixed, 0) > 0);
 		assertEquals(0.0, shipDps(mixed, 1), "a land mob takes no cannon fire");

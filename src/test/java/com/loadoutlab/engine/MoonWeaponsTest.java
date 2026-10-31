@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MoonWeaponsTest {
 	private static LoadoutData data;
-	private static MonsterStats ankou;
+	private static Monster ankou;
 
 	@BeforeAll
 	static void load() {
@@ -31,8 +31,8 @@ class MoonWeaponsTest {
 		ankou = data.searchMonsters("ankou", 1).get(0);
 	}
 
-	private static GearItem byNameVersion(String nameLower, String version) {
-		for (GearItem item : data.getGearItems()) {
+	private static Gear byNameVersion(String nameLower, String version) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals(nameLower)
 				&& (version == null || version.equalsIgnoreCase(item.getVersion()))) {
 				return item;
@@ -47,15 +47,15 @@ class MoonWeaponsTest {
 			.findFirst().orElseThrow(() -> new AssertionError("no spell " + name));
 	}
 
-	private static OptimizationRequest request(CombatStyle style, MonsterStats monster) {
+	private static OptimizationRequest request(Style style, Monster monster) {
 		return new OptimizationRequest(monster, style, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 	}
 
-	private static EnumMap<GearSlot, GearItem> atlatlGear(boolean fullSet) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+	private static EnumMap<GearSlot, Gear> atlatlGear(boolean fullSet) {
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byNameVersion("eclipse atlatl", null));
 		gear.put(GearSlot.AMMO, byNameVersion("atlatl dart", null));
 		if (fullSet) {
@@ -70,7 +70,7 @@ class MoonWeaponsTest {
 	@DisplayName("the atlatl's max hit comes from Strength level and worn MELEE strength bonuses")
 	void atlatlScalesWithStrength() {
 		Loadout loadout = new Loadout(atlatlGear(false));
-		DpsResult result = new DpsCalculator().calculate(request(CombatStyle.RANGED, ankou), loadout);
+		DpsResult result = new DpsCalculator().calculate(request(Style.RANGED, ankou), loadout);
 		// Rapid (stance 0), no prayer: effective 99+8, strength term is the
 		// worn melee str total (the atlatl's own +40) - NOT ranged strength,
 		// which is 0 on both the weapon and the darts.
@@ -85,7 +85,7 @@ class MoonWeaponsTest {
 	@DisplayName("Eclipse: the full set adds ~2 burn damage per landed hit against a burnable monster")
 	void eclipseBurnExpectation() {
 		DpsResult set = new DpsCalculator().calculate(
-			request(CombatStyle.RANGED, ankou), new Loadout(atlatlGear(true)));
+			request(Style.RANGED, ankou), new Loadout(atlatlGear(true)));
 		// The burn rides expected damage on top of the plain roll: recover
 		// the bonus from the result's own accuracy and max hit.
 		double base = RollMath.normalExpectedHit(set.getAccuracy(), set.getMaxHit());
@@ -97,11 +97,11 @@ class MoonWeaponsTest {
 	@Test
 	@DisplayName("Eclipse: burn-immune monsters take no burn and show no chip")
 	void eclipseBurnRespectsImmunity() {
-		MonsterStats immune = data.getMonsters().stream()
+		Monster immune = data.getMonsters().stream()
 			.filter(m -> m.hasAttribute("burn_immune"))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus premise: some monster is burn-immune"));
 		DpsResult set = new DpsCalculator().calculate(
-			request(CombatStyle.RANGED, immune), new Loadout(atlatlGear(true)));
+			request(Style.RANGED, immune), new Loadout(atlatlGear(true)));
 		double base = RollMath.normalExpectedHit(set.getAccuracy(), set.getMaxHit());
 		assertEquals(0.0, set.getExpectedHit() - base, 1e-9);
 		assertTrue(set.getCountedBonuses().stream()
@@ -109,13 +109,13 @@ class MoonWeaponsTest {
 	}
 
 	private DpsResult castWithBlueMoon(SpellStats spell) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byNameVersion("blue moon spear", null));
 		gear.put(GearSlot.HEAD, byNameVersion("blue moon helm", "New"));
 		gear.put(GearSlot.BODY, byNameVersion("blue moon chestplate", "New"));
 		gear.put(GearSlot.LEGS, byNameVersion("blue moon tassets", "New"));
 		return new DpsCalculator().calculate(
-			request(CombatStyle.MAGIC, ankou).withSpell(spell), new Loadout(gear));
+			request(Style.MAGIC, ankou).withSpell(spell), new Loadout(gear));
 	}
 
 	private static double bonus(DpsResult result) {

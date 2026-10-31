@@ -3,9 +3,9 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -26,8 +26,8 @@ class RosterPinsTest {
 	private static final int WHIP = 4151;
 	private static final int DRAGON_SCIMITAR = 4587;
 	private static LoadoutData data;
-	private static MonsterStats graardor;
-	private static MonsterStats fireGiant;
+	private static Monster graardor;
+	private static Monster fireGiant;
 
 	@BeforeAll
 	static void load() {
@@ -59,9 +59,9 @@ class RosterPinsTest {
 	void itemPinnedOnTheSecondMember() throws Exception {
 		Map<GearSlot, Integer> weapon = new EnumMap<>(GearSlot.class);
 		weapon.put(GearSlot.WEAPON, DRAGON_SCIMITAR);
-		Map<CombatStyle, Map<GearSlot, Integer>> melee = new EnumMap<>(CombatStyle.class);
-		melee.put(CombatStyle.MELEE, weapon);
-		Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob =
+		Map<Style, Map<GearSlot, Integer>> melee = new EnumMap<>(Style.class);
+		melee.put(Style.MELEE, weapon);
+		Map<Integer, Map<Style, Map<GearSlot, Integer>>> pinsByMob =
 			Collections.singletonMap(fireGiant.profileId(), melee);
 		OptimizerService service = new OptimizerService(data);
 		try {
@@ -94,11 +94,11 @@ class RosterPinsTest {
 	}
 
 	private static String spellAgainst(OptimizerService.RosterResult roster, int member) {
-		return roster.perMob.get(member).get(CombatStyle.MAGIC).owned.get(0).getSpellName();
+		return roster.perMob.get(member).get(Style.MAGIC).owned.get(0).getSpellName();
 	}
 
 	private static int weaponAgainst(OptimizerService.RosterResult roster, int member) {
-		return roster.perMob.get(member).get(CombatStyle.MELEE).owned.get(0)
+		return roster.perMob.get(member).get(Style.MELEE).owned.get(0)
 			.getLoadout().get(GearSlot.WEAPON).getId();
 	}
 }

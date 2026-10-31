@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +32,8 @@ class GroupSpellbookPageTest {
 		engine.setStoreOps(new TestStoreOps());
 		engine.setOwnedCheck(id -> false);
 		state.setParam("thralls", true);
-		MonsterStats a = data.searchMonsters("ba-ba", 1).get(0);
-		MonsterStats b = data.searchMonsters("kephri", 1).get(0);
+		Monster a = data.searchMonsters("ba-ba", 1).get(0);
+		Monster b = data.searchMonsters("kephri", 1).get(0);
 		state.selectRoster(List.of(a, b), "Custom roster", false);
 		String reason = "Elidinis' Warden P2 (magic only) wants Earth Surge - the group runs the standard book";
 
@@ -65,8 +65,8 @@ class GroupSpellbookPageTest {
 		engine.setStoreOps(new TestStoreOps());
 		engine.setOwnedCheck(id -> false);
 		state.setParam("thralls", true);
-		MonsterStats a = data.searchMonsters("ba-ba", 1).get(0);
-		MonsterStats b = data.searchMonsters("kephri", 1).get(0);
+		Monster a = data.searchMonsters("ba-ba", 1).get(0);
+		Monster b = data.searchMonsters("kephri", 1).get(0);
 		state.selectRoster(List.of(a, b), "Custom roster", false);
 
 		engine.onRosterResults(List.of(a, b), List.of(Map.of(), Map.of()), "arceuus",

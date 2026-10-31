@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class RespiratorySystemTest {
 	private static LoadoutData data;
-	private static MonsterStats vents;
+	private static Monster vents;
 
 	@BeforeAll
 	static void load() {
@@ -29,8 +29,8 @@ class RespiratorySystemTest {
 		assertEquals(5914, vents.getId(), "test premise: the corpus vent row");
 	}
 
-	private static GearItem byName(String nameLower) {
-		for (GearItem item : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}
@@ -40,7 +40,7 @@ class RespiratorySystemTest {
 
 	/** A loadout wielding just this weapon. */
 	private static Loadout wielding(String nameLower) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName(nameLower));
 		return new Loadout(gear);
 	}
@@ -48,15 +48,15 @@ class RespiratorySystemTest {
 	@Test
 	@DisplayName("standard melee can never work on a vent; halberds and demonbane can")
 	void meleeGating() {
-		assertFalse(MonsterMechanics.weaponCanEverWork(vents, CombatStyle.MELEE,
+		assertFalse(MonsterMechanics.weaponCanEverWork(vents, Style.MELEE,
 			byName("abyssal whip")), "a whip cannot damage the vents");
-		assertFalse(MonsterMechanics.weaponCanEverWork(vents, CombatStyle.MELEE,
+		assertFalse(MonsterMechanics.weaponCanEverWork(vents, Style.MELEE,
 			byName("osmumten's fang")), "a stab sword cannot damage the vents");
-		assertTrue(MonsterMechanics.weaponCanEverWork(vents, CombatStyle.MELEE,
+		assertTrue(MonsterMechanics.weaponCanEverWork(vents, Style.MELEE,
 			byName("crystal halberd")), "halberds are the melee exception");
-		assertTrue(MonsterMechanics.weaponCanEverWork(vents, CombatStyle.MELEE,
+		assertTrue(MonsterMechanics.weaponCanEverWork(vents, Style.MELEE,
 			byName("arclight")), "melee demonbane one-shots a vent");
-		assertTrue(MonsterMechanics.weaponCanEverWork(vents, CombatStyle.RANGED,
+		assertTrue(MonsterMechanics.weaponCanEverWork(vents, Style.RANGED,
 			byName("toxic blowpipe")), "ranged is unaffected by the melee gate");
 	}
 
@@ -64,12 +64,12 @@ class RespiratorySystemTest {
 	@DisplayName("the melee pick vs a vent is a halberd or demonbane, never a whip line")
 	void optimizerRespectsTheGate() {
 		OptimizationRequest request = TestRequests.of(vents,
-			CombatStyle.MELEE, PlayerLevels.MAXED,
+			Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);
 		assertFalse(out.isEmpty());
-		GearItem weapon = out.get(0).getLoadout().getWeapon();
+		Gear weapon = out.get(0).getLoadout().getWeapon();
 		assertTrue("Polearm".equals(weapon.getCategory()) || weapon.isMeleeDemonbane(),
 			"melee pick must be a halberd or demonbane, was: " + weapon.label());
 	}
@@ -107,7 +107,7 @@ class RespiratorySystemTest {
 	@DisplayName("the bow beats melee demonbane at the vents: no walking between them")
 	void rangedDemonbaneOutranksMeleeDemonbane() {
 		DpsResult bow = new DpsCalculator().calculate(
-			TestRequests.of(vents, CombatStyle.RANGED, PlayerLevels.MAXED,
+			TestRequests.of(vents, Style.RANGED, PlayerLevels.MAXED,
 				PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, true, false,
 				OwnedItems.EMPTY, 1), wielding("scorching bow"));
 
@@ -132,7 +132,7 @@ class RespiratorySystemTest {
 	@DisplayName("the ranged pick vs a vent is the Scorching bow, not a blowpipe")
 	void scorchingBowBeatsTheBlowpipe() {
 		OptimizationRequest request = TestRequests.of(vents,
-			CombatStyle.RANGED, PlayerLevels.MAXED,
+			Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);
@@ -152,7 +152,7 @@ class RespiratorySystemTest {
 		// its own subtleties; the 1.5x scaling is the contract.
 		Loadout halberd = wielding("crystal halberd");
 
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		DpsResult atVents = new DpsCalculator().calculate(req(vents), halberd);
 		DpsResult atGoblin = new DpsCalculator().calculate(req(goblin), halberd);
 		assertNotNull(atVents);
@@ -163,9 +163,9 @@ class RespiratorySystemTest {
 			"the vents' min-hit must scale the per-hit mean by exactly 1.5");
 	}
 
-	private static OptimizationRequest req(MonsterStats monster) {
+	private static OptimizationRequest req(Monster monster) {
 		return TestRequests.of(monster,
-			CombatStyle.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
+			Style.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 	}
 

@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +32,7 @@ public class SoulreaperAxeTest {
 		return data;
 	}
 
-	private static GearItem byName(String nameLower) {
+	private static Gear byName(String nameLower) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
@@ -40,12 +40,12 @@ public class SoulreaperAxeTest {
 
 	@Test
 	public void fiveSoulStacksBeatTheNoxiousHalberdOnThermy() {
-		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
+		Monster thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(byName("soulreaper axe").getId(), 1);
 		owned.put(byName("noxious halberd").getId(), 1);
 		OptimizationRequest request = new OptimizationRequest(
-			thermy, CombatStyle.MELEE, PlayerLevels.MAXED,
+			thermy, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1);
@@ -61,13 +61,13 @@ public class SoulreaperAxeTest {
 		// The exact wiki-calc chain: effective strength gains
 		// floor(level * 30/100) on top of the prayer-multiplied level -
 		// never level * prayer * 1.30 (that would over-price the axe).
-		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
+		Monster thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(
-			thermy, CombatStyle.MELEE, PlayerLevels.MAXED,
+			thermy, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName("soulreaper axe"));
 		DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));
 		Assert.assertNotNull(result);
@@ -84,13 +84,13 @@ public class SoulreaperAxeTest {
 
 	@Test
 	public void otherAxesDoNotInheritTheStackBonus() {
-		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
+		Monster thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(
-			thermy, CombatStyle.MELEE, PlayerLevels.MAXED,
+			thermy, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName("dragon axe"));
 		DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));
 		Assert.assertNotNull(result);

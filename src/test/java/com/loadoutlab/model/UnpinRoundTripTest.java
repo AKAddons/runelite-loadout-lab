@@ -5,7 +5,7 @@ import com.loadoutlab.collection.MonsterProfileStore;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.testsupport.InMemoryConfigManager;
 import java.util.Map;
 import net.runelite.client.config.ConfigManager;
@@ -57,7 +57,7 @@ class UnpinRoundTripTest {
 		CommandEngine engine = new CommandEngine(data, new PageState(), (mob, p, onDone) -> {
 		}, new CompanionLink());
 		engine.setStoreOps(wired(store));
-		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
+		Monster araxxor = data.searchMonsters("araxxor", 1).get(0);
 		int mobId = araxxor.getId();
 		assertTrue(engine.execute("select", Map.of("id", mobId)));
 		store.pin(mobId, MonsterProfileStore.ALL, GearSlot.WEAPON, 4151);
@@ -97,7 +97,7 @@ class UnpinRoundTripTest {
 		}, new CompanionLink());
 		engine.setStoreOps(wired(store));
 		engine.setOwnedCheck(id -> true);
-		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
+		Monster araxxor = data.searchMonsters("araxxor", 1).get(0);
 		assertTrue(engine.execute("select", Map.of("id", araxxor.getId())));
 
 		for (String how : new String[]{"pin", "ladder-try"}) {
@@ -118,8 +118,8 @@ class UnpinRoundTripTest {
 		}, new CompanionLink());
 		engine.setStoreOps(wired(store));
 		engine.setOwnedCheck(id -> true);
-		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
-		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
+		Monster araxxor = data.searchMonsters("araxxor", 1).get(0);
+		Monster demon = data.searchMonsters("abyssal demon", 1).get(0);
 		state.selectRoster(java.util.List.of(araxxor, demon), "Custom roster", false);
 
 		for (String how : new String[]{"pin", "ladder-try"}) {

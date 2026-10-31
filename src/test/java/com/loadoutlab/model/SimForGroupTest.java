@@ -3,7 +3,7 @@ package com.loadoutlab.model;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,8 +50,8 @@ class SimForGroupTest {
 			}
 		});
 		engine.setOwnedCheck(id -> false);
-		MonsterStats a = data.searchMonsters("abyssal demon", 1).get(0);
-		MonsterStats b = data.searchMonsters("black demon", 1).get(0);
+		Monster a = data.searchMonsters("abyssal demon", 1).get(0);
+		Monster b = data.searchMonsters("black demon", 1).get(0);
 		state.selectRoster(List.of(a, b), "Custom roster", false);
 
 		assertTrue(engine.execute("sim-for-group", Map.of("itemId", 26384, "label", "Torva platebody")));

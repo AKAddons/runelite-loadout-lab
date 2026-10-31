@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +52,7 @@ class OfferingChoiceTest {
 		engine.setOwnedCheck(id -> id == ASH_SANCTIFIER || id == BONECRUSHER || id == SOUL || id == WRATH || id == BLOOD);
 		engine.setSupplyDefaults(() -> new HashMap<>(choices));
 		engine.setArceuusReady(magic -> castable && magic >= 84);
-		MonsterStats mob = data.searchMonsters(query, 1).get(0);
+		Monster mob = data.searchMonsters(query, 1).get(0);
 		engine.execute("select", Map.of("id", mob.getId()));
 		engine.onResults(mob, Map.of());
 		try {

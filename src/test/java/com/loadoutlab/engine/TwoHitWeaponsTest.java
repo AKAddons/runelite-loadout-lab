@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,19 +27,19 @@ public class TwoHitWeaponsTest {
 		return data;
 	}
 
-	private static GearItem byName(String nameLower, String version) {
+	private static Gear byName(String nameLower, String version) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear()
 				&& (version == null || version.equalsIgnoreCase(g.getVersion())))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 	}
 
-	private static DpsResult swing(String monster, CombatStyle style, GearItem weapon, String ammo) {
-		MonsterStats mob = data().searchMonsters(monster, 1).get(0);
+	private static DpsResult swing(String monster, Style style, Gear weapon, String ammo) {
+		Monster mob = data().searchMonsters(monster, 1).get(0);
 		OptimizationRequest request = TestRequests.of(mob, style,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, weapon);
 		if (ammo != null) {
 			gear.put(GearSlot.AMMO, byName(ammo, null));
@@ -50,10 +50,10 @@ public class TwoHitWeaponsTest {
 	}
 
 	private static void assertTwoIndependentHits(String weapon, String version) {
-		MonsterStats moon = data().searchMonsters("blue moon", 1).get(0);
+		Monster moon = data().searchMonsters("blue moon", 1).get(0);
 		int armour = moon.getDefensive().getFlatArmour();
 		Assert.assertTrue("blue moon carries negative flat armour", armour < 0);
-		DpsResult result = swing("blue moon", CombatStyle.MELEE, byName(weapon, version), null);
+		DpsResult result = swing("blue moon", Style.MELEE, byName(weapon, version), null);
 		int rawMax = result.getMaxHit() + armour;
 		int firstRaw = rawMax / 2;
 		int secondRaw = rawMax - firstRaw;
@@ -74,15 +74,15 @@ public class TwoHitWeaponsTest {
 
 	@Test
 	public void theDarkBowFiresTwoFullArrows() {
-		DpsResult bow = swing("goblin", CombatStyle.RANGED, byName("dark bow", "Regular"), "dragon arrow");
+		DpsResult bow = swing("goblin", Style.RANGED, byName("dark bow", "Regular"), "dragon arrow");
 		double one = RollMath.expectedHitWithFlatArmour(bow.getAccuracy(), 0, bow.getMaxHit(), 0);
 		Assert.assertEquals("two arrows, each a full roll", 2 * one, bow.getExpectedHit(), 1e-9);
 	}
 
 	@Test
 	public void chargedTonalzticsThrowTwiceAtThreeQuarters() {
-		DpsResult charged = swing("goblin", CombatStyle.RANGED, byName("tonalztics of ralos", "Charged"), null);
-		DpsResult uncharged = swing("goblin", CombatStyle.RANGED, byName("tonalztics of ralos", "Uncharged"), null);
+		DpsResult charged = swing("goblin", Style.RANGED, byName("tonalztics of ralos", "Charged"), null);
+		DpsResult uncharged = swing("goblin", Style.RANGED, byName("tonalztics of ralos", "Uncharged"), null);
 		Assert.assertEquals("both versions roll 75% of the max", uncharged.getMaxHit(), charged.getMaxHit());
 		double one = RollMath.expectedHitWithFlatArmour(charged.getAccuracy(), 0, charged.getMaxHit(), 0);
 		Assert.assertEquals("charged throws twice", 2 * one, charged.getExpectedHit(), 1e-9);

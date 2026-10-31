@@ -3,7 +3,7 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.*;
 import com.loadoutlab.model.CommandEngine;
 import com.loadoutlab.model.CompanionLink;
@@ -32,7 +32,7 @@ class RaidArceuusTest {
 	private static LoadoutData data;
 	private static OptimizerService service;
 	/** Akkha "Magic only" and Elidinis' Warden "P2 (magic only)". */
-	private static List<MonsterStats> pair;
+	private static List<Monster> pair;
 
 	@BeforeAll
 	static void load() {
@@ -48,7 +48,7 @@ class RaidArceuusTest {
 		service.shutdown();
 	}
 
-	private static MonsterStats member(MonsterGroups.MonsterGroup group, String name, String label) {
+	private static Monster member(MonsterGroups.MonsterGroup group, String name, String label) {
 		return group.getMobs().stream().filter(m -> m.getName().equals(name) && m.label().contains(label))
 			.findFirst().orElseThrow();
 	}

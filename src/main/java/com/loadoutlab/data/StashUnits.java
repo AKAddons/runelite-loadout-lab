@@ -15,67 +15,67 @@ import java.util.*;
 // as a text cell (type 4) followed by up to two sprite cells (type 5) -
 // first sprite means built, second means filled.
 public class StashUnits {
-    // Widget child types on the chart, per the in-game interface.
-    public static final int TEXT_CELL = 4;
-    public static final int SPRITE_CELL = 5;
+// Widget child types on the chart, per the in-game interface.
+static final int TEXT_CELL = 4;
+static final int SPRITE_CELL = 5;
 
-    final Map<String, int[]> byChartText;
+final Map<String, int[]> byChartText;
 
-    StashUnits(Map<String, int[]> byChartText) { this.byChartText = byChartText; }
+StashUnits(Map<String, int[]> byChartText) { this.byChartText = byChartText; }
 
-    // Load the vendored table from resources; throws on a broken bundle.
-    public static StashUnits load() {
-        Map<String, int[]> units = new HashMap<>();
-        try (InputStream in = StashUnits.class.getResourceAsStream("stash-units.tsv")) {
-            if (in == null) throw new IOException("stash-units.tsv missing from resources");
-            BufferedReader reader = new BufferedReader( new InputStreamReader(in, StandardCharsets.UTF_8));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                int tab = line.indexOf('\t');
-                units.put(line.substring(0, tab), Arrays.stream(line.substring(tab + 1).split(",")).mapToInt(Integer::parseInt).toArray());
-            }
-        } catch (IOException | RuntimeException ex) {
-            throw new IllegalStateException("could not load stash-units.tsv", ex);
+// Load the vendored table from resources; throws on a broken bundle.
+public static StashUnits load() {
+    Map<String, int[]> units = new HashMap<>();
+    try (InputStream in = StashUnits.class.getResourceAsStream("stash-units.tsv")) {
+        if (in == null) throw new IOException("stash-units.tsv missing from resources");
+        BufferedReader reader = new BufferedReader( new InputStreamReader(in, StandardCharsets.UTF_8));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            int tab = line.indexOf('\t');
+            units.put(line.substring(0, tab), Arrays.stream(line.substring(tab + 1).split(",")).mapToInt(Integer::parseInt).toArray());
         }
-        return new StashUnits(units);
+    } catch (IOException | RuntimeException ex) {
+        throw new IllegalStateException("could not load stash-units.tsv", ex);
     }
+    return new StashUnits(units);
+}
 
-    // Default item ids for a chart entry, or null when unknown.
-    public int[] itemsFor(String chartText) { return byChartText.get(chartText); }
+// Default item ids for a chart entry, or null when unknown.
+public int[] itemsFor(String chartText) { return byChartText.get(chartText); }
 
-    public int size() { return byChartText.size(); }
+int size() { return byChartText.size(); }
 
-    // One chart cell (widget child) as extracted from a tier panel.
-    @lombok.AllArgsConstructor
-    public static class Cell {
-        final int type;
-        final String text;
+// One chart cell (widget child) as extracted from a tier panel.
+@lombok.AllArgsConstructor
+public static class Cell {
+    final int type;
+    final String text;
+}
+
+// Chart texts of FILLED units in one tier panel's cells. masterTier
+// disambiguates the Warriors' Guild bank unit, which appears on two
+// tiers under the same chart text.
+public static List<String> filledNames(List<Cell> cells, boolean masterTier) {
+    List<String> filled = new ArrayList<>();
+    String current = null;
+    int sprites = 0;
+    for (Cell cell : cells) {
+        if (cell.type == TEXT_CELL) {
+            flush(filled, current, sprites);
+            current = rename(cell.text, masterTier);
+            sprites = 0;
+        } else if (cell.type == SPRITE_CELL && current != null) sprites++;
     }
+    flush(filled, current, sprites);
+    return filled;
+}
 
-    // Chart texts of FILLED units in one tier panel's cells. masterTier
-    // disambiguates the Warriors' Guild bank unit, which appears on two
-    // tiers under the same chart text.
-    public static List<String> filledNames(List<Cell> cells, boolean masterTier) {
-        List<String> filled = new ArrayList<>();
-        String current = null;
-        int sprites = 0;
-        for (Cell cell : cells) {
-            if (cell.type == TEXT_CELL) {
-                flush(filled, current, sprites);
-                current = rename(cell.text, masterTier);
-                sprites = 0;
-            } else if (cell.type == SPRITE_CELL && current != null) sprites++;
-        }
-        flush(filled, current, sprites);
-        return filled;
-    }
+static void flush(List<String> filled, String name, int sprites) {
+    if (name != null && sprites >= 2) filled.add(name);
+}
 
-    static void flush(List<String> filled, String name, int sprites) {
-        if (name != null && sprites >= 2) filled.add(name);
-    }
-
-    static String rename(String text, boolean masterTier) {
-        return masterTier && "Warriors' Guild bank".equals(text) ? "Warriors' Guild bank (master)" : text;
-    }
+static String rename(String text, boolean masterTier) {
+    return masterTier && "Warriors' Guild bank".equals(text) ? "Warriors' Guild bank (master)" : text;
+}
 }

@@ -5,144 +5,144 @@ import net.runelite.client.config.*;
 
 @ConfigGroup("loadoutlab")
 public interface LoadoutLabConfig extends Config {
-    @ConfigSection(
-        name = "Display", description = "Which detail lines each set card shows", position = 0 ) String display = "display";
+@ConfigSection(
+    name = "Display", description = "Which detail lines each set card shows", position = 0 ) String display = "display";
 
-    @ConfigSection(
-        name = "Controls", description = "Which parameter chips and buttons each card offers", position = 1 ) String controls = "controls";
+@ConfigSection(
+    name = "Controls", description = "Which parameter chips and buttons each card offers", position = 1 ) String controls = "controls";
 
-    @ConfigSection(
-        name = "Defaults", description = "What every new result assumes - chips and pickers"
-            + " still override per mob", position = 2 ) String defaults = "defaults";
+@ConfigSection(
+    name = "Defaults", description = "What every new result assumes - chips and pickers"
+        + " still override per mob", position = 2 ) String defaults = "defaults";
 
-    @ConfigSection(
-        name = "Connections", description = "Other plugins Loadout Lab reads data from when they are installed",
-        position = 3 ) String connections = "connections";
+@ConfigSection(
+    name = "Connections", description = "Other plugins Loadout Lab reads data from when they are installed",
+    position = 3 ) String connections = "connections";
 
-    // Its own section, last and folded (Andrew 2026-10-19: the reset tick
-    // sat between two ordinary chip toggles in Controls).
-    @ConfigSection(
-        name = "Reset", description = "Put this profile back to a just-installed state", position = 4,
-        closedByDefault = true ) String reset = "reset";
+// Its own section, last and folded (Andrew 2026-10-19: the reset tick
+// sat between two ordinary chip toggles in Controls).
+@ConfigSection(
+    name = "Reset", description = "Put this profile back to a just-installed state", position = 4,
+    closedByDefault = true ) String reset = "reset";
 
-    // --- Display ---------------------------------------------------------
+// --- Display ---------------------------------------------------------
 
-    @ConfigItem(
-        keyName = "loadingAnimation", name = "Loading animation",
-        description = "Show the animation while computing; off = a plain line.", section = display, position = 12 )
-    default boolean loadingAnimation() { return true; }
+@ConfigItem(
+    keyName = "loadingAnimation", name = "Loading animation",
+    description = "Show the animation while computing; off = a plain line.", section = display, position = 12 )
+default boolean loadingAnimation() { return true; }
 
-    // --- Controls --------------------------------------------------------
+// --- Controls --------------------------------------------------------
 
-    @ConfigItem(
-        keyName = "defaultSpecWeapon", name = "Spec weapon", description = "Seed new results with the Spec chip on.",
-        section = defaults, position = 2 ) default boolean defaultSpecWeapon() { return true; }
+@ConfigItem(
+    keyName = "defaultSpecWeapon", name = "Spec weapon", description = "Seed new results with the Spec chip on.",
+    section = defaults, position = 2 ) default boolean defaultSpecWeapon() { return true; }
 
-    @ConfigItem(
-        keyName = "defaultUpgradeBudget", name = "Upgrade budget",
-        description = "Seed new results' budget (750k, 1m; - = unlimited; empty = owned only)", section = defaults,
-        position = 14 ) default String defaultUpgradeBudget() { return ""; }
+@ConfigItem(
+    keyName = "defaultUpgradeBudget", name = "Upgrade budget",
+    description = "Seed new results' budget (750k, 1m; - = unlimited; empty = owned only)", section = defaults,
+    position = 14 ) default String defaultUpgradeBudget() { return ""; }
 
-    @ConfigItem(
-        keyName = "showTripBreakdown", name = "Sea trip breakdown",
-        description = "Show the set, spec and cannon lines under a sea card, or just the total. Clicking the lines flips this too.",
-        section = controls, position = 3 ) default boolean showTripBreakdown() { return true; }
+@ConfigItem(
+    keyName = "showTripBreakdown", name = "Sea trip breakdown",
+    description = "Show the set, spec and cannon lines under a sea card, or just the total. Clicking the lines flips this too.",
+    section = controls, position = 3 ) default boolean showTripBreakdown() { return true; }
 
-    @ConfigItem(
-        keyName = "showWildyRisk", name = "Wilderness risk options",
-        description = "Show the low-risk, Protect Item and risk-cap controls.", section = controls, position = 2 )
-    default boolean showWildyRisk() { return true; }
+@ConfigItem(
+    keyName = "showWildyRisk", name = "Wilderness risk options",
+    description = "Show the low-risk, Protect Item and risk-cap controls.", section = controls, position = 2 )
+default boolean showWildyRisk() { return true; }
 
-    @ConfigItem(
-        keyName = "hideCompletedCa", name = "Hide completed CA chips",
-        description = "Leave out the combat achievement chips for tasks you have completed.", section = controls, position = 4 )
-    default boolean hideCompletedCa() { return false; }
+@ConfigItem(
+    keyName = "hideCompletedCa", name = "Hide completed CA chips",
+    description = "Leave out the combat achievement chips for tasks you have completed.", section = controls, position = 4 )
+default boolean hideCompletedCa() { return false; }
 
-    @ConfigItem(
-        keyName = "showPvpWorldChip", name = "PvP world chip",
-        description = "Show the PvP world chip on every card, to plan a PvP-world trip"
-            + " from a normal world. Always shown on a PvP world.", section = controls, position = 6 )
-    default boolean showPvpWorldChip() { return false; }
+@ConfigItem(
+    keyName = "showPvpWorldChip", name = "PvP world chip",
+    description = "Show the PvP world chip on every card, to plan a PvP-world trip"
+        + " from a normal world. Always shown on a PvP world.", section = controls, position = 6 )
+default boolean showPvpWorldChip() { return false; }
 
-    @ConfigItem(
-        keyName = "showDegradableChip", name = "Degradable chip", description = "Show the Degrades chip on cards.",
-        section = controls, position = 4 ) default boolean showDegradableChip() { return true; }
+@ConfigItem(
+    keyName = "showDegradableChip", name = "Degradable chip", description = "Show the Degrades chip on cards.",
+    section = controls, position = 4 ) default boolean showDegradableChip() { return true; }
 
-    @ConfigItem(
-        keyName = "skipDegradableDefault", name = "Skip degradable gear",
-        description = "New mobs start with degradable gear skipped.", section = defaults, position = 16 )
-    default boolean skipDegradableDefault() { return false; }
+@ConfigItem(
+    keyName = "skipDegradableDefault", name = "Skip degradable gear",
+    description = "New mobs start with degradable gear skipped.", section = defaults, position = 16 )
+default boolean skipDegradableDefault() { return false; }
 
-    @ConfigItem(
-        keyName = "resetCustomizations", name = "Reset to fresh install",
-        description = "Tick to put this profile back to a just-installed state: every setting to its default, and all excludes, sims, stored-elsewhere, protect-only, filters, mob pins and notes, and supply defaults wiped. Bank memory stays. Unticks itself. Cannot be undone.",
-        section = reset, position = 1 ) default boolean resetCustomizations() { return false; }
+@ConfigItem(
+    keyName = "resetCustomizations", name = "Reset to fresh install",
+    description = "Tick to put this profile back to a just-installed state: every setting to its default, and all excludes, sims, stored-elsewhere, protect-only, filters, mob pins and notes, and supply defaults wiped. Bank memory stays. Unticks itself. Cannot be undone.",
+    section = reset, position = 1 ) default boolean resetCustomizations() { return false; }
 
-    // Unset every setting so each goes back to its default (the reset
-    // tick included). The key list is RuneLite's own config descriptor -
-    // the hub allows no reflection in plugin code.
-    static void unsetAll(ConfigManager manager, Config config) {
-        for (ConfigItemDescriptor item : manager.getConfigDescriptor(config).getItems()) manager.unsetConfiguration("loadoutlab", item.key());
-    }
+// Unset every setting so each goes back to its default (the reset
+// tick included). The key list is RuneLite's own config descriptor -
+// the hub allows no reflection in plugin code.
+static void unsetAll(ConfigManager manager, Config config) {
+    for (ConfigItemDescriptor item : manager.getConfigDescriptor(config).getItems()) manager.unsetConfiguration("loadoutlab", item.key());
+}
 
-    @ConfigItem(
-        keyName = "defaultRiskCap", name = "Wilderness risk cap",
-        description = "Seed new results' wilderness risk cap (empty = uncapped).", section = defaults, position = 15 )
-    default String defaultRiskCap() { return "75k"; }
+@ConfigItem(
+    keyName = "defaultRiskCap", name = "Wilderness risk cap",
+    description = "Seed new results' wilderness risk cap (empty = uncapped).", section = defaults, position = 15 )
+default String defaultRiskCap() { return "75k"; }
 
-    @ConfigItem(
-        keyName = "defaultOptimizeMode", name = "Mode",
-        description = "The tab new searches start on. Max DPS: the most damage. Balanced (beta): the best"
-            + " damage dealt per damage taken. Tanky (beta): the least damage taken.", section = defaults, position = 1
-    ) default OptimizeModeDefault defaultOptimizeMode() { return OptimizeModeDefault.MAX_DPS; }
+@ConfigItem(
+    keyName = "defaultOptimizeMode", name = "Mode",
+    description = "The tab new searches start on. Max DPS: the most damage. Balanced (beta): the best"
+        + " damage dealt per damage taken. Tanky (beta): the least damage taken.", section = defaults, position = 1
+) default OptimizeModeDefault defaultOptimizeMode() { return OptimizeModeDefault.MAX_DPS; }
 
-    // The mode new searches start on (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6,
-    // Andrew 2026-10-22: "a setting to make max dps/balanced/tanky the
-    // default search option"). Names match OptimizerService.OptimizeMode.
-    @lombok.RequiredArgsConstructor
-    enum OptimizeModeDefault {
-        MAX_DPS("Max DPS"), BALANCED("Balanced (beta)"), TANKY("Tanky (beta)");
+// The mode new searches start on (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6,
+// Andrew 2026-10-22: "a setting to make max dps/balanced/tanky the
+// default search option"). Names match OptimizerService.OptimizeMode.
+@lombok.RequiredArgsConstructor
+enum OptimizeModeDefault {
+    MAX_DPS("Max DPS"), BALANCED("Balanced (beta)"), TANKY("Tanky (beta)");
 
-        final String label;
+    final String label;
 
-        public String toString() { return label; }
-    }
+    public String toString() { return label; }
+}
 
-    enum AssumeDefault {
-        DETECT, NONE
-    }
+enum AssumeDefault {
+    DETECT, NONE
+}
 
-    @ConfigItem(
-        keyName = "defaultThralls", name = "Thralls",
-        description = "Detect folds a thrall in where it benefits; None starts off.", section = defaults, position = 9 )
-    default AssumeDefault defaultThralls() { return AssumeDefault.DETECT; }
+@ConfigItem(
+    keyName = "defaultThralls", name = "Thralls",
+    description = "Detect folds a thrall in where it benefits; None starts off.", section = defaults, position = 9 )
+default AssumeDefault defaultThralls() { return AssumeDefault.DETECT; }
 
-    @ConfigItem(
-        keyName = "slayerTaskBracelet", name = "Slayer task bracelet",
-        description = "Worn by every slayer-task set unless the mob pins its own hands slot.", section = defaults,
-        position = 11 ) default TaskBracelet slayerTaskBracelet() { return TaskBracelet.NONE; }
+@ConfigItem(
+    keyName = "slayerTaskBracelet", name = "Slayer task bracelet",
+    description = "Worn by every slayer-task set unless the mob pins its own hands slot.", section = defaults,
+    position = 11 ) default TaskBracelet slayerTaskBracelet() { return TaskBracelet.NONE; }
 
-    @ConfigItem(
-        keyName = "defaultDeathCharge", name = "Death Charge",
-        description = "Detect assumes Death Charge where it benefits; None starts off.", section = defaults,
-        position = 10 ) default AssumeDefault defaultDeathCharge() { return AssumeDefault.DETECT; }
+@ConfigItem(
+    keyName = "defaultDeathCharge", name = "Death Charge",
+    description = "Detect assumes Death Charge where it benefits; None starts off.", section = defaults,
+    position = 10 ) default AssumeDefault defaultDeathCharge() { return AssumeDefault.DETECT; }
 
-    @ConfigItem(
-        keyName = "npcRightClickEntry", name = "NPC right-click entry",
-        description = "Add 'Search in Loadout Lab' to known monsters' right-click menus.", section = controls,
-        position = 10 ) default boolean npcRightClickEntry() { return true; }
+@ConfigItem(
+    keyName = "npcRightClickEntry", name = "NPC right-click entry",
+    description = "Add 'Search in Loadout Lab' to known monsters' right-click menus.", section = controls,
+    position = 10 ) default boolean npcRightClickEntry() { return true; }
 
-    // --- Connections -----------------------------------------------------
+// --- Connections -----------------------------------------------------
 
-    @ConfigItem(
-        keyName = "useDwmsData", name = "Use Dude, Where's My Stuff", description = "Count gear tracked by Dude, Where's My Stuff (2.11.5+,"
-            + " running) as owned - STASH, POH, death storage and more.", section = connections, position = 1 )
-    default boolean useDwmsData() { return true; }
+@ConfigItem(
+    keyName = "useDwmsData", name = "Use Dude, Where's My Stuff", description = "Count gear tracked by Dude, Where's My Stuff (2.11.5+,"
+        + " running) as owned - STASH, POH, death storage and more.", section = connections, position = 1 )
+default boolean useDwmsData() { return true; }
 
-    @ConfigItem(
-        keyName = "fetchMonsterIcons", name = "Monster pictures (wiki)",
-        description = "Fetch each mob row's picture from the OSRS wiki - one"
-            + " request per monster, cached. Off = no wiki requests, plain" + " text rows.", section = connections,
-        position = 2 ) default boolean fetchMonsterIcons() { return true; }
+@ConfigItem(
+    keyName = "fetchMonsterIcons", name = "Monster pictures (wiki)",
+    description = "Fetch each mob row's picture from the OSRS wiki - one"
+        + " request per monster, cached. Off = no wiki requests, plain" + " text rows.", section = connections,
+    position = 2 ) default boolean fetchMonsterIcons() { return true; }
 
 }

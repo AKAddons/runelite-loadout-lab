@@ -4,7 +4,7 @@ import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups.MonsterGroup;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +35,7 @@ class TripDedupeTest {
 	@Test
 	@DisplayName("the Royal Titans trip counts Branda and Eldric once each, their first version, and leaves the elementals out")
 	void royalTitans() {
-		List<MonsterStats> mobs = group("Royal Titans").getMobs();
+		List<Monster> mobs = group("Royal Titans").getMobs();
 		assertEquals(6, mobs.size());
 		assertEquals(List.of(0, 1), RenderModel.tripMembers(mobs));
 		assertTrue(mobs.get(4).hasAttribute("no_trip") && mobs.get(5).hasAttribute("no_trip"));
@@ -46,7 +46,7 @@ class TripDedupeTest {
 	void duplicatesOnce() {
 		for (String name : new String[]{"Tormented Demons", "Demonic gorillas", "Zulrah (all forms)", "Tombs of Amascut",
 			"Chambers of Xeric", "Theatre of Blood (Entry)", "The Fractured Archive"}) {
-			List<MonsterStats> mobs = group(name).getMobs();
+			List<Monster> mobs = group(name).getMobs();
 			List<Integer> counted = RenderModel.tripMembers(mobs);
 			long distinct = mobs.stream().map(m -> m.name).distinct().count();
 			assertEquals(distinct, counted.size(), name);

@@ -2,7 +2,7 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.*;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,13 +44,13 @@ class SpecFightLengthTest {
 	}
 
 	private static OptimizerService.StyleResult melee(String mobName, int pinnedSpec) throws Exception {
-		MonsterStats mob = data.searchMonsters(mobName, 1).get(0);
+		Monster mob = data.searchMonsters(mobName, 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(WHIP, 1);
 		owned.put(DRAGON_CLAWS, 1);
 		owned.put(CRYSTAL_HALBERD, 1);
 		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		ServiceCalls.bestPerStyle(service, mob, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true),
 			owned.hashCode() + 31 * pinnedSpec + mobName.hashCode(),
@@ -59,7 +59,7 @@ class SpecFightLengthTest {
 			Collections.emptyMap(), null, pinnedSpec, Collections.emptySet(),
 			results -> { out.set(results); done.countDown(); });
 		assertTrue(done.await(120, TimeUnit.SECONDS));
-		return out.get().get(CombatStyle.MELEE);
+		return out.get().get(Style.MELEE);
 	}
 
 	private static String specName(OptimizerService.StyleResult result) {

@@ -3,10 +3,10 @@ package com.loadoutlab.profile;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.ComputeParams;
 import java.util.List;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.Arrays;
 import java.util.Collections;
@@ -124,8 +124,8 @@ public final class QueryBenchmark {
 	 */
 	private static long runPinnedSalve(OptimizerService service, LoadoutData data,
 		PlayerProfile profile, int[] fingerprint) throws Exception {
-		com.loadoutlab.data.GearItem salve = null;
-		for (com.loadoutlab.data.GearItem item : data.getGearItems()) {
+		com.loadoutlab.data.Gear salve = null;
+		for (com.loadoutlab.data.Gear item : data.getGearItems()) {
 			if ("salve amulet(ei)".equalsIgnoreCase(item.getName())
 				&& item.isStandardGear() && !data.isVariant(item.getId())) {
 				salve = item;
@@ -138,13 +138,13 @@ public final class QueryBenchmark {
 		java.util.Map<Integer, Integer> owned =
 			new java.util.LinkedHashMap<>(profile.ownedItems().getQuantities());
 		owned.put(salve.getId(), 1);
-		java.util.Map<com.loadoutlab.engine.CombatStyle,
+		java.util.Map<com.loadoutlab.engine.Style,
 			java.util.Map<com.loadoutlab.data.GearSlot, Integer>> pins = new java.util.EnumMap<>(
-			com.loadoutlab.engine.CombatStyle.class);
-		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues()) {
+			com.loadoutlab.engine.Style.class);
+		for (com.loadoutlab.engine.Style style : com.loadoutlab.engine.Style.concreteValues()) {
 			pins.put(style, java.util.Map.of(com.loadoutlab.data.GearSlot.NECK, salve.getId()));
 		}
-		MonsterStats monster = data.searchMonsters("revenant demon", 1).get(0);
+		Monster monster = data.searchMonsters("revenant demon", 1).get(0);
 		CountDownLatch done = new CountDownLatch(1);
 		long start = System.nanoTime();
 		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, profile.realLevels, profile.boostedLevels,
@@ -155,7 +155,7 @@ public final class QueryBenchmark {
 			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false,
 			Collections.emptySet(), 0,
 			pins, null,
-			(Map<CombatStyle, OptimizerService.StyleResult> results) -> done.countDown());
+			(Map<Style, OptimizerService.StyleResult> results) -> done.countDown());
 		if (!done.await(600, TimeUnit.SECONDS)) {
 			throw new IllegalStateException("benchmark cell timed out: pinned salve");
 		}
@@ -165,7 +165,7 @@ public final class QueryBenchmark {
 	// One group search on the fixture account, maxSwaps 3, under a mode.
 	private static long runGroup(OptimizerService service, LoadoutData data, PlayerProfile profile,
 		String group, String mode, int[] fingerprint) throws Exception {
-		List<MonsterStats> mobs = MonsterGroups.load(data).stream().filter(g -> group.equals(g.getName()))
+		List<Monster> mobs = MonsterGroups.load(data).stream().filter(g -> group.equals(g.getName()))
 			.findFirst().orElseThrow(() -> new IllegalStateException(group)).getMobs();
 		ComputeParams p = new ComputeParams();
 		p.maxSwaps = 3;
@@ -185,7 +185,7 @@ public final class QueryBenchmark {
 	private static long runOnce(OptimizerService service, LoadoutData data,
 		PlayerProfile profile, String monsterName,
 		int lowRisk, int[] fingerprint) throws Exception {
-		MonsterStats monster = data.searchMonsters(monsterName, 1).get(0);
+		Monster monster = data.searchMonsters(monsterName, 1).get(0);
 		CountDownLatch done = new CountDownLatch(1);
 		long start = System.nanoTime();
 		// A fresh fingerprint per run defeats the result cache, so every
@@ -196,7 +196,7 @@ public final class QueryBenchmark {
 			Collections.emptySet(), lowRisk,
 			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false,
 			Collections.emptySet(), 0,
-			(Map<CombatStyle, OptimizerService.StyleResult> results) -> done.countDown());
+			(Map<Style, OptimizerService.StyleResult> results) -> done.countDown());
 		if (!done.await(600, TimeUnit.SECONDS)) {
 			throw new IllegalStateException("benchmark cell timed out: " + monsterName);
 		}

@@ -1,6 +1,6 @@
 package com.loadoutlab.profile;
 
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.engine.PlayerLevels;
 import com.loadoutlab.engine.PrayerUnlocks;
@@ -132,7 +132,7 @@ public final class FixtureBank {
 		owned.put(21880, 10000); // wrath rune
 		List<String> missing = new ArrayList<>();
 		for (String name : BANK_NAMES) {
-			GearItem item = firstByName(data, name);
+			Gear item = firstByName(data, name);
 			if (item == null) {
 				missing.add(name);
 			} else {
@@ -145,9 +145,9 @@ public final class FixtureBank {
 		return owned;
 	}
 
-	private static GearItem firstByName(LoadoutData data, String name) {
-		GearItem fallback = null;
-		for (GearItem item : data.getGearItems()) {
+	private static Gear firstByName(LoadoutData data, String name) {
+		Gear fallback = null;
+		for (Gear item : data.getGearItems()) {
 			if (!item.getName().equalsIgnoreCase(name) || !item.isStandardGear()
 				|| data.isVariant(item.getId())) {
 				continue;

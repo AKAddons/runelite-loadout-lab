@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TitansTripSpecTest {
 	private static LoadoutData data;
-	private static List<MonsterStats> titans;
+	private static List<Monster> titans;
 
 	@BeforeAll
 	static void load() {
@@ -39,7 +39,7 @@ class TitansTripSpecTest {
 			.findFirst().orElseThrow().getMobs().subList(0, 4);
 	}
 
-	private static GearItem item(String name) {
+	private static Gear item(String name) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name));
@@ -57,7 +57,7 @@ class TitansTripSpecTest {
 		return owned;
 	}
 
-	private static OptimizerService.StyleResult result(OptimizerService.RosterResult roster, int mob, CombatStyle style) {
+	private static OptimizerService.StyleResult result(OptimizerService.RosterResult roster, int mob, Style style) {
 		OptimizerService.StyleResult sr = roster.perMob.get(mob).get(style);
 		assertNotNull(sr, titans.get(mob).label() + " " + style);
 		return sr;
@@ -70,13 +70,13 @@ class TitansTripSpecTest {
 		try {
 			OptimizerService.RosterResult roster = ServiceCalls.runRoster(service, titans, bank(), 4, Collections.emptyMap());
 			for (int mob : new int[]{0, 1}) {
-				OptimizerService.StyleResult melee = result(roster, mob, CombatStyle.MELEE);
+				OptimizerService.StyleResult melee = result(roster, mob, Style.MELEE);
 				assertNotNull(melee.specWeapon, titans.get(mob).label() + " carries a spec");
 				assertTrue(melee.specWeapon.getNameLower().contains("crystal halberd"),
 					titans.get(mob).label() + ": " + melee.specWeapon.getName() + " adds " + melee.specDpsAdded);
 			}
 			// One spec weapon per trip: out of reach, nothing melee can spec.
-			assertNull(result(roster, 2, CombatStyle.RANGED).specWeapon, "out of reach: no melee spec to show");
+			assertNull(result(roster, 2, Style.RANGED).specWeapon, "out of reach: no melee spec to show");
 		} finally {
 			service.shutdown();
 		}

@@ -4,7 +4,7 @@ import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.MonsterDefences;
 import com.loadoutlab.data.MonsterOffence;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +25,7 @@ class IncomingDefenceRollTest {
 	@Test
 	@DisplayName("matches the official calculator's own Abyssal demon vectors")
 	void abyssalDemonVectors() {
-		MonsterStats demon = new DataService().load().searchMonsters("abyssal demon", 1).get(0);
+		Monster demon = new DataService().load().searchMonsters("abyssal demon", 1).get(0);
 		// Roll (97+9)*64 = 6784 vs 576 at Defence 1 and 6848 at Defence 99
 		// (osrs-dps-calc DamageTaken.test.ts: 1.596 and 0.825 dps).
 		assertEquals(1.5957, IncomingDpsCalculator.calculate(demon, NAKED, 1, 1, 0).unprayedDps, 0.0005);
@@ -36,7 +36,7 @@ class IncomingDefenceRollTest {
 	@DisplayName("magic defence is 70% Magic plus 30% Defence plus 8, each floored")
 	void magicDefenceLevel() {
 		// Magic 99, Defence 70: 69 + 21 + 8 = 98 -> roll 98 * 64 = 6272.
-		MonsterStats mage = new MonsterStats(1, "Test mage", "", 300, 255, 1, 1, 200, 0,
+		Monster mage = new Monster(1, "Test mage", "", 300, 255, 1, 1, 200, 0,
 			MonsterDefences.ZERO, new MonsterOffence(1, 1, 1, 200, 0, 0, 0, 0, 0, 0, 4,
 				List.of("Magic")),
 			java.util.Collections.emptyList(), false, "", 0);

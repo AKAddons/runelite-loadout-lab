@@ -1,6 +1,6 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 
 /**
  * Loadout queries only the test suite asks for. Kept out of main source so
@@ -15,7 +15,7 @@ public final class LoadoutTestSupport {
 	/** Items in this set you would risk in PvP (tradeables). */
 	public static int tradeableCount(Loadout loadout) {
 		int count = 0;
-		for (GearItem item : loadout.getGear().values()) {
+		for (Gear item : loadout.getGear().values()) {
 			if (item != null && item.isTradeable()) {
 				count++;
 			}

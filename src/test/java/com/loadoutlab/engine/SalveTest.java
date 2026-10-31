@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SalveTest {
 	private static LoadoutData data;
-	private static MonsterStats ankou;   // undead, magic-attackable
+	private static Monster ankou;   // undead, magic-attackable
 
 	@BeforeAll
 	static void load() {
@@ -31,8 +31,8 @@ class SalveTest {
 		assertTrue(ankou.hasAttribute("undead"), "test premise: ankou is undead");
 	}
 
-	private static GearItem byName(String nameLower) {
-		for (GearItem item : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}
@@ -40,15 +40,15 @@ class SalveTest {
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static OptimizationRequest request(CombatStyle style) {
+	private static OptimizationRequest request(Style style) {
 		return new OptimizationRequest(ankou, style, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 	}
 
-	private static DpsResult calc(CombatStyle style, GearItem weapon, GearItem neck) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+	private static DpsResult calc(Style style, Gear weapon, Gear neck) {
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, weapon);
 		if (neck != null) {
 			gear.put(neck.getSlot(), neck);
@@ -59,11 +59,11 @@ class SalveTest {
 	@Test
 	@DisplayName("melee: salve(ei) sits in the 20% tier with salve (e), above (i) and base")
 	void meleeTiers() {
-		GearItem whip = byName("abyssal whip");
-		double ei = calc(CombatStyle.MELEE, whip, byName("salve amulet(ei)")).getDps();
-		double e = calc(CombatStyle.MELEE, whip, byName("salve amulet (e)")).getDps();
-		double i = calc(CombatStyle.MELEE, whip, byName("salve amulet(i)")).getDps();
-		double base = calc(CombatStyle.MELEE, whip, byName("salve amulet")).getDps();
+		Gear whip = byName("abyssal whip");
+		double ei = calc(Style.MELEE, whip, byName("salve amulet(ei)")).getDps();
+		double e = calc(Style.MELEE, whip, byName("salve amulet (e)")).getDps();
+		double i = calc(Style.MELEE, whip, byName("salve amulet(i)")).getDps();
+		double base = calc(Style.MELEE, whip, byName("salve amulet")).getDps();
 
 		assertEquals(e, ei, 1e-9, "(ei) must match (e)'s 20% melee tier");
 		assertEquals(base, i, 1e-9, "(i) shares the base 16.67% melee tier");
@@ -73,10 +73,10 @@ class SalveTest {
 	@Test
 	@DisplayName("magic: salve(ei) raises the MAX HIT 20% and (i) 15% against undead")
 	void magicDamageTiers() {
-		GearItem sang = byName("sanguinesti staff");
-		int bare = calc(CombatStyle.MAGIC, sang, null).getMaxHit();
-		int ei = calc(CombatStyle.MAGIC, sang, byName("salve amulet(ei)")).getMaxHit();
-		int i = calc(CombatStyle.MAGIC, sang, byName("salve amulet(i)")).getMaxHit();
+		Gear sang = byName("sanguinesti staff");
+		int bare = calc(Style.MAGIC, sang, null).getMaxHit();
+		int ei = calc(Style.MAGIC, sang, byName("salve amulet(ei)")).getMaxHit();
+		int i = calc(Style.MAGIC, sang, byName("salve amulet(i)")).getMaxHit();
 
 		assertEquals(multiply(bare, 6, 5), ei, "(ei) magic damage is +20%");
 		assertEquals(multiply(bare, 23, 20), i, "(i) magic damage is +15%");
@@ -85,18 +85,18 @@ class SalveTest {
 	@Test
 	@DisplayName("salves do nothing against the living")
 	void noEffectOnNonUndead() {
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		assertFalse(goblin.hasAttribute("undead"));
-		OptimizationRequest req = new OptimizationRequest(goblin, CombatStyle.MELEE,
+		OptimizationRequest req = new OptimizationRequest(goblin, Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
-		GearItem whip = byName("abyssal whip");
+		Gear whip = byName("abyssal whip");
 
-		EnumMap<GearSlot, GearItem> bare = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> bare = new EnumMap<>(GearSlot.class);
 		bare.put(GearSlot.WEAPON, whip);
-		EnumMap<GearSlot, GearItem> salved = new EnumMap<>(bare);
-		GearItem ei = byName("salve amulet(ei)");
+		EnumMap<GearSlot, Gear> salved = new EnumMap<>(bare);
+		Gear ei = byName("salve amulet(ei)");
 		salved.put(ei.getSlot(), ei);
 
 		assertEquals(new DpsCalculator().calculate(req, new Loadout(bare)).getDps(),

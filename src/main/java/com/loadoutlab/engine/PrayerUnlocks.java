@@ -9,44 +9,44 @@ import lombok.AllArgsConstructor;
 // the unlock varbits at snapshot time.
 @AllArgsConstructor
 public class PrayerUnlocks {
-    // Everything unlocked - tests, harness, and the game-best ceiling.
-    public static final PrayerUnlocks ALL = new PrayerUnlocks(true, true, true, true, true, true);
+// Everything unlocked - tests, harness, and the game-best ceiling.
+public static final PrayerUnlocks ALL = new PrayerUnlocks(true, true, true, true, true, true);
 
-    // The free-to-play prayer book: everything through Mystic Might is
-    // F2P; the unlock-gated prayers (Piety/Chivalry/Rigour/Deadeye/
-    // Augury/Mystic Vigour) are exactly the members-only ones, so denying
-    // them all IS the F2P ceiling (wiki-verified 2026-07-15).
-    public static final PrayerUnlocks F2P = new PrayerUnlocks(false, false, false, false, false, false);
+// The free-to-play prayer book: everything through Mystic Might is
+// F2P; the unlock-gated prayers (Piety/Chivalry/Rigour/Deadeye/
+// Augury/Mystic Vigour) are exactly the members-only ones, so denying
+// them all IS the F2P ceiling (wiki-verified 2026-07-15).
+public static final PrayerUnlocks F2P = new PrayerUnlocks(false, false, false, false, false, false);
 
-    final boolean kingsRansom;
-    final boolean rigour;
-    final boolean augury;
-    final boolean deadeye;
-    final boolean mysticVigour;
-    final boolean zeal;
+final boolean kingsRansom;
+final boolean rigour;
+final boolean augury;
+final boolean deadeye;
+final boolean mysticVigour;
+final boolean zeal;
 
-    // The pre-Zeal form (older profiles, the harness).
-    public PrayerUnlocks(boolean kingsRansom, boolean rigour, boolean augury, boolean deadeye, boolean mysticVigour) {
-        this(kingsRansom, rigour, augury, deadeye, mysticVigour, false);
-    }
+// The pre-Zeal form (older profiles, the harness).
+public PrayerUnlocks(boolean kingsRansom, boolean rigour, boolean augury, boolean deadeye, boolean mysticVigour) {
+    this(kingsRansom, rigour, augury, deadeye, mysticVigour, false);
+}
 
-    // Zeal: the Fractured Archive's Piety upgrade.
-    public boolean zeal() { return zeal; }
+// Zeal: the Fractured Archive's Piety upgrade.
+boolean zeal() { return zeal; }
 
-    public boolean piety() { return kingsRansom; }
+public boolean piety() { return kingsRansom; }
 
-    public boolean chivalry() { return kingsRansom; }
+boolean chivalry() { return kingsRansom; }
 
-    public boolean rigour() { return rigour; }
+public boolean rigour() { return rigour; }
 
-    public boolean augury() { return augury; }
+public boolean augury() { return augury; }
 
-    public boolean deadeye() { return deadeye; }
+boolean deadeye() { return deadeye; }
 
-    public boolean mysticVigour() { return mysticVigour; }
+boolean mysticVigour() { return mysticVigour; }
 
-    public String key() {
-        return "" + (kingsRansom ? 1 : 0) + (rigour ? 1 : 0) + (augury ? 1 : 0)
-            + (deadeye ? 1 : 0) + (mysticVigour ? 1 : 0) + (zeal ? 1 : 0);
-    }
+public String key() {
+    return "" + (kingsRansom ? 1 : 0) + (rigour ? 1 : 0) + (augury ? 1 : 0)
+        + (deadeye ? 1 : 0) + (mysticVigour ? 1 : 0) + (zeal ? 1 : 0);
+}
 }

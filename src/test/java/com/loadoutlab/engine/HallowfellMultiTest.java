@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.Collections;
 import java.util.Map;
@@ -37,13 +37,13 @@ class HallowfellMultiTest {
 	@DisplayName("with the Multi card on at abyssal demons, owning Hallowfell, the hallowfell tool's Yours wears it")
 	void toolWearsHallowfell() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
+		Monster demon = data.searchMonsters("abyssal demon", 1).get(0);
 		ComputeParams p = new ComputeParams();
 		p.multiView = true;
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			service.bestPerStyle(demon, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(Map.of(MultiTool.HALLOWFELL_SWORD, 1), true), 1, p,
 				Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
@@ -54,7 +54,7 @@ class HallowfellMultiTest {
 			assertTrue(done.await(300, TimeUnit.SECONDS));
 			OptimizerService.StyleResult tool = out.get().values().iterator().next().multiTools.get("hallowfell");
 			assertNotNull(tool, "the hallowfell tool is on the Multi card");
-			GearItem weapon = tool.owned.get(0).getLoadout().get(GearSlot.WEAPON);
+			Gear weapon = tool.owned.get(0).getLoadout().get(GearSlot.WEAPON);
 			assertEquals(MultiTool.HALLOWFELL_SWORD, weapon.getId());
 		} finally {
 			service.shutdown();

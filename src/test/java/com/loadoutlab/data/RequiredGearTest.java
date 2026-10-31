@@ -26,7 +26,7 @@ class RequiredGearTest {
 	@DisplayName("every curated monster key binds to a loaded corpus row")
 	void keysBindToCorpus() {
 		for (String key : RequiredGear.BY_NAME.keySet()) {
-			List<MonsterStats> hits = data.searchMonsters(key, 10);
+			List<Monster> hits = data.searchMonsters(key, 10);
 			assertTrue(hits.stream().anyMatch(
 				m -> m.getName().equalsIgnoreCase(key)),
 				"no corpus row named: " + key);
@@ -37,7 +37,7 @@ class RequiredGearTest {
 	@DisplayName("every rule's items resolve to standard gear in its slot")
 	void itemsResolve() {
 		for (String key : RequiredGear.BY_NAME.keySet()) {
-			MonsterStats mob = data.searchMonsters(key, 10).stream()
+			Monster mob = data.searchMonsters(key, 10).stream()
 				.filter(m -> m.getName().equalsIgnoreCase(key))
 				.findFirst().orElseThrow();
 			RequiredGear.Rule rule = ruleFor(mob);
@@ -45,7 +45,7 @@ class RequiredGearTest {
 			Set<Integer> ids = rule.ids(data);
 			assertFalse(ids.isEmpty(), key + ": no item resolved");
 			for (int id : ids) {
-				GearItem item = data.getGear(id);
+				Gear item = data.getGear(id);
 				assertNotNull(item, key + ": id " + id);
 				assertEquals(rule.slot, item.getSlot(),
 					key + ": " + item.label() + " is not in the rule's slot");
@@ -57,14 +57,14 @@ class RequiredGearTest {
 	@Test
 	@DisplayName("the basilisk family requires a gaze shield; goblins require nothing")
 	void spotChecks() {
-		MonsterStats basilisk = data.searchMonsters("basilisk", 1).get(0);
+		Monster basilisk = data.searchMonsters("basilisk", 1).get(0);
 		RequiredGear.Rule rule = ruleFor(basilisk);
 		assertNotNull(rule);
 		assertEquals(GearSlot.SHIELD, rule.slot);
 		assertTrue(rule.ids(data).contains(4156), "mirror shield accepted");
 		assertNull(ruleFor(data.searchMonsters("goblin", 1).get(0)));
 		// The harpies' lantern must resolve to the LIT version only.
-		MonsterStats harpie = data.searchMonsters("harpie bug swarm", 1).get(0);
+		Monster harpie = data.searchMonsters("harpie bug swarm", 1).get(0);
 		assertEquals(Set.of(7053), ruleFor(harpie).ids(data));
 	}
 
@@ -74,7 +74,7 @@ class RequiredGearTest {
 		// Andrew (2026-10-15): "for the ancient wyvern it's not recommending wyvern shield".
 		Set<Integer> shields = Set.of(2890, 9731, 11283, 11284, 22002, 22003, 21633, 21634);
 		for (String name : new String[]{"ancient wyvern", "spitting wyvern", "taloned wyvern", "long-tailed wyvern", "skeletal wyvern"}) {
-			MonsterStats wyvern = data.searchMonsters(name, 1).get(0);
+			Monster wyvern = data.searchMonsters(name, 1).get(0);
 			List<RequiredGear.Rule> rules = RequiredGear.rulesFor(wyvern);
 			assertEquals(1, rules.size(), name + ": one shield rule");
 			assertEquals(GearSlot.SHIELD, rules.get(0).slot, name);
@@ -85,7 +85,7 @@ class RequiredGearTest {
 	@Test
 	@DisplayName("Lizardman shamans outside CoX require the full tier-5 Shayzien set; the slayer helmet may stand in for the helm; the CoX shaman needs nothing")
 	void shamansRequireShayzien() {
-		MonsterStats temple = data.searchMonsters("Lizardman shaman", 5).stream()
+		Monster temple = data.searchMonsters("Lizardman shaman", 5).stream()
 			.filter(m -> "Lizardman Temple".equals(m.getVersion())).findFirst().orElseThrow();
 		List<RequiredGear.Rule> rules = RequiredGear.rulesFor(temple);
 		assertEquals(5, rules.size(), "head, body, legs, hands, feet");
@@ -97,12 +97,12 @@ class RequiredGearTest {
 			assertTrue(ids.contains(id), "Shayzien tier-5 piece " + id);
 		}
 		assertTrue(ids.contains(11864), "the slayer helmet stands in for the helm (hard Kourend & Kebos diary)");
-		MonsterStats cox = data.searchMonsters("Lizardman shaman (Chambers of Xeric)", 1).get(0);
+		Monster cox = data.searchMonsters("Lizardman shaman (Chambers of Xeric)", 1).get(0);
 		assertTrue(RequiredGear.rulesFor(cox).isEmpty(), "in CoX the attack is dodged");
 	}
 
 	/** The first rule, or null - the pre-2026-09-17 single-rule view. */
-	private static RequiredGear.Rule ruleFor(MonsterStats mob) {
+	private static RequiredGear.Rule ruleFor(Monster mob) {
 		List<RequiredGear.Rule> rules = RequiredGear.rulesFor(mob);
 		return rules.isEmpty() ? null : rules.get(0);
 	}

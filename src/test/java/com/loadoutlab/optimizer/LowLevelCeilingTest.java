@@ -2,9 +2,9 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.PlayerLevels;
@@ -60,19 +60,19 @@ class LowLevelCeilingTest {
 	@Test
 	@DisplayName("the BiS ceiling never names gear the player cannot equip")
 	void ceilingRespectsThePlayersRequirements() throws Exception {
-		MonsterStats obor = data.searchMonsters("obor", 1).get(0);
+		Monster obor = data.searchMonsters("obor", 1).get(0);
 		RequirementProfile fresh = freshAccount();
 		PlayerLevels levels = new PlayerLevels(10, 1, 1, 10, 1, 1, 1);
 
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out =
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out =
 				new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, obor,
 				levels, levels, PrayerUnlocks.ALL,
 				fresh, new OwnedItems(new HashMap<>(), true), 0,
-				false, false, "", new EnumMap<>(CombatStyle.class), -1,
+				false, false, "", new EnumMap<>(Style.class), -1,
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 				Collections.emptySet(), 0,
 				Collections.emptyMap(), null, 0, Collections.emptySet(),
@@ -82,12 +82,12 @@ class LowLevelCeilingTest {
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS), "the Obor query timed out");
 
-			OptimizerService.StyleResult melee = out.get().get(CombatStyle.MELEE);
+			OptimizerService.StyleResult melee = out.get().get(Style.MELEE);
 			assertNotNull(melee, "no melee result for Obor");
 			assertNotNull(melee.overallBest, "no game-best set for Obor");
 
 			for (GearSlot slot : GearSlot.values()) {
-				GearItem worn = melee.overallBest.getLoadout().get(slot);
+				Gear worn = melee.overallBest.getLoadout().get(slot);
 				if (worn == null) {
 					continue;
 				}

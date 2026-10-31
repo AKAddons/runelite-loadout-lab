@@ -1,8 +1,8 @@
 package com.loadoutlab.optimizer;
 
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.CandidateMode;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -55,8 +55,8 @@ public class DeathChargeTest {
 
 	@Test
 	public void theRequestCarriesTheFlagThroughItsWither() {
-		MonsterStats dummy = new MonsterStats(1, "Test", "", 100, 100, 1, 1, null, null);
-		OptimizationRequest base = new OptimizationRequest(dummy, CombatStyle.MELEE,
+		Monster dummy = new Monster(1, "Test", "", 100, 100, 1, 1, null, null);
+		OptimizationRequest base = new OptimizationRequest(dummy, Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);

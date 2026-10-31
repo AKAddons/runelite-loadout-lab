@@ -3,10 +3,10 @@ package com.loadoutlab.engine;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -294,14 +294,14 @@ public class OfficialVectorExport {
 		List<Map> ours = new ArrayList<>();
 
 		for (String[] m : SWEEP_MONSTERS) {
-			MonsterStats monster = data.searchMonsters(m[0], 10).stream()
+			Monster monster = data.searchMonsters(m[0], 10).stream()
 				.filter(x -> m[1].isEmpty() || m[1].equalsIgnoreCase(x.getVersion()))
 				.findFirst()
 				.orElse(data.searchMonsters(m[0], 1).stream().findFirst().orElse(null));
 			if (monster == null) {
 				continue;
 			}
-			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
+			for (Style style : new Style[]{Style.MELEE, Style.RANGED, Style.MAGIC}) {
 				OptimizationRequest request = new OptimizationRequest(
 					monster, style, PlayerLevels.MAXED,
 					prayersFor(style), null, 0,
@@ -315,7 +315,7 @@ public class OfficialVectorExport {
 				String name = (m[0] + "-" + style).toLowerCase().replace(" ", "").replace("'", "");
 
 				List<Object> gearNames = new ArrayList<>();
-				for (GearItem item : result.getLoadout().getGear().values()) {
+				for (Gear item : result.getLoadout().getGear().values()) {
 					if (item != null) {
 						gearNames.add(gearRef(item));
 					}
@@ -376,20 +376,20 @@ public class OfficialVectorExport {
 			// normalizes the wiki's compound strings ("Awakened, Awake"
 			// -> "Awakened") while the official data keeps them raw -
 			// the vector carries the raw string for their lookup.
-			MonsterStats monster = data.searchMonsters(s[1], 10).stream()
+			Monster monster = data.searchMonsters(s[1], 10).stream()
 				.filter(m -> s[2] == null || s[2].isEmpty()
 					|| firstToken(s[2]).equalsIgnoreCase(firstToken(m.getVersion())))
 				.findFirst()
 				.orElse(data.searchMonsters(s[1], 1).stream().findFirst().orElse(null));
-			GearItem weapon = byName(data, s[4]);
+			Gear weapon = byName(data, s[4]);
 			if (monster == null || weapon == null) {
 				continue;
 			}
-			CombatStyle style = CombatStyle.valueOf(s[3]);
+			Style style = Style.valueOf(s[3]);
 			com.loadoutlab.data.SpellStats forcedSpell = s.length > 6 && s[6] != null
 				? data.getSpells().stream().filter(sp -> sp.getName().equalsIgnoreCase(s[6])).findFirst().orElse(null)
 				: null;
-			EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+			EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 			gear.put(GearSlot.WEAPON, weapon);
 			List<Object> gearNames = new ArrayList<>();
 			gearNames.add(gearRef(weapon));
@@ -399,10 +399,10 @@ public class OfficialVectorExport {
 				// (a dart as gear is a thrown WEAPON there and would replace
 				// the blowpipe); our side keeps the BlowpipeDarts assumption
 				// - game-best assumes dragon, so name a dragon dart here.
-				GearItem dart = byName(data, s[5].substring(5));
+				Gear dart = byName(data, s[5].substring(5));
 				blowpipeDartId = dart.getId();
 			} else if (s[5] != null) {
-				GearItem ammo = byName(data, s[5]);
+				Gear ammo = byName(data, s[5]);
 				gear.put(GearSlot.AMMO, ammo);
 				gearNames.add(gearRef(ammo));
 			}
@@ -421,7 +421,7 @@ public class OfficialVectorExport {
 					sunfire = true;
 					continue;
 				}
-				GearItem extra = byName(data, s[i]);
+				Gear extra = byName(data, s[i]);
 				gear.put(extra.getSlot(), extra);
 				gearNames.add(gearRef(extra));
 				onTask |= s[i].toLowerCase().contains("slayer helmet");
@@ -484,7 +484,7 @@ public class OfficialVectorExport {
 		System.out.println("exported " + vectors.size() + " vectors to " + dir);
 	}
 
-	private static Object gearRef(GearItem item) {
+	private static Object gearRef(Gear item) {
 		// [name, version, id]: the harness looks the piece up by id first -
 		// the official data cases names differently (Tonalztics of Ralos,
 		// Trident of the Swamp) and a name miss drops the vector.
@@ -499,7 +499,7 @@ public class OfficialVectorExport {
 		return (comma < 0 ? version : version.substring(0, comma)).trim();
 	}
 
-	private static GearItem byName(LoadoutData data, String name) {
+	private static Gear byName(LoadoutData data, String name) {
 		// "Name#Version" pins an exact variant (Toxic blowpipe#Charged);
 		// plain names keep first-standard-match, where Empty can precede
 		// Charged in corpus order.
@@ -513,11 +513,11 @@ public class OfficialVectorExport {
 			.findFirst().orElse(null);
 	}
 
-	private static PrayerBonuses prayersFor(CombatStyle style) {
+	private static PrayerBonuses prayersFor(Style style) {
 		return PrayerBonuses.bestAvailable(PlayerLevels.MAXED);
 	}
 
-	private static List<String> prayerNames(CombatStyle style) {
+	private static List<String> prayerNames(Style style) {
 		switch (style) {
 			case RANGED: return List.of("RIGOUR");
 			// Augury only - the wiki engine stacks any prayers it is fed,

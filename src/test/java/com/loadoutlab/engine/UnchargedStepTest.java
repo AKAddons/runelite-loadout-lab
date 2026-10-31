@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ class UnchargedStepTest {
 	private static final int EYE_OF_AYAK_CHARGED = 31113;
 	private static final int EYE_OF_AYAK_UNCHARGED = 31115;
 	private static LoadoutData data;
-	private static MonsterStats spectre;
+	private static Monster spectre;
 
 	@BeforeAll
 	static void load() {
@@ -40,7 +40,7 @@ class UnchargedStepTest {
 		spectre = data.searchMonsters("aberrant spectre", 1).get(0);
 	}
 
-	private static GearItem item(String name) {
+	private static Gear item(String name) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name));
@@ -63,14 +63,14 @@ class UnchargedStepTest {
 	@DisplayName("the Aberrant spectre's weapon swaps hold the charged Obligator and never the uncharged one")
 	void swapsAreChargedOnly() {
 		Map<Integer, Integer> owned = new HashMap<>();
-		EnumMap<GearSlot, GearItem> g = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> g = new EnumMap<>(GearSlot.class);
 		for (String name : new String[]{"neitiznot faceguard", "fire cape", "amulet of torture", "rada's blessing 4",
 			"noxious halberd", "bandos chestplate", "ahrim's robeskirt", "ferocious gloves", "aranea boots", "berserker ring (i)"}) {
-			GearItem it = item(name);
+			Gear it = item(name);
 			owned.put(it.getId(), 1);
 			g.put(it.getSlot(), it);
 		}
-		OptimizationRequest request = new OptimizationRequest(spectre, CombatStyle.MELEE, PlayerLevels.MAXED,
+		OptimizationRequest request = new OptimizationRequest(spectre, Style.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL), null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 3);
 		DpsResult shown = new DpsCalculator().calculate(request, new Loadout(g));

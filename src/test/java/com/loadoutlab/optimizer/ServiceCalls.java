@@ -1,7 +1,7 @@
 package com.loadoutlab.optimizer;
 
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
@@ -30,9 +30,9 @@ public final class ServiceCalls {
 	}
 
 	// A roster's route gods, as the engine seeds them on a pick.
-	static java.util.List<String> routeOf(java.util.List<MonsterStats> mobs) {
+	static java.util.List<String> routeOf(java.util.List<Monster> mobs) {
 		java.util.List<String> gods = new java.util.ArrayList<>();
-		for (MonsterStats m : mobs) for (String god : com.loadoutlab.engine.GwdProtection.godsFor(m)) if (!gods.contains(god)) gods.add(god);
+		for (Monster m : mobs) for (String god : com.loadoutlab.engine.GwdProtection.godsFor(m)) if (!gods.contains(god)) gods.add(god);
 		return gods;
 	}
 
@@ -57,7 +57,7 @@ public final class ServiceCalls {
 	/** No pinned items. */
 	public static void bestPerStyle(
 		OptimizerService service,
-		MonsterStats monster,
+		Monster monster,
 		PlayerLevels realLevels,
 		PlayerLevels boostedLevels,
 		PrayerUnlocks prayerUnlocks,
@@ -73,12 +73,12 @@ public final class ServiceCalls {
 		boolean antifirePotion,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
-		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback) {
+		Consumer<Map<Style, OptimizerService.StyleResult>> callback) {
 		bestPerStyle(service, monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedItems, maxTradeables, riskBudgetGp, antifirePotion, dreamItems,
 			upgradeBudgetGp,
-			Collections.<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>>emptyMap(),
+			Collections.<Style, Map<com.loadoutlab.data.GearSlot, Integer>>emptyMap(),
 			null, callback);
 	}
 
@@ -86,7 +86,7 @@ public final class ServiceCalls {
 	 * exists nowhere else (matches the request default). */
 	public static void bestPerStyle(
 		OptimizerService service,
-		MonsterStats monster,
+		Monster monster,
 		PlayerLevels realLevels,
 		PlayerLevels boostedLevels,
 		PrayerUnlocks prayerUnlocks,
@@ -102,13 +102,13 @@ public final class ServiceCalls {
 		boolean antifirePotion,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		Map<Style, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell,
-		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback) {
+		Consumer<Map<Style, OptimizerService.StyleResult>> callback) {
 		Set<Integer> uniform = excludedItems == null
 			? Collections.emptySet() : excludedItems;
-		Map<CombatStyle, Set<Integer>> byStyle = new EnumMap<>(CombatStyle.class);
-		for (CombatStyle style : CombatStyle.concreteValues()) {
+		Map<Style, Set<Integer>> byStyle = new EnumMap<>(Style.class);
+		for (Style style : Style.concreteValues()) {
 			byStyle.put(style, uniform);
 		}
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
@@ -122,7 +122,7 @@ public final class ServiceCalls {
 	/** Per-style exclusions, no bench (maxSwaps 1). */
 	public static void bestPerStyle(
 		OptimizerService service,
-		MonsterStats monster,
+		Monster monster,
 		PlayerLevels realLevels,
 		PlayerLevels boostedLevels,
 		PrayerUnlocks prayerUnlocks,
@@ -132,17 +132,17 @@ public final class ServiceCalls {
 		boolean f2pOnly,
 		boolean onSlayerTask,
 		String spellbookLock,
-		Map<CombatStyle, Set<Integer>> excludedByStyle,
+		Map<Style, Set<Integer>> excludedByStyle,
 		int maxTradeables,
 		int riskBudgetGp,
 		boolean antifirePotion,
 		boolean inWilderness,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		Map<Style, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell,
 		Set<Integer> protectOnlyItems,
-		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback) {
+		Consumer<Map<Style, OptimizerService.StyleResult>> callback) {
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, params(com.loadoutlab.engine.GwdProtection.godsFor(monster), f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
 				riskBudgetGp, antifirePotion, inWilderness, upgradeBudgetGp, 1),
@@ -152,7 +152,7 @@ public final class ServiceCalls {
 	/** Per-style exclusions with a pinned SPEC weapon (no bench). */
 	public static void bestPerStyle(
 		OptimizerService service,
-		MonsterStats monster,
+		Monster monster,
 		PlayerLevels realLevels,
 		PlayerLevels boostedLevels,
 		PrayerUnlocks prayerUnlocks,
@@ -162,18 +162,18 @@ public final class ServiceCalls {
 		boolean f2pOnly,
 		boolean onSlayerTask,
 		String spellbookLock,
-		Map<CombatStyle, Set<Integer>> excludedByStyle,
+		Map<Style, Set<Integer>> excludedByStyle,
 		int maxTradeables,
 		int riskBudgetGp,
 		boolean antifirePotion,
 		boolean inWilderness,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		Map<Style, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell,
 		int pinnedSpec,
 		Set<Integer> protectOnlyItems,
-		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback) {
+		Consumer<Map<Style, OptimizerService.StyleResult>> callback) {
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, params(com.loadoutlab.engine.GwdProtection.godsFor(monster), f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
 				riskBudgetGp, antifirePotion, inWilderness, upgradeBudgetGp, 1),
@@ -183,7 +183,7 @@ public final class ServiceCalls {
 	/** maxSwaps bench, raid boost assumed. */
 	public static void bestPerStyle(
 		OptimizerService service,
-		MonsterStats monster,
+		Monster monster,
 		PlayerLevels realLevels,
 		PlayerLevels boostedLevels,
 		PrayerUnlocks prayerUnlocks,
@@ -193,7 +193,7 @@ public final class ServiceCalls {
 		boolean f2pOnly,
 		boolean onSlayerTask,
 		String spellbookLock,
-		Map<CombatStyle, Set<Integer>> excludedByStyle,
+		Map<Style, Set<Integer>> excludedByStyle,
 		int maxTradeables,
 		int riskBudgetGp,
 		boolean antifirePotion,
@@ -201,10 +201,10 @@ public final class ServiceCalls {
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
 		int maxSwaps,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		Map<Style, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell,
 		Set<Integer> protectOnlyItems,
-		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback) {
+		Consumer<Map<Style, OptimizerService.StyleResult>> callback) {
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, params(com.loadoutlab.engine.GwdProtection.godsFor(monster), f2pOnly, onSlayerTask, spellbookLock, maxTradeables,
 				riskBudgetGp, antifirePotion, inWilderness, upgradeBudgetGp, maxSwaps),
@@ -215,13 +215,13 @@ public final class ServiceCalls {
 	/** No bench, no per-mob exclusions. */
 	public static void bestPerStyleAcross(
 		OptimizerService service,
-		List<MonsterStats> mobs,
+		List<Monster> mobs,
 		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
-		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
+		Map<Style, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
 		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		Map<Style, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<OptimizerService.RosterResult> callback) {
 		bestPerStyleAcross(service, mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
@@ -233,14 +233,14 @@ public final class ServiceCalls {
 	/** maxSwaps bench, no per-mob exclusions. */
 	public static void bestPerStyleAcross(
 		OptimizerService service,
-		List<MonsterStats> mobs,
+		List<Monster> mobs,
 		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
-		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
+		Map<Style, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
 		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		int maxSwaps,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		Map<Style, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<OptimizerService.RosterResult> callback) {
 		bestPerStyleAcross(service, mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
@@ -256,9 +256,9 @@ public final class ServiceCalls {
 	 * throws on timeout. Previously each roster test hand-rolled this
 	 * latch + AtomicReference block. */
 	public static OptimizerService.RosterResult runRoster(
-		OptimizerService service, List<MonsterStats> mobs,
+		OptimizerService service, List<Monster> mobs,
 		Map<Integer, Integer> owned, int maxSwaps,
-		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob)
+		Map<Integer, Map<Style, Set<Integer>>> excludedByMob)
 		throws InterruptedException {
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
@@ -279,12 +279,12 @@ public final class ServiceCalls {
 	}
 
 	/** The per-member harness (ISS-01M4Y2VJ8DWBBKFR1HP9NR45NG): pins, the
-	 * pinned spell and the pinned spec keyed by MonsterStats.profileId(),
+	 * pinned spell and the pinned spec keyed by Monster.profileId(),
 	 * the way excludedByMob travels. Same latch as runRoster. */
 	public static OptimizerService.RosterResult runRosterPinned(
-		OptimizerService service, List<MonsterStats> mobs,
+		OptimizerService service, List<Monster> mobs,
 		Map<Integer, Integer> owned, int maxSwaps,
-		Map<Integer, Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>>> pinsByMob,
+		Map<Integer, Map<Style, Map<com.loadoutlab.data.GearSlot, Integer>>> pinsByMob,
 		Map<Integer, com.loadoutlab.data.SpellStats> spellByMob,
 		Map<Integer, Integer> specByMob)
 		throws InterruptedException {
@@ -308,21 +308,21 @@ public final class ServiceCalls {
 	/** Per-mob exclusions; per-mob sims empty, raid boost assumed. */
 	public static void bestPerStyleAcross(
 		OptimizerService service,
-		List<MonsterStats> mobs,
+		List<Monster> mobs,
 		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
-		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
+		Map<Style, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
 		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		int maxSwaps,
-		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		Map<Integer, Map<Style, Set<Integer>>> excludedByMob,
+		Map<Style, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<OptimizerService.RosterResult> callback) {
 		// A roster-wide pin reaches every member (today's test semantics).
-		Map<Integer, Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>>> pinsByMob = new HashMap<>();
+		Map<Integer, Map<Style, Map<com.loadoutlab.data.GearSlot, Integer>>> pinsByMob = new HashMap<>();
 		Map<Integer, com.loadoutlab.data.SpellStats> spellByMob = new HashMap<>();
-		for (MonsterStats mob : mobs) {
+		for (Monster mob : mobs) {
 			pinsByMob.put(mob.profileId(), pinnedByStyle);
 			spellByMob.put(mob.profileId(), pinnedSpell);
 		}

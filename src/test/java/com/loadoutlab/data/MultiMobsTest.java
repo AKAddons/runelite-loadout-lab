@@ -38,7 +38,7 @@ class MultiMobsTest {
 		}
 	}
 
-	private static String version(MonsterStats m) {
+	private static String version(Monster m) {
 		return m.getVersion() == null ? "" : m.getVersion();
 	}
 
@@ -66,7 +66,7 @@ class MultiMobsTest {
 			String name = mob.get("name").getAsString();
 			String version = mob.get("version").getAsString();
 			assertTrue(seen.add(name + "#" + version), "repeated entry: " + name + " [" + version + "]");
-			List<MonsterStats> hits = data.searchMonsters(name, 100);
+			List<Monster> hits = data.searchMonsters(name, 100);
 			long exact = hits.stream()
 				.filter(m -> m.getName().equals(name) && version(m).equals(version)).count();
 			assertEquals(1, exact, name + " [" + version + "] must name one corpus monster, found " + exact);

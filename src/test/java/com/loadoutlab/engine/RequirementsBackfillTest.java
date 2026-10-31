@@ -1,7 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import java.util.EnumMap;
 import java.util.Map;
@@ -27,8 +27,8 @@ class RequirementsBackfillTest {
 		data = new DataService().load();
 	}
 
-	private static GearItem byName(String nameLower) {
-		for (GearItem item : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}

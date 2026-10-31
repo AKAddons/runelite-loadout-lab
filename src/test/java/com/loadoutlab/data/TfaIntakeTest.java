@@ -1,7 +1,7 @@
 package com.loadoutlab.data;
 
 import com.loadoutlab.engine.CandidateMode;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.LoadoutOptimizer;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
@@ -33,7 +33,7 @@ class TfaIntakeTest {
 			.findFirst().orElseThrow();
 	}
 
-	private static MonsterStats guardian() {
+	private static Monster guardian() {
 		return tfa.getMobs().stream().filter(m -> m.getName().equals("Archive Guardian")).findFirst().orElseThrow();
 	}
 
@@ -43,7 +43,7 @@ class TfaIntakeTest {
 		assertTrue(tfa.isRaid());
 		// The two Monks share one stat block, so the corpus folds them into one row.
 		assertEquals(14, tfa.getMobs().size());
-		Set<String> names = tfa.getMobs().stream().map(MonsterStats::getName).collect(Collectors.toSet());
+		Set<String> names = tfa.getMobs().stream().map(Monster::getName).collect(Collectors.toSet());
 		for (String name : new String[]{"Archive Guardian", "Ezekiel", "Bork", "The Smorks",
 			"Dreadnoth the Jellied", "Moia", "Xarth", "Ocellus", "Dagon'hai Elder", "Dagon'hai Monk"}) {
 			assertTrue(names.contains(name), name);
@@ -54,7 +54,7 @@ class TfaIntakeTest {
 	@Test
 	@DisplayName("the Archive Guardian reads 550 hitpoints and an 80% fire weakness")
 	void guardianStats() {
-		MonsterStats guardian = guardian();
+		Monster guardian = guardian();
 		assertEquals(550, guardian.getHitpoints());
 		assertEquals("fire", guardian.getWeaknessElement());
 		assertEquals(80, guardian.getWeaknessSeverity());
@@ -63,7 +63,7 @@ class TfaIntakeTest {
 	@Test
 	@DisplayName("every style computes a set against the Guardian")
 	void everyStyleComputes() {
-		for (CombatStyle style : CombatStyle.values()) {
+		for (Style style : Style.values()) {
 			OptimizationRequest request = TestRequests.of(guardian(), style, PlayerLevels.MAXED,
 				PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD,
 				true, false, OwnedItems.EMPTY, 1);
@@ -75,7 +75,7 @@ class TfaIntakeTest {
 	@DisplayName("the tradeable rewards are priced so the game-best pool admits them; a charged weapon is priced as the uncharged twin you buy")
 	void rewardsArePricedAndTradeableByVersion() {
 		for (int id : new int[]{34681, 34719, 34717, 34727, 34684, 34702}) {
-			GearItem item = data.getGear(id);
+			Gear item = data.getGear(id);
 			assertTrue(item.isTradeable(), item.getName());
 			assertNotNull(item.getEstimatedPrice(), item.getName() + " needs a price for ALL_STANDARD");
 		}
@@ -85,8 +85,8 @@ class TfaIntakeTest {
 		assertTrue(data.getGear(34715).isTradeable(), "Obligator (charged) is bought as the uncharged one");
 		assertEquals(data.getGear(34717).getEstimatedPrice(), data.getGear(34715).getEstimatedPrice(), "at its price");
 		assertTrue(data.getGear(34725).isTradeable(), "Zorya's tome (charged) the same way");
-		GearItem xbow = data.getGear(34681);
-		OptimizationRequest request = TestRequests.of(guardian(), CombatStyle.RANGED, PlayerLevels.MAXED,
+		Gear xbow = data.getGear(34681);
+		OptimizationRequest request = TestRequests.of(guardian(), Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD,
 			true, false, OwnedItems.EMPTY, 1);
 		java.util.Map<GearSlot, Integer> pin = new java.util.EnumMap<>(GearSlot.class);
@@ -98,12 +98,12 @@ class TfaIntakeTest {
 	@Test
 	@DisplayName("the rewards are gear rows: the Obligator a crush two-hander, the tome a powered staff, the crossbows and bolts, the Rondache")
 	void rewardsInTheCorpus() {
-		GearItem obligator = data.getGear(34715);
+		Gear obligator = data.getGear(34715);
 		assertNotNull(obligator);
 		assertEquals("Obligator", obligator.getName());
 		assertTrue(obligator.isTwoHanded());
 		assertEquals(120, obligator.getOffensive().getCrush());
-		GearItem tome = data.getGear(34725);
+		Gear tome = data.getGear(34725);
 		assertNotNull(tome);
 		assertTrue(tome.isPoweredStaff(), "Zorya's tome is a powered staff");
 		assertTrue(tome.isTwoHanded());

@@ -7,5 +7,5 @@ import java.util.function.BiConsumer;
 // future split this becomes the item-search/item-picked message
 // round trip from the contract.
 public interface ItemPicker {
-    void search(String prompt, BiConsumer<Integer, String> onPicked);
+void search(String prompt, BiConsumer<Integer, String> onPicked);
 }

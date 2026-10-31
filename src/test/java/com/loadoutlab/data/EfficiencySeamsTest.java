@@ -31,14 +31,14 @@ class EfficiencySeamsTest {
 	@Test
 	@DisplayName("gear name markers are bits: a lower-case marker matches by name fragment, any other trips the -ea guard")
 	void nameMarkersAreBits() {
-		GearItem salve = data.gearItems.stream().filter(g -> g.nameLower.equals("salve amulet(ei)")).findFirst().get();
+		Gear salve = data.gearItems.stream().filter(g -> g.nameLower.equals("salve amulet(ei)")).findFirst().get();
 		java.util.function.Predicate<String> has = marker -> {
-			int bit = GearItem.markerBit(marker);
-			return (GearItem.marks(new GearItem[]{salve}, false)[1 + (bit >> 5)] >>> bit & 1) != 0;
+			int bit = Gear.markerBit(marker);
+			return (Gear.marks(new Gear[]{salve}, false)[1 + (bit >> 5)] >>> bit & 1) != 0;
 		};
 		assertTrue(has.test("salve amulet"));
 		assertTrue(has.test("salve amulet(ei)"));
 		assertFalse(has.test("salve amulet(i)"));
-		assertThrows(AssertionError.class, () -> GearItem.markerBit("Salve amulet"));
+		assertThrows(AssertionError.class, () -> Gear.markerBit("Salve amulet"));
 	}
 }

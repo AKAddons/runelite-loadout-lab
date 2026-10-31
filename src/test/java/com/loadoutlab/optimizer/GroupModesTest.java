@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.DpsCalculator;
 import com.loadoutlab.engine.DpsResult;
@@ -54,7 +54,7 @@ class GroupModesTest {
 
 	private static LoadoutData data;
 	private static OwnedItems owned;
-	private static List<MonsterStats> moons;
+	private static List<Monster> moons;
 	private static final Map<OptimizeMode, OptimizerService.RosterResult> runs = new EnumMap<>(OptimizeMode.class);
 
 	@BeforeAll
@@ -65,7 +65,7 @@ class GroupModesTest {
 				.findFirst().get());
 		Map<Integer, Integer> bank = new HashMap<>();
 		for (GearSlot slot : GearSlot.values()) {
-			for (GearItem g : data.getGearItems(slot)) {
+			for (Gear g : data.getGearItems(slot)) {
 				if (BANK.contains(g.nameLower)) bank.put(g.id, 1);
 			}
 		}
@@ -93,7 +93,7 @@ class GroupModesTest {
 		}
 	}
 
-	private static StyleResult card(OptimizeMode mode, int mob, CombatStyle style) {
+	private static StyleResult card(OptimizeMode mode, int mob, Style style) {
 		return runs.get(mode).perMob.get(mob).get(style);
 	}
 
@@ -119,8 +119,8 @@ class GroupModesTest {
 	void tankyCutsAMoonsDamage() {
 		int cut = 0;
 		for (int j = 0; j < moons.size(); j++) {
-			StyleResult max = card(MAX_DPS, j, CombatStyle.MELEE);
-			StyleResult tanky = card(TANKY, j, CombatStyle.MELEE);
+			StyleResult max = card(MAX_DPS, j, Style.MELEE);
+			StyleResult tanky = card(TANKY, j, Style.MELEE);
 			String where = moons.get(j).name + " DTPS " + dtps(tanky) + " vs Max DPS " + dtps(max);
 			assertTrue(dtps(tanky) <= dtps(max) + 1e-9, where);
 			assertNotNull(tanky.modeTrade, where);
@@ -140,8 +140,8 @@ class GroupModesTest {
 		// On this bank the dragonfire shield's -32% DPS buys ~1% damage, so
 		// Balanced rightly keeps every Max DPS set (Tanky takes the shield).
 		for (int j = 0; j < moons.size(); j++) {
-			StyleResult max = card(MAX_DPS, j, CombatStyle.MELEE);
-			StyleResult balanced = card(BALANCED, j, CombatStyle.MELEE);
+			StyleResult max = card(MAX_DPS, j, Style.MELEE);
+			StyleResult balanced = card(BALANCED, j, Style.MELEE);
 			double rMax = dtps(max) / dps(max);
 			double rBalanced = dtps(balanced) / dps(balanced);
 			assertTrue(rBalanced <= rMax + 1e-9, moons.get(j).name + " DTPS/DPS " + rBalanced + " vs Max DPS " + rMax);
@@ -159,7 +159,7 @@ class GroupModesTest {
 	void tradesReadAgainstTheMaxDpsCard() {
 		int cards = 0;
 		for (int j = 0; j < moons.size(); j++) {
-			for (CombatStyle style : CombatStyle.values()) {
+			for (Style style : Style.values()) {
 				StyleResult max = card(MAX_DPS, j, style);
 				if (max == null || max.owned.isEmpty()) continue;
 				assertNull(max.modeTrade, "Max DPS makes no trade");
@@ -190,14 +190,14 @@ class GroupModesTest {
 			Collections.emptyMap(), Collections.<Integer>emptySet());
 	}
 
-	private static OptimizationRequest melee(OptimizerService service, OptimizerService.ComputeContext ctx, MonsterStats moon) {
-		return service.ownedRequestFor(ctx, moon, CombatStyle.MELEE,
-			OptimizerService.stylePlan(ctx, CombatStyle.MELEE, null).levels, null);
+	private static OptimizationRequest melee(OptimizerService service, OptimizerService.ComputeContext ctx, Monster moon) {
+		return service.ownedRequestFor(ctx, moon, Style.MELEE,
+			OptimizerService.stylePlan(ctx, Style.MELEE, null).levels, null);
 	}
 
-	private static GearItem item(String name) {
+	private static Gear item(String name) {
 		for (GearSlot slot : GearSlot.values()) {
-			for (GearItem g : data.getGearItems(slot)) {
+			for (Gear g : data.getGearItems(slot)) {
 				if (g.nameLower.equals(name)) return g;
 			}
 		}
@@ -205,9 +205,9 @@ class GroupModesTest {
 	}
 
 	private static Loadout set(List<String> names) {
-		Map<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		Map<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		for (String name : names) {
-			GearItem g = item(name);
+			Gear g = item(name);
 			gear.put(g.slot, g);
 		}
 		return new Loadout(gear);
@@ -217,8 +217,8 @@ class GroupModesTest {
 		return service.calcRespecting(new DpsCalculator(), req, set(names));
 	}
 
-	private static double dtps(OptimizerService.ComputeContext ctx, MonsterStats moon, DpsResult r) {
-		return OptimizerService.incomingFor(moon, r.getLoadout(), ctx, CombatStyle.MELEE).totalDps;
+	private static double dtps(OptimizerService.ComputeContext ctx, Monster moon, DpsResult r) {
+		return OptimizerService.incomingFor(moon, r.getLoadout(), ctx, Style.MELEE).totalDps;
 	}
 
 	private static final List<String> ARMOUR = List.of("blood moon helm", "fire cape", "amulet of torture",
@@ -246,12 +246,12 @@ class GroupModesTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			OptimizerService.ComputeContext ctx = tanky(service);
-			MonsterStats moon = moons.get(0);
+			Monster moon = moons.get(0);
 			OptimizationRequest req = melee(service, ctx, moon);
 			DpsCalculator calc = new DpsCalculator();
 			DpsResult shown = wearing(service, req, with("abyssal tentacle"));
 			assertSame(shown, service.modeWear(calc, ctx, req, moon, shown, List.of(), null));
-			List<GearItem> carried = List.of(item("bandos chestplate"), item("bandos tassets"), item("dragon defender"),
+			List<Gear> carried = List.of(item("bandos chestplate"), item("bandos tassets"), item("dragon defender"),
 				item("amulet of fury"));
 			DpsResult worn = service.modeWear(calc, ctx, req, moon, shown, carried, null);
 			Set<Integer> given = new HashSet<>(shown.getLoadout().ids());
@@ -271,7 +271,7 @@ class GroupModesTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			OptimizerService.ComputeContext ctx = tanky(service);
-			MonsterStats moon = moons.get(1);
+			Monster moon = moons.get(1);
 			OptimizationRequest req = melee(service, ctx, moon);
 			DpsCalculator calc = new DpsCalculator();
 			DpsResult shown = wearing(service, req, with("dual macuahuitl"));

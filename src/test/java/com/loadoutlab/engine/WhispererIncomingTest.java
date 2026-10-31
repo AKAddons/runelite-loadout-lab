@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +25,7 @@ class WhispererIncomingTest {
 	void standardPlayPlusLeak() {
 		LoadoutData data = new DataService().load();
 		// The loader drops the "Post-quest" label: the 900-hp row is the bare fight.
-		MonsterStats whisperer = data.searchMonsters("the whisperer", 10).stream()
+		Monster whisperer = data.searchMonsters("the whisperer", 10).stream()
 			.filter(m -> m.getName().equals("The Whisperer") && m.getHitpoints() == 900).findFirst()
 			.orElseThrow(() -> new AssertionError("no 900-hp Whisperer in the corpus"));
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(whisperer, new Loadout(Map.of()), 99, 99, 0);

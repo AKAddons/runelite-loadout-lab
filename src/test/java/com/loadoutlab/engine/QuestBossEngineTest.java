@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.EnumMap;
 import java.util.List;
@@ -29,17 +29,17 @@ class QuestBossEngineTest {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats mob(String name) {
+	private static Monster mob(String name) {
 		return data.searchMonsters(name, 5).stream().filter(m -> m.getName().equalsIgnoreCase(name)).findFirst()
 			.orElseThrow(() -> new AssertionError("corpus is missing " + name));
 	}
 
-	private static OptimizationRequest request(MonsterStats mob, CombatStyle style) {
+	private static OptimizationRequest request(Monster mob, Style style) {
 		return new OptimizationRequest(mob, style, PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 	}
 
-	private static List<DpsResult> best(String name, CombatStyle style) {
+	private static List<DpsResult> best(String name, Style style) {
 		return new LoadoutOptimizer().optimize(data, request(mob(name), style));
 	}
 
@@ -50,14 +50,14 @@ class QuestBossEngineTest {
 	}
 
 	private static String ammo(DpsResult result) {
-		GearItem ammo = result.getLoadout().get(GearSlot.AMMO);
+		Gear ammo = result.getLoadout().get(GearSlot.AMMO);
 		return ammo == null ? "" : ammo.getNameLower();
 	}
 
 	@Test
 	@DisplayName("the Fragment of Seren takes at most 24 a hit in every style")
 	void serenCap() {
-		for (CombatStyle style : CombatStyle.concreteValues()) {
+		for (Style style : Style.concreteValues()) {
 			DpsResult set = best("fragment of seren", style).get(0);
 			assertTrue(set.getMaxHit() <= 24, style + " max " + set.getMaxHit());
 		}
@@ -66,33 +66,33 @@ class QuestBossEngineTest {
 	@Test
 	@DisplayName("Fareed: magic casts a water spell, ranged fires arrows, and Tumeken's shadow cannot hurt him")
 	void fareed() {
-		assertEquals("water", spellElement(best("fareed", CombatStyle.MAGIC).get(0)));
-		assertTrue(ammo(best("fareed", CombatStyle.RANGED).get(0)).contains("arrow"));
-		Map<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		assertEquals("water", spellElement(best("fareed", Style.MAGIC).get(0)));
+		assertTrue(ammo(best("fareed", Style.RANGED).get(0)).contains("arrow"));
+		Map<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, data.getGearItems().stream().filter(g -> g.getNameLower().equals("tumeken's shadow"))
 			.findFirst().get());
-		assertNull(new DpsCalculator().calculate(request(mob("fareed"), CombatStyle.MAGIC), new Loadout(gear)));
+		assertNull(new DpsCalculator().calculate(request(mob("fareed"), Style.MAGIC), new Loadout(gear)));
 	}
 
 	@Test
 	@DisplayName("Kamil: the magic set casts a fire spell")
 	void kamil() {
-		assertEquals("fire", spellElement(best("kamil", CombatStyle.MAGIC).get(0)));
+		assertEquals("fire", spellElement(best("kamil", Style.MAGIC).get(0)));
 	}
 
 	@Test
 	@DisplayName("the Fire Warrior of Lesarkus has no melee or magic set; ranged fires ice arrows")
 	void fireWarrior() {
-		assertTrue(best("fire warrior of lesarkus", CombatStyle.MELEE).isEmpty());
-		assertTrue(best("fire warrior of lesarkus", CombatStyle.MAGIC).isEmpty());
-		assertEquals("ice arrows", ammo(best("fire warrior of lesarkus", CombatStyle.RANGED).get(0)));
+		assertTrue(best("fire warrior of lesarkus", Style.MELEE).isEmpty());
+		assertTrue(best("fire warrior of lesarkus", Style.MAGIC).isEmpty());
+		assertEquals("ice arrows", ammo(best("fire warrior of lesarkus", Style.RANGED).get(0)));
 	}
 
 	@Test
 	@DisplayName("zogres and Slash Bash: the ranged set wields the comp ogre bow with brutal arrows")
 	void zogres() {
 		for (String name : List.of("zogre", "slash bash")) {
-			DpsResult set = best(name, CombatStyle.RANGED).get(0);
+			DpsResult set = best(name, Style.RANGED).get(0);
 			assertEquals("comp ogre bow", set.getLoadout().getWeapon().getNameLower(), name);
 			assertTrue(ammo(set).contains("brutal"), name + " ammo " + ammo(set));
 		}
@@ -101,6 +101,6 @@ class QuestBossEngineTest {
 	@Test
 	@DisplayName("Slagilith: the melee set wields a pickaxe")
 	void slagilith() {
-		assertEquals("Pickaxe", best("slagilith", CombatStyle.MELEE).get(0).getLoadout().getWeapon().getCategory());
+		assertEquals("Pickaxe", best("slagilith", Style.MELEE).get(0).getLoadout().getWeapon().getCategory());
 	}
 }

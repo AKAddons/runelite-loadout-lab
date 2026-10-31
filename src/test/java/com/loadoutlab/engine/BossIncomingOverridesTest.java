@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.MonsterDefences;
 import com.loadoutlab.data.MonsterOffence;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.StatBlock;
 import java.util.Arrays;
 import java.util.List;
@@ -23,18 +23,18 @@ public class BossIncomingOverridesTest {
 			120, 43, 100, 40, 0, 0, 6, styles);
 	}
 
-	private static MonsterStats named(String name, List<String> styles) {
+	private static Monster named(String name, List<String> styles) {
 		return versioned(name, "", styles);
 	}
 
-	private static MonsterStats versioned(String name, String version, List<String> styles) {
-		return new MonsterStats(1, name, version, 600, 255, 4, 250, 80, 0,
+	private static Monster versioned(String name, String version, List<String> styles) {
+		return new Monster(1, name, version, 600, 255, 4, 250, 80, 0,
 			MonsterDefences.ZERO, offence(styles),
 			java.util.Collections.emptyList(), false, "", 0);
 	}
 
 	private static Loadout armour(int stab, int slash, int crush, int magic, int ranged) {
-		GearItem body = new GearItem(1, "Test platebody", "", GearSlot.BODY, "", 0,
+		Gear body = new Gear(1, "Test platebody", "", GearSlot.BODY, "", 0,
 			false, true, true, true, 0,
 			StatBlock.ZERO,
 			new StatBlock(stab, slash, crush, magic, ranged, 0, 0, 0, 0),
@@ -165,7 +165,7 @@ public class BossIncomingOverridesTest {
 		// savings for YOUR gear: heavy ranged defence leaves magic as the
 		// bigger threat (pray mage), heavy magic defence flips it. A
 		// symmetric offence isolates the armour-driven flip.
-		MonsterStats tanzanite = new MonsterStats(1, "Zulrah", "Tanzanite",
+		Monster tanzanite = new Monster(1, "Zulrah", "Tanzanite",
 			600, 255, 4, 250, 80, 0, MonsterDefences.ZERO,
 			new MonsterOffence(1, 1, 300, 300, 0, 0, 50, 0, 50, 0, 4,
 				Arrays.asList("Magic", "Ranged")),
@@ -279,7 +279,7 @@ public class BossIncomingOverridesTest {
 		// (factor 0.667). Prayed total must include the pierce-through;
 		// unprayed must use the full 65-based dps.
 		LoadoutData data = new DataService().load();
-		MonsterStats corp = data.searchMonsters("corporeal beast", 1).get(0);
+		Monster corp = data.searchMonsters("corporeal beast", 1).get(0);
 		// Heavy melee armour + zero magic defence: the magic saving must
 		// dominate, so Protect from Magic gets prayed and the pierce shows.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
@@ -305,14 +305,14 @@ public class BossIncomingOverridesTest {
 		// though the melee hit is bigger - the chosen prayer must be the
 		// bigger saving.
 		LoadoutData data = new DataService().load();
-		MonsterStats callisto = data.searchMonsters("callisto", 1).get(0);
+		Monster callisto = data.searchMonsters("callisto", 1).get(0);
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			callisto, new Loadout(java.util.Map.of()), 99, 99, 0);
 		Assert.assertEquals("Protect from Magic", result.protectPrayer);
 	}
 
 	private static Loadout tankMeleeArmour() {
-		com.loadoutlab.data.GearItem body = new com.loadoutlab.data.GearItem(
+		com.loadoutlab.data.Gear body = new com.loadoutlab.data.Gear(
 			99, "Tank platebody", "", com.loadoutlab.data.GearSlot.BODY, "", 0,
 			false, true, true, true, 0,
 			com.loadoutlab.data.StatBlock.ZERO,

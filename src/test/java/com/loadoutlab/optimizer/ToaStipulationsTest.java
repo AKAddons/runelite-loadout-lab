@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * N's ToA reports (Discord 2026-09-09) are the bank shape here. */
 class ToaStipulationsTest {
 	private static LoadoutData data;
-	private static List<MonsterStats> toa;
+	private static List<Monster> toa;
 
 	@BeforeAll
 	static void load() {
@@ -42,9 +42,9 @@ class ToaStipulationsTest {
 		return owned;
 	}
 
-	private static GearItem byName(String nameLower) {
-		GearItem best = null;
-		for (GearItem g : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		Gear best = null;
+		for (Gear g : data.getGearItems()) {
 			if (g.getNameLower().equals(nameLower) && g.isStandardGear()
 				&& (best == null || "Charged".equals(g.getVersion()) || "Active".equals(g.getVersion())
 					|| "Undamaged".equals(g.getVersion()) || "Normal".equals(g.getVersion()))) {
@@ -57,7 +57,7 @@ class ToaStipulationsTest {
 		return best;
 	}
 
-	private static OptimizerService.StyleResult result(OptimizerService.RosterResult roster, String nickPart, CombatStyle style) {
+	private static OptimizerService.StyleResult result(OptimizerService.RosterResult roster, String nickPart, Style style) {
 		for (int j = 0; j < roster.mobs.size(); j++) {
 			if (roster.mobs.get(j).label().contains(nickPart)) {
 				return roster.perMob.get(j).get(style);
@@ -72,12 +72,12 @@ class ToaStipulationsTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			OptimizerService.RosterResult roster = ServiceCalls.runRoster(service, toa, bank(), 16, Collections.emptyMap());
-			OptimizerService.StyleResult core = result(roster, "Core", CombatStyle.MELEE);
+			OptimizerService.StyleResult core = result(roster, "Core", Style.MELEE);
 			assertNotNull(core.specWeapon, "the core dump has a spec");
 			assertTrue(core.specWeapon.getNameLower().contains("dragon dagger"), core.specWeapon.getName());
 			// The kit carries ONE spec weapon for the trip, so the Wardens'
 			// dagger rides every card - Ba-Ba included.
-			OptimizerService.StyleResult baba = result(roster, "Ba-Ba", CombatStyle.MELEE);
+			OptimizerService.StyleResult baba = result(roster, "Ba-Ba", Style.MELEE);
 			assertNotNull(baba.specWeapon);
 			assertTrue(baba.specWeapon.getNameLower().contains("dragon dagger"), baba.specWeapon.getName());
 		} finally {
@@ -91,9 +91,9 @@ class ToaStipulationsTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			OptimizerService.RosterResult roster = ServiceCalls.runRoster(service, toa, bank(), 10, Collections.emptyMap());
-			OptimizerService.StyleResult p2 = result(roster, "Elidinis' Warden", CombatStyle.MAGIC);
+			OptimizerService.StyleResult p2 = result(roster, "Elidinis' Warden", Style.MAGIC);
 			String worn = p2.owned.get(0).getLoadout().getGear().values().stream()
-				.map(GearItem::getNameLower).collect(java.util.stream.Collectors.joining(", "));
+				.map(Gear::getNameLower).collect(java.util.stream.Collectors.joining(", "));
 			assertTrue(worn.contains("occult necklace"), worn);
 			assertTrue(worn.contains("ahrim's robeskirt"), worn);
 		} finally {

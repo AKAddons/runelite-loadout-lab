@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class LadderRulesTest {
     private static LoadoutData data;
-    private static MonsterStats vardorvis;
+    private static Monster vardorvis;
     private final LoadoutOptimizer optimizer = new LoadoutOptimizer();
 
     @BeforeAll
@@ -29,21 +29,21 @@ class LadderRulesTest {
         vardorvis = data.searchMonsters("vardorvis", 1).get(0);
     }
 
-    private static GearItem item(String name) {
+    private static Gear item(String name) {
         for (GearSlot slot : GearSlot.values()) {
-            for (GearItem g : data.getGearItems(slot)) if (g.name.equals(name)) return g;
+            for (Gear g : data.getGearItems(slot)) if (g.name.equals(name)) return g;
         }
         throw new AssertionError(name + " is in the data");
     }
 
-    private static Loadout wearing(GearItem... items) {
-        EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-        for (GearItem g : items) gear.put(g.slot, g);
+    private static Loadout wearing(Gear... items) {
+        EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
+        for (Gear g : items) gear.put(g.slot, g);
         return new Loadout(gear);
     }
 
-    private static OptimizationRequest request(MonsterStats mob, SetRules rules) {
-        OptimizationRequest request = new OptimizationRequest(mob, CombatStyle.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
+    private static OptimizationRequest request(Monster mob, SetRules rules) {
+        OptimizationRequest request = new OptimizationRequest(mob, Style.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
             CandidateMode.ALL_STANDARD, false, false, OwnedItems.EMPTY, RequirementProfile.MAXED, 10);
         return rules == null ? request : request.withSetRules(rules);
     }
@@ -69,16 +69,16 @@ class LadderRulesTest {
         return steps.stream().map(s -> s.getLoadout().get(slot).name).collect(Collectors.toSet());
     }
 
-    private static DpsResult stepWearing(List<DpsResult> steps, GearItem item) {
+    private static DpsResult stepWearing(List<DpsResult> steps, Gear item) {
         return steps.stream().filter(s -> s.getLoadout().get(item.slot).id == item.id).findFirst().orElse(null);
     }
 
     @Test
     @DisplayName("a slot's steps under a task's rules all keep them, and the same search with no rules still offers the rest")
     void stepsKeepTheRules() {
-        GearItem whip = item("Abyssal whip");
-        GearItem fits = item("Warrior ring");
-        GearItem dear = item("Berserker ring");
+        Gear whip = item("Abyssal whip");
+        Gear fits = item("Warrior ring");
+        Gear dear = item("Berserker ring");
         assertTrue(dear.getPriceOrZero() > fits.getPriceOrZero(), "the data still prices them apart");
         Loadout set = wearing(whip, item("Ring of shadows"));
         SetRules cap = atMost("price", whip.getPriceOrZero() + fits.getPriceOrZero());
@@ -99,12 +99,12 @@ class LadderRulesTest {
     @Test
     @DisplayName("a weapon step whose best shield breaks a rule stays on the ladder with a shield that keeps it")
     void weaponStepRepicksItsShield() {
-        GearItem whip = item("Abyssal whip");
+        Gear whip = item("Abyssal whip");
         Loadout set = wearing(item("Dragon scimitar"));
         OptimizationRequest free = request(vardorvis, null);
         DpsResult best = stepWearing(optimizer.slotSwaps(data, free, shown(free, set), GearSlot.WEAPON), whip);
         assertNotNull(best, "the whip is a step");
-        GearItem bestShield = best.getLoadout().get(GearSlot.SHIELD);
+        Gear bestShield = best.getLoadout().get(GearSlot.SHIELD);
         assertNotNull(bestShield, "a one-hander brings its best shield");
         double limit = SetRules.total(best.getLoadout(), "str") - 1;
 
@@ -127,12 +127,12 @@ class LadderRulesTest {
     @Test
     @DisplayName("a task that needs the worn shield keeps its one-hander steps, each with that shield, and loses the two-handers")
     void aRuleAboutTheShieldKeepsOneHanders() {
-        MonsterStats kbd = data.searchMonsters("king black dragon", 1).get(0);
+        Monster kbd = data.searchMonsters("king black dragon", 1).get(0);
         // The task's own terms: antifire up, so no dragonfire lock narrows the shield
         // pool. The search itself finds no set here today (the score cut drops the
         // shield), so this holds the ladder's side for when it does.
         OptimizationRequest ruled = request(kbd, CombatAchievements.byId(166).rulesFor(List.of(kbd))).withAntifirePotion(true);
-        GearItem antiDragon = item("Anti-dragon shield");
+        Gear antiDragon = item("Anti-dragon shield");
         List<DpsResult> steps = optimizer.slotSwaps(data, ruled, shown(ruled, wearing(item("Dragon scimitar"), antiDragon)), GearSlot.WEAPON);
         DpsResult whip = stepWearing(steps, item("Abyssal whip"));
         assertNotNull(whip, "the whip stays on the ladder");
@@ -152,7 +152,7 @@ class LadderRulesTest {
         p.setRules = budget;
         OptimizerService service = new OptimizerService(data);
         try {
-            var done = new CompletableFuture<Map<CombatStyle, OptimizerService.StyleResult>>();
+            var done = new CompletableFuture<Map<Style, OptimizerService.StyleResult>>();
             service.bestPerStyle(vardorvis, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
                 new OwnedItems(bank, true), 1, p, Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
                 Collections.<Integer>emptySet(), done::complete);
@@ -176,11 +176,11 @@ class LadderRulesTest {
     @Test
     @DisplayName("a group step one member's rules refuse is dropped for the group, not averaged in as a 0")
     void groupDropsARefusedStep() {
-        GearItem whip = item("Abyssal whip");
-        GearItem glory = item("Amulet of glory");
-        GearItem shadows = item("Ring of shadows");
-        GearItem dear = item("Berserker ring");
-        GearItem cheap = item("Warrior ring");
+        Gear whip = item("Abyssal whip");
+        Gear glory = item("Amulet of glory");
+        Gear shadows = item("Ring of shadows");
+        Gear dear = item("Berserker ring");
+        Gear cheap = item("Warrior ring");
         assertTrue(glory.getPriceOrZero() > 0 && cheap.getPriceOrZero() + glory.getPriceOrZero() < dear.getPriceOrZero(), "the data still prices them apart");
         // The dear ring fits the plain set exactly; on the set with an amulet too it does not.
         SetRules cap = atMost("price", whip.getPriceOrZero() + dear.getPriceOrZero());
@@ -197,9 +197,9 @@ class LadderRulesTest {
     @Test
     @DisplayName("a group step a member already wears is no refusal: it stays for the others")
     void groupKeepsAStepAMemberWears() {
-        GearItem whip = item("Abyssal whip");
-        GearItem shadows = item("Ring of shadows");
-        GearItem ring = item("Warrior ring");
+        Gear whip = item("Abyssal whip");
+        Gear shadows = item("Ring of shadows");
+        Gear ring = item("Warrior ring");
         SetRules cap = atMost("price", whip.getPriceOrZero() + ring.getPriceOrZero());
         List<OptimizerService.Rung> steps = groupRingSteps(cap, new OwnedItems(Map.of(ring.id, 1), true),
             wearing(whip, shadows), wearing(whip, shadows), wearing(whip, ring));
@@ -209,17 +209,17 @@ class LadderRulesTest {
     // The ring steps of a group strip: one member per set, all under the rules.
     private static List<OptimizerService.Rung> groupRingSteps(SetRules rules, OwnedItems owned, Loadout... sets) {
         String[] names = {"vardorvis", "general graardor", "commander zilyana"};
-        List<MonsterStats> mobs = new ArrayList<>();
+        List<Monster> mobs = new ArrayList<>();
         List<OptimizationRequest> reqs = new ArrayList<>();
         List<List<DpsResult>> bests = new ArrayList<>();
-        List<Map<CombatStyle, OptimizerService.StyleResult>> perMob = new ArrayList<>();
+        List<Map<Style, OptimizerService.StyleResult>> perMob = new ArrayList<>();
         double[] weights = new double[sets.length];
         for (int j = 0; j < sets.length; j++) {
             mobs.add(data.searchMonsters(names[j], 1).get(0));
             reqs.add(request(mobs.get(j), rules));
             DpsResult set = shown(reqs.get(j), sets[j]);
             bests.add(List.of(set));
-            perMob.add(Map.of(CombatStyle.MELEE, result(set)));
+            perMob.add(Map.of(Style.MELEE, result(set)));
             weights[j] = 1;
         }
         var side = new OptimizerService.SharedSide(reqs, bests, weights);
@@ -228,7 +228,7 @@ class LadderRulesTest {
         try {
             var ctx = service.buildContext(PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED, owned, 1,
                 new ComputeParams(), Map.of(), Set.of(), Map.of(), Map.of(), Map.of(), Set.of());
-            OptimizerService.Ladder rings = service.groupLadderFor(ctx, side, mobs, perMob, CombatStyle.MELEE).get(GearSlot.RING);
+            OptimizerService.Ladder rings = service.groupLadderFor(ctx, side, mobs, perMob, Style.MELEE).get(GearSlot.RING);
             return rings == null ? List.of() : rungs(rings);
         } finally {
             service.shutdown();

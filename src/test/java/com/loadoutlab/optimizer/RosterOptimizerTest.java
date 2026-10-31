@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.Loadout;
 import com.loadoutlab.engine.OptimizationRequest;
@@ -47,19 +47,19 @@ public class RosterOptimizerTest {
 		return owned;
 	}
 
-	private static RosterResultView run(OptimizerService service, List<MonsterStats> mobs,
+	private static RosterResultView run(OptimizerService service, List<Monster> mobs,
 		Map<Integer, Integer> owned) throws Exception {
 		return run(service, mobs, owned, 1);
 	}
 
-	private static RosterResultView run(OptimizerService service, List<MonsterStats> mobs,
+	private static RosterResultView run(OptimizerService service, List<Monster> mobs,
 		Map<Integer, Integer> owned, int maxSwaps) throws Exception {
 		return run(service, mobs, owned, maxSwaps, Collections.emptyMap());
 	}
 
-	private static RosterResultView run(OptimizerService service, List<MonsterStats> mobs,
+	private static RosterResultView run(OptimizerService service, List<Monster> mobs,
 		Map<Integer, Integer> owned, int maxSwaps,
-		Map<Integer, Map<CombatStyle, java.util.Set<Integer>>> excludedByMob) throws Exception {
+		Map<Integer, Map<Style, java.util.Set<Integer>>> excludedByMob) throws Exception {
 		return new RosterResultView(
 			ServiceCalls.runRoster(service, mobs, owned, maxSwaps, excludedByMob));
 	}
@@ -79,7 +79,7 @@ public class RosterOptimizerTest {
 	@Test
 	public void singleMobRosterReducesToBestPerStyle() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats ankou = data.searchMonsters("ankou", 1).get(0);
+		Monster ankou = data.searchMonsters("ankou", 1).get(0);
 		Map<Integer, Integer> owned = ownedMelee();
 		OptimizerService service = new OptimizerService(data);
 		try {
@@ -87,11 +87,11 @@ public class RosterOptimizerTest {
 			RosterResultView roster = run(service, Collections.singletonList(ankou), owned);
 			Assert.assertEquals(1, roster.result.perMob.size());
 			double rosterDps = roster.result.perMob.get(0)
-				.get(CombatStyle.MELEE).owned.get(0).getDps();
+				.get(Style.MELEE).owned.get(0).getDps();
 
 			// via the direct single-mob path
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, ankou, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
 				Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
@@ -101,7 +101,7 @@ public class RosterOptimizerTest {
 					done.countDown();
 				});
 			Assert.assertTrue(done.await(90, TimeUnit.SECONDS));
-			double directDps = out.get().get(CombatStyle.MELEE).owned.get(0).getDps();
+			double directDps = out.get().get(Style.MELEE).owned.get(0).getDps();
 			Assert.assertEquals("1-mob roster must equal bestPerStyle", directDps, rosterDps, 1e-9);
 		} finally {
 			service.shutdown();
@@ -113,15 +113,15 @@ public class RosterOptimizerTest {
 		LoadoutData data = new DataService().load();
 		// Two monsters with clearly different defence so the same set does
 		// visibly different dps - the lens invariant (same set, numbers flip).
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
-		MonsterStats ankou = data.searchMonsters("ankou", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster ankou = data.searchMonsters("ankou", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
 		try {
 			RosterResultView roster = run(service, Arrays.asList(goblin, ankou), ownedMelee());
 			Assert.assertEquals(2, roster.result.perMob.size());
 
-			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(CombatStyle.MELEE);
-			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(Style.MELEE);
+			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(Style.MELEE);
 			Assert.assertNotNull(m0);
 			Assert.assertNotNull(m1);
 			Assert.assertFalse(m0.owned.isEmpty());
@@ -152,8 +152,8 @@ public class RosterOptimizerTest {
 		// The corpus rows disagree hard (ranged def 300 / 50 / 0), so the
 		// shared ranged set MUST produce three different numbers.
 		LoadoutData data = new DataService().load();
-		List<MonsterStats> forms = new ArrayList<>();
-		for (MonsterStats hit : data.searchMonsters("zulrah", 10)) {
+		List<Monster> forms = new ArrayList<>();
+		for (Monster hit : data.searchMonsters("zulrah", 10)) {
 			if ("Zulrah".equals(hit.getName())) {
 				forms.add(hit);
 			}
@@ -169,8 +169,8 @@ public class RosterOptimizerTest {
 			Assert.assertEquals(3, roster.result.perMob.size());
 			List<Double> dps = new ArrayList<>();
 			List<List<Integer>> sets = new ArrayList<>();
-			for (Map<CombatStyle, OptimizerService.StyleResult> perMob : roster.result.perMob) {
-				OptimizerService.StyleResult ranged = perMob.get(CombatStyle.RANGED);
+			for (Map<Style, OptimizerService.StyleResult> perMob : roster.result.perMob) {
+				OptimizerService.StyleResult ranged = perMob.get(Style.RANGED);
 				Assert.assertNotNull(ranged);
 				Assert.assertFalse(ranged.owned.isEmpty());
 				dps.add(ranged.owned.get(0).getDps());
@@ -196,8 +196,8 @@ public class RosterOptimizerTest {
 		// ride. (A mob the set cannot damage contributes zero everywhere,
 		// so an unhittable giant drops out of the choice naturally.)
 		LoadoutData data = new DataService().load();
-		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster vorkath = data.searchMonsters("vorkath", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		Assert.assertTrue("premise: vorkath dwarfs the goblin",
 			vorkath.getHitpoints() >= 10 * goblin.getHitpoints());
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -207,10 +207,10 @@ public class RosterOptimizerTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			RosterResultView roster = run(service, Arrays.asList(vorkath, goblin), owned);
-			OptimizerService.StyleResult melee = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult melee = roster.result.perMob.get(0).get(Style.MELEE);
 			Assert.assertNotNull(melee);
 			Assert.assertFalse(melee.owned.isEmpty());
-			GearItem neck = melee.owned.get(0).getLoadout().get(GearSlot.NECK);
+			Gear neck = melee.owned.get(0).getLoadout().get(GearSlot.NECK);
 			Assert.assertNotNull(neck);
 			Assert.assertEquals("the 750hp undead's salve wins the shared neck",
 				"salve amulet(ei)", neck.getNameLower());
@@ -233,8 +233,8 @@ public class RosterOptimizerTest {
 		// the trip carries a spec rather than none (regression 2026-08-08:
 		// argmax-then-veto used to drop the spec slot entirely).
 		LoadoutData data = new DataService().load();
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
-		MonsterStats fireGiant = data.searchMonsters("fire giant", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster fireGiant = data.searchMonsters("fire giant", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // whip
 		owned.put(1215, 1);   // dragon dagger
@@ -249,8 +249,8 @@ public class RosterOptimizerTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			RosterResultView roster = run(service, Arrays.asList(graardor, fireGiant), owned);
-			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(CombatStyle.MELEE);
-			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(Style.MELEE);
+			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(Style.MELEE);
 			Assert.assertNotNull(m0.specWeapon);
 			Assert.assertNotNull(m1.specWeapon);
 			Assert.assertEquals("one spec weapon for the whole trip",
@@ -273,7 +273,7 @@ public class RosterOptimizerTest {
 		// same disease as the quiver relocation. Every non-empty shown set
 		// on both sides must satisfy the recoil requirement.
 		LoadoutData data = new DataService().load();
-		List<MonsterStats> forms = new ArrayList<>(data.searchMonsters("zulrah", 5));
+		List<Monster> forms = new ArrayList<>(data.searchMonsters("zulrah", 5));
 		Assert.assertTrue("the Zulrah forms must load", forms.size() >= 3);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(12926, 1);  // toxic blowpipe - Zulrah rejects melee
@@ -283,7 +283,7 @@ public class RosterOptimizerTest {
 			RosterResultView roster = run(service, forms, owned, 3);
 			boolean sawAnySet = false;
 			for (int j = 0; j < forms.size(); j++) {
-				for (CombatStyle s : CombatStyle.concreteValues()) {
+				for (Style s : Style.concreteValues()) {
 					OptimizerService.StyleResult sr = roster.result.perMob.get(j).get(s);
 					if (sr == null) {
 						continue;
@@ -319,7 +319,7 @@ public class RosterOptimizerTest {
 		// its spec. The contest now scores what the card SHOWS: kit total
 		// plus the kept spec's dpsAdded value.
 		LoadoutData data = new DataService().load();
-		List<MonsterStats> mobs = new ArrayList<>(data.searchMonsters("phantom muspah", 10));
+		List<Monster> mobs = new ArrayList<>(data.searchMonsters("phantom muspah", 10));
 		Assert.assertTrue("the Muspah phases must load", mobs.size() >= 3);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // whip - the owned side is irrelevant here
@@ -328,7 +328,7 @@ public class RosterOptimizerTest {
 			RosterResultView roster = run(service, mobs, owned, 3);
 			boolean anyGameSpec = false;
 			for (int j = 0; j < mobs.size(); j++) {
-				for (CombatStyle s : CombatStyle.concreteValues()) {
+				for (Style s : Style.concreteValues()) {
 					OptimizerService.StyleResult sr = roster.result.perMob.get(j).get(s);
 					anyGameSpec |= sr != null && sr.gameSpecWeapon != null;
 				}
@@ -348,12 +348,12 @@ public class RosterOptimizerTest {
 		// Against a stat-less alternative (ring of dueling) the Lightbearer
 		// must take the shared slot whenever any spec value is in play.
 		LoadoutData data = new DataService().load();
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
-		MonsterStats fireGiant = data.searchMonsters("fire giant", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster fireGiant = data.searchMonsters("fire giant", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // whip
 		owned.put(13576, 1);  // dragon warhammer
-		for (GearItem g : data.getGearItems()) {
+		for (Gear g : data.getGearItems()) {
 			if ((g.getNameLower().equals("ring of dueling")
 				|| g.getNameLower().equals("lightbearer")) && g.isStandardGear()) {
 				owned.put(g.getId(), 1);
@@ -362,9 +362,9 @@ public class RosterOptimizerTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			RosterResultView roster = run(service, Arrays.asList(graardor, fireGiant), owned);
-			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(Style.MELEE);
 			Assert.assertNotNull(m0);
-			GearItem ring = m0.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
+			Gear ring = m0.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
 			Assert.assertNotNull("a ring must be worn", ring);
 			Assert.assertTrue("doubled regen with no stat cost must take the shared slot, was: "
 				+ ring.label(), ring.getNameLower().contains("lightbearer"));
@@ -379,11 +379,11 @@ public class RosterOptimizerTest {
 		// Two goblins die before any sustained spec fires - the Berserker
 		// ring's strength beats regen nobody spends.
 		LoadoutData data = new DataService().load();
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // whip
 		owned.put(13576, 1);  // dragon warhammer
-		for (GearItem g : data.getGearItems()) {
+		for (Gear g : data.getGearItems()) {
 			if ((g.getNameLower().equals("berserker ring (i)")
 				|| g.getNameLower().equals("lightbearer")) && g.isStandardGear()) {
 				owned.put(g.getId(), 1);
@@ -392,9 +392,9 @@ public class RosterOptimizerTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			RosterResultView roster = run(service, Arrays.asList(goblin, goblin), owned);
-			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(Style.MELEE);
 			Assert.assertNotNull(m0);
-			GearItem ring = m0.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
+			Gear ring = m0.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
 			Assert.assertNotNull(ring);
 			Assert.assertTrue("no spec value, no swap - the stat ring stands, was: "
 				+ ring.label(), ring.getNameLower().contains("berserker"));
@@ -418,11 +418,11 @@ public class RosterOptimizerTest {
 			Assert.assertEquals(3, roster.result.perMob.size());
 			// Phase order in the curation: melee, ranged, magic immune.
 			OptimizerService.StyleResult meleeVsMeleeImmune =
-				roster.result.perMob.get(0).get(CombatStyle.MELEE);
+				roster.result.perMob.get(0).get(Style.MELEE);
 			Assert.assertTrue("no melee set vs the melee-shielded phase",
 				meleeVsMeleeImmune == null || meleeVsMeleeImmune.owned.isEmpty());
-			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(CombatStyle.MELEE);
-			OptimizerService.StyleResult m2 = roster.result.perMob.get(2).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(Style.MELEE);
+			OptimizerService.StyleResult m2 = roster.result.perMob.get(2).get(Style.MELEE);
 			Assert.assertFalse("hittable phases carry the shared melee set", m1.owned.isEmpty());
 			Assert.assertFalse(m2.owned.isEmpty());
 			Assert.assertEquals("one shared set across the hittable phases",
@@ -451,10 +451,10 @@ public class RosterOptimizerTest {
 			Assert.assertEquals(3, roster.result.perMob.size());
 			// Every phase has a best-across-styles answer that respects its
 			// shield (phase order matches the immunity order).
-			CombatStyle[] immuneTo = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
+			Style[] immuneTo = {Style.MELEE, Style.RANGED, Style.MAGIC};
 			for (int j = 0; j < 3; j++) {
 				DpsResult best = null;
-				for (CombatStyle style : CombatStyle.values()) {
+				for (Style style : Style.values()) {
 					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
 					DpsResult shown = r == null || r.owned.isEmpty() ? null : r.owned.get(0);
 					if (shown != null && (best == null || shown.getDps() > best.getDps())) {
@@ -468,16 +468,16 @@ public class RosterOptimizerTest {
 			}
 			// Each tab stays honest about its own immunity even in the kit.
 			OptimizerService.StyleResult meleeVsMeleeImmune =
-				roster.result.perMob.get(0).get(CombatStyle.MELEE);
+				roster.result.perMob.get(0).get(Style.MELEE);
 			Assert.assertTrue("no melee roll into the melee shield",
 				meleeVsMeleeImmune == null || meleeVsMeleeImmune.owned.isEmpty());
 			OptimizerService.StyleResult rangedVsRangedImmune =
-				roster.result.perMob.get(1).get(CombatStyle.RANGED);
+				roster.result.perMob.get(1).get(Style.RANGED);
 			Assert.assertTrue("no ranged roll into the ranged shield",
 				rangedVsRangedImmune == null || rangedVsRangedImmune.owned.isEmpty());
 			// The backpack view never duplicates: vs the melee-immune phase
 			// the ranged answer WEARS the blowpipe and benches the whip.
-			OptimizerService.StyleResult rangedKit = roster.result.perMob.get(0).get(CombatStyle.RANGED);
+			OptimizerService.StyleResult rangedKit = roster.result.perMob.get(0).get(Style.RANGED);
 			Assert.assertNotNull(rangedKit);
 			Assert.assertFalse(rangedKit.owned.isEmpty());
 			Assert.assertEquals("the carried blowpipe answers the melee shield",
@@ -487,7 +487,7 @@ public class RosterOptimizerTest {
 			Assert.assertTrue("the worn blowpipe never duplicates into the bench",
 				rangedKit.bench.stream().noneMatch(i -> i.getId() == 12926));
 			// ...and vs the ranged-immune phase the melee answer flips it.
-			OptimizerService.StyleResult meleeKit = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult meleeKit = roster.result.perMob.get(1).get(Style.MELEE);
 			Assert.assertNotNull(meleeKit);
 			Assert.assertFalse(meleeKit.owned.isEmpty());
 			Assert.assertEquals(4151, meleeKit.owned.get(0).getLoadout().getWeapon().getId());
@@ -519,9 +519,9 @@ public class RosterOptimizerTest {
 			RosterResultView solo = run(service,
 				Collections.singletonList(tds.getMobs().get(0)), owned, 20);
 			double soloBest = solo.result.perMob.get(0)
-				.get(CombatStyle.RANGED).owned.get(0).getDps();
+				.get(Style.RANGED).owned.get(0).getDps();
 			double rosterBest = 0;
-			for (CombatStyle style : CombatStyle.values()) {
+			for (Style style : Style.values()) {
 				OptimizerService.StyleResult r = roster.result.perMob.get(0).get(style);
 				if (r != null && !r.owned.isEmpty()) {
 					rosterBest = Math.max(rosterBest, r.owned.get(0).getDps());
@@ -537,7 +537,7 @@ public class RosterOptimizerTest {
 			// ranged-immune phase (worn melee) the carried blowpipe waits
 			// in the backpack (field bug: it vanished into a clipped row).
 			OptimizerService.StyleResult meleeVsRangedImmune =
-				roster.result.perMob.get(1).get(CombatStyle.MELEE);
+				roster.result.perMob.get(1).get(Style.MELEE);
 			Assert.assertNotNull(meleeVsRangedImmune);
 			Assert.assertTrue("the carried cross weapon rides the inventory",
 				meleeVsRangedImmune.bench.stream().anyMatch(i -> i.getId() == 12926));
@@ -546,7 +546,7 @@ public class RosterOptimizerTest {
 			java.util.Set<Integer> planned = new java.util.HashSet<>();
 			for (int j = 0; j < 3; j++) {
 				DpsResult best = null;
-				for (CombatStyle style : CombatStyle.values()) {
+				for (Style style : Style.values()) {
 					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
 					if (r != null && !r.owned.isEmpty()
 						&& (best == null || r.owned.get(0).getDps() > best.getDps())) {
@@ -554,7 +554,7 @@ public class RosterOptimizerTest {
 					}
 				}
 				if (best != null) {
-					for (GearItem item : best.getLoadout().getGear().values()) {
+					for (Gear item : best.getLoadout().getGear().values()) {
 						if (item != null) {
 							planned.add(item.getId());
 						}
@@ -562,12 +562,12 @@ public class RosterOptimizerTest {
 				}
 			}
 			for (int j = 0; j < 3; j++) {
-				for (CombatStyle style : CombatStyle.values()) {
+				for (Style style : Style.values()) {
 					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
 					if (r == null) {
 						continue;
 					}
-					for (GearItem item : r.bench) {
+					for (Gear item : r.bench) {
 						Assert.assertTrue("inventory item outside the plan: " + item.label(),
 							planned.contains(item.getId())
 								|| (r.specWeapon != null && item.getId() == r.specWeapon.getId()));
@@ -596,15 +596,15 @@ public class RosterOptimizerTest {
 			RosterResultView roster = run(service, tds.getMobs(), owned, 4);
 			// The melee answer vs the ranged-immune phase wears the bolts.
 			OptimizerService.StyleResult melee =
-				roster.result.perMob.get(1).get(CombatStyle.MELEE);
+				roster.result.perMob.get(1).get(Style.MELEE);
 			Assert.assertNotNull(melee);
 			Assert.assertFalse(melee.owned.isEmpty());
-			GearItem wornAmmo = melee.owned.get(0).getLoadout().get(GearSlot.AMMO);
+			Gear wornAmmo = melee.owned.get(0).getLoadout().get(GearSlot.AMMO);
 			Assert.assertNotNull("the melee set wears the ranged ammo", wornAmmo);
 			Assert.assertEquals(9144, wornAmmo.getId());
 			// ...and no inventory list carries an ammo-slot item.
 			for (int j = 0; j < 3; j++) {
-				for (CombatStyle style : CombatStyle.values()) {
+				for (Style style : Style.values()) {
 					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
 					if (r == null) {
 						continue;
@@ -643,7 +643,7 @@ public class RosterOptimizerTest {
 			RosterResultView roster = run(service, tds.getMobs(), owned, 1);
 			// The melee-immune phase gets the bow's answer.
 			DpsResult phase0 = null;
-			for (CombatStyle style : CombatStyle.values()) {
+			for (Style style : Style.values()) {
 				OptimizerService.StyleResult r = roster.result.perMob.get(0).get(style);
 				if (r != null && !r.owned.isEmpty()
 					&& (phase0 == null || r.owned.get(0).getDps() > phase0.getDps())) {
@@ -654,7 +654,7 @@ public class RosterOptimizerTest {
 			Assert.assertEquals("the carried bow answers the melee shield",
 				29591, phase0.getLoadout().getWeapon().getId());
 			// The spec lost its seat, and the dagger stays home.
-			OptimizerService.StyleResult melee = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult melee = roster.result.perMob.get(1).get(Style.MELEE);
 			Assert.assertNotNull(melee);
 			Assert.assertFalse(melee.owned.isEmpty());
 			Assert.assertNull("the spec is dropped for the bow", melee.specWeapon);
@@ -680,11 +680,11 @@ public class RosterOptimizerTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			RosterResultView roster = run(service, tds.getMobs(), owned, 1);
-			CombatStyle[] immuneTo = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
+			Style[] immuneTo = {Style.MELEE, Style.RANGED, Style.MAGIC};
 			boolean anyInventory = false;
 			for (int j = 0; j < 3; j++) {
 				DpsResult best = null;
-				for (CombatStyle style : CombatStyle.values()) {
+				for (Style style : Style.values()) {
 					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
 					if (r == null) {
 						continue;
@@ -712,23 +712,23 @@ public class RosterOptimizerTest {
 		// usable for the rest of the roster - the excluding mob's answer
 		// just never wears it, even when the shared set carries it.
 		LoadoutData data = new DataService().load();
-		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster vorkath = data.searchMonsters("vorkath", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // abyssal whip
 		owned.put(12018, 1);  // salve amulet(ei)
-		Map<Integer, Map<CombatStyle, java.util.Set<Integer>>> excludedByMob =
+		Map<Integer, Map<Style, java.util.Set<Integer>>> excludedByMob =
 			Collections.singletonMap(goblin.profileId(), Collections.singletonMap(
-				CombatStyle.MELEE, Collections.singleton(4151)));
+				Style.MELEE, Collections.singleton(4151)));
 		OptimizerService service = new OptimizerService(data);
 		try {
 			RosterResultView roster = run(service,
 				Arrays.asList(vorkath, goblin), owned, 1, excludedByMob);
-			OptimizerService.StyleResult vsVorkath = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult vsVorkath = roster.result.perMob.get(0).get(Style.MELEE);
 			Assert.assertNotNull(vsVorkath);
 			Assert.assertFalse("the roster still uses the whip", vsVorkath.owned.isEmpty());
 			Assert.assertEquals(4151, vsVorkath.owned.get(0).getLoadout().getWeapon().getId());
-			OptimizerService.StyleResult vsGoblin = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult vsGoblin = roster.result.perMob.get(1).get(Style.MELEE);
 			boolean goblinWearsWhip = vsGoblin != null && !vsGoblin.owned.isEmpty()
 				&& vsGoblin.owned.get(0).getLoadout().getWeapon() != null
 				&& vsGoblin.owned.get(0).getLoadout().getWeapon().getId() == 4151;
@@ -745,14 +745,14 @@ public class RosterOptimizerTest {
 	}
 
 	/** The style a result's attack-type string rolls under. */
-	private static CombatStyle styleOfAttack(String attackType) {
+	private static Style styleOfAttack(String attackType) {
 		if (attackType != null && attackType.startsWith("ranged")) {
-			return CombatStyle.RANGED;
+			return Style.RANGED;
 		}
 		if (attackType != null && attackType.startsWith("magic")) {
-			return CombatStyle.MAGIC;
+			return Style.MAGIC;
 		}
-		return CombatStyle.MELEE;
+		return Style.MELEE;
 	}
 
 	@Test
@@ -763,8 +763,8 @@ public class RosterOptimizerTest {
 		// WORN only against the goblin - per-mob combinations over one
 		// carried kit.
 		LoadoutData data = new DataService().load();
-		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Monster vorkath = data.searchMonsters("vorkath", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // abyssal whip
 		owned.put(12018, 1);  // salve amulet(ei)
@@ -772,10 +772,10 @@ public class RosterOptimizerTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			RosterResultView roster = run(service, Arrays.asList(vorkath, goblin), owned);
-			OptimizerService.StyleResult vsVorkath = roster.result.perMob.get(0).get(CombatStyle.MELEE);
-			OptimizerService.StyleResult vsGoblin = roster.result.perMob.get(1).get(CombatStyle.MELEE);
-			GearItem vorkathNeck = vsVorkath.owned.get(0).getLoadout().get(GearSlot.NECK);
-			GearItem goblinNeck = vsGoblin.owned.get(0).getLoadout().get(GearSlot.NECK);
+			OptimizerService.StyleResult vsVorkath = roster.result.perMob.get(0).get(Style.MELEE);
+			OptimizerService.StyleResult vsGoblin = roster.result.perMob.get(1).get(Style.MELEE);
+			Gear vorkathNeck = vsVorkath.owned.get(0).getLoadout().get(GearSlot.NECK);
+			Gear goblinNeck = vsGoblin.owned.get(0).getLoadout().get(GearSlot.NECK);
 			Assert.assertEquals("the 750hp undead anchors the salve",
 				"salve amulet(ei)", vorkathNeck.getNameLower());
 			Assert.assertEquals("the goblin wears the benched torture",

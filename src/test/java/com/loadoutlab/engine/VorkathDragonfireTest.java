@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class VorkathDragonfireTest {
 	private static LoadoutData data;
-	private static MonsterStats vorkath;
+	private static Monster vorkath;
 
 	@BeforeAll
 	static void load() {
@@ -31,7 +31,7 @@ class VorkathDragonfireTest {
 	}
 
 	private static Loadout wearing(String shield) {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		if (shield != null) {
 			gear.put(GearSlot.SHIELD, data.getGearItems().stream()
 				.filter(g -> g.getNameLower().equals(shield) && g.isStandardGear())

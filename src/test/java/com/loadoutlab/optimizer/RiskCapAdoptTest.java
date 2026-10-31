@@ -31,19 +31,19 @@ class RiskCapAdoptTest {
         Map<Integer, Integer> bank = new HashMap<>();
         for (String name : BANK) {
             for (GearSlot slot : GearSlot.values()) {
-                for (GearItem item : data.getGearItems(slot)) {
+                for (Gear item : data.getGearItems(slot)) {
                     if (item.getNameLower().startsWith(name.toLowerCase())) bank.put(item.getId(), 1);
                 }
             }
         }
-        MonsterStats mob = data.getMonsters().stream()
+        Monster mob = data.getMonsters().stream()
             .filter(m -> m.getName().equalsIgnoreCase("Crazy archaeologist")).findFirst().orElseThrow(AssertionError::new);
-        var done = new CompletableFuture<Map<CombatStyle, OptimizerService.StyleResult>>();
+        var done = new CompletableFuture<Map<Style, OptimizerService.StyleResult>>();
         ServiceCalls.bestPerStyle(new OptimizerService(data), mob, PlayerLevels.MAXED, PlayerLevels.MAXED,
             new PrayerUnlocks(true, true, true, true, true), RequirementProfile.MAXED, new OwnedItems(bank, true), 1,
             false, false, "", Set.of(), 4, 75_000, false, Set.of(), 0, done::complete);
-        Map<CombatStyle, OptimizerService.StyleResult> results = done.get(5, TimeUnit.MINUTES);
-        for (CombatStyle style : CombatStyle.concreteValues()) {
+        Map<Style, OptimizerService.StyleResult> results = done.get(5, TimeUnit.MINUTES);
+        for (Style style : Style.concreteValues()) {
             List<DpsResult> owned = results.get(style).owned;
             assertFalse(owned.isEmpty(), style + " has a set");
             long risk = PvpRisk.riskGp(owned.get(0).getLoadout(), null, 4);

@@ -9,49 +9,49 @@ package com.loadoutlab.engine;
 // encoded as factor 0.0, which makes floor(4 + level * 0.0) exactly 4.
 @lombok.AllArgsConstructor
 public enum BoostProfile {
-    NONE("No boosts", 0, 0, ""), LIVE_CURRENT("Current boosted levels", 0, 0, ""),
-    // Label deliberately avoids " + " - the assumes chips split on it.
-    F2P_COMBAT("Attack & strength potions", 3, 0.10, "as"), SUPER_COMBAT("Super combat", 5, 0.15, "asd"),
-    // The pair a super combat replaces, for a bank with none left (field report 2026-10-29).
-    SUPER_ATTACK_STRENGTH("Super attack & strength", 5, 0.15, "as"),
-    // Divine variants boost identically; they hold the boost at ceiling
-    // for 5 minutes instead of decaying, so they are the preferred assumption.
-    DIVINE_SUPER_COMBAT("Divine super combat", 5, 0.15, "asd"), RANGING("Ranging potion", 4, 0.10, "r"),
-    DIVINE_RANGING("Divine ranging potion", 4, 0.10, "r"),
-    // Same ranged numbers as the ranging potion; the super-defence half
-    // is deliberately unmodeled here (outgoing dps never reads it).
-    BASTION("Bastion potion", 4, 0.10, "r"), DIVINE_BASTION("Divine bastion potion", 4, 0.10, "r"),
-    SUPER_RANGING("Super ranging", 5, 0.15, "r"), SATURATED_HEART("Saturated heart", 4, 0.10, "m"),
-    IMBUED_HEART("Imbued heart", 1, 0.10, "m"), MAGIC("Magic potion", 4, 0.0, "m"), DIVINE_MAGIC("Divine magic potion", 4, 0.0, "m"),
-    // Magic potion's flat +4 with the unmodeled super-defence half.
-    BATTLEMAGE("Battlemage potion", 4, 0.0, "m"), DIVINE_BATTLEMAGE("Divine battlemage potion", 4, 0.0, "m"),
-    SUPER_MAGIC("Super magic", 5, 0.15, "m"), OVERLOAD("Overload", 5, 0.13, "asdrm"),
-    OVERLOAD_PLUS("Overload (+)", 6, 0.16, "asdrm"), SMELLING_SALTS("Smelling salts", 11, 0.16, "asdrm");
+NONE("No boosts", 0, 0, ""), LIVE_CURRENT("Current boosted levels", 0, 0, ""),
+// Label deliberately avoids " + " - the assumes chips split on it.
+F2P_COMBAT("Attack & strength potions", 3, 0.10, "as"), SUPER_COMBAT("Super combat", 5, 0.15, "asd"),
+// The pair a super combat replaces, for a bank with none left (field report 2026-10-29).
+SUPER_ATTACK_STRENGTH("Super attack & strength", 5, 0.15, "as"),
+// Divine variants boost identically; they hold the boost at ceiling
+// for 5 minutes instead of decaying, so they are the preferred assumption.
+DIVINE_SUPER_COMBAT("Divine super combat", 5, 0.15, "asd"), RANGING("Ranging potion", 4, 0.10, "r"),
+DIVINE_RANGING("Divine ranging potion", 4, 0.10, "r"),
+// Same ranged numbers as the ranging potion; the super-defence half
+// is deliberately unmodeled here (outgoing dps never reads it).
+BASTION("Bastion potion", 4, 0.10, "r"), DIVINE_BASTION("Divine bastion potion", 4, 0.10, "r"),
+SUPER_RANGING("Super ranging", 5, 0.15, "r"), SATURATED_HEART("Saturated heart", 4, 0.10, "m"),
+IMBUED_HEART("Imbued heart", 1, 0.10, "m"), MAGIC("Magic potion", 4, 0.0, "m"), DIVINE_MAGIC("Divine magic potion", 4, 0.0, "m"),
+// Magic potion's flat +4 with the unmodeled super-defence half.
+BATTLEMAGE("Battlemage potion", 4, 0.0, "m"), DIVINE_BATTLEMAGE("Divine battlemage potion", 4, 0.0, "m"),
+SUPER_MAGIC("Super magic", 5, 0.15, "m"), OVERLOAD("Overload", 5, 0.13, "asdrm"),
+OVERLOAD_PLUS("Overload (+)", 6, 0.16, "asdrm"), SMELLING_SALTS("Smelling salts", 11, 0.16, "asdrm");
 
-    final String label;
-    final int flat;
-    final double factor;
-    // Which skills this profile boosts, as letters from "asdrm".
-    final String skills;
+final String label;
+final int flat;
+final double factor;
+// Which skills this profile boosts, as letters from "asdrm".
+final String skills;
 
-    public PlayerLevels apply(PlayerLevels base, PlayerLevels current) {
-        PlayerLevels source = base == null ? PlayerLevels.MAXED : base;
-        if (this == LIVE_CURRENT) return current == null ? source : current;
-        // NONE boosts nothing and must hand back the SAME instance: the
-        // general path below always allocates a fresh PlayerLevels.
-        if (skills.isEmpty()) return source;
-        return source.withBoosts( boostIf('a', source.attack), boostIf('s', source.strength),
-            boostIf('d', source.defence), boostIf('r', source.ranged), boostIf('m', source.magic));
-    }
+public PlayerLevels apply(PlayerLevels base, PlayerLevels current) {
+    PlayerLevels source = base == null ? PlayerLevels.MAXED : base;
+    if (this == LIVE_CURRENT) return current == null ? source : current;
+    // NONE boosts nothing and must hand back the SAME instance: the
+    // general path below always allocates a fresh PlayerLevels.
+    if (skills.isEmpty()) return source;
+    return source.withBoosts( boostIf('a', source.attack), boostIf('s', source.strength),
+        boostIf('d', source.defence), boostIf('r', source.ranged), boostIf('m', source.magic));
+}
 
-    // True when this profile boosts the skill letter (from "asdrm") - the
-    // assume-chip picker filters style-relevant boosts with it.
-    public boolean boosts(char skill) { return skills.indexOf(skill) >= 0; }
+// True when this profile boosts the skill letter (from "asdrm") - the
+// assume-chip picker filters style-relevant boosts with it.
+public boolean boosts(char skill) { return skills.indexOf(skill) >= 0; }
 
-    // floor(flat + level * factor), or 0 when this profile skips the skill.
-    int boostIf(char skill, int level) {
-        return skills.indexOf(skill) < 0 ? 0 : (int) Math.floor(flat + level * factor);
-    }
+// floor(flat + level * factor), or 0 when this profile skips the skill.
+int boostIf(char skill, int level) {
+    return skills.indexOf(skill) < 0 ? 0 : (int) Math.floor(flat + level * factor);
+}
 
-    public String toString() { return label; }
+public String toString() { return label; }
 }

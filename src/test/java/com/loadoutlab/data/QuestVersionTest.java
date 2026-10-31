@@ -25,7 +25,7 @@ class QuestVersionTest {
 	private static List<String> versions(String name) {
 		return data.searchMonsters(name, 10).stream()
 			.filter(m -> m.getName().equalsIgnoreCase(name))
-			.map(MonsterStats::getVersion)
+			.map(Monster::getVersion)
 			.collect(Collectors.toList());
 	}
 

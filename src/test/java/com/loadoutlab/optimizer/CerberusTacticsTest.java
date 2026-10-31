@@ -1,9 +1,9 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.RequiredGear;
 import com.loadoutlab.engine.*;
 import com.loadoutlab.model.CommandEngine;
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CerberusTacticsTest {
 	private static final int SPECTRAL = 12821;
 	private static LoadoutData data;
-	private static MonsterStats cerberus;
+	private static Monster cerberus;
 
 	@BeforeAll
 	static void load() {
@@ -52,7 +52,7 @@ class CerberusTacticsTest {
 		assertEquals(List.of(SPECTRAL), RequiredGear.swapIds(cerberus));
 		assertTrue(RequiredGear.swapNote(SPECTRAL).contains("summoned souls"));
 		assertTrue(RequiredGear.ward(cerberus));
-		MonsterStats zulrah = data.searchMonsters("zulrah", 1).get(0);
+		Monster zulrah = data.searchMonsters("zulrah", 1).get(0);
 		assertTrue(RequiredGear.swapIds(zulrah).isEmpty());
 		assertFalse(RequiredGear.ward(zulrah));
 	}
@@ -70,7 +70,7 @@ class CerberusTacticsTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			service.bestPerStyle(cerberus, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 7, p, Collections.emptyMap(),
 				Collections.emptySet(), Collections.emptyMap(), null, 0, Collections.<Integer>emptySet(), r -> {
@@ -78,7 +78,7 @@ class CerberusTacticsTest {
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
-			List<GearItem> bench = out.get().get(CombatStyle.MELEE).bench;
+			List<Gear> bench = out.get().get(Style.MELEE).bench;
 			assertTrue(bench.stream().anyMatch(g -> g.getId() == SPECTRAL), "the shield rides: " + bench);
 		} finally {
 			service.shutdown();
@@ -97,7 +97,7 @@ class CerberusTacticsTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			service.bestPerStyle(cerberus, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 8, p, Collections.emptyMap(),
 				java.util.Set.of(SPECTRAL), Collections.emptyMap(), null, 0, Collections.<Integer>emptySet(), r -> {
@@ -105,7 +105,7 @@ class CerberusTacticsTest {
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
-			List<GearItem> bench = out.get().get(CombatStyle.MELEE).bench;
+			List<Gear> bench = out.get().get(Style.MELEE).bench;
 			assertTrue(bench.stream().anyMatch(g -> g.getId() == SPECTRAL), "the simmed shield rides: " + bench);
 		} finally {
 			service.shutdown();

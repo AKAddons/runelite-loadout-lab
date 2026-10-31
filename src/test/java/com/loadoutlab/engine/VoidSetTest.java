@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class VoidSetTest {
 	private static LoadoutData data;
-	private static MonsterStats ankou;
+	private static Monster ankou;
 
 	@BeforeAll
 	static void load() {
@@ -30,13 +30,13 @@ class VoidSetTest {
 		ankou = data.searchMonsters("ankou", 1).get(0);
 	}
 
-	private static GearItem byId(int id) {
-		GearItem item = data.getGear(id);
+	private static Gear byId(int id) {
+		Gear item = data.getGear(id);
 		assertNotNull(item, "corpus is missing item " + id);
 		return item;
 	}
 
-	private static OptimizationRequest request(CombatStyle style) {
+	private static OptimizationRequest request(Style style) {
 		return new OptimizationRequest(ankou, style, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
@@ -48,20 +48,20 @@ class VoidSetTest {
 	void voidPiecesScoreIntoThePool() {
 		// The shared pieces enter every style's pool; each helm only its own.
 		int[] shared = {8839, 8840, 8842, 13072, 13073}; // top, robe, gloves, elite top, elite robe
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
+		for (Style style : new Style[]{Style.MELEE, Style.RANGED, Style.MAGIC}) {
 			for (int id : shared) {
 				assertTrue(LoadoutOptimizer.candidateScore(request(style), byId(id), false) > 0,
 					"piece " + id + " must be seeded for " + style);
 			}
 		}
-		assertTrue(LoadoutOptimizer.candidateScore(request(CombatStyle.RANGED), byId(11664), false) > 0,
+		assertTrue(LoadoutOptimizer.candidateScore(request(Style.RANGED), byId(11664), false) > 0,
 			"ranger helm seeds the ranged pool");
-		assertTrue(LoadoutOptimizer.candidateScore(request(CombatStyle.MAGIC), byId(11663), false) > 0,
+		assertTrue(LoadoutOptimizer.candidateScore(request(Style.MAGIC), byId(11663), false) > 0,
 			"mage helm seeds the magic pool");
-		assertTrue(LoadoutOptimizer.candidateScore(request(CombatStyle.MELEE), byId(11665), false) > 0,
+		assertTrue(LoadoutOptimizer.candidateScore(request(Style.MELEE), byId(11665), false) > 0,
 			"melee helm seeds the melee pool");
 		// The off-style helm stays unseeded (zero score - pruned).
-		assertEquals(0.0, LoadoutOptimizer.candidateScore(request(CombatStyle.MELEE), byId(11664), false),
+		assertEquals(0.0, LoadoutOptimizer.candidateScore(request(Style.MELEE), byId(11664), false),
 			1e-9, "ranger helm has no business in the melee pool");
 	}
 
@@ -79,18 +79,18 @@ class VoidSetTest {
 		com.loadoutlab.data.SpellStats surge = data.getSpells().stream()
 			.filter(sp -> sp.getName().equalsIgnoreCase("Fire Surge"))
 			.findFirst().orElseThrow(() -> new AssertionError("no Fire Surge"));
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName("kodai wand"));
 		gear.put(GearSlot.HEAD, byId(11663));
 		gear.put(GearSlot.BODY, byId(topId));
 		gear.put(GearSlot.LEGS, byId(robeId));
 		gear.put(GearSlot.HANDS, byId(8842));
 		return new DpsCalculator().calculate(
-			request(CombatStyle.MAGIC).withSpell(surge), new Loadout(gear));
+			request(Style.MAGIC).withSpell(surge), new Loadout(gear));
 	}
 
-	private static GearItem byName(String nameLower) {
-		for (GearItem item : data.getGearItems()) {
+	private static Gear byName(String nameLower) {
+		for (Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}

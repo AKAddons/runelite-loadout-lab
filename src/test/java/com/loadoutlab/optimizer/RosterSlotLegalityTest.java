@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.DpsResult;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +25,7 @@ public class RosterSlotLegalityTest {
 	@Test
 	public void moonsRosterNeverWearsAShieldUnderATwoHander() throws Exception {
 		LoadoutData data = new DataService().load();
-		List<MonsterStats> moons = List.of(
+		List<Monster> moons = List.of(
 			data.searchMonsters("blood moon", 1).get(0),
 			data.searchMonsters("blue moon", 1).get(0),
 			data.searchMonsters("eclipse moon", 1).get(0));
@@ -35,8 +35,8 @@ public class RosterSlotLegalityTest {
 		Assert.assertNotNull(roster);
 		int checked = 0;
 		for (int i = 0; i < roster.mobs.size(); i++) {
-			Map<CombatStyle, OptimizerService.StyleResult> styles = roster.perMob.get(i);
-			for (Map.Entry<CombatStyle, OptimizerService.StyleResult> e : styles.entrySet()) {
+			Map<Style, OptimizerService.StyleResult> styles = roster.perMob.get(i);
+			for (Map.Entry<Style, OptimizerService.StyleResult> e : styles.entrySet()) {
 				OptimizerService.StyleResult result = e.getValue();
 				if (result.overallBest != null) {
 					assertLegal(roster.mobs.get(i), e.getKey(), "BiS", result.overallBest);
@@ -51,10 +51,10 @@ public class RosterSlotLegalityTest {
 		Assert.assertTrue("the roster answered something", checked > 0);
 	}
 
-	private static void assertLegal(MonsterStats mob, CombatStyle style,
+	private static void assertLegal(Monster mob, Style style,
 		String side, DpsResult result) {
-		GearItem weapon = result.getLoadout().getWeapon();
-		GearItem shield = result.getLoadout().get(GearSlot.SHIELD);
+		Gear weapon = result.getLoadout().getWeapon();
+		Gear shield = result.getLoadout().get(GearSlot.SHIELD);
 		if (weapon != null && weapon.isTwoHanded()) {
 			Assert.assertNull(mob.label() + " " + style + " " + side + " wears "
 					+ weapon.label() + " (two-handed) WITH " + (shield == null ? "" : shield.label()),

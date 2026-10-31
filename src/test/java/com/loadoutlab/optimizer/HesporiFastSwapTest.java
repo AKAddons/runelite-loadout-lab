@@ -1,9 +1,9 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.RequiredGear;
 import com.loadoutlab.engine.*;
 import java.util.Collections;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class HesporiFastSwapTest {
 	private static LoadoutData data;
-	private static MonsterStats hespori;
+	private static Monster hespori;
 
 	@BeforeAll
 	static void load() {
@@ -40,13 +40,13 @@ class HesporiFastSwapTest {
 			.findFirst().orElseThrow(() -> new AssertionError(name)).getId();
 	}
 
-	private static Map<CombatStyle, OptimizerService.StyleResult> search(Map<Integer, Integer> owned) throws Exception {
+	private static Map<Style, OptimizerService.StyleResult> search(Map<Integer, Integer> owned) throws Exception {
 		ComputeParams p = new ComputeParams();
 		p.maxSwaps = 2;
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			service.bestPerStyle(hespori, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 7, p, Collections.emptyMap(),
 				Collections.emptySet(), Collections.emptyMap(), null, 0, Collections.<Integer>emptySet(), r -> {
@@ -60,7 +60,7 @@ class HesporiFastSwapTest {
 		}
 	}
 
-	private static boolean fast(GearItem g) { return g.speed == 3 && g.isWeaponFor(CombatStyle.RANGED); }
+	private static boolean fast(Gear g) { return g.speed == 3 && g.isWeaponFor(Style.RANGED); }
 
 	@Test
 	@DisplayName("Hespori's swap rule is the fast ranged kind; Cerberus' stays an item")
@@ -76,8 +76,8 @@ class HesporiFastSwapTest {
 		for (String name : new String[]{"abyssal whip", "avernic defender", "bandos chestplate", "bandos tassets", "rune knife", "adamant dart"}) {
 			owned.put(id(name), 1);
 		}
-		OptimizerService.StyleResult melee = search(owned).get(CombatStyle.MELEE);
-		List<GearItem> fastOnes = melee.bench.stream().filter(HesporiFastSwapTest::fast).collect(java.util.stream.Collectors.toList());
+		OptimizerService.StyleResult melee = search(owned).get(Style.MELEE);
+		List<Gear> fastOnes = melee.bench.stream().filter(HesporiFastSwapTest::fast).collect(java.util.stream.Collectors.toList());
 		assertEquals(1, fastOnes.size(), "one fast ranged weapon rides: " + melee.bench);
 		assertEquals(id("rune knife"), fastOnes.get(0).id, "the knives out-hit the darts");
 		assertTrue(melee.swapNotes.get(id("rune knife")).contains("sprouts"), melee.swapNotes.toString());
@@ -91,7 +91,7 @@ class HesporiFastSwapTest {
 		for (String name : new String[]{"abyssal whip", "avernic defender", "bandos chestplate", "bandos tassets"}) {
 			owned.put(id(name), 1);
 		}
-		OptimizerService.StyleResult melee = search(owned).get(CombatStyle.MELEE);
+		OptimizerService.StyleResult melee = search(owned).get(Style.MELEE);
 		assertTrue(melee.bench.stream().noneMatch(HesporiFastSwapTest::fast), melee.bench.toString());
 	}
 }

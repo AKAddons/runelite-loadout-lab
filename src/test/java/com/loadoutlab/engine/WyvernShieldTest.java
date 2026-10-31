@@ -3,7 +3,7 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +21,7 @@ class WyvernShieldTest {
 	@DisplayName("the ancient wyvern's owned ranged set wears a breath shield with a one-handed weapon over a two-handed bow; without one the card keeps an answer")
 	void breathShieldWins() {
 		LoadoutData data = new DataService().load();
-		MonsterStats wyvern = data.searchMonsters("ancient wyvern", 1).get(0);
+		Monster wyvern = data.searchMonsters("ancient wyvern", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (int id : new int[]{20997, 11212, 9185, 9144, 9731}) {
 			owned.put(id, 1); // twisted bow + dragon arrows, rune crossbow + runite bolts, mind shield
@@ -37,8 +37,8 @@ class WyvernShieldTest {
 		assertFalse(without.isEmpty(), "no breath shield owned never empties the card");
 	}
 
-	private static OptimizationRequest request(LoadoutData data, MonsterStats mob, Map<Integer, Integer> owned) {
-		return TestRequests.of(mob, CombatStyle.RANGED, PlayerLevels.MAXED,
+	private static OptimizationRequest request(LoadoutData data, Monster mob, Map<Integer, Integer> owned) {
+		return TestRequests.of(mob, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), 1);
 	}

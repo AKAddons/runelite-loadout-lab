@@ -10,15 +10,15 @@ import java.util.function.IntUnaryOperator;
 // Pure over the two value arrays so the plugin's varbit reads stay thin.
 public class RunePouchScan {
 
-    // itemId -> quantity for every filled slot; an empty or zero slot adds nothing.
-    public static Map<Integer, Integer> items(int[] types, int[] quantities, IntUnaryOperator typeToItem) {
-        Map<Integer, Integer> out = new HashMap<>();
-        for (int i = 0; i < types.length && i < quantities.length; i++) {
-            if (types[i] > 0 && quantities[i] > 0) {
-                int item = typeToItem.applyAsInt(types[i]);
-                if (item > 0) out.merge(item, quantities[i], Integer::sum);
-            }
+// itemId -> quantity for every filled slot; an empty or zero slot adds nothing.
+public static Map<Integer, Integer> items(int[] types, int[] quantities, IntUnaryOperator typeToItem) {
+    Map<Integer, Integer> out = new HashMap<>();
+    for (int i = 0; i < types.length && i < quantities.length; i++) {
+        if (types[i] > 0 && quantities[i] > 0) {
+            int item = typeToItem.applyAsInt(types[i]);
+            if (item > 0) out.merge(item, quantities[i], Integer::sum);
         }
-        return out;
     }
+    return out;
+}
 }

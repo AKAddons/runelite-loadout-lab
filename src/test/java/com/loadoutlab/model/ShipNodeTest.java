@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.engine.ShipCannon;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +61,7 @@ class ShipNodeTest {
 		CommandEngine engine = engine(state, link);
 		engine.setRangedLevel(ranged);
 		engine.setSailingLevel(sailing);
-		MonsterStats mob = data.searchMonsters(mobName, 1).get(0);
+		Monster mob = data.searchMonsters(mobName, 1).get(0);
 		engine.execute("select", Map.of("id", mob.getId()));
 		engine.onResults(mob, Map.of());
 		flushEdt();
@@ -175,8 +175,8 @@ class ShipNodeTest {
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = engine(state, link);
 		engine.setRangedLevel(99);
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
-		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster shark = data.searchMonsters("hammerhead shark", 1).get(0);
 
 		state.setParam("lensIndex", 0);
 		engine.onRosterResults(List.of(graardor, shark), List.of(Map.of(), Map.of()));

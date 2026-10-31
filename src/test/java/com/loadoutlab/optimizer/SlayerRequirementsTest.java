@@ -3,9 +3,9 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.RequiredGear;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -42,7 +42,7 @@ class SlayerRequirementsTest {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats mob(String name) {
+	private static Monster mob(String name) {
 		return data.searchMonsters(name, 1).get(0);
 	}
 
@@ -52,7 +52,7 @@ class SlayerRequirementsTest {
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + nameLower)).getId();
 	}
 
-	private static OptimizerService.StyleResult melee(MonsterStats monster, boolean kourendElite, String... owned)
+	private static OptimizerService.StyleResult melee(Monster monster, boolean kourendElite, String... owned)
 		throws Exception {
 		Map<Integer, Integer> bank = new HashMap<>();
 		for (String name : owned) {
@@ -61,7 +61,7 @@ class SlayerRequirementsTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ComputeParams p = new ComputeParams();
 			p.specWeapon = false;
 			p.kourendElite = kourendElite;
@@ -73,7 +73,7 @@ class SlayerRequirementsTest {
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
-			return out.get().get(CombatStyle.MELEE);
+			return out.get().get(Style.MELEE);
 		} finally {
 			service.shutdown();
 		}
@@ -91,7 +91,7 @@ class SlayerRequirementsTest {
 	@Test
 	@DisplayName("Karuulm needs boots of stone (or brimstone, granite) until the elite Kourend & Kebos diary")
 	void karuulmBoots() throws Exception {
-		MonsterStats drake = mob("drake");
+		Monster drake = mob("drake");
 		assertTrue(RequiredGear.requiredIds(drake, data, Set.of()).containsKey(GearSlot.FEET));
 		assertFalse(RequiredGear.requiredIds(drake, data, Set.of(RequiredGear.KOUREND_ELITE)).containsKey(GearSlot.FEET),
 			"the elite diary waives them");

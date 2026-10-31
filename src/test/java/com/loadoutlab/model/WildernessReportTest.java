@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -51,7 +51,7 @@ class WildernessReportTest {
 			},
 			link);
 		assertTrue(engine.execute("select", Map.of("query", query)));
-		MonsterStats mob = state.mob();
+		Monster mob = state.mob();
 		assertNotNull(mob, query + " selected");
 		engine.onResults(mob, styles(mob));
 		flushEdt();
@@ -59,19 +59,19 @@ class WildernessReportTest {
 		return link.published;
 	}
 
-	private static Map<com.loadoutlab.engine.CombatStyle,
-		com.loadoutlab.optimizer.OptimizerService.StyleResult> styles(MonsterStats mob) {
+	private static Map<com.loadoutlab.engine.Style,
+		com.loadoutlab.optimizer.OptimizerService.StyleResult> styles(Monster mob) {
 		return styles(data, mob);
 	}
 
 	/** Real per-style results for a mob - shared with WikiCalcExportTest. */
-	static Map<com.loadoutlab.engine.CombatStyle,
-		com.loadoutlab.optimizer.OptimizerService.StyleResult> styles(LoadoutData data, MonsterStats mob) {
+	static Map<com.loadoutlab.engine.Style,
+		com.loadoutlab.optimizer.OptimizerService.StyleResult> styles(LoadoutData data, Monster mob) {
 		com.loadoutlab.optimizer.OptimizerService service =
 			new com.loadoutlab.optimizer.OptimizerService(data);
 		try {
 			java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
-			java.util.concurrent.atomic.AtomicReference<Map<com.loadoutlab.engine.CombatStyle,
+			java.util.concurrent.atomic.AtomicReference<Map<com.loadoutlab.engine.Style,
 				com.loadoutlab.optimizer.OptimizerService.StyleResult>> out =
 				new java.util.concurrent.atomic.AtomicReference<>();
 			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, mob,
@@ -81,7 +81,7 @@ class WildernessReportTest {
 				com.loadoutlab.engine.RequirementProfile.MAXED,
 				com.loadoutlab.engine.OwnedItems.EMPTY, 0,
 				false, false, "",
-				new java.util.EnumMap<>(com.loadoutlab.engine.CombatStyle.class), -1,
+				new java.util.EnumMap<>(com.loadoutlab.engine.Style.class), -1,
 				com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 				java.util.Collections.emptySet(), 0,
 				java.util.Collections.emptyMap(), null, 0, java.util.Collections.emptySet(),

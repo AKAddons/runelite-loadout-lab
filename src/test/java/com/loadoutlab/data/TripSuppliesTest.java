@@ -165,11 +165,11 @@ public class TripSuppliesTest {
 		}
 	}
 
-	private static MonsterStats named(String name) {
+	private static Monster named(String name) {
 		if (name == null) {
 			return null;
 		}
-		return new MonsterStats(1, name, "", 100, 100, 1, 1, null, null);
+		return new Monster(1, name, "", 100, 100, 1, 1, null, null);
 	}
 
 	@Test
@@ -195,8 +195,8 @@ public class TripSuppliesTest {
 	@Test
 	public void antipoisonCoversThePoisonersTheVenomListDoesNot() {
 		LoadoutData data = new DataService().load();
-		MonsterStats rex = data.searchMonsters("Dagannoth Rex", 1).get(0);
-		MonsterStats zulrah = data.searchMonsters("Zulrah", 1).get(0);
+		Monster rex = data.searchMonsters("Dagannoth Rex", 1).get(0);
+		Monster zulrah = data.searchMonsters("Zulrah", 1).get(0);
 		Assert.assertTrue(TripSupplies.inflictsPoison(rex));
 		Assert.assertFalse(TripSupplies.inflictsVenom(rex));
 		Assert.assertFalse("venom is its own category", TripSupplies.inflictsPoison(zulrah));
@@ -211,7 +211,7 @@ public class TripSuppliesTest {
 	 * wiki infobox says poisonous = No. The name had been on the list. */
 	@Test
 	public void sarachnisDoesNotPoison() {
-		MonsterStats sarachnis = new DataService().load().searchMonsters("sarachnis", 1).get(0);
+		Monster sarachnis = new DataService().load().searchMonsters("sarachnis", 1).get(0);
 		Assert.assertEquals("Sarachnis", sarachnis.getName());
 		Assert.assertFalse("wiki infobox: poisonous = No", TripSupplies.inflictsPoison(sarachnis));
 		Assert.assertFalse(TripSupplies.inflictsVenom(sarachnis));

@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,9 +13,9 @@ public class BlowpipeTest {
 	@Test
 	public void blowpipeWithDragonDartsBeatsBareThrownDarts() {
 		LoadoutData data = new DataService().load();
-		MonsterStats hydra = data.searchMonsters("alchemical hydra", 1).get(0);
+		Monster hydra = data.searchMonsters("alchemical hydra", 1).get(0);
 		OptimizationRequest game = new OptimizationRequest(
-			hydra, CombatStyle.RANGED, PlayerLevels.MAXED,
+			hydra, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 3);
@@ -31,12 +31,12 @@ public class BlowpipeTest {
 	@Test
 	public void ownedBlowpipeUsesTheBestOwnedDartTierAndNeedsDarts() {
 		LoadoutData data = new DataService().load();
-		MonsterStats hydra = data.searchMonsters("alchemical hydra", 1).get(0);
+		Monster hydra = data.searchMonsters("alchemical hydra", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(12926, 1);  // toxic blowpipe (charged)
 		owned.put(811, 500);  // rune darts
 		OptimizationRequest request = new OptimizationRequest(
-			hydra, CombatStyle.RANGED, PlayerLevels.MAXED,
+			hydra, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1);
@@ -45,7 +45,7 @@ public class BlowpipeTest {
 
 		owned.put(11230, 500); // dragon darts: better tier takes over
 		DpsResult withDragon = new LoadoutOptimizer().optimize(data, new OptimizationRequest(
-			hydra, CombatStyle.RANGED, PlayerLevels.MAXED,
+			hydra, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1)).get(0);

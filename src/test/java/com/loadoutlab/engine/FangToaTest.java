@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -32,17 +32,17 @@ class FangToaTest {
 	}
 
 	private static DpsResult fangAt(String monster, String version, int invocation) {
-		MonsterStats mob = version.isEmpty() ? data.searchMonsters(monster, 1).get(0)
+		Monster mob = version.isEmpty() ? data.searchMonsters(monster, 1).get(0)
 			: data.getMonsters().stream()
 				.filter(m -> m.getName().equalsIgnoreCase(monster) && m.getVersion().equalsIgnoreCase(version))
 				.findFirst().orElseThrow(AssertionError::new);
 		mob = MonsterMechanics.atToaInvocation(mob, invocation);
-		GearItem fang = data.getGearItems().stream()
+		Gear fang = data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals("osmumten's fang") && g.isStandardGear())
 			.findFirst().orElseThrow(AssertionError::new);
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, fang);
-		OptimizationRequest request = new OptimizationRequest(mob, CombatStyle.MELEE, PlayerLevels.MAXED,
+		OptimizationRequest request = new OptimizationRequest(mob, Style.MELEE, PlayerLevels.MAXED,
 			// The official vectors were taken under Piety (2026-10-18); ALL
 			// assumes Zeal since the Fractured Archive (2026-10-20).
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, new PrayerUnlocks(true, true, true, true, true)),

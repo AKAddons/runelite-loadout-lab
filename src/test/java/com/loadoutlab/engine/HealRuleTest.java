@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class HealRuleTest {
 	private static LoadoutData data;
-	private static MonsterStats moon;
+	private static Monster moon;
 
 	@BeforeAll
 	static void load() {
@@ -31,10 +31,10 @@ class HealRuleTest {
 	}
 
 	private static Loadout wearing(String... names) {
-		Map<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		Map<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		for (String name : names) {
 			for (GearSlot slot : GearSlot.values()) {
-				for (GearItem g : data.getGearItems(slot)) {
+				for (Gear g : data.getGearItems(slot)) {
 					if (g.nameLower.equals(name)) gear.put(g.slot, g);
 				}
 			}
@@ -87,7 +87,7 @@ class HealRuleTest {
 	@Test
 	@DisplayName("a boss with no heal rule heals nothing, and its numbers are what they were")
 	void noHealRule() {
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
 		IncomingDpsCalculator.Result r = IncomingDpsCalculator.calculate(graardor, wearing("bandos chestplate"), 99, 99, 0);
 		assertEquals(0, r.healDps, 0);
 		assertTrue(r.totalDps > 0);

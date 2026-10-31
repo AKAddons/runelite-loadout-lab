@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -29,13 +29,13 @@ class SeaMeleeTest {
 	void seaMonstersRejectMelee() {
 		Loadout bare = new Loadout(new EnumMap<>(com.loadoutlab.data.GearSlot.class));
 		for (String name : com.loadoutlab.data.NavalCombat.NAVAL) {
-			MonsterStats mob = data.searchMonsters(name, 1).get(0);
-			assertTrue(MonsterMechanics.isImmune(mob, CombatStyle.MELEE, bare, null),
+			Monster mob = data.searchMonsters(name, 1).get(0);
+			assertTrue(MonsterMechanics.isImmune(mob, Style.MELEE, bare, null),
 				name + " must reject melee at sea");
-			assertFalse(MonsterMechanics.isImmune(mob, CombatStyle.RANGED, bare, null),
+			assertFalse(MonsterMechanics.isImmune(mob, Style.RANGED, bare, null),
 				name + " must still take ranged");
 		}
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
-		assertFalse(MonsterMechanics.isImmune(graardor, CombatStyle.MELEE, bare, null));
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
+		assertFalse(MonsterMechanics.isImmune(graardor, Style.MELEE, bare, null));
 	}
 }

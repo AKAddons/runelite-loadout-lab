@@ -2,8 +2,8 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -27,12 +27,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * "BiS ignores exclusions (Recommended)").
  */
 class BisIgnoresExclusionsTest {
-	private static OptimizerService.StyleResult melee(LoadoutData data, MonsterStats mob,
-		Map<CombatStyle, Set<Integer>> excluded) throws Exception {
+	private static OptimizerService.StyleResult melee(LoadoutData data, Monster mob,
+		Map<Style, Set<Integer>> excluded) throws Exception {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ComputeParams p = new ComputeParams();
 			p.specWeapon = false;
 			service.bestPerStyle(mob, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
@@ -43,7 +43,7 @@ class BisIgnoresExclusionsTest {
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
-			return out.get().get(CombatStyle.MELEE);
+			return out.get().get(Style.MELEE);
 		} finally {
 			service.shutdown();
 		}
@@ -53,9 +53,9 @@ class BisIgnoresExclusionsTest {
 	@DisplayName("excluding the best weapon leaves Best in game wearing it - exclusions shape Yours only")
 	void exclusionsLeaveTheCeiling() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
+		Monster demon = data.searchMonsters("abyssal demon", 1).get(0);
 		int bisWeapon = melee(data, demon, Map.of()).overallBest.getLoadout().getWeapon().getId();
-		OptimizerService.StyleResult excluded = melee(data, demon, Map.of(CombatStyle.MELEE, Set.of(bisWeapon)));
+		OptimizerService.StyleResult excluded = melee(data, demon, Map.of(Style.MELEE, Set.of(bisWeapon)));
 		assertEquals(bisWeapon, excluded.overallBest.getLoadout().getWeapon().getId(),
 			"the ceiling ignores the exclusion");
 	}

@@ -13,11 +13,11 @@ class EchoVariantsTest {
 	@DisplayName("no Echo boss enters the corpus, so none can be searched")
 	void noEchoBosses() {
 		LoadoutData data = new DataService().load();
-		for (MonsterStats m : data.getMonsters()) {
+		for (Monster m : data.getMonsters()) {
 			assertFalse(m.getName().contains("(Echo)"), m.getName());
 		}
 		assertFalse(data.searchMonsters("cerberus", 10).isEmpty(), "the main-game Cerberus still answers");
-		for (MonsterStats m : data.searchMonsters("echo", 20)) {
+		for (Monster m : data.searchMonsters("echo", 20)) {
 			assertFalse(m.getName().contains("(Echo)"), m.getName());
 		}
 	}
@@ -26,7 +26,7 @@ class EchoVariantsTest {
 	@DisplayName("no Nightmare Zone version enters the corpus - nobody theorycrafts the dream")
 	void noNightmareZone() {
 		LoadoutData data = new DataService().load();
-		for (MonsterStats m : data.getMonsters()) {
+		for (Monster m : data.getMonsters()) {
 			assertFalse(m.getName().contains("(Nightmare Zone)"), m.getName());
 		}
 		assertFalse(data.searchMonsters("nightmare", 10).isEmpty(), "The Nightmare still answers");

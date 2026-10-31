@@ -3,8 +3,8 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +36,7 @@ class GroupSwapsTest {
 	@Test
 	@DisplayName("a group search has swaps: one strip on every member, scored by the group's HP-weighted DPS")
 	void groupStrip() throws Exception {
-		List<MonsterStats> mobs = List.of(data.searchMonsters("abyssal demon", 1).get(0),
+		List<Monster> mobs = List.of(data.searchMonsters("abyssal demon", 1).get(0),
 			data.searchMonsters("black demon", 1).get(0));
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String name : new String[]{"abyssal whip", "dragon scimitar", "rune scimitar", "fighter torso",
@@ -46,8 +46,8 @@ class GroupSwapsTest {
 		OptimizerService service = new OptimizerService(data);
 		try {
 			OptimizerService.RosterResult roster = ServiceCalls.runRoster(service, mobs, owned, 0, Map.of());
-			OptimizerService.StyleResult first = roster.perMob.get(0).get(CombatStyle.MELEE);
-			OptimizerService.StyleResult second = roster.perMob.get(1).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult first = roster.perMob.get(0).get(Style.MELEE);
+			OptimizerService.StyleResult second = roster.perMob.get(1).get(Style.MELEE);
 			OptimizerService.Ladder weapon = first.ladder.get(GearSlot.WEAPON);
 			assertNotNull(weapon, "the group's weapon slot has swaps");
 			assertTrue(weapon.group, "scored across the group");

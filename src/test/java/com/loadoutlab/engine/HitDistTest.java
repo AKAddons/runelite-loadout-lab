@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -32,10 +32,10 @@ class HitDistTest {
 	}
 
 	private static Loadout wearing(String... names) {
-		Map<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		Map<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		for (String name : names) {
 			for (GearSlot slot : GearSlot.values()) {
-				for (GearItem g : data.getGearItems(slot)) {
+				for (Gear g : data.getGearItems(slot)) {
 					if (g.nameLower.equals(name) && g.isStandardGear() && !gear.containsKey(g.slot)) gear.put(g.slot, g);
 				}
 			}
@@ -43,7 +43,7 @@ class HitDistTest {
 		return new Loadout(gear);
 	}
 
-	private static OptimizationRequest request(MonsterStats mob, CombatStyle style, String spell) {
+	private static OptimizationRequest request(Monster mob, Style style, String spell) {
 		SpellStats s = null;
 		if (spell != null) {
 			for (SpellStats candidate : data.spells) if (candidate.name.equalsIgnoreCase(spell)) s = candidate;
@@ -54,8 +54,8 @@ class HitDistTest {
 			s, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 	}
 
-	private static MonsterStats mob(String name) {
-		List<MonsterStats> found = data.searchMonsters(name, 1);
+	private static Monster mob(String name) {
+		List<Monster> found = data.searchMonsters(name, 1);
 		assertFalse(found.isEmpty(), name);
 		return found.get(0);
 	}
@@ -88,17 +88,17 @@ class HitDistTest {
 	@Test
 	@DisplayName("every standard weapon alone, at every style it can fight, against a spread of monsters: the distribution's mean is the calculator's expected hit")
 	void everyWeapon() {
-		List<MonsterStats> mobs = List.of(mob("general graardor"), mob("zulrah"), mob("abyssal demon"), mob("blue moon"),
+		List<Monster> mobs = List.of(mob("general graardor"), mob("zulrah"), mob("abyssal demon"), mob("blue moon"),
 			mob("tormented demon"), mob("kalphite queen"), mob("grey golem"), mob("vorkath"));
 		int checked = 0;
 		List<String> approximate = new ArrayList<>();
-		for (GearItem weapon : data.getGearItems(GearSlot.WEAPON)) {
+		for (Gear weapon : data.getGearItems(GearSlot.WEAPON)) {
 			if (!weapon.isStandardGear()) continue;
-			Map<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+			Map<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 			gear.put(GearSlot.WEAPON, weapon);
 			Loadout set = new Loadout(gear);
-			for (MonsterStats mob : mobs) {
-				for (CombatStyle style : CombatStyle.concreteValues()) {
+			for (Monster mob : mobs) {
+				for (Style style : Style.concreteValues()) {
 					if (agrees(request(mob, style, null), set, approximate)) checked++;
 				}
 			}
@@ -113,35 +113,35 @@ class HitDistTest {
 		List<String> approximate = new ArrayList<>();
 		int checked = 0;
 		Object[][] cases = {
-			{"general graardor", CombatStyle.MELEE, null, new String[]{"scythe of vitur"}},
-			{"general graardor", CombatStyle.MELEE, null, new String[]{"osmumten's fang"}},
-			{"ba-ba", CombatStyle.MELEE, null, new String[]{"osmumten's fang"}},
-			{"blue moon", CombatStyle.MELEE, null, new String[]{"dual macuahuitl"}},
-			{"blue moon", CombatStyle.MELEE, null, new String[]{"sulphur blades"}},
-			{"grey golem", CombatStyle.MELEE, null, new String[]{"torag's hammers"}},
-			{"cerberus", CombatStyle.MELEE, null, new String[]{"obligator"}},
-			{"general graardor", CombatStyle.MELEE, null, new String[]{"verac's flail", "verac's helm", "verac's brassard", "verac's plateskirt"}},
-			{"kalphite queen", CombatStyle.MELEE, null, new String[]{"keris partisan"}},
-			{"ba-ba", CombatStyle.MELEE, null, new String[]{"keris partisan of the sun"}},
-			{"general graardor", CombatStyle.RANGED, null, new String[]{"dark bow", "dragon arrow"}},
-			{"general graardor", CombatStyle.RANGED, null, new String[]{"tonalztics of ralos"}},
-			{"general graardor", CombatStyle.RANGED, null, new String[]{"magic shortbow", "seeking arrow"}},
-			{"general graardor", CombatStyle.RANGED, null, new String[]{"eclipse atlatl", "atlatl dart", "eclipse moon helm", "eclipse moon chestplate", "eclipse moon tassets"}},
-			{"general graardor", CombatStyle.MAGIC, "Fire Surge", new String[]{"kodai wand"}},
-			{"general graardor", CombatStyle.MAGIC, "Fire Blast", new String[]{"twinflame staff"}},
-			{"general graardor", CombatStyle.MAGIC, null, new String[]{"sanguinesti staff"}},
-			{"general graardor", CombatStyle.MAGIC, "Ice Barrage", new String[]{"blue moon spear", "blue moon helm", "blue moon chestplate", "blue moon tassets"}},
-			{"zulrah", CombatStyle.RANGED, null, new String[]{"twisted bow", "dragon arrow"}},
-			{"fragment of seren", CombatStyle.MAGIC, "Fire Surge", new String[]{"kodai wand"}},
-			{"tormented demon", CombatStyle.MELEE, null, new String[]{"scythe of vitur"}},
-			{"jal-nib", CombatStyle.MAGIC, "Ice Barrage", new String[]{"kodai wand"}},
-			{"salarin the twisted", CombatStyle.MAGIC, "Fire Strike", new String[]{"kodai wand"}},
-			{"vanstrom klause", CombatStyle.MELEE, null, new String[]{"blisterwood flail"}},
-			{"vanstrom klause", CombatStyle.RANGED, null, new String[]{"twisted bow", "dragon arrow"}},
-			{"abyssal sire", CombatStyle.RANGED, null, new String[]{"twisted bow", "dragon arrow"}},
+			{"general graardor", Style.MELEE, null, new String[]{"scythe of vitur"}},
+			{"general graardor", Style.MELEE, null, new String[]{"osmumten's fang"}},
+			{"ba-ba", Style.MELEE, null, new String[]{"osmumten's fang"}},
+			{"blue moon", Style.MELEE, null, new String[]{"dual macuahuitl"}},
+			{"blue moon", Style.MELEE, null, new String[]{"sulphur blades"}},
+			{"grey golem", Style.MELEE, null, new String[]{"torag's hammers"}},
+			{"cerberus", Style.MELEE, null, new String[]{"obligator"}},
+			{"general graardor", Style.MELEE, null, new String[]{"verac's flail", "verac's helm", "verac's brassard", "verac's plateskirt"}},
+			{"kalphite queen", Style.MELEE, null, new String[]{"keris partisan"}},
+			{"ba-ba", Style.MELEE, null, new String[]{"keris partisan of the sun"}},
+			{"general graardor", Style.RANGED, null, new String[]{"dark bow", "dragon arrow"}},
+			{"general graardor", Style.RANGED, null, new String[]{"tonalztics of ralos"}},
+			{"general graardor", Style.RANGED, null, new String[]{"magic shortbow", "seeking arrow"}},
+			{"general graardor", Style.RANGED, null, new String[]{"eclipse atlatl", "atlatl dart", "eclipse moon helm", "eclipse moon chestplate", "eclipse moon tassets"}},
+			{"general graardor", Style.MAGIC, "Fire Surge", new String[]{"kodai wand"}},
+			{"general graardor", Style.MAGIC, "Fire Blast", new String[]{"twinflame staff"}},
+			{"general graardor", Style.MAGIC, null, new String[]{"sanguinesti staff"}},
+			{"general graardor", Style.MAGIC, "Ice Barrage", new String[]{"blue moon spear", "blue moon helm", "blue moon chestplate", "blue moon tassets"}},
+			{"zulrah", Style.RANGED, null, new String[]{"twisted bow", "dragon arrow"}},
+			{"fragment of seren", Style.MAGIC, "Fire Surge", new String[]{"kodai wand"}},
+			{"tormented demon", Style.MELEE, null, new String[]{"scythe of vitur"}},
+			{"jal-nib", Style.MAGIC, "Ice Barrage", new String[]{"kodai wand"}},
+			{"salarin the twisted", Style.MAGIC, "Fire Strike", new String[]{"kodai wand"}},
+			{"vanstrom klause", Style.MELEE, null, new String[]{"blisterwood flail"}},
+			{"vanstrom klause", Style.RANGED, null, new String[]{"twisted bow", "dragon arrow"}},
+			{"abyssal sire", Style.RANGED, null, new String[]{"twisted bow", "dragon arrow"}},
 		};
 		for (Object[] c : cases) {
-			OptimizationRequest request = request(mob((String) c[0]), (CombatStyle) c[1], (String) c[2]);
+			OptimizationRequest request = request(mob((String) c[0]), (Style) c[1], (String) c[2]);
 			if ("Fire Surge".equals(c[2])) request = request.withSunfireRunes(true);
 			if (agrees(request, wearing((String[]) c[3]), approximate)) checked++;
 		}

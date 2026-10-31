@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import javax.swing.SwingUtilities;
@@ -41,7 +41,7 @@ class CaDoneTest {
 		CommandEngine engine = new CommandEngine(data, state, (mob, p, onDone) -> {
 		}, link);
 		engine.setCaDone(id -> id == 161);
-		MonsterStats kq = data.searchMonsters("kalphite queen", 1).get(0);
+		Monster kq = data.searchMonsters("kalphite queen", 1).get(0);
 		engine.execute("select", Map.of("id", kq.getId()));
 		engine.onResults(kq, Map.of());
 		SwingUtilities.invokeAndWait(() -> {

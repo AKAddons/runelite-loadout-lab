@@ -6,11 +6,11 @@ import java.util.Map;
 // directly in-plugin today; over PluginMessage if the renderer ever
 // lifts out into the parked Companion plugin (ADR-0008 Path C).
 public interface CommandSink {
-    void send(String name, Map args);
+void send(String name, Map args);
 
-    // A command with no arguments.
-    default void send(String name) { send(name, Map.of()); }
+// A command with no arguments.
+default void send(String name) { send(name, Map.of()); }
 
-    // The page-param write every chip and picker sends.
-    default void set(String param, Object value) { send("set-param", Map.of("param", param, "value", value)); }
+// The page-param write every chip and picker sends.
+default void set(String param, Object value) { send("set-param", Map.of("param", param, "value", value)); }
 }

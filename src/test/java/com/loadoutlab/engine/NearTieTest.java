@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +21,7 @@ import org.junit.Test;
  * so swaps cannot stack past it).
  */
 public class NearTieTest {
-	private static GearItem item(LoadoutData data, String name, String version) {
+	private static Gear item(LoadoutData data, String name, String version) {
 		return data.getGearItems().stream().filter(g -> g.getName().equalsIgnoreCase(name)
 			&& (version == null || version.equals(g.getVersion())) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError(name));
@@ -30,8 +30,8 @@ public class NearTieTest {
 	@Test
 	public void theFireCapeWinsAWithinHalfAPercentTieOnPrayerAndDefence() {
 		LoadoutData data = new DataService().load();
-		MonsterStats ezekiel = data.searchMonsters("ezekiel", 1).get(0);
-		EnumMap<GearSlot, GearItem> worn = new EnumMap<>(GearSlot.class);
+		Monster ezekiel = data.searchMonsters("ezekiel", 1).get(0);
+		EnumMap<GearSlot, Gear> worn = new EnumMap<>(GearSlot.class);
 		worn.put(GearSlot.HEAD, item(data, "Neitiznot faceguard", null));
 		worn.put(GearSlot.CAPE, item(data, "Mythical cape", null));
 		worn.put(GearSlot.NECK, item(data, "Amulet of torture", null));
@@ -42,13 +42,13 @@ public class NearTieTest {
 		worn.put(GearSlot.FEET, item(data, "Primordial boots", null));
 		worn.put(GearSlot.RING, item(data, "Berserker ring (i)", null));
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (GearItem g : worn.values()) {
+		for (Gear g : worn.values()) {
 			owned.put(g.getId(), 1);
 		}
 		owned.put(item(data, "Fire cape", "Normal").getId(), 1);
 		// The report's assumptions: Piety (no Zeal) + Divine super combat.
 		PlayerLevels boosted = PlayerLevels.MAXED.boosted(BoostProfile.DIVINE_SUPER_COMBAT, PlayerLevels.MAXED);
-		OptimizationRequest request = TestRequests.of(ezekiel, CombatStyle.MELEE, boosted,
+		OptimizationRequest request = TestRequests.of(ezekiel, Style.MELEE, boosted,
 			PrayerBonuses.bestAvailable(boosted, new PrayerUnlocks(true, false, false, true, false)), null, 0,
 			CandidateMode.OWNED_ONLY, true, false, new OwnedItems(owned, true), 1);
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
@@ -65,8 +65,8 @@ public class NearTieTest {
 	public void thePolishNeverCostsMoreThanHalfAPercentInTotal() {
 		LoadoutData data = new DataService().load();
 		for (String q : new String[]{"ezekiel", "vorkath", "general graardor", "zulrah"}) {
-			MonsterStats mob = data.searchMonsters(q, 1).get(0);
-			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
+			Monster mob = data.searchMonsters(q, 1).get(0);
+			for (Style style : new Style[]{Style.MELEE, Style.RANGED, Style.MAGIC}) {
 				OptimizationRequest request = TestRequests.of(mob, style, PlayerLevels.MAXED,
 					PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD, true, false,
 					OwnedItems.EMPTY, 1);

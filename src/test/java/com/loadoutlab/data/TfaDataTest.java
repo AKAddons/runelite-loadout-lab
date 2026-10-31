@@ -21,13 +21,13 @@ class TfaDataTest {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats byId(int id) {
+	private static Monster byId(int id) {
 		return data.getMonsters().stream().filter(m -> m.getId() == id).findFirst()
 			.orElseThrow(() -> new AssertionError("no monster row " + id));
 	}
 
 	// The cdn gives both Archive Guardian versions the wiki's one id (16659).
-	private static MonsterStats byVersion(String name, String version) {
+	private static Monster byVersion(String name, String version) {
 		return data.getMonsters().stream().filter(m -> name.equals(m.getName()) && version.equals(m.getVersion())).findFirst()
 			.orElseThrow(() -> new AssertionError("no monster row " + name + " " + version));
 	}
@@ -36,13 +36,13 @@ class TfaDataTest {
 	@DisplayName("the wiki's fixes since 20 Oct: Nex crush 35, Bork crush 10 and flat armour 11 (the wiki's 8-14 base), Moia weak to air, Xarth's bonuses")
 	void statFixes() {
 		assertEquals(35, byId(11278).getDefensive().get("crush"), "Nex (Jagex 2026-10-20)");
-		MonsterStats bork = byId(16640);
+		Monster bork = byId(16640);
 		assertEquals(10, bork.getDefensive().get("crush"));
 		assertEquals(11, bork.getDefensive().getFlatArmour());
-		MonsterStats moia = byId(16667);
+		Monster moia = byId(16667);
 		assertEquals("air", moia.getWeaknessElement());
 		assertEquals(80, moia.getWeaknessSeverity());
-		MonsterStats xarth = byId(16684);
+		Monster xarth = byId(16684);
 		assertEquals(150, xarth.getOffence().getAttackBonus());
 		assertEquals(225, xarth.getOffence().getStrengthBonus());
 		assertEquals(1601, byId(16677).getCombatLevel(), "Ocellus phase 3");
@@ -51,7 +51,7 @@ class TfaDataTest {
 	@Test
 	@DisplayName("the Archive Guardian has a real grounded row beside the flying one (the wiki's one id, 16659)")
 	void groundedGuardian() {
-		MonsterStats grounded = byVersion("Archive Guardian", "Grounded");
+		Monster grounded = byVersion("Archive Guardian", "Grounded");
 		assertEquals("Archive Guardian", grounded.getName());
 		assertEquals("Grounded", grounded.getVersion());
 		assertEquals(90, grounded.getDefensive().get("slash"));
@@ -59,7 +59,7 @@ class TfaDataTest {
 		assertEquals(115, grounded.getDefensive().get("standard"));
 		assertEquals("fire", grounded.getWeaknessElement());
 		assertEquals(40, grounded.getWeaknessSeverity());
-		MonsterStats flying = byVersion("Archive Guardian", "Flying");
+		Monster flying = byVersion("Archive Guardian", "Flying");
 		assertEquals(16659, flying.getId());
 		assertEquals(80, flying.getWeaknessSeverity());
 	}

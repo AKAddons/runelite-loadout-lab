@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.WildernessMonsters;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -50,16 +50,16 @@ class SpecOffhandTest {
 		return owned;
 	}
 
-	private static boolean carries(List<GearItem> bench, int id) {
+	private static boolean carries(List<Gear> bench, int id) {
 		return bench.stream().anyMatch(i -> i.getId() == id);
 	}
 
 	private static OptimizerService.StyleResult single(int maxSwaps) throws Exception {
-		MonsterStats mob = data.searchMonsters("dagannoth rex", 1).get(0);
+		Monster mob = data.searchMonsters("dagannoth rex", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			com.loadoutlab.engine.ComputeParams p = new com.loadoutlab.engine.ComputeParams();
 			p.inWilderness = WildernessMonsters.isExclusive(mob);
 			p.maxSwaps = maxSwaps;
@@ -71,7 +71,7 @@ class SpecOffhandTest {
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS), "compute finished");
-			return out.get().get(CombatStyle.MELEE);
+			return out.get().get(Style.MELEE);
 		} finally {
 			service.shutdown();
 		}
@@ -80,10 +80,10 @@ class SpecOffhandTest {
 	private static OptimizerService.StyleResult roster(int maxSwaps, String... mobs) throws Exception {
 		OptimizerService service = new OptimizerService(data);
 		try {
-			MonsterStats[] stats = Arrays.stream(mobs)
-				.map(m -> data.searchMonsters(m, 1).get(0)).toArray(MonsterStats[]::new);
+			Monster[] stats = Arrays.stream(mobs)
+				.map(m -> data.searchMonsters(m, 1).get(0)).toArray(Monster[]::new);
 			return ServiceCalls.runRoster(service, Arrays.asList(stats), owned(), maxSwaps,
-				Collections.emptyMap()).perMob.get(0).get(CombatStyle.MELEE);
+				Collections.emptyMap()).perMob.get(0).get(Style.MELEE);
 		} finally {
 			service.shutdown();
 		}

@@ -2,8 +2,8 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.OptimizationRequest;
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SharedOptimizeCacheTest {
 	private static LoadoutData data;
-	private static MonsterStats mob;
+	private static Monster mob;
 
 	@BeforeAll
 	static void load() {
@@ -46,12 +46,12 @@ class SharedOptimizeCacheTest {
 		return new OwnedItems(Map.of(4151, 1), true);
 	}
 
-	private static Map<CombatStyle, OptimizerService.StyleResult> search(OptimizerService service, String mode) throws Exception {
+	private static Map<Style, OptimizerService.StyleResult> search(OptimizerService service, String mode) throws Exception {
 		ComputeParams p = new ComputeParams();
 		p.specWeapon = false;
 		p.optimizeMode = mode;
 		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		service.bestPerStyle(mob, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 			RequirementProfile.MAXED, whip(), 1, p, Collections.emptyMap(), Collections.emptySet(),
 			Collections.emptyMap(), null, 0, Collections.<Integer>emptySet(), result -> {
@@ -81,12 +81,12 @@ class SharedOptimizeCacheTest {
 	void modeFlipReusesTheOptimizes() throws Exception {
 		OptimizerService service = new OptimizerService(data);
 		try {
-			Map<CombatStyle, OptimizerService.StyleResult> max = search(service, "MAX_DPS");
+			Map<Style, OptimizerService.StyleResult> max = search(service, "MAX_DPS");
 			Set<String> before = keys(service);
 			assertEquals(6, before.size(), "owned and BiS for each of the three styles");
-			Map<CombatStyle, OptimizerService.StyleResult> tanky = search(service, "TANKY");
+			Map<Style, OptimizerService.StyleResult> tanky = search(service, "TANKY");
 			assertEquals(before, keys(service), "the Tanky search computed no new optimize");
-			for (CombatStyle style : max.keySet()) {
+			for (Style style : max.keySet()) {
 				assertEquals(max.get(style).overallBest.dps, tanky.get(style).overallBest.dps, 1e-9,
 					style + ": the ceiling does not depend on the mode");
 			}
@@ -120,7 +120,7 @@ class SharedOptimizeCacheTest {
 			long ticket = service.requestSeq.incrementAndGet();
 			assertNull(service.passA(List.of(mob), ctx, stale), "a stale ticket abandons");
 			assertTrue(keys(service).isEmpty(), "and computes nothing");
-			Map<CombatStyle, OptimizerService.StyleWork> works = service.passA(List.of(mob), ctx, ticket);
+			Map<Style, OptimizerService.StyleWork> works = service.passA(List.of(mob), ctx, ticket);
 			assertNotNull(works);
 			assertEquals(3, works.size(), "one plan per style");
 			assertEquals(6, keys(service).size(), "owned and BiS per style, cached");
@@ -136,8 +136,8 @@ class SharedOptimizeCacheTest {
 		try {
 			OptimizerService.ComputeContext ctx = context(service);
 			ctx.ticket = service.requestSeq.incrementAndGet();
-			OptimizerService.StylePlan plan = OptimizerService.stylePlan(ctx, CombatStyle.MELEE, null);
-			OptimizationRequest req = service.ownedRequestFor(ctx, mob, CombatStyle.MELEE, plan.levels, null);
+			OptimizerService.StylePlan plan = OptimizerService.stylePlan(ctx, Style.MELEE, null);
+			OptimizationRequest req = service.ownedRequestFor(ctx, mob, Style.MELEE, plan.levels, null);
 			List<DpsResult> first = service.sideBest(false, ctx, req, null);
 			assertFalse(first.isEmpty());
 			assertEquals(1, keys(service).size(), "a style card's side is cached");

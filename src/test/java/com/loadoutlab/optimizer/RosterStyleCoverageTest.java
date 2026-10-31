@@ -2,8 +2,8 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,10 +44,10 @@ public class RosterStyleCoverageTest {
 	@Test
 	public void everyStyleASingleAnswersSurvivesTheRoster() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats vents = data.searchMonsters("respiratory system", 1).get(0);
-		MonsterStats phase1 = sire(data, "Phase 1");
-		MonsterStats phase3 = sire(data, "Phase 3 (stage 2)");
-		List<MonsterStats> mobs = new ArrayList<>(List.of(vents, phase1, phase3));
+		Monster vents = data.searchMonsters("respiratory system", 1).get(0);
+		Monster phase1 = sire(data, "Phase 1");
+		Monster phase3 = sire(data, "Phase 3 (stage 2)");
+		List<Monster> mobs = new ArrayList<>(List.of(vents, phase1, phase3));
 
 		OptimizerService service = new OptimizerService(data);
 		// The shared client-call harness, at the screenshot's Inventory: 3.
@@ -56,14 +56,14 @@ public class RosterStyleCoverageTest {
 		Assert.assertNotNull("roster returned null (superseded?)", roster);
 
 		for (int j = 0; j < mobs.size(); j++) {
-			Map<CombatStyle, OptimizerService.StyleResult> byStyle = roster.perMob.get(j);
-			for (CombatStyle style : CombatStyle.concreteValues()) {
+			Map<Style, OptimizerService.StyleResult> byStyle = roster.perMob.get(j);
+			for (Style style : Style.concreteValues()) {
 				OptimizerService.StyleResult sr = byStyle.get(style);
 				Assert.assertNotNull(
 					mobs.get(j).label() + " lost its " + style + " answer inside the roster"
 						+ " (fine alone, dash in the roster - the field bug)",
 					sr);
-				if (style != CombatStyle.MELEE) {
+				if (style != Style.MELEE) {
 					Assert.assertFalse(
 						mobs.get(j).label() + " " + style + " owned list is empty in the roster",
 						sr.owned == null || sr.owned.isEmpty());
@@ -80,9 +80,9 @@ public class RosterStyleCoverageTest {
 		// out of the mob row (field bug 2026-08-06: the vents row showed a
 		// whole ranged set on a melee kit).
 		LoadoutData data = new DataService().load();
-		MonsterStats vents = data.searchMonsters("respiratory system", 1).get(0);
-		MonsterStats phase1 = sire(data, "Phase 1");
-		List<MonsterStats> mobs = new ArrayList<>(List.of(vents, phase1));
+		Monster vents = data.searchMonsters("respiratory system", 1).get(0);
+		Monster phase1 = sire(data, "Phase 1");
+		List<Monster> mobs = new ArrayList<>(List.of(vents, phase1));
 
 		OptimizerService service = new OptimizerService(data);
 		OptimizerService.RosterResult roster = ServiceCalls.runRoster(
@@ -109,7 +109,7 @@ public class RosterStyleCoverageTest {
 		}
 	}
 
-	private static MonsterStats sire(LoadoutData data, String version) {
+	private static Monster sire(LoadoutData data, String version) {
 		return data.searchMonsters("abyssal sire", 6).stream()
 			.filter(m -> version.equals(m.getVersion()))
 			.findFirst().orElseThrow(() -> new AssertionError("missing Sire " + version));

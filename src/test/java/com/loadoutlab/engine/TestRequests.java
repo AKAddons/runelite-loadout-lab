@@ -1,6 +1,6 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
 
 /**
@@ -17,8 +17,8 @@ public final class TestRequests {
 
 	/** A request with the requirement profile defaulted to MAXED. */
 	public static OptimizationRequest of(
-		MonsterStats monster,
-		CombatStyle style,
+		Monster monster,
+		Style style,
 		PlayerLevels levels,
 		PrayerBonuses prayers,
 		SpellStats spell,

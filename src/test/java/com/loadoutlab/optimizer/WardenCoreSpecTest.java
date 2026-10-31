@@ -1,10 +1,10 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
 import com.loadoutlab.engine.PrayerUnlocks;
@@ -29,14 +29,14 @@ public class WardenCoreSpecTest {
 	@Test
 	public void ddsSpecSurfacesAtTheCore() throws Exception {
 		LoadoutData data = new DataService().load();
-		MonsterStats core = data.searchMonsters("tumeken's warden", 8).stream()
+		Monster core = data.searchMonsters("tumeken's warden", 8).stream()
 			.filter(m -> m.getVersion().startsWith("Core-ejected"))
 			.findFirst().orElseThrow();
 
-		GearItem dds = null;
-		GearItem whip = null;
-		GearItem chally = null;
-		for (GearItem g : data.getGearItems()) {
+		Gear dds = null;
+		Gear whip = null;
+		Gear chally = null;
+		for (Gear g : data.getGearItems()) {
 			if (g.getNameLower().equals("dragon dagger") && g.isStandardGear()) {
 				dds = g;
 			}
@@ -60,8 +60,8 @@ public class WardenCoreSpecTest {
 
 		OptimizerService service = new OptimizerService(data);
 		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-		Map<CombatStyle, Set<Integer>> excludedByStyle = new java.util.EnumMap<>(CombatStyle.class);
+		AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		Map<Style, Set<Integer>> excludedByStyle = new java.util.EnumMap<>(Style.class);
 		ServiceCalls.bestPerStyle(service, core,
 			PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 			RequirementProfile.MAXED, new OwnedItems(owned, true), 1,
@@ -74,7 +74,7 @@ public class WardenCoreSpecTest {
 				done.countDown();
 			});
 		Assert.assertTrue("compute timed out", done.await(120, TimeUnit.SECONDS));
-		OptimizerService.StyleResult melee = out.get().get(CombatStyle.MELEE);
+		OptimizerService.StyleResult melee = out.get().get(Style.MELEE);
 		Assert.assertNotNull(melee);
 		Assert.assertNotNull("the dagger must enter the spec competition at the core",
 			melee.specWeapon);

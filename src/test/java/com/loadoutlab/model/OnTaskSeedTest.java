@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -33,8 +33,8 @@ class OnTaskSeedTest {
 		return engine;
 	}
 
-	private static MonsterStats mob(String query, String name) {
-		MonsterStats mob = data.searchMonsters(query, 1).get(0);
+	private static Monster mob(String query, String name) {
+		Monster mob = data.searchMonsters(query, 1).get(0);
 		assertEquals(name, mob.getName());
 		return mob;
 	}
@@ -44,8 +44,8 @@ class OnTaskSeedTest {
 	void slayerMonsterSeedsOn() {
 		PageState state = new PageState();
 		CommandEngine engine = engine(state);
-		MonsterStats demon = mob("abyssal demon", "Abyssal demon");
-		MonsterStats orca = mob("orca", "Orca");
+		Monster demon = mob("abyssal demon", "Abyssal demon");
+		Monster orca = mob("orca", "Orca");
 		assertTrue(demon.isSlayerMonster(), "fixture: the demon is a slayer monster");
 		assertFalse(orca.isSlayerMonster(), "fixture: the orca is not");
 		engine.execute("select", Map.of("id", demon.getId()));
@@ -59,7 +59,7 @@ class OnTaskSeedTest {
 	void taskOnlyAndRaid() {
 		PageState state = new PageState();
 		CommandEngine engine = engine(state);
-		MonsterStats sire = mob("abyssal sire", "Abyssal Sire");
+		Monster sire = mob("abyssal sire", "Abyssal Sire");
 		engine.execute("select", Map.of("id", sire.getId()));
 		assertEquals(true, state.paramsNode().get("onTask"));
 		engine.execute("select", Map.of("query", "Chambers of Xeric"));

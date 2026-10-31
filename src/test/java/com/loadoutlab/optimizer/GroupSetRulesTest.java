@@ -21,7 +21,7 @@ class GroupSetRulesTest {
     @DisplayName("a group's kit-built sets hold the task's rules and the requirements")
     void groupKitHoldsTheRules() throws Exception {
         LoadoutData data = new DataService().load();
-        List<MonsterStats> mobs = data.getMonsters().stream()
+        List<Monster> mobs = data.getMonsters().stream()
             .filter(m -> m.getName().equalsIgnoreCase("Maggot King")).collect(Collectors.toList());
         assertTrue(mobs.size() > 1, "Maggot King is a group");
         SetRules rules = CombatAchievements.byId(641).getRules().plus(SetRules.parse("prayer>=10"));

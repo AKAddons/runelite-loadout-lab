@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -34,8 +34,8 @@ class UnchargedWeaponPoolTest {
 	@Test
 	@DisplayName("a 500m budget never recommends buying an uncharged/broken weapon")
 	void budgetNeverBuysDeadWeapons() {
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
+		for (Style style : new Style[]{Style.MELEE, Style.RANGED, Style.MAGIC}) {
 			OptimizationRequest request = new OptimizationRequest(graardor, style,
 				PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 				null, 500_000_000, CandidateMode.BUDGET, true, false,
@@ -56,8 +56,8 @@ class UnchargedWeaponPoolTest {
 	@Test
 	@DisplayName("game-best pools never surface an uncharged weapon either")
 	void allStandardNeverPicksDeadWeapons() {
-		MonsterStats revDragon = data.searchMonsters("revenant dragon", 1).get(0);
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED}) {
+		Monster revDragon = data.searchMonsters("revenant dragon", 1).get(0);
+		for (Style style : new Style[]{Style.MELEE, Style.RANGED}) {
 			OptimizationRequest request = new OptimizationRequest(revDragon, style,
 				PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 				null, 0, CandidateMode.ALL_STANDARD, true, false,

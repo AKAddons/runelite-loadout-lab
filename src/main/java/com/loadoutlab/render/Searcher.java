@@ -7,5 +7,5 @@ import java.util.function.Consumer;
 // direct call and the Companion's search/search-results round trip
 // fit the same seam. Results: {label, id?} or {label, group?}.
 public interface Searcher {
-    void search(String query, Consumer<List<Map>> onResults);
+void search(String query, Consumer<List<Map>> onResults);
 }

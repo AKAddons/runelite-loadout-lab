@@ -1,7 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import net.runelite.api.Skill;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,7 +31,7 @@ class StatSimTest {
 		data = new DataService().load();
 	}
 
-	private static GearItem item(String name) {
+	private static Gear item(String name) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name));
@@ -64,7 +64,7 @@ class StatSimTest {
 	@Test
 	@DisplayName("the requirement profile follows the sim: 60 Attack cannot wear the fang, simmed to 99 it can, back to 60 it cannot")
 	void gearFollowsTheSim() {
-		GearItem fang = item("osmumten's fang");
+		Gear fang = item("osmumten's fang");
 		RequirementProfile sixty = profile(60);
 		assertFalse(sixty.canEquip(fang.getRequirements()));
 		PlayerLevels ninetyNine = PlayerLevels.from(sixty).overridden(new int[]{99, 0, 0, 0, 0, 0, 0});

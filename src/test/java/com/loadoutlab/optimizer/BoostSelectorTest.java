@@ -1,7 +1,7 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.engine.BoostProfile;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
 import java.util.HashMap;
@@ -25,20 +25,20 @@ class BoostSelectorTest {
 		owned.put(3040, 1);  // magic potion(4) - the fallback must be OWNED now
 		OwnedItems bag = new OwnedItems(owned, true);
 		assertEquals(BoostProfile.SATURATED_HEART,
-			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
+			BoostSelector.bestFor(Style.MAGIC, bag, false, false));
 		assertEquals(BoostProfile.MAGIC,
-			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, true));
+			BoostSelector.bestFor(Style.MAGIC, bag, false, true));
 	}
 
 	@Test
 	@DisplayName("the BiS ceiling assumes divine potions for melee and ranged")
 	void ceilingPrefersDivine() {
 		assertEquals(BoostProfile.DIVINE_SUPER_COMBAT,
-			BoostSelector.ceilingFor(CombatStyle.MELEE, false));
+			BoostSelector.ceilingFor(Style.MELEE, false));
 		assertEquals(BoostProfile.DIVINE_RANGING,
-			BoostSelector.ceilingFor(CombatStyle.RANGED, false));
+			BoostSelector.ceilingFor(Style.RANGED, false));
 		assertEquals(BoostProfile.SATURATED_HEART,
-			BoostSelector.ceilingFor(CombatStyle.MAGIC, false),
+			BoostSelector.ceilingFor(Style.MAGIC, false),
 			"the heart out-boosts the flat divine magic potion");
 	}
 
@@ -51,11 +51,11 @@ class BoostSelectorTest {
 		owned.put(23754, 1); // divine magic (1)
 		OwnedItems bag = new OwnedItems(owned, true);
 		assertEquals(BoostProfile.DIVINE_SUPER_COMBAT,
-			BoostSelector.bestFor(CombatStyle.MELEE, bag, false, false));
+			BoostSelector.bestFor(Style.MELEE, bag, false, false));
 		assertEquals(BoostProfile.DIVINE_RANGING,
-			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));
+			BoostSelector.bestFor(Style.RANGED, bag, false, false));
 		assertEquals(BoostProfile.DIVINE_MAGIC,
-			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
+			BoostSelector.bestFor(Style.MAGIC, bag, false, false));
 	}
 
 	@Test
@@ -68,11 +68,11 @@ class BoostSelectorTest {
 		// set to detect from bank. The old expectations were the defect.
 		OwnedItems empty = new OwnedItems(new HashMap<>(), true);
 		assertEquals(BoostProfile.NONE,
-			BoostSelector.bestFor(CombatStyle.MELEE, empty, false, false));
+			BoostSelector.bestFor(Style.MELEE, empty, false, false));
 		assertEquals(BoostProfile.NONE,
-			BoostSelector.bestFor(CombatStyle.RANGED, empty, false, false));
+			BoostSelector.bestFor(Style.RANGED, empty, false, false));
 		assertEquals(BoostProfile.NONE,
-			BoostSelector.bestFor(CombatStyle.MAGIC, empty, false, false));
+			BoostSelector.bestFor(Style.MAGIC, empty, false, false));
 	}
 
 	@Test
@@ -84,11 +84,11 @@ class BoostSelectorTest {
 		owned.put(3040, 1);   // magic potion(4)
 		OwnedItems bag = new OwnedItems(owned, true);
 		assertEquals(BoostProfile.SUPER_COMBAT,
-			BoostSelector.bestFor(CombatStyle.MELEE, bag, false, false));
+			BoostSelector.bestFor(Style.MELEE, bag, false, false));
 		assertEquals(BoostProfile.RANGING,
-			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));
+			BoostSelector.bestFor(Style.RANGED, bag, false, false));
 		assertEquals(BoostProfile.MAGIC,
-			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
+			BoostSelector.bestFor(Style.MAGIC, bag, false, false));
 	}
 
 	@Test
@@ -99,9 +99,9 @@ class BoostSelectorTest {
 		owned.put(22449, 1);  // battlemage potion(4)
 		OwnedItems bag = new OwnedItems(owned, true);
 		assertEquals(BoostProfile.BASTION,
-			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));
+			BoostSelector.bestFor(Style.RANGED, bag, false, false));
 		assertEquals(BoostProfile.BATTLEMAGE,
-			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
+			BoostSelector.bestFor(Style.MAGIC, bag, false, false));
 
 		// Same offensive numbers plus a defence half, so bastion/battlemage win
 		// even against the DIVINE plain variants (owner call 2026-08-25).
@@ -109,9 +109,9 @@ class BoostSelectorTest {
 		owned.put(23745, 1);  // divine magic potion(4)
 		OwnedItems both = new OwnedItems(owned, true);
 		assertEquals(BoostProfile.BASTION,
-			BoostSelector.bestFor(CombatStyle.RANGED, both, false, false));
+			BoostSelector.bestFor(Style.RANGED, both, false, false));
 		assertEquals(BoostProfile.BATTLEMAGE,
-			BoostSelector.bestFor(CombatStyle.MAGIC, both, false, false));
+			BoostSelector.bestFor(Style.MAGIC, both, false, false));
 	}
 
 	@Test
@@ -126,9 +126,9 @@ class BoostSelectorTest {
 		// divine-only owner at a potion they do not have, which is the very
 		// bug this release fixes.
 		assertEquals(BoostProfile.DIVINE_BASTION,
-			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));
+			BoostSelector.bestFor(Style.RANGED, bag, false, false));
 		assertEquals(BoostProfile.DIVINE_BATTLEMAGE,
-			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
+			BoostSelector.bestFor(Style.MAGIC, bag, false, false));
 	}
 
 	@Test
@@ -165,9 +165,9 @@ class BoostSelectorTest {
 		owned.put(23745, 1); // divine magic (4)
 		OwnedItems bag = new OwnedItems(owned, true);
 		assertEquals(BoostProfile.SATURATED_HEART,
-			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
+			BoostSelector.bestFor(Style.MAGIC, bag, false, false));
 		assertEquals(BoostProfile.DIVINE_MAGIC,
-			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, true),
+			BoostSelector.bestFor(Style.MAGIC, bag, false, true),
 			"under a risk cap the heart falls to the divine potion when owned");
 	}
 
@@ -178,11 +178,11 @@ class BoostSelectorTest {
 		owned.put(145, 1);    // super attack(3)
 		owned.put(2440, 1);   // super strength(4)
 		OwnedItems pair = new OwnedItems(owned, true);
-		assertEquals(BoostProfile.SUPER_ATTACK_STRENGTH, BoostSelector.bestFor(CombatStyle.MELEE, pair, false, false));
-		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MELEE, new OwnedItems(Map.of(2436, 1), true), false, false),
+		assertEquals(BoostProfile.SUPER_ATTACK_STRENGTH, BoostSelector.bestFor(Style.MELEE, pair, false, false));
+		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(Style.MELEE, new OwnedItems(Map.of(2436, 1), true), false, false),
 			"a super attack alone is no rung");
 		owned.put(12699, 1);  // super combat(2)
-		assertEquals(BoostProfile.SUPER_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, new OwnedItems(owned, true), false, false));
+		assertEquals(BoostProfile.SUPER_COMBAT, BoostSelector.bestFor(Style.MELEE, new OwnedItems(owned, true), false, false));
 		PlayerLevels boosted = BoostProfile.SUPER_ATTACK_STRENGTH.apply(PlayerLevels.MAXED, null);
 		assertEquals(118, boosted.attack);
 		assertEquals(118, boosted.strength);

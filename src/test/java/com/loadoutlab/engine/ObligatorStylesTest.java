@@ -1,7 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.LoadoutData;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +26,7 @@ class ObligatorStylesTest {
 	@Test
 	@DisplayName("the Obligator's Extending Chain Mace category offers crush accurate and aggressive, not the fallback")
 	void crushOnly() {
-		GearItem obligator = data.getGear(34715);
+		Gear obligator = data.getGear(34715);
 		assertNotNull(obligator, "Obligator (Charged)");
 		assertEquals("Extending Chain Mace", obligator.category);
 		var styles = WeaponStyles.melee(obligator);

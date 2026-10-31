@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class AtlatlStrengthGearTest {
 	private static final int ECLIPSE_ATLATL = 29000;
 	private static final int ATLATL_DART = 28991;
 	private static LoadoutData data;
-	private static MonsterStats gorilla;
+	private static Monster gorilla;
 
 	@BeforeAll
 	static void load() {
@@ -39,13 +39,13 @@ class AtlatlStrengthGearTest {
 		gorilla = data.searchMonsters("demonic gorilla", 1).get(0);
 	}
 
-	private static GearItem item(String name) {
+	private static Gear item(String name) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name));
 	}
 
-	private static GearItem item(String name, String version) {
+	private static Gear item(String name, String version) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name) && version.equalsIgnoreCase(g.getVersion()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name + " " + version));
@@ -68,12 +68,12 @@ class AtlatlStrengthGearTest {
 		for (String name : names) {
 			owned.put(item(name).getId(), 1);
 		}
-		return new OptimizationRequest(gorilla, CombatStyle.RANGED, PlayerLevels.MAXED,
+		return new OptimizationRequest(gorilla, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL), null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 3);
 	}
 
-	private static boolean holds(List<GearItem> pool, String name) {
+	private static boolean holds(List<Gear> pool, String name) {
 		return pool.stream().anyMatch(g -> g != null && g.getNameLower().equals(name));
 	}
 
@@ -93,7 +93,7 @@ class AtlatlStrengthGearTest {
 	@DisplayName("the atlatl wins the demonic gorilla with its darts and strength gear - at least the dps of the eclipse set with torture, ferocious gloves, ultor, infernal cape and primordials")
 	void atlatlWinsWithStrengthGear() {
 		OptimizationRequest request = request();
-		EnumMap<GearSlot, GearItem> g = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> g = new EnumMap<>(GearSlot.class);
 		g.put(GearSlot.WEAPON, item("eclipse atlatl"));
 		g.put(GearSlot.AMMO, item("atlatl dart"));
 		g.put(GearSlot.HEAD, item("eclipse moon helm", "New"));
@@ -119,7 +119,7 @@ class AtlatlStrengthGearTest {
 	@Test
 	@DisplayName("atlatl darts are the atlatl's ammo; a blessing or an empty slot is not")
 	void dartsAreTheAmmo() {
-		GearItem atlatl = item("eclipse atlatl");
+		Gear atlatl = item("eclipse atlatl");
 		assertTrue(RangedAmmo.compatible(item("atlatl dart"), atlatl));
 		assertFalse(RangedAmmo.compatible(item("rada's blessing 4"), atlatl));
 		assertFalse(RangedAmmo.compatible(null, atlatl));

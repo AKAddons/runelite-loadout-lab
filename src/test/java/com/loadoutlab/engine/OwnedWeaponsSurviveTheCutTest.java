@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -41,11 +41,11 @@ class OwnedWeaponsSurviveTheCutTest {
 	@DisplayName("with sixteen staves in the bank every distinct owned magic weapon is in the pool - both smoke staves included")
 	void ownedWeaponsStayInThePool() {
 		LoadoutData data = new DataService().load();
-		MonsterStats giant = data.searchMonsters("fire giant", 1).get(0);
+		Monster giant = data.searchMonsters("fire giant", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
-		List<GearItem> staves = new ArrayList<>();
+		List<Gear> staves = new ArrayList<>();
 		for (String name : STAVES) {
-			GearItem staff = data.getGearItems(GearSlot.WEAPON).stream()
+			Gear staff = data.getGearItems(GearSlot.WEAPON).stream()
 				.filter(g -> g.getNameLower().equals(name) && g.isStandardGear() && !data.isVariant(g.getId()))
 				.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + name));
 			owned.put(staff.getId(), 1);
@@ -54,15 +54,15 @@ class OwnedWeaponsSurviveTheCutTest {
 		for (int rune : new int[]{554, 555, 556, 557, 560, 565, 566, 21880}) {
 			owned.put(rune, 10000);
 		}
-		OptimizationRequest request = new OptimizationRequest(giant, CombatStyle.MAGIC, PlayerLevels.MAXED,
+		OptimizationRequest request = new OptimizationRequest(giant, Style.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL), null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 3);
 
 		Set<Integer> pool = new LoadoutOptimizer().preparePools(data, request).weapons.stream()
-			.map(GearItem::getId).collect(Collectors.toSet());
+			.map(Gear::getId).collect(Collectors.toSet());
 		List<String> missing = staves.stream()
 			.filter(s -> !STAT_TWINS.contains(s.getNameLower()) && !pool.contains(s.getId()))
-			.map(GearItem::getName).collect(Collectors.toList());
+			.map(Gear::getName).collect(Collectors.toList());
 		assertTrue(missing.isEmpty(), "owned weapons cut from the pool: " + missing);
 	}
 }

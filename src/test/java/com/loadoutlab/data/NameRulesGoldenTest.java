@@ -48,7 +48,7 @@ public class NameRulesGoldenTest {
 	 * needs Grim Tales, not Between a Rock...; the light ballista and the
 	 * Dorgeshuun crossbow need no quest (the Dorgeshuun-crest heraldry keeps
 	 * The Lost Tribe). */
-	private static List<String> expectedQuests(GearItem item) {
+	private static List<String> expectedQuests(Gear item) {
 		List<String> expected = new ArrayList<>(
 			LegacyNameRules.forItem(item.getId(), item.getName(), item.getVersion()));
 		String key = (item.getName() + " " + item.getVersion()).toLowerCase(java.util.Locale.ROOT);
@@ -84,7 +84,7 @@ public class NameRulesGoldenTest {
 	public void questUnlocksMatchTheOldImplementationForEveryGearItem() throws Exception {
 		List<String> mismatches = new ArrayList<>();
 		int withQuests = 0;
-		for (GearItem item : data.getGearItems()) {
+		for (Gear item : data.getGearItems()) {
 			List<String> expected = expectedQuests(item);
 			List<String> actual = new ArrayList<>(
 				(java.util.Set<String>) questsFor.invoke(null, item.getName(), item.getVersion()));
@@ -105,7 +105,7 @@ public class NameRulesGoldenTest {
 	@Test
 	public void attachedGearRequirementsMatchTheOldImplementation() {
 		List<String> mismatches = new ArrayList<>();
-		for (GearItem item : data.getGearItems()) {
+		for (Gear item : data.getGearItems()) {
 			List<String> expected = expectedQuests(item);
 			List<String> actual = new ArrayList<>(item.getRequirements().getQuests());
 			if (!expected.equals(actual)) {
@@ -132,7 +132,7 @@ public class NameRulesGoldenTest {
 	public void slayerMonsterDetectionMatchesTheOldOrChain() throws Exception {
 		List<String> mismatches = new ArrayList<>();
 		int matched = 0;
-		for (MonsterStats monster : data.getMonsters()) {
+		for (Monster monster : data.getMonsters()) {
 			boolean expected = LegacyNameRules.knownSlayerMonster(monster.getName());
 			boolean actual = (Boolean) knownSlayerMonster.invoke(null, monster.getName());
 			if (expected != actual) {

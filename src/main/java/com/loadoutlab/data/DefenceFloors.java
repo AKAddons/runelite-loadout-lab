@@ -11,37 +11,37 @@ import java.util.*;
 // in defence_floors.json are copied verbatim from the wiki calc's
 // constants - the same weirdgloop ids our corpus carries.
 public class DefenceFloors {
-    // Sentinel: the floor IS the boss's base defence (undrainable).
-    static final int BASE = -1;
+// Sentinel: the floor IS the boss's base defence (undrainable).
+static final int BASE = -1;
 
-    static final Map<Integer, Integer> BY_ID = new HashMap<>();
-    // Bosses a Death Charge does nothing on (a row's "deathCharge": false).
-    static final Set<Integer> NO_DEATH_CHARGE = new HashSet<>();
+static final Map<Integer, Integer> BY_ID = new HashMap<>();
+// Bosses a Death Charge does nothing on (a row's "deathCharge": false).
+static final Set<Integer> NO_DEATH_CHARGE = new HashSet<>();
 
-    static {
-        JsonObject root = JsonResources.objectOrThrow( "defence_floors.json");
-        for (JsonElement e : root.getAsJsonArray("rules")) {
-            JsonObject row = e.getAsJsonObject();
-            int floor = "base".equals(row.get("floor").getAsString()) ? BASE : row.get("floor").getAsInt();
-            boolean charge = !row.has("deathCharge") || row.get("deathCharge").getAsBoolean();
-            for (JsonElement id : row.getAsJsonArray("ids")) {
-                BY_ID.put(id.getAsInt(), floor);
-                if (!charge) NO_DEATH_CHARGE.add(id.getAsInt());
-            }
+static {
+    JsonObject root = JsonResources.objectOrThrow( "defence_floors.json");
+    for (JsonElement e : root.getAsJsonArray("rules")) {
+        JsonObject row = e.getAsJsonObject();
+        int floor = "base".equals(row.get("floor").getAsString()) ? BASE : row.get("floor").getAsInt();
+        boolean charge = !row.has("deathCharge") || row.get("deathCharge").getAsBoolean();
+        for (JsonElement id : row.getAsJsonArray("ids")) {
+            BY_ID.put(id.getAsInt(), floor);
+            if (!charge) NO_DEATH_CHARGE.add(id.getAsInt());
         }
-        if (BY_ID.isEmpty()) throw new IllegalStateException("defence_floors.json loaded empty");
     }
+    if (BY_ID.isEmpty()) throw new IllegalStateException("defence_floors.json loaded empty");
+}
 
 
-    // Whether a Death Charge pays out on this monster (the Moons: no).
-    public static boolean deathChargeWorks(MonsterStats monster) { return monster == null || !NO_DEATH_CHARGE.contains(monster.profileId()); }
+// Whether a Death Charge pays out on this monster (the Moons: no).
+public static boolean deathChargeWorks(Monster monster) { return monster == null || !NO_DEATH_CHARGE.contains(monster.profileId()); }
 
-    // The defence level a drain cannot pass for this monster - 0 when
-    // unfloored. Synthetic group rows resolve through profileId().
-    public static int floorFor(MonsterStats monster) {
-        if (monster == null) return 0;
-        Integer floor = BY_ID.get(monster.profileId());
-        if (floor == null) return 0;
-        return floor == BASE ? monster.defence : floor;
-    }
+// The defence level a drain cannot pass for this monster - 0 when
+// unfloored. Synthetic group rows resolve through profileId().
+public static int floorFor(Monster monster) {
+    if (monster == null) return 0;
+    Integer floor = BY_ID.get(monster.profileId());
+    if (floor == null) return 0;
+    return floor == BASE ? monster.defence : floor;
+}
 }

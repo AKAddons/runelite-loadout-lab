@@ -1,10 +1,10 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.MonsterDefences;
 import com.loadoutlab.data.MonsterOffence;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.StatBlock;
 import java.util.Arrays;
 import java.util.List;
@@ -19,15 +19,15 @@ public class IncomingDpsCalculatorTest {
 			120, 43, 100, 40, 0, 0, 6, styles);
 	}
 
-	private static MonsterStats monster(List<String> styles) {
-		return new MonsterStats(1, "Test Boss", "", 600, 255, 4, 250, 80, 0,
+	private static Monster monster(List<String> styles) {
+		return new Monster(1, "Test Boss", "", 600, 255, 4, 250, 80, 0,
 			MonsterDefences.ZERO, offence(styles),
 			java.util.Collections.emptyList(), false, "", 0);
 	}
 
 	/** A single armour piece carrying the whole set's defensive block. */
 	private static Loadout armour(int stab, int slash, int crush, int magic, int ranged) {
-		GearItem body = new GearItem(1, "Test platebody", "", GearSlot.BODY, "", 0,
+		Gear body = new Gear(1, "Test platebody", "", GearSlot.BODY, "", 0,
 			false, true, true, true, 0,
 			StatBlock.ZERO,
 			new StatBlock(stab, slash, crush, magic, ranged, 0, 0, 0, 0),
@@ -92,7 +92,7 @@ public class IncomingDpsCalculatorTest {
 		// The defense-weighted beam scores thousands of candidate sets per
 		// optimize; prepare() hoists the monster-side constants and must
 		// reproduce calculate() bit-for-bit on both model paths.
-		MonsterStats sheet = monster(Arrays.asList("Crush", "Ranged", "Magic", "Dragonfire"));
+		Monster sheet = monster(Arrays.asList("Crush", "Ranged", "Magic", "Dragonfire"));
 		Loadout[] armours = {
 			armour(0, 0, 0, 0, 0),
 			armour(200, 180, 210, 40, 150),
@@ -109,7 +109,7 @@ public class IncomingDpsCalculatorTest {
 	public void aPreparedCalculatorMatchesOnCuratedOverrideBosses() {
 		com.loadoutlab.data.LoadoutData data = new com.loadoutlab.data.DataService().load();
 		for (String name : new String[]{"Callisto", "Zulrah", "Corporeal Beast"}) {
-			MonsterStats boss = data.searchMonsters(name, 1).get(0);
+			Monster boss = data.searchMonsters(name, 1).get(0);
 			IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(boss, BossIncomingOverrides.overridesFor(boss), 85, 89, 0);
 			for (Loadout loadout : new Loadout[]{
 				armour(0, 0, 0, 0, 0), armour(220, 240, 230, 80, 200)}) {
@@ -126,7 +126,7 @@ public class IncomingDpsCalculatorTest {
 		// agree with the display path on every monster we ship.
 		com.loadoutlab.data.LoadoutData data = new com.loadoutlab.data.DataService().load();
 		Loadout[] armours = {armour(0, 0, 0, 0, 0), armour(220, 240, 230, 80, 200)};
-		for (MonsterStats mob : data.getMonsters()) {
+		for (Monster mob : data.getMonsters()) {
 			IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(mob, BossIncomingOverrides.overridesFor(mob), 85, 89, 0);
 			for (Loadout loadout : armours) {
 				IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(mob, loadout, 85, 89, 0);
@@ -147,7 +147,7 @@ public class IncomingDpsCalculatorTest {
 
 	@Test
 	public void magicDefenceUsesMagicLevelAndMagicDefBonus() {
-		MonsterStats mage = monster(List.of("Magic", "Ranged"));
+		Monster mage = monster(List.of("Magic", "Ranged"));
 		double lowMagic = IncomingDpsCalculator.calculate(mage, armour(0, 0, 0, 0, 0), 99, 1, 0).totalDps;
 		double highMagic = IncomingDpsCalculator.calculate(mage, armour(0, 0, 0, 0, 0), 99, 99, 0).totalDps;
 		Assert.assertTrue(highMagic <= lowMagic);

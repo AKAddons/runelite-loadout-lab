@@ -24,7 +24,7 @@ class MonsterVersionDefaultTest {
 	}
 
 	private static String defaultVersion(String query) {
-		List<MonsterStats> hits = data.searchMonsters(query, 5);
+		List<Monster> hits = data.searchMonsters(query, 5);
 		assertFalse(hits.isEmpty(), "no hits for " + query);
 		return hits.get(0).getVersion() == null ? "" : hits.get(0).getVersion();
 	}
@@ -57,7 +57,7 @@ class MonsterVersionDefaultTest {
 	@Test
 	@DisplayName("asking for a specific version still finds it")
 	void explicitVersionStillReachable() {
-		List<MonsterStats> hits = data.searchMonsters("zulrah", 5);
+		List<Monster> hits = data.searchMonsters("zulrah", 5);
 		assertTrue(hits.stream().anyMatch(m -> "Magma".equals(m.getVersion())),
 			"all versions stay reachable in the hit list");
 		assertTrue(hits.stream().anyMatch(m -> "Tanzanite".equals(m.getVersion())));

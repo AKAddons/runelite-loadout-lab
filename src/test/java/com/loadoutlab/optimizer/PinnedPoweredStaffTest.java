@@ -3,9 +3,9 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.SpellStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * A weapon pin forces the slot; the set is optimised around it. */
 class PinnedPoweredStaffTest {
 	private static LoadoutData data;
-	private static MonsterStats zulrah;
+	private static Monster zulrah;
 
 	@BeforeAll
 	static void load() {
@@ -63,12 +63,12 @@ class PinnedPoweredStaffTest {
 		owned.put(12002, 1); // occult necklace
 		Map<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
 		pins.put(GearSlot.WEAPON, 28585);
-		Map<CombatStyle, Map<GearSlot, Integer>> byStyle = new EnumMap<>(CombatStyle.class);
-		byStyle.put(CombatStyle.MAGIC, pins);
+		Map<Style, Map<GearSlot, Integer>> byStyle = new EnumMap<>(Style.class);
+		byStyle.put(Style.MAGIC, pins);
 		OptimizerService service = new OptimizerService(data);
 		try {
 			CountDownLatch done = new CountDownLatch(1);
-			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, zulrah, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
 				Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Collections.emptySet(), 0,
@@ -77,7 +77,7 @@ class PinnedPoweredStaffTest {
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS));
-			return out.get().get(CombatStyle.MAGIC);
+			return out.get().get(Style.MAGIC);
 		} finally {
 			service.shutdown();
 		}

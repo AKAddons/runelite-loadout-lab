@@ -3,8 +3,8 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.OwnedItems;
@@ -43,7 +43,7 @@ class GroupSpellbookTest {
 	private static LoadoutData data;
 	private static OptimizerService service;
 	/** Akkha "Magic only" and Elidinis' Warden "P2 (magic only)": both can only be maged. */
-	private static List<MonsterStats> magicOnlyPair;
+	private static List<Monster> magicOnlyPair;
 
 	@BeforeAll
 	static void load() {
@@ -52,8 +52,8 @@ class GroupSpellbookTest {
 		MonsterGroups.MonsterGroup toa = MonsterGroups.load(data).stream()
 			.filter(g -> g.getName().equals("Tombs of Amascut")).findFirst()
 			.orElseThrow(() -> new AssertionError("no Tombs of Amascut group"));
-		MonsterStats akkha = member(toa, "Akkha", "Magic only");
-		MonsterStats warden = member(toa, "Elidinis' Warden", "P2 (magic only)");
+		Monster akkha = member(toa, "Akkha", "Magic only");
+		Monster warden = member(toa, "Elidinis' Warden", "P2 (magic only)");
 		magicOnlyPair = List.of(akkha, warden);
 	}
 
@@ -62,7 +62,7 @@ class GroupSpellbookTest {
 		service.shutdown();
 	}
 
-	private static MonsterStats member(MonsterGroups.MonsterGroup group, String name, String label) {
+	private static Monster member(MonsterGroups.MonsterGroup group, String name, String label) {
 		return group.getMobs().stream()
 			.filter(m -> m.getName().equals(name) && m.label().contains(label)).findFirst()
 			.orElseThrow(() -> new AssertionError("no " + name + " " + label + " in " + group.getName()));
@@ -119,7 +119,7 @@ class GroupSpellbookTest {
 	}
 
 	private static DpsResult magicOf(OptimizerService.RosterResult roster, int mob) {
-		OptimizerService.StyleResult magic = roster.perMob.get(mob).get(CombatStyle.MAGIC);
+		OptimizerService.StyleResult magic = roster.perMob.get(mob).get(Style.MAGIC);
 		assertNotNull(magic, "mob " + mob + " has a magic result");
 		assertTrue(!magic.owned.isEmpty(), "mob " + mob + " has an owned magic set");
 		return magic.owned.get(0);
@@ -145,13 +145,13 @@ class GroupSpellbookTest {
 
 	/** Akkha "Magic only" and Ba-Ba: neither has an elemental weakness, and a
 	 * mage-only kit makes magic Ba-Ba's only usable style. */
-	private static List<MonsterStats> weaknessFreePair() {
+	private static List<Monster> weaknessFreePair() {
 		MonsterGroups.MonsterGroup toa = MonsterGroups.load(data).stream()
 			.filter(g -> g.getName().equals("Tombs of Amascut")).findFirst().orElseThrow();
 		return List.of(member(toa, "Akkha", "Magic only"), member(toa, "Ba-Ba", ""));
 	}
 
-	private static OptimizerService.RosterResult run(List<MonsterStats> mobs, Map<Integer, Integer> owned,
+	private static OptimizerService.RosterResult run(List<Monster> mobs, Map<Integer, Integer> owned,
 		boolean thralls, int deathCharge, String lock) throws InterruptedException {
 		ComputeParams p = new ComputeParams();
 		p.thralls = thralls;

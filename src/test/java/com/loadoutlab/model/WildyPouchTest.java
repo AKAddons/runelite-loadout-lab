@@ -2,7 +2,7 @@ package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +47,7 @@ class WildyPouchTest {
 		engine.setStoreOps(new TestStoreOps());
 		engine.setOwnedCheck(bank::contains);
 		engine.setMagicLevel(99);
-		MonsterStats mob = data.searchMonsters(wildy ? "callisto" : "general graardor", 1).get(0);
+		Monster mob = data.searchMonsters(wildy ? "callisto" : "general graardor", 1).get(0);
 		engine.execute("select", Map.of("id", mob.getId()));
 		state.setParam("thralls", true); // a casting trip, so the kit renders
 		if (wildy) {

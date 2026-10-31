@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import com.loadoutlab.data.WildernessMonsters;
 import java.util.List;
 import org.junit.Assert;
@@ -11,7 +11,7 @@ import org.junit.Test;
 
 public class RiskConstraintTest {
 	private static LoadoutData data;
-	private static MonsterStats callisto;
+	private static Monster callisto;
 
 	@BeforeClass
 	public static void load() {
@@ -19,7 +19,7 @@ public class RiskConstraintTest {
 		callisto = data.searchMonsters("callisto", 1).get(0);
 	}
 
-	private static OptimizationRequest request(CombatStyle style, int maxTradeables) {
+	private static OptimizationRequest request(Style style, int maxTradeables) {
 		return TestRequests.of(callisto, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1)
@@ -56,7 +56,7 @@ public class RiskConstraintTest {
 	@Test
 	public void riskCappedSetsTotalDroppableValueStaysWithinTheBudget() {
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED}) {
+		for (Style style : new Style[]{Style.MELEE, Style.RANGED}) {
 			List<DpsResult> capped = optimizer.optimize(data, request(style, 3));
 			Assert.assertFalse(capped.isEmpty());
 			DpsResult best = optimizer.fillDpsNeutralSlots(data, request(style, 3), capped.get(0));
@@ -84,7 +84,7 @@ public class RiskConstraintTest {
 		// low-risk tail keeps such a line alive. (The precise starvation
 		// needed the field bank's mid-tier breadth - this bank guards the
 		// invariant: rich flood + tiny cap must still yield a set.)
-		MonsterStats kbd = data.searchMonsters("king black dragon", 1).get(0);
+		Monster kbd = data.searchMonsters("king black dragon", 1).get(0);
 		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
 		// The cheap compliant line...
 		for (String name : new String[]{"mystic hat", "mystic robe top", "mystic robe bottom",
@@ -112,7 +112,7 @@ public class RiskConstraintTest {
 		// expensive partials with the cheap ones, and the less-risk
 		// tie-break would rescue the cheap line on its own. Bare accuracy
 		// keeps the ordering strict - the shape that starved the field beam.
-		OptimizationRequest request = new OptimizationRequest(kbd, CombatStyle.MAGIC,
+		OptimizationRequest request = new OptimizationRequest(kbd, Style.MAGIC,
 			PlayerLevels.MAXED, PrayerBonuses.NONE,
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 1)
@@ -127,8 +127,8 @@ public class RiskConstraintTest {
 			PvpRisk.riskGp(found, null, 3) <= 75_000);
 	}
 
-	private static com.loadoutlab.data.GearItem gear(String name) {
-		for (com.loadoutlab.data.GearItem item : data.getGearItems()) {
+	private static com.loadoutlab.data.Gear gear(String name) {
+		for (com.loadoutlab.data.Gear item : data.getGearItems()) {
 			if (name.equalsIgnoreCase(item.getName())) {
 				return item;
 			}
@@ -180,8 +180,8 @@ public class RiskConstraintTest {
 		return UntradeableDeathCosts.categoryFor(untradeable(name));
 	}
 
-	private static com.loadoutlab.data.GearItem untradeable(String name) {
-		for (com.loadoutlab.data.GearItem item : data.getGearItems()) {
+	private static com.loadoutlab.data.Gear untradeable(String name) {
+		for (com.loadoutlab.data.Gear item : data.getGearItems()) {
 			if (name.equalsIgnoreCase(item.getName()) && !item.isTradeable()) {
 				return item;
 			}
@@ -200,13 +200,13 @@ public class RiskConstraintTest {
 		owned.put(4151, 1);  // abyssal whip
 		owned.put(1712, 1);  // amulet of glory (4)
 		owned.put(12851, 1); // amulet of the damned (full)
-		OptimizationRequest req = TestRequests.of(callisto, CombatStyle.MELEE,
+		OptimizationRequest req = TestRequests.of(callisto, Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(data.canonicalizeOwned(owned), true), 1).withMaxTradeables(3);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
 		Assert.assertFalse(out.isEmpty());
-		com.loadoutlab.data.GearItem neck = out.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.NECK);
+		com.loadoutlab.data.Gear neck = out.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.NECK);
 		Assert.assertNotNull(neck);
 		Assert.assertEquals("Amulet of glory", neck.getName());
 	}
@@ -219,14 +219,14 @@ public class RiskConstraintTest {
 		owned.put(4151, 1);
 		owned.put(1712, 1);
 		owned.put(12851, 1);
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
-		OptimizationRequest req = TestRequests.of(goblin, CombatStyle.MELEE,
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
+		OptimizationRequest req = TestRequests.of(goblin, Style.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(data.canonicalizeOwned(owned), true), 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
 		Assert.assertFalse(out.isEmpty());
-		com.loadoutlab.data.GearItem neck = out.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.NECK);
+		com.loadoutlab.data.Gear neck = out.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.NECK);
 		if (neck != null) {
 			Assert.assertEquals("Amulet of glory", neck.getName());
 		}
@@ -235,8 +235,8 @@ public class RiskConstraintTest {
 	@Test
 	public void protectItemBuysAFourthRiskSlotAndAtLeastAsMuchDps() {
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
-		double three = optimizer.optimize(data, request(CombatStyle.MELEE, 3)).get(0).getDps();
-		List<DpsResult> four = optimizer.optimize(data, request(CombatStyle.MELEE, 4));
+		double three = optimizer.optimize(data, request(Style.MELEE, 3)).get(0).getDps();
+		List<DpsResult> four = optimizer.optimize(data, request(Style.MELEE, 4));
 		Assert.assertTrue(LoadoutTestSupport.tradeableCount(four.get(0).getLoadout()) <= 4);
 		Assert.assertTrue(four.get(0).getDps() >= three - 1e-9);
 	}
@@ -250,7 +250,7 @@ public class RiskConstraintTest {
 		// Amulet of fury: a plausible tradeable the optimizer would otherwise
 		// risk in a melee set at Callisto.
 		int fury = 6585;
-		OptimizationRequest base = request(CombatStyle.MELEE, 3);
+		OptimizationRequest base = request(Style.MELEE, 3);
 		DpsResult unflagged = optimizer.fillDpsNeutralSlots(data, base,
 			optimizer.optimize(data, base).get(0));
 
@@ -272,8 +272,8 @@ public class RiskConstraintTest {
 	@Test
 	public void unconstrainedIsAtLeastAsStrongAsTheCappedSet() {
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
-		double capped = optimizer.optimize(data, request(CombatStyle.RANGED, 3)).get(0).getDps();
-		double free = optimizer.optimize(data, request(CombatStyle.RANGED, -1)).get(0).getDps();
+		double capped = optimizer.optimize(data, request(Style.RANGED, 3)).get(0).getDps();
+		double free = optimizer.optimize(data, request(Style.RANGED, -1)).get(0).getDps();
 		Assert.assertTrue(free >= capped - 1e-9);
 	}
 
@@ -281,12 +281,12 @@ public class RiskConstraintTest {
 	public void aTighterRiskBudgetIsHonoredAndNeverBeatsTheDefault() {
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		List<DpsResult> tight = optimizer.optimize(data,
-			request(CombatStyle.MELEE, 3).withRiskBudgetGp(10_000));
+			request(Style.MELEE, 3).withRiskBudgetGp(10_000));
 		Assert.assertFalse(tight.isEmpty());
 		PvpRisk.Assessment risk = PvpRisk.assess(tight.get(0).getLoadout(), null, 3);
 		Assert.assertTrue("risks " + risk.riskGp, risk.riskGp <= 10_000);
 		// A tighter budget can only shrink the candidate space.
-		double withDefault = optimizer.optimize(data, request(CombatStyle.MELEE, 3)).get(0).getDps();
+		double withDefault = optimizer.optimize(data, request(Style.MELEE, 3)).get(0).getDps();
 		Assert.assertTrue(tight.get(0).getDps() <= withDefault + 1e-9);
 	}
 }

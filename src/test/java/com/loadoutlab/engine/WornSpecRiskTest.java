@@ -1,7 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import java.util.EnumMap;
@@ -24,7 +24,7 @@ public class WornSpecRiskTest {
 		return data;
 	}
 
-	private static GearItem byName(String name) {
+	private static Gear byName(String name) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + name));
@@ -32,8 +32,8 @@ public class WornSpecRiskTest {
 
 	@Test
 	public void aWornSpecWeaponIsChargedOnce() {
-		GearItem weapon = byName("abyssal whip");
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		Gear weapon = byName("abyssal whip");
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, weapon);
 		gear.put(GearSlot.BODY, byName("bandos chestplate"));
 		gear.put(GearSlot.FEET, byName("primordial boots"));
@@ -56,11 +56,11 @@ public class WornSpecRiskTest {
 
 	@Test
 	public void aSeparatelyCarriedSpecStillCounts() {
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName("abyssal whip"));
 		gear.put(GearSlot.BODY, byName("bandos chestplate"));
 		Loadout loadout = new Loadout(gear);
-		GearItem carried = byName("dragon warhammer");
+		Gear carried = byName("dragon warhammer");
 
 		long withCarried = PvpRisk.riskGp(loadout, carried, 1);
 		long without = PvpRisk.riskGp(loadout, null, 1);

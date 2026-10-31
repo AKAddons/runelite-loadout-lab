@@ -2,7 +2,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,14 +48,14 @@ class CalibratedBossesTest {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats find(Object[] mob) {
+	private static Monster find(Object[] mob) {
 		String name = (String) mob[0];
 		int hp = (Integer) mob[1];
 		String version = (String) mob[2];
-		List<MonsterStats> rows = data.searchMonsters(name, 40);
-		MonsterStats byVersion = null;
-		MonsterStats byHp = null;
-		for (MonsterStats m : rows) {
+		List<Monster> rows = data.searchMonsters(name, 40);
+		Monster byVersion = null;
+		Monster byHp = null;
+		for (Monster m : rows) {
 			if (!m.getName().equalsIgnoreCase(name) || m.getHitpoints() != hp) {
 				continue;
 			}
@@ -66,7 +66,7 @@ class CalibratedBossesTest {
 				byHp = m;
 			}
 		}
-		MonsterStats found = byVersion != null ? byVersion : byHp;
+		Monster found = byVersion != null ? byVersion : byHp;
 		assertTrue(found != null, "corpus is missing " + name + " " + hp + " hp " + version);
 		return found;
 	}

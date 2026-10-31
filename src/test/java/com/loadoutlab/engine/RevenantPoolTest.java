@@ -3,7 +3,7 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.Monster;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class RevenantPoolTest {
 	private static LoadoutData data;
-	private static MonsterStats revDemon;
+	private static Monster revDemon;
 
 	@BeforeAll
 	static void load() {
@@ -30,7 +30,7 @@ class RevenantPoolTest {
 	}
 
 	private static OptimizationRequest request(CandidateMode mode, OwnedItems owned) {
-		return new OptimizationRequest(revDemon, CombatStyle.RANGED, PlayerLevels.MAXED,
+		return new OptimizationRequest(revDemon, Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			mode, true, false, owned, RequirementProfile.MAXED, 1);
 	}
@@ -76,7 +76,7 @@ class RevenantPoolTest {
 				.withMaxTradeables(3).withRiskBudgetGp(cap);
 			List<DpsResult> results = new LoadoutOptimizer().optimize(data, constrained);
 			assertFalse(results.isEmpty());
-			com.loadoutlab.data.GearItem neck =
+			com.loadoutlab.data.Gear neck =
 				results.get(0).getLoadout().get(GearSlot.NECK);
 			assertTrue(neck == null || !neck.getNameLower().contains("salve"),
 				"an unprotectable salve may never ride a low-risk set (cap " + cap
@@ -91,13 +91,13 @@ class RevenantPoolTest {
 		// score boosts must keep both alive ONLY at revenants.
 		OptimizationRequest atRevs = request(CandidateMode.ALL_STANDARD, OwnedItems.EMPTY);
 		OptimizationRequest atGoblin = new OptimizationRequest(
-			data.searchMonsters("goblin", 1).get(0), CombatStyle.RANGED, PlayerLevels.MAXED,
+			data.searchMonsters("goblin", 1).get(0), Style.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 
-		com.loadoutlab.data.GearItem ethereum = null;
-		com.loadoutlab.data.GearItem avarice = null;
-		for (com.loadoutlab.data.GearItem item : data.getGearItems()) {
+		com.loadoutlab.data.Gear ethereum = null;
+		com.loadoutlab.data.Gear avarice = null;
+		for (com.loadoutlab.data.Gear item : data.getGearItems()) {
 			if (item.getNameLower().equals("bracelet of ethereum")
 				&& "charged".equals(item.getVersionLower())) {
 				ethereum = item;

@@ -3,8 +3,8 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.MultiTool;
 import com.loadoutlab.engine.OwnedItems;
@@ -47,15 +47,15 @@ class MultiToolsTest {
 		data = new DataService().load();
 	}
 
-	private static Map<CombatStyle, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView) throws Exception {
+	private static Map<Style, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView) throws Exception {
 		return compute(query, owned, multiView, 3);
 	}
 
-	private static Map<CombatStyle, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView, int stack) throws Exception {
-		MonsterStats mob = data.searchMonsters(query, 1).get(0);
+	private static Map<Style, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView, int stack) throws Exception {
+		Monster mob = data.searchMonsters(query, 1).get(0);
 		OptimizerService service = new OptimizerService(data);
 		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		AtomicReference<Map<Style, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		ComputeParams p = new ComputeParams();
 		p.multiView = multiView;
 		p.multiStack = stack;
@@ -94,7 +94,7 @@ class MultiToolsTest {
 		return owned;
 	}
 
-	private static Map<String, OptimizerService.StyleResult> tools(Map<CombatStyle, OptimizerService.StyleResult> results) {
+	private static Map<String, OptimizerService.StyleResult> tools(Map<Style, OptimizerService.StyleResult> results) {
 		for (OptimizerService.StyleResult r : results.values()) {
 			if (r.multiTools != null) {
 				return r.multiTools;

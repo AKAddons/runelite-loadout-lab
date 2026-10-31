@@ -1,11 +1,11 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.Gear;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.Monster;
+import com.loadoutlab.engine.Style;
 import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.engine.DpsCalculator;
 import com.loadoutlab.engine.DpsResult;
@@ -43,7 +43,7 @@ class KillTimeRankingTest {
 	private static LoadoutData data;
 	private static OptimizerService service;
 	private static OwnedItems owned;
-	private static List<MonsterStats> moons;
+	private static List<Monster> moons;
 
 	@BeforeAll
 	static void load() {
@@ -51,7 +51,7 @@ class KillTimeRankingTest {
 		service = new OptimizerService(data);
 		Map<Integer, Integer> bank = new HashMap<>();
 		for (GearSlot slot : GearSlot.values()) {
-			for (GearItem g : data.getGearItems(slot)) {
+			for (Gear g : data.getGearItems(slot)) {
 				if (GroupModesTest.BANK.contains(g.nameLower)) bank.put(g.id, 1);
 			}
 		}
@@ -66,9 +66,9 @@ class KillTimeRankingTest {
 		service.shutdown();
 	}
 
-	private static Map<CombatStyle, StyleResult> single(MonsterStats mob) throws Exception {
+	private static Map<Style, StyleResult> single(Monster mob) throws Exception {
 		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<Map<CombatStyle, StyleResult>> out = new AtomicReference<>();
+		AtomicReference<Map<Style, StyleResult>> out = new AtomicReference<>();
 		service.bestPerStyle(mob, GroupModesTest.LV, GroupModesTest.LV, PrayerUnlocks.ALL, RequirementProfile.MAXED, owned, 1,
 			new ComputeParams(), Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
 			Collections.<Integer>emptySet(), result -> {
@@ -93,9 +93,9 @@ class KillTimeRankingTest {
 		return out.get();
 	}
 
-	private static GearItem item(String name) {
+	private static Gear item(String name) {
 		for (GearSlot slot : GearSlot.values()) {
-			for (GearItem g : data.getGearItems(slot)) {
+			for (Gear g : data.getGearItems(slot)) {
 				if (g.nameLower.equals(name)) return g;
 			}
 		}
@@ -103,22 +103,22 @@ class KillTimeRankingTest {
 	}
 
 	private static Loadout set(String... names) {
-		Map<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		Map<GearSlot, Gear> gear = new EnumMap<>(GearSlot.class);
 		for (String name : names) gear.put(item(name).slot, item(name));
 		return new Loadout(gear);
 	}
 
-	private static OptimizationRequest melee(MonsterStats moon) {
+	private static OptimizationRequest melee(Monster moon) {
 		OptimizerService.ComputeContext ctx = service.buildContext(GroupModesTest.LV, GroupModesTest.LV, PrayerUnlocks.ALL,
 			RequirementProfile.MAXED, owned, 1, new ComputeParams(), Collections.emptyMap(), Collections.emptySet(),
 			Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.<Integer>emptySet());
-		return service.ownedRequestFor(ctx, moon, CombatStyle.MELEE, OptimizerService.stylePlan(ctx, CombatStyle.MELEE, null).levels, null);
+		return service.ownedRequestFor(ctx, moon, Style.MELEE, OptimizerService.stylePlan(ctx, Style.MELEE, null).levels, null);
 	}
 
 	@Test
 	@DisplayName("alone, Blood Moon's Max DPS card counts her heal: its net DPS is below its DPS, its kill time reads the net, and no set in the bank kills faster")
 	void singleBloodMoonRanksByNet() throws Exception {
-		StyleResult melee = single(moons.get(0)).get(CombatStyle.MELEE);
+		StyleResult melee = single(moons.get(0)).get(Style.MELEE);
 		DpsResult shown = melee.owned.get(0);
 		assertTrue(melee.incoming.healDps > 0, "she heals");
 		assertEquals(shown.dps - melee.incoming.healDps, shown.net, 1e-9);
@@ -134,7 +134,7 @@ class KillTimeRankingTest {
 	@Test
 	@DisplayName("a boss with no heal rule ranks as before: net DPS is DPS on every card, and the incoming heal is zero")
 	void graardorUnchanged() throws Exception {
-		Map<CombatStyle, StyleResult> cards = single(data.searchMonsters("general graardor", 1).get(0));
+		Map<Style, StyleResult> cards = single(data.searchMonsters("general graardor", 1).get(0));
 		int seen = 0;
 		for (StyleResult r : cards.values()) {
 			if (r == null || r.owned.isEmpty()) continue;
@@ -149,7 +149,7 @@ class KillTimeRankingTest {
 	@DisplayName("the Moons' Max DPS kit wears the faster-kill set on Blood Moon, each card carries its kill time, and the entry carries the trip's")
 	void moonsKitRanksByTripTime() throws Exception {
 		OptimizerService.RosterResult roster = group();
-		StyleResult blood = roster.perMob.get(0).get(CombatStyle.MELEE);
+		StyleResult blood = roster.perMob.get(0).get(Style.MELEE);
 		DpsResult shown = blood.owned.get(0);
 		Set<Integer> worn = shown.getLoadout().ids();
 		assertFalse(worn.contains(item("blood moon chestplate").id), "the heal-feeding chestplate is not worn on her");
