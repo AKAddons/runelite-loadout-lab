@@ -1,0 +1,71 @@
+package com.ll.profile;
+
+import com.ll.engine.Levels;
+import com.ll.engine.Prayers;
+import com.ll.engine.RequirementProfile;
+import java.util.Map;
+import java.util.Set;
+import net.runelite.api.Skill;
+import org.junit.Assert;
+import org.junit.Test;
+
+public class PlayerProfileTest {
+	@Test
+	public void aProfileSurvivesTheJsonRoundTripExactly() {
+		PlayerProfile original = new PlayerProfile(
+			new Levels(75, 80, 70, 85, 77, 52, 82),
+			new Levels(80, 85, 70, 89, 77, 52, 82),
+			new Prayers(true, false, true, false, false),
+			new RequirementProfile(Map.of(Skill.ATTACK, 75, Skill.SLAYER, 60),
+				Set.of("Dragon Slayer I", "Monkey Madness I")),
+			Map.of(4151, 1, 11832, 1, 12934, 5000),
+			true);
+		PlayerProfile copy = PlayerProfile.fromJson(original.toJson());
+		Assert.assertEquals(75, copy.realLevels.getAttack());
+		Assert.assertEquals(89, copy.boostedLevels.getRanged());
+		Assert.assertTrue(copy.prayerUnlocks.piety());
+		Assert.assertFalse(copy.prayerUnlocks.rigour());
+		Assert.assertTrue(copy.prayerUnlocks.augury());
+		Assert.assertEquals(Integer.valueOf(60), copy.requirements.getLevels().get(Skill.SLAYER));
+		Assert.assertTrue(copy.requirements.getCq().contains("Monkey Madness I"));
+		Assert.assertEquals(Integer.valueOf(5000), copy.owned.get(12934));
+		Assert.assertTrue(copy.bankScanned);
+	}
+
+	@Test
+	public void theHeadlessRunnerAnswersAQueryWithoutAClient() throws Exception {
+		String out = HeadlessQuery.run(new String[]{"vorkath", "--maxed"});
+		Assert.assertTrue(out, out.contains("vs Vorkath"));
+		Assert.assertTrue(out, out.contains("game best:"));
+		Assert.assertTrue(out, out.contains("[Ranged]"));
+	}
+
+	@Test
+	public void aMockUserWithABankDrivesOwnedResults() throws Exception {
+		PlayerProfile mock = new PlayerProfile(Levels.MAXED, Levels.MAXED,
+			Prayers.ALL, RequirementProfile.MAXED,
+			Map.of(4151, 1, 1712, 1), true);
+		java.nio.file.Path file = java.nio.file.Files.createTempFile("profile", ".json");
+		java.nio.file.Files.writeString(file, mock.toJson());
+		String out = HeadlessQuery.run(new String[]{"goblin", "--profile", file.toString()});
+		Assert.assertTrue(out, out.contains("Abyssal whip"));
+		Assert.assertTrue(out, out.contains("Amulet of glory"));
+	}
+
+	/** Field report 2026-09-01: a 45-prayer account saw Piety after logging
+	 * out - the snapshot was dropped and the MAXED fallback priced a
+	 * stranger wearing its bank. Logout keeps the last character; only a
+	 * different character replaces it. */
+	@Test
+	public void theLastCharactersSnapshotSurvivesLogoutButNotASwitch() {
+		long me = 1234L;
+		Assert.assertTrue("logout keeps the last character",
+			PlayerProfile.snapshotSurvives(me, -1));
+		Assert.assertTrue("same character re-login keeps it",
+			PlayerProfile.snapshotSurvives(me, me));
+		Assert.assertFalse("a different character replaces it",
+			PlayerProfile.snapshotSurvives(me, 5678L));
+		Assert.assertFalse("a hashless snapshot is replaced once the hash arrives",
+			PlayerProfile.snapshotSurvives(-1, me));
+	}
+}

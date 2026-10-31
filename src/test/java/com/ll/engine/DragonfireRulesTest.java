@@ -1,0 +1,69 @@
+package com.ll.engine;
+
+import com.ll.data.DataService;
+import com.ll.data.Gear;
+import com.ll.data.Slot;
+import com.ll.data.Tables;
+import com.ll.data.Monster;
+import java.util.List;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+public class DragonfireRulesTest {
+	private static Tables data;
+
+	@BeforeClass
+	public static void load() {
+		data = new DataService().load();
+	}
+
+	private static Monster monster(String name) {
+		return data.searchMonsters(name, 1).get(0);
+	}
+
+	@Test
+	public void firebreathersAreDetectedByTheirDragonfireStyleAndBabiesAreNot() {
+		Assert.assertTrue(DragonfireRules.breathesFire(monster("green dragon")));
+		Assert.assertTrue(DragonfireRules.breathesFire(monster("steel dragon")));
+		Assert.assertTrue(DragonfireRules.breathesFire(monster("vorkath")));
+		Assert.assertTrue(DragonfireRules.breathesFire(monster("king black dragon")));
+		Assert.assertFalse(DragonfireRules.breathesFire(monster("baby black dragon")));
+		Assert.assertFalse(DragonfireRules.breathesFire(monster("zulrah")));
+	}
+
+	@Test
+	public void gearModeForcesAProtectiveShieldAndBansTwoHanders() {
+		Req req = TestRequests.of(monster("vorkath"), Style.RANGED,
+			Levels.MAXED, PrayerBonuses.bestAvailable(Levels.MAXED, Prayers.ALL),
+			null, 0, CandidateMode.ALL_STANDARD, true, false, Owned.EMPTY, 1);
+		List<Dps> out = new LoadoutOptimizer().optimize(data, req);
+		Assert.assertFalse(out.isEmpty());
+		Gear shield = out.get(0).getLoadout().get(Slot.SHIELD);
+		Assert.assertNotNull("gear mode must fill the shield slot", shield);
+		Assert.assertTrue(shield.label() + " is not dragonfire-protective",
+			DragonfireRules.isProtectiveShield(shield));
+		Assert.assertFalse(out.get(0).getLoadout().getWeapon().isTwoh());
+	}
+
+	@Test
+	public void thePotionToggleLiftsTheConstraintAndNeverCostsDps() {
+		Req gear = TestRequests.of(monster("green dragon"), Style.MELEE,
+			Levels.MAXED, PrayerBonuses.bestAvailable(Levels.MAXED, Prayers.ALL),
+			null, 0, CandidateMode.ALL_STANDARD, true, false, Owned.EMPTY, 1);
+		double shielded = new LoadoutOptimizer().optimize(data, gear).get(0).getDps();
+		double potion = new LoadoutOptimizer().optimize(data, gear.withAntifirePotion(true)).get(0).getDps();
+		Assert.assertTrue(potion >= shielded - 1e-9);
+	}
+
+	@Test
+	public void nonDragonsAreUnaffectedByTheShieldRule() {
+		Req req = TestRequests.of(monster("general graardor"), Style.MELEE,
+			Levels.MAXED, PrayerBonuses.bestAvailable(Levels.MAXED, Prayers.ALL),
+			null, 0, CandidateMode.ALL_STANDARD, true, false, Owned.EMPTY, 1);
+		List<Dps> out = new LoadoutOptimizer().optimize(data, req);
+		Gear shield = out.get(0).getLoadout().get(Slot.SHIELD);
+		Assert.assertTrue(shield == null || !DragonfireRules.isProtectiveShield(shield)
+			|| out.get(0).getLoadout().getWeapon().isTwoh() == false);
+	}
+}

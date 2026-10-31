@@ -1,0 +1,103 @@
+package com.ll.optimizer;
+
+import com.ll.data.DataService;
+import com.ll.data.Tables;
+import com.ll.data.Monster;
+import com.ll.engine.Style;
+import com.ll.data.Gear;
+import com.ll.data.Slot;
+import com.ll.engine.Req;
+import com.ll.engine.Levels;
+import com.ll.engine.Owned;
+import com.ll.engine.Prayers;
+import com.ll.engine.RequirementProfile;
+import net.runelite.api.Skill;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Field report 2026-08-27: "it's saying my bis on obor is a rune scimitar but
+ * my attack is only 10 so i can't use that."
+ *
+ * <p>The ceiling gated on RequirementProfile.MAXED, so it named gear the player
+ * could not wear and quoted a DPS that can never occur - reaching the 40 Attack
+ * a rune scimitar needs changes the number it was quoting. It now uses the same
+ * requirement profile as the Yours side, leaving OWNERSHIP as the only
+ * difference between the two, which is the gap the comparison exists to show.
+ *
+ * <p>The goldens cannot catch this: FixtureBank is a maxed account, where the
+ * two requirement profiles agree.
+ */
+class LowLevelCeilingTest {
+	private static Tables data;
+
+	@BeforeAll
+	static void load() {
+		data = new DataService().load();
+	}
+
+	/** A fresh account: 10 Attack, nothing trained, every quest unstarted. */
+	private static RequirementProfile freshAccount() {
+		Map<Skill, Integer> levels = new HashMap<>();
+		for (Skill s : Skill.values()) {
+			levels.put(s, 1);
+		}
+		levels.put(Skill.ATTACK, 10);
+		levels.put(Skill.HITPOINTS, 10);
+		return new RequirementProfile(levels, Collections.emptySet());
+	}
+
+	@Test
+	@DisplayName("the BiS ceiling never names gear the player cannot equip")
+	void ceilingRespectsThePlayersRequirements() throws Exception {
+		Monster obor = data.searchMonsters("obor", 1).get(0);
+		RequirementProfile fresh = freshAccount();
+		Levels levels = new Levels(10, 1, 1, 10, 1, 1, 1);
+
+		Service service = new Service(data);
+		try {
+			CountDownLatch done = new CountDownLatch(1);
+			AtomicReference<Map<Style, Service.Pick>> out =
+				new AtomicReference<>();
+			ServiceCalls.bestPerStyle(service, obor,
+				levels, levels, Prayers.ALL,
+				fresh, new Owned(new HashMap<>(), true), 0,
+				false, false, "", new EnumMap<>(Style.class), -1,
+				Req.DEFAULT_RISK_BUDGET_GP, false, false,
+				Collections.emptySet(), 0,
+				Collections.emptyMap(), null, 0, Collections.emptySet(),
+				r -> {
+					out.set(r);
+					done.countDown();
+				});
+			assertTrue(done.await(300, TimeUnit.SECONDS), "the Obor query timed out");
+
+			Service.Pick melee = out.get().get(Style.MELEE);
+			assertNotNull(melee, "no melee result for Obor");
+			assertNotNull(melee.overallBest, "no game-best set for Obor");
+
+			for (Slot slot : Slot.values()) {
+				Gear worn = melee.overallBest.getLoadout().get(slot);
+				if (worn == null) {
+					continue;
+				}
+				// Levels only: the ceiling never trims on the quest log (2026-09-09).
+				assertTrue(fresh.withAllQuests().canEquip(worn.getRequirements()),
+					"the ceiling put on " + worn.getName()
+						+ ", which a 10 Attack account cannot equip");
+			}
+		} finally {
+			service.shutdown();
+		}
+	}
+}

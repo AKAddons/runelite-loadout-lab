@@ -1,0 +1,151 @@
+package com.ll.optimizer;
+
+import com.ll.data.DataService;
+import com.ll.data.Slot;
+import com.ll.data.Tables;
+import com.ll.data.Monster;
+import com.ll.engine.Style;
+import com.ll.engine.ComputeParams;
+import com.ll.engine.MultiTool;
+import com.ll.engine.Owned;
+import com.ll.engine.Levels;
+import com.ll.engine.Prayers;
+import com.ll.engine.RequirementProfile;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * The Multi card's rows (Andrew 2026-10-19): with the Multi switch on, a
+ * multi-able mob's compute also ranks the three multi tools - the best
+ * ancient burst/barrage set, the best chinchompa set, the venator bow
+ * set - each a full per-target Pick; a mob outside the multi
+ * list computes nothing extra, and a tool the player does not own has
+ * no Yours side.
+ */
+class MultiToolsTest {
+	private static final int BLACK_CHIN = 11959;
+	private static final int VENATOR = 27610;
+	private static final int ADAMANT_ARROW = 890;
+	private static final int DRAGON_2H = 7158;
+	private static final int DRAGON_CLAWS = 13652;
+	private static final int BLOOD_RUNE = 565;
+	private static final int DEATH_RUNE = 560;
+	private static final int WATER_RUNE = 555;
+	private static Tables data;
+
+	@BeforeAll
+	static void load() {
+		data = new DataService().load();
+	}
+
+	private static Map<Style, Service.Pick> compute(String query, Map<Integer, Integer> owned, boolean multiView) throws Exception {
+		return compute(query, owned, multiView, 3);
+	}
+
+	private static Map<Style, Service.Pick> compute(String query, Map<Integer, Integer> owned, boolean multiView, int stack) throws Exception {
+		Monster mob = data.searchMonsters(query, 1).get(0);
+		Service service = new Service(data);
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<Map<Style, Service.Pick>> out = new AtomicReference<>();
+		ComputeParams p = new ComputeParams();
+		p.multiView = multiView;
+		p.multiStack = stack;
+		service.bestPerStyle(mob, Levels.MAXED, Levels.MAXED, Prayers.ALL,
+			RequirementProfile.MAXED, new Owned(owned, true), 1, p,
+			Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
+			Collections.<Integer>emptySet(), result -> {
+				out.set(result);
+				done.countDown();
+			});
+		assertTrue(done.await(120, TimeUnit.SECONDS), "compute timed out");
+		return out.get();
+	}
+
+	private static Map<Integer, Integer> kit(boolean chins, boolean venator, boolean runes) {
+		Map<Integer, Integer> owned = new HashMap<>();
+		for (String name : new String[]{"rune scimitar", "rune full helm", "rune platebody", "rune platelegs",
+			"ancient staff", "mystic robe top", "mystic robe bottom", "magic shortbow", "black d'hide body", "black d'hide chaps"}) {
+			data.getGearItems().stream().filter(g -> g.getLname().equals(name) && g.isStandardGear())
+				.findFirst().ifPresent(g -> owned.put(g.getId(), 1));
+		}
+		if (chins) {
+			owned.put(BLACK_CHIN, 5000);
+		}
+		if (venator) {
+			// The bow fires arrows (wiki: any arrow up to dragon); without
+			// them the owned row is rightly empty.
+			owned.put(VENATOR, 1);
+			owned.put(ADAMANT_ARROW, 1000);
+		}
+		if (runes) {
+			owned.put(BLOOD_RUNE, 1000);
+			owned.put(DEATH_RUNE, 1000);
+			owned.put(WATER_RUNE, 1000);
+		}
+		return owned;
+	}
+
+	private static Map<String, Service.Pick> tools(Map<Style, Service.Pick> results) {
+		for (Service.Pick r : results.values()) {
+			if (r.multiTools != null) {
+				return r.multiTools;
+			}
+		}
+		return null;
+	}
+
+	@Test
+	@DisplayName("Greater Nechryaels with the switch on rank barrage, chins, the venator bow and Hallowfell, each a per-target set")
+	void nechryaelsHaveThreeTools() throws Exception {
+		Map<String, Service.Pick> tools = tools(compute("greater nechryael", kit(true, true, true), true));
+		assertNotNull(tools, "the multi tools ride the results");
+		assertEquals(4, tools.size(), "barrage, chins, venator and Hallowfell (ISS-01M5TPEWE9AQM3B55ZH02PHGE4)");
+		assertEquals(MultiTool.HALLOWFELL_SWORD, tools.get(MultiTool.HALLOWFELL.key).overallBest.getLoadout().get(Slot.WEAPON).getId(), "the ceiling wields Hallowfell");
+		Service.Pick barrage = tools.get(MultiTool.BARRAGE.key);
+		assertEquals("Ice Barrage", barrage.owned.get(0).getSpellName(), "a maxed mage barrages");
+		assertEquals(BLACK_CHIN, tools.get(MultiTool.CHINS.key).owned.get(0).getLoadout().get(Slot.WEAPON).getId());
+		assertEquals(VENATOR, tools.get(MultiTool.VENATOR.key).owned.get(0).getLoadout().get(Slot.WEAPON).getId());
+		assertEquals(VENATOR, tools.get(MultiTool.VENATOR.key).overallBest.getLoadout().get(Slot.WEAPON).getId(), "the ceiling wears it too");
+	}
+
+	@Test
+	@DisplayName("a tool you do not own has no Yours side; the ceiling still shows it")
+	void unownedToolHasNoYours() throws Exception {
+		Map<String, Service.Pick> tools = tools(compute("greater nechryael", kit(true, false, true), true));
+		assertNotNull(tools);
+		assertTrue(tools.get(MultiTool.VENATOR.key).owned.isEmpty(), "no venator bow, no Yours row");
+		assertNotNull(tools.get(MultiTool.VENATOR.key).overallBest);
+		assertFalse(tools.get(MultiTool.CHINS.key).owned.isEmpty());
+	}
+
+	@Test
+	@DisplayName("at a stack of nine the chins row's spec is the d2h over the claws; at one it is not (Andrew 2026-10-19)")
+	void multiSpecAtTheStack() throws Exception {
+		Map<Integer, Integer> owned = kit(true, false, false);
+		owned.put(DRAGON_2H, 1);
+		owned.put(DRAGON_CLAWS, 1);
+		// At three the claws' four hits per 50% still edge three Powerstabs
+		// per 60%; at nine the stack is decisive.
+		Service.Pick atNine = tools(compute("greater nechryael", owned, true, 9)).get(MultiTool.CHINS.key);
+		assertNotNull(atNine.specWeapon, "a spec rides the chins row");
+		assertEquals(DRAGON_2H, atNine.specWeapon.getId(), "Powerstab hits the whole stack");
+		Service.Pick atOne = tools(compute("greater nechryael", owned, true, 1)).get(MultiTool.CHINS.key);
+		assertNotEquals(DRAGON_2H, atOne.specWeapon == null ? 0 : atOne.specWeapon.getId(), "one target: the claws win as ever");
+	}
+
+	@Test
+	@DisplayName("the switch off, or a mob outside the multi list, computes no tools")
+	void offOrNotMultiAble() throws Exception {
+		assertNull(tools(compute("greater nechryael", kit(true, true, true), false)), "switch off");
+		assertNull(tools(compute("vorkath", kit(true, true, true), true)), "Vorkath is single-way");
+	}
+}

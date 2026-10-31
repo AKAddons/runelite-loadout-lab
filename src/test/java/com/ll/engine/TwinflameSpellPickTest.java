@@ -1,0 +1,103 @@
+package com.ll.engine;
+
+import com.ll.data.DataService;
+import com.ll.data.Gear;
+import com.ll.data.Slot;
+import com.ll.data.Tables;
+import com.ll.data.Monster;
+import com.ll.data.Spell;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * The twinflame staff's 40% second hit applies to Bolt/Blast/Wave, not
+ * Strike/Surge - so spell DOMINANCE depends on the weapon. The elemental
+ * prune used to keep only the top max-hit spell per class, which dropped
+ * every doubled tier before evaluation: a pinned twinflame was told to
+ * autocast Wind Surge while Wind Wave computed ~18% more dps (field
+ * report 2026-08-06, reproduced at Guthan).
+ */
+class TwinflameSpellPickTest {
+	private static Tables data;
+	private static Monster guthan;
+	private static Gear staff;
+
+	@BeforeAll
+	static void load() {
+		data = new DataService().load();
+		guthan = data.searchMonsters("guthan", 1).get(0);
+		for (Gear g : data.getGearItems()) {
+			if (g.getLname().contains("twinflame") && g.isStandardGear()) {
+				staff = g;
+			}
+		}
+		assertNotNull(staff, "test premise: the twinflame staff exists");
+	}
+
+	@Test
+	@DisplayName("a pinned twinflame autocasts a doubled tier, not the pruned-to Surge")
+	void pinnedTwinflamePicksADoubledTier() {
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(staff.getId(), 1);
+		// The premium runes, so the rune-ownership gate (0.4.1) leaves the
+		// full spell ladder in play - this test is about twinflame doubling
+		// economics, and without blood/wrath runes Wave and Surge both
+		// (correctly) drop from an owned-only pool.
+		owned.put(565, 1000);   // blood
+		owned.put(560, 1000);   // death
+		owned.put(566, 1000);   // soul
+		owned.put(21880, 1000); // wrath
+		Map<Slot, Integer> pins = new EnumMap<>(Slot.class);
+		pins.put(Slot.WEAPON, staff.getId());
+		Req request = TestRequests.of(guthan,
+			Style.MAGIC, Levels.MAXED,
+			PrayerBonuses.bestAvailable(Levels.MAXED), null, 0,
+			CandidateMode.OWNED_ONLY, true, false,
+			new Owned(owned, true), 1)
+			.withPinnedItems(pins);
+		List<Dps> out = new LoadoutOptimizer().optimize(data, request);
+		assertFalse(out.isEmpty());
+		String spell = out.get(0).getSpellName();
+		assertNotNull(spell);
+		assertTrue(spell.endsWith("Wave") || spell.endsWith("Blast") || spell.endsWith("Bolt"),
+			"the doubled tier must win under a twinflame, picked: " + spell);
+
+		// And the pick genuinely out-damages the surge it used to recommend.
+		EnumMap<Slot, Gear> gear = new EnumMap<>(Slot.class);
+		gear.put(Slot.WEAPON, staff);
+		Spell surge = data.getSpells().stream()
+			.filter(s -> "Wind Surge".equals(s.getName())).findFirst().orElseThrow();
+		Dps surged = new Calc().calculate(request.withSpell(surge),
+			new Kit(gear));
+		assertTrue(out.get(0).getDps() > surged.getDps(),
+			"picked " + spell + " at " + out.get(0).getDps()
+				+ " must beat Wind Surge at " + surged.getDps());
+	}
+
+	@Test
+	@DisplayName("without a twinflame the surge tier still wins - no over-correction")
+	void plainStaffStillPicksSurge() {
+		Req request = TestRequests.of(guthan,
+			Style.MAGIC, Levels.MAXED,
+			PrayerBonuses.bestAvailable(Levels.MAXED), null, 0,
+			CandidateMode.ALL_STANDARD, true, false, Owned.EMPTY, 1);
+		List<Dps> out = new LoadoutOptimizer().optimize(data, request);
+		assertFalse(out.isEmpty());
+		String spell = out.get(0).getSpellName();
+		// Powered staves carry their own builtin; only assert when the pick
+		// is a plain elemental autocast.
+		if (spell != null && Calc.isPlainElemental(
+			data.getSpells().stream().filter(s -> spell.equals(s.getName()))
+				.findFirst().orElse(null))) {
+			assertFalse(spell.endsWith("Wave") || spell.endsWith("Blast"),
+				"with no twinflame the doubled tiers have no edge, picked: " + spell);
+		}
+	}
+}

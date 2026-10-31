@@ -25,7 +25,7 @@ plugin. The animations do not come with it.
 ## Consequences
 
 - The renderer that had been lead in the companion repo transplants
-  into `com.loadoutlab.render`; the PluginMessage seam, the bare
+  into `com.ll.render`; the PluginMessage seam, the bare
   fallback surface and the install hook are deleted.
 - All 16 mascot moods (~27k tokens of animation) are dropped. The
   compute animation returns later as ASCII frames in a resource, so

@@ -1,0 +1,24 @@
+// Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
+package com.ll.data;
+
+import java.util.*;
+
+import lombok.Getter;
+
+public class GearRequirements {
+static final GearRequirements NONE = new GearRequirements(Map.of(), Set.of());
+
+Map<String, Integer> skills;
+@Getter
+Set<String> quests;
+
+GearRequirements(Map<String, Integer> skills, Set<String> quests) {
+    this.skills = new LinkedHashMap<>(skills == null ? Map.of() : skills);
+    this.quests = new LinkedHashSet<>(quests == null ? Set.of() : quests);
+}
+
+public Map<String, Integer> getSkills() { return skills; }
+
+
+public boolean isEmpty() { return skills.isEmpty() && quests.isEmpty(); }
+}

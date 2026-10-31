@@ -1,0 +1,205 @@
+package com.ll.profile;
+
+import com.ll.data.DataService;
+import com.ll.data.Tables;
+import com.ll.data.MonsterGroups;
+import com.ll.data.Monster;
+import com.ll.engine.ComputeParams;
+import java.util.List;
+import com.ll.engine.Style;
+import com.ll.optimizer.Service;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Wall-clock benchmark for the full optimizer path (patterned on
+ * HeadlessQuery): times Service.bestPerStyle end-to-end for a
+ * representative matrix of monsters x optimize modes x risk flags, using
+ * the FixtureBank account. Warm JVM: one full untimed warmup pass, then
+ * PASSES timed passes; the median per cell is reported.
+ *
+ *   ./gradlew benchmark
+ */
+public final class QueryBenchmark {
+	private static final int[] RISKS = {-1, 3};
+	private static final int PASSES = 3;
+
+	private static String[] MONSTERS = {"general graardor", "zulrah", "callisto"};
+	// The group matrix (ISS-01M65NK1MVKG23513RC89CJRS1, Andrew 2026-10-30:
+	// "raid searches seem to be taking a while"; "balanced/tanky seem to
+	// still take quite a while"): the Moons under every mode, the raids at
+	// Max DPS, one timed pass each after the warmup above.
+	private static final String[][] GROUPS = {{"Moons of Peril", "MAX_DPS"}, {"Moons of Peril", "BALANCED"}, {"Moons of Peril", "TANKY"},
+		{"Tombs of Amascut", "MAX_DPS"}, {"Chambers of Xeric", "MAX_DPS"}, {"Theatre of Blood (Entry)", "MAX_DPS"}};
+
+	private QueryBenchmark() {
+	}
+
+	public static void main(String[] args) throws Exception {
+		// Optional: --only <monster substring> narrows the matrix (profiling);
+		// --group <group substring> runs that group's cells alone, each
+		// three times after one warmup, no single-monster passes.
+		String onlyGroup = null;
+		for (int i = 0; i + 1 < args.length; i++) {
+			if ("--only".equals(args[i])) {
+				MONSTERS = new String[]{args[i + 1]};
+			}
+			if ("--group".equals(args[i])) {
+				onlyGroup = args[i + 1];
+			}
+		}
+		Tables data = new DataService().load();
+		PlayerProfile profile = FixtureBank.profile(data);
+		Service service = new Service(data);
+		int[] fingerprint = {1};
+		if (onlyGroup != null) {
+			try {
+				for (String[] cell : GROUPS) {
+					if (!cell[0].contains(onlyGroup)) continue;
+					runGroup(service, data, profile, cell[0], cell[1], fingerprint);
+					long[] times = new long[3];
+					for (int pass = 0; pass < 3; pass++) times[pass] = runGroup(service, data, profile, cell[0], cell[1], fingerprint);
+					System.out.println(String.format(Locale.ROOT, "%-25s %-9s %s", cell[0], cell[1], Arrays.toString(times)));
+				}
+			} finally {
+				service.shutdown();
+			}
+			return;
+		}
+		try {
+			// Warmup: one untimed full pass so the JIT sees every path.
+			for (String monster : MONSTERS) {
+				for (int risk : RISKS) {
+					runOnce(service, data, profile, monster, risk, fingerprint);
+				}
+			}
+			// The friction + pin cell: a revenant (salve territory) with the
+			// salve owned AND pinned, risk-capped - the per-trial rebuild-veto
+			// and pinned-risk-floor paths the standard matrix never touches.
+			runPinnedSalve(service, data, profile, fingerprint);
+			System.out.println("monster            risk  median_ms  passes_ms");
+			for (String monster : MONSTERS) {
+				for (int risk : RISKS) {
+					long[] times = new long[PASSES];
+					for (int pass = 0; pass < PASSES; pass++) {
+						times[pass] = runOnce(service, data, profile, monster, risk, fingerprint);
+					}
+					long[] sorted = times.clone();
+					Arrays.sort(sorted);
+					System.out.println(String.format(Locale.ROOT,
+						"%-18s %-5s %9d  %s",
+						monster, risk < 0 ? "off" : ("lr" + risk),
+						sorted[PASSES / 2], Arrays.toString(times)));
+				}
+			}
+			long[] times = new long[PASSES];
+			for (int pass = 0; pass < PASSES; pass++) {
+				times[pass] = runPinnedSalve(service, data, profile, fingerprint);
+			}
+			long[] sorted = times.clone();
+			Arrays.sort(sorted);
+			System.out.println(String.format(Locale.ROOT,
+				"%-18s %-5s %9d  %s",
+				"rev demon+salvepin", "lr3",
+				sorted[PASSES / 2], Arrays.toString(times)));
+			System.out.println("group                     mode       ms");
+			for (String[] cell : GROUPS) {
+				long ms = runGroup(service, data, profile, cell[0], cell[1], fingerprint);
+				System.out.println(String.format(Locale.ROOT, "%-25s %-9s %7d", cell[0], cell[1], ms));
+			}
+		} finally {
+			service.shutdown();
+		}
+	}
+
+	/**
+	 * The risk-constrained + pinned scenario: revenant demon at lr3 with a
+	 * salve amulet(ei) added to the fixture bank and pinned in every style.
+	 * The salve is friction gear, so every trial runs the rebuild veto, and
+	 * the pin keeps the pinned-risk-floor path live.
+	 */
+	private static long runPinnedSalve(Service service, Tables data,
+		PlayerProfile profile, int[] fingerprint) throws Exception {
+		com.ll.data.Gear salve = null;
+		for (com.ll.data.Gear item : data.getGearItems()) {
+			if ("salve amulet(ei)".equalsIgnoreCase(item.getName())
+				&& item.isStandardGear() && !data.isVariant(item.getId())) {
+				salve = item;
+				break;
+			}
+		}
+		if (salve == null) {
+			throw new IllegalStateException("salve amulet(ei) not in dataset");
+		}
+		java.util.Map<Integer, Integer> owned =
+			new java.util.LinkedHashMap<>(profile.oi().getQuantities());
+		owned.put(salve.getId(), 1);
+		java.util.Map<com.ll.engine.Style,
+			java.util.Map<com.ll.data.Slot, Integer>> pins = new java.util.EnumMap<>(
+			com.ll.engine.Style.class);
+		for (com.ll.engine.Style style : com.ll.engine.Style.concreteValues()) {
+			pins.put(style, java.util.Map.of(com.ll.data.Slot.NECK, salve.getId()));
+		}
+		Monster monster = data.searchMonsters("revenant demon", 1).get(0);
+		CountDownLatch done = new CountDownLatch(1);
+		long start = System.nanoTime();
+		com.ll.optimizer.ServiceCalls.bestPerStyle(service, monster, profile.realLevels, profile.boostedLevels,
+			profile.prayerUnlocks, profile.requirements,
+			new com.ll.engine.Owned(owned, true),
+			fingerprint[0]++, false, false, "",
+			Collections.emptySet(), 3,
+			com.ll.engine.Req.DEFAULT_RISK_BUDGET_GP, false,
+			Collections.emptySet(), 0,
+			pins, null,
+			(Map<Style, Service.Pick> results) -> done.countDown());
+		if (!done.await(600, TimeUnit.SECONDS)) {
+			throw new IllegalStateException("benchmark cell timed out: pinned salve");
+		}
+		return (System.nanoTime() - start) / 1_000_000L;
+	}
+
+	// One group search on the fixture account, maxSwaps 3, under a mode.
+	private static long runGroup(Service service, Tables data, PlayerProfile profile,
+		String group, String mode, int[] fingerprint) throws Exception {
+		List<Monster> mobs = MonsterGroups.load(data).stream().filter(g -> group.equals(g.getName()))
+			.findFirst().orElseThrow(() -> new IllegalStateException(group)).getMobs();
+		ComputeParams p = new ComputeParams();
+		p.maxSwaps = 3;
+		p.optimizeMode = mode;
+		CountDownLatch done = new CountDownLatch(1);
+		long start = System.nanoTime();
+		service.bestPerStyleAcross(mobs, profile.realLevels, profile.boostedLevels, profile.prayerUnlocks, profile.requirements,
+			profile.oi(), fingerprint[0]++, p, Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(),
+			Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptySet(),
+			r -> done.countDown());
+		if (!done.await(1200, TimeUnit.SECONDS)) {
+			throw new IllegalStateException("benchmark cell timed out: " + group + " " + mode);
+		}
+		return (System.nanoTime() - start) / 1_000_000L;
+	}
+
+	private static long runOnce(Service service, Tables data,
+		PlayerProfile profile, String monsterName,
+		int lowRisk, int[] fingerprint) throws Exception {
+		Monster monster = data.searchMonsters(monsterName, 1).get(0);
+		CountDownLatch done = new CountDownLatch(1);
+		long start = System.nanoTime();
+		// A fresh fingerprint per run defeats the result cache, so every
+		// run measures a full computation.
+		com.ll.optimizer.ServiceCalls.bestPerStyle(service, monster, profile.realLevels, profile.boostedLevels,
+			profile.prayerUnlocks, profile.requirements, profile.oi(),
+			fingerprint[0]++, false, false, "",
+			Collections.emptySet(), lowRisk,
+			com.ll.engine.Req.DEFAULT_RISK_BUDGET_GP, false,
+			Collections.emptySet(), 0,
+			(Map<Style, Service.Pick> results) -> done.countDown());
+		if (!done.await(600, TimeUnit.SECONDS)) {
+			throw new IllegalStateException("benchmark cell timed out: " + monsterName);
+		}
+		return (System.nanoTime() - start) / 1_000_000L;
+	}
+}

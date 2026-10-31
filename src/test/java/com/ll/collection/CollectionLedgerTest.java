@@ -1,0 +1,164 @@
+package com.ll.collection;
+
+import com.google.gson.Gson;
+import com.ll.testsupport.InMemoryConfigManager;
+import java.util.Map;
+import net.runelite.client.config.ConfigManager;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class CollectionLedgerTest {
+	private ConfigManager cfg;
+	private CollectionLedger ledger;
+
+	@BeforeEach
+	void setUp() {
+		cfg = InMemoryConfigManager.create();
+		ledger = new CollectionLedger(cfg, new Gson());
+		ledger.loadScope("std");
+	}
+
+	@Test
+	@DisplayName("the merged view sums quantities across equipment, inventory, and bank")
+	void mergeSumsAcrossSources() {
+		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1, 861, 2));
+		ledger.update(CollectionLedger.Source.INVENTORY, Map.of(861, 1));
+		ledger.update(CollectionLedger.Source.EQUIPMENT, Map.of(11832, 1));
+
+		Map<Integer, Integer> owned = ledger.owned();
+		assertEquals(1, owned.get(4151));
+		assertEquals(3, owned.get(861));
+		assertEquals(1, owned.get(11832));
+	}
+
+	@Test
+	@DisplayName("the ledger survives a new session - bank from LAST visit still counts")
+	void persistsAcrossInstances() {
+		ledger.update(CollectionLedger.Source.BANK, Map.of(20997, 1));
+
+		// A fresh instance on the same backing store stands in for the next
+		// session: no bank visit yet, but ownership is already known.
+		CollectionLedger next = new CollectionLedger(cfg, new Gson());
+		next.loadScope("std");
+		assertEquals(1, next.owned().get(20997));
+		assertTrue(next.bankKnown());
+	}
+
+	@Test
+	@DisplayName("a seasonal-world login never touches the standard ledger")
+	void worldScopesAreIsolated() {
+		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1));
+
+		ledger.loadScope("seasonal");
+		assertTrue(ledger.owned().isEmpty(), "seasonal scope starts empty");
+		ledger.update(CollectionLedger.Source.BANK, Map.of(995, 1_000_000));
+
+		ledger.loadScope("std");
+		assertEquals(1, ledger.owned().get(4151));
+		assertNull(ledger.owned().get(995), "leagues gold must not leak into the main ledger");
+	}
+
+	@Test
+	@DisplayName("an unchanged snapshot neither rewrites config nor changes the fingerprint")
+	void unchangedSnapshotIsANoOp() {
+		assertTrue(ledger.update(CollectionLedger.Source.INVENTORY, Map.of(4151, 1)));
+		int fp = ledger.fingerprint();
+
+		clearInvocations(cfg);
+		assertFalse(ledger.update(CollectionLedger.Source.INVENTORY, Map.of(4151, 1)));
+		assertEquals(fp, ledger.fingerprint());
+		verify(cfg, never()).setConfiguration(anyString(), anyString(), anyString());
+	}
+
+	@Test
+	@DisplayName("the fingerprint changes when ownership actually changes")
+	void fingerprintTracksOwnership() {
+		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1));
+		int before = ledger.fingerprint();
+		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1, 11802, 1));
+		assertNotEquals(before, ledger.fingerprint());
+	}
+
+	@Test
+	@DisplayName("a corrupt persisted entry starts that snapshot fresh instead of failing")
+	void corruptEntryDegradesGracefully() {
+		cfg.setConfiguration(CollectionLedger.CONFIG_GROUP, "std.collection.bank", "{not json!");
+		CollectionLedger fresh = new CollectionLedger(cfg, new Gson());
+		fresh.loadScope("std");
+		assertTrue(fresh.owned().isEmpty());
+		assertFalse(fresh.bankKnown());
+	}
+
+	@Test
+	@DisplayName("the looting bag is a ledger source: its contents count as owned and persist")
+	void lootingBagCountsAndPersists() {
+		ledger.update(CollectionLedger.Source.LOOTING_BAG, Map.of(2434, 3));
+		assertEquals(3, ledger.owned().get(2434));
+
+		CollectionLedger next = new CollectionLedger(cfg, new Gson());
+		next.loadScope("std");
+		assertEquals(3, next.owned().get(2434));
+		assertFalse(next.bankKnown(), "a looting bag scan alone is not a bank scan");
+	}
+
+	@Test
+	@DisplayName("the storage sources (POH, STASH, cargo) merge into owned and persist independently")
+	void storageSourcesMergeAndPersist() {
+		ledger.update(CollectionLedger.Source.POH_COSTUMES, Map.of(11832, 1));
+		ledger.update(CollectionLedger.Source.STASH, Map.of(4151, 1));
+		ledger.update(CollectionLedger.Source.CARGO_HOLD_1, Map.of(2, 5000));
+
+		CollectionLedger next = new CollectionLedger(cfg, new Gson());
+		next.loadScope("std");
+		assertEquals(1, next.owned().get(11832));
+		assertEquals(1, next.owned().get(4151));
+		assertEquals(5000, next.owned().get(2));
+		assertFalse(next.bankKnown());
+
+		// Emptying a STASH via a fresh chart read removes only its items.
+		next.update(CollectionLedger.Source.STASH, Map.of());
+		assertNull(next.owned().get(4151));
+		assertEquals(1, next.owned().get(11832));
+	}
+
+	@org.junit.jupiter.api.Test
+	void accountScopesNeverShareAndLegacyDataIsAdoptedOnce() {
+		com.google.gson.Gson gson = new com.google.gson.Gson();
+		CollectionLedger ledger = new CollectionLedger(cfg, gson);
+		// Legacy pre-account data saved under the bare world scope.
+		ledger.loadScope("std");
+		ledger.update(CollectionLedger.Source.BANK, java.util.Map.of(4151, 1));
+		// Account A adopts the legacy bank on first load...
+		ledger.loadScope("std.1111");
+		org.junit.jupiter.api.Assertions.assertTrue(ledger.owned().containsKey(4151));
+		// ...and its own writes stay isolated from account B.
+		ledger.update(CollectionLedger.Source.BANK, java.util.Map.of(20997, 1));
+		ledger.loadScope("std.2222");
+		org.junit.jupiter.api.Assertions.assertFalse(ledger.owned().containsKey(20997));
+		// B adopts NOTHING: A already took the legacy scan, and the entry was
+		// removed with it. Letting every account adopt it (the original
+		// reading of "once") is what showed a test account the main's bank
+		// and priced its BiS off gear it does not own - field report
+		// 2026-08-26. An empty ledger until B scans is the honest state.
+		org.junit.jupiter.api.Assertions.assertFalse(ledger.owned().containsKey(4151));
+		// Back to A: the tbow is still there.
+		ledger.loadScope("std.1111");
+		org.junit.jupiter.api.Assertions.assertTrue(ledger.owned().containsKey(20997));
+	}
+
+	@org.junit.jupiter.api.Test
+	void perSourceSnapshotsAreReadableAndReadOnly() {
+		CollectionLedger ledger = new CollectionLedger(cfg, new Gson());
+		ledger.loadScope("std");
+		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1));
+
+		assertEquals(Map.of(4151, 1), ledger.snapshot(CollectionLedger.Source.BANK));
+		assertEquals(Map.of(), ledger.snapshot(CollectionLedger.Source.STASH));
+		org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class,
+			() -> ledger.snapshot(CollectionLedger.Source.BANK).put(1, 1));
+	}
+}

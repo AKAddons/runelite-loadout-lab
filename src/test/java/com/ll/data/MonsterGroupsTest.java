@@ -1,0 +1,327 @@
+package com.ll.data;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * The curated groups must resolve COMPLETELY against loaded corpus rows -
+ * a silent member drop at runtime is a curation bug this test catches
+ * (the loader itself stays lenient so a bad row never takes the panel
+ * down). Members with ambiguous names must name a version.
+ */
+class MonsterGroupsTest {
+	private static Tables data;
+	private static List<MonsterGroups.MonsterGroup> groups;
+
+	@BeforeAll
+	static void load() {
+		data = new DataService().load();
+		groups = MonsterGroups.load(data);
+	}
+
+	@Test
+	@DisplayName("every curated member resolves to exactly one loaded row")
+	void everyMemberResolves() throws Exception {
+		try (InputStreamReader reader = new InputStreamReader(
+			MonsterGroupsTest.class.getResourceAsStream("/com/ll/data/monster_groups.json"),
+			StandardCharsets.UTF_8)) {
+			JsonArray rows = new JsonParser().parse(reader).getAsJsonArray();
+			int curated = 0;
+			for (JsonElement element : rows) {
+				JsonObject row = element.getAsJsonObject();
+				String group = row.get("name").getAsString();
+				for (JsonElement m : row.getAsJsonArray("members")) {
+					JsonObject member = m.getAsJsonObject();
+					String name = member.get("name").getAsString();
+					String version = member.has("version") ? member.get("version").getAsString() : null;
+					assertNotNull(MonsterGroups.resolve(data, name, version),
+						group + " member did not resolve (missing or ambiguous): "
+							+ name + (version == null ? "" : " [" + version + "]"));
+					curated++;
+				}
+			}
+			// The loader kept every resolved member (nothing silently dropped).
+			int loaded = groups.stream().mapToInt(g -> g.getMobs().size()).sum();
+			assertEquals(curated, loaded, "loader dropped members");
+		}
+	}
+
+	@Test
+	@DisplayName("the flagship groups load with their full rosters")
+	void flagshipRosters() {
+		assertEquals(26, groups.size(), "25 plus the Fractured Archive (2026-10-20)");
+		assertEquals(4, byName("Yama").getMobs().size());
+		assertEquals(3, byName("Grotesque Guardians").getMobs().size());
+		assertEquals(3, byName("The Hueycoatl").getMobs().size());
+		assertEquals(4, byName("Phantom Muspah").getMobs().size());
+		assertEquals(5, byName("Nex").getMobs().size());
+		// 2 near + 2 out-of-reach phase forms + 2 elementals (2026-08-10).
+		assertEquals(6, byName("Royal Titans").getMobs().size());
+		// Far (out of reach) + Nearby + Roaring (2026-08-20).
+		assertEquals(3, byName("Maggot King").getMobs().size());
+		assertEquals(9, byName("Fortis Colosseum").getMobs().size());
+		assertEquals(4, byName("The Gauntlet").getMobs().size());
+		assertEquals(4, byName("Corrupted Gauntlet").getMobs().size());
+		// The gauntlets stay flagged until the crystal-cost tiering lands
+		// (the note renders in the result card, not the search label).
+		assertTrue(byName("The Gauntlet").comingSoon);
+		assertTrue(byName("Corrupted Gauntlet").comingSoon);
+		assertFalse(byName("Fight Caves").comingSoon);
+		assertFalse(byName("The Gauntlet").label().contains("coming soon"));
+		assertEquals(7, byName("Fight Caves").getMobs().size());
+		assertEquals(9, byName("Inferno").getMobs().size());
+		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());
+		assertEquals(10, byName("Theatre of Blood (Entry)").getMobs().size());
+		assertEquals(10, byName("Theatre of Blood (Hard)").getMobs().size());
+		// Kephri's scarab adds are deliberately absent, same call as the
+		// Sire's spawn/scion (field decision 2026-08-06).
+		// P3 is ONE enraged Warden - the one left alive after P2 (Andrew
+		// 2026-09-02); both carry the same stats, so a single row.
+		assertEquals(12, byName("Tombs of Amascut").getMobs().size());
+		java.util.List<Monster> enraged = byName("Tombs of Amascut").getMobs().stream()
+			.filter(m -> "Enraged".equals(m.getVersion()))
+			.collect(java.util.stream.Collectors.toList());
+		assertEquals(1, enraged.size());
+		assertTrue(enraged.get(0).label().contains("left alive"), enraged.get(0).label());
+		assertTrue(byName("Tombs of Amascut").getMobs().stream()
+			.noneMatch(m -> m.getName().contains("Scarab")));
+		// The P2 spec-dump window rides the Core-ejected row, nicked so
+		// the roster reads as the phase players know (field report
+		// 2026-08-06: "ToA is missing the crucial heart phase").
+		assertTrue(byName("Tombs of Amascut").getMobs().stream()
+			.anyMatch(m -> m.getVersion().startsWith("Core-ejected")
+				&& m.label().contains("Warden's Core")));
+		// Vents + the two phase rows only: the spawn/scion adds are
+		// deliberately absent - players walk or ignore them (field
+		// decision 2026-08-06); + Add mob covers whoever kills them.
+		assertEquals(3, byName("Abyssal Sire").getMobs().size());
+		assertTrue(byName("Abyssal Sire").getMobs().stream()
+			.noneMatch(m -> "Scion".equals(m.getName()) || "Spawn".equals(m.getName())));
+		assertEquals(15, byName("Chambers of Xeric").getMobs().size());
+		// The Jad in the Fight Caves roster is the real one, not the
+		// Colosseum's TzTok-Jad-Rek; the Tok-Xil is the fight-caves row,
+		// not the Construction target dummy.
+		assertTrue(byName("Fight Caves").getMobs().stream()
+			.anyMatch(m -> m.getName().equals("TzTok-Jad")));
+		assertTrue(byName("Fight Caves").getMobs().stream()
+			.noneMatch(m -> m.getName().contains("Construction")));
+	}
+
+	@Test
+	@DisplayName("Inferno and Fight Caves rows wear their community names")
+	void communityNicknames() {
+		// The Jal-/Tz- vocabulary is what made a field report say "the
+		// bats" (2026-08-06): rows display the name players actually use.
+		// getName() stays the in-game name, so name-keyed rules (the
+		// nibbler barrage note, TzHaar handling) keep firing.
+		Monster bat = byName("Inferno").getMobs().stream()
+			.filter(m -> "Jal-MejRah".equals(m.getName())).findFirst().orElseThrow();
+		assertTrue(bat.label().startsWith("Bat"), "was: " + bat.label());
+		assertEquals("Jal-MejRah", bat.getName());
+
+		Monster nibbler = byName("Inferno").getMobs().stream()
+			.filter(m -> "Jal-Nib".equals(m.getName())).findFirst().orElseThrow();
+		assertTrue(nibbler.label().startsWith("Nibbler"));
+
+		assertTrue(byName("Fight Caves").getMobs().stream()
+			.anyMatch(m -> m.label().startsWith("Jad")));
+		// Plain corpus searches stay un-nicked - only curated group rows
+		// carry the community name.
+		assertEquals("Jal-MejRah",
+			data.searchMonsters("jal-mejrah", 1).get(0).label().split(" - ")[0]);
+	}
+
+	@Test
+	@DisplayName("group search finds by fragment, in curated order")
+	void searchFindsGroups() {
+		assertEquals("Fight Caves",
+			MonsterGroups.search(groups, "fight", 5).get(0).getName());
+		assertEquals("Inferno",
+			MonsterGroups.search(groups, "infer", 5).get(0).getName());
+		assertTrue(MonsterGroups.search(groups, "x", 5).isEmpty(),
+			"single-char queries return nothing");
+		// Player vocabulary reaches the groups via aliases.
+		assertEquals("Fight Caves",
+			MonsterGroups.search(groups, "jad", 5).get(0).getName());
+		assertEquals("Inferno",
+			MonsterGroups.search(groups, "zuk", 5).get(0).getName());
+		assertEquals("Dagannoth Kings",
+			MonsterGroups.search(groups, "dks", 5).get(0).getName());
+		// Andrew (2026-10-15, first 0.5.4 field pass): "just fossil island
+		// wyvern didn't come up with anything" - the four cave wyverns carry
+		// their own names, so the slayer task's name needs a group.
+		assertEquals("Fossil Island Wyverns",
+			MonsterGroups.search(groups, "fossil island wyvern", 5).get(0).getName());
+		assertEquals("Fossil Island Wyverns",
+			MonsterGroups.search(groups, "fossil wyverns", 5).get(0).getName());
+		List<String> wyverns = new ArrayList<>();
+		for (Monster m : byName("Fossil Island Wyverns").getMobs()) {
+			wyverns.add(m.getName());
+		}
+		assertEquals(List.of("Spitting Wyvern", "Taloned Wyvern", "Long-tailed Wyvern", "Ancient Wyvern"), wyverns);
+		assertEquals("Skeletal Wyvern",
+			data.searchMonsters("skeletal wyvern", 1).get(0).getName(), "no wyvern alias swallows the skeletal one");
+	}
+
+	@Test
+	@DisplayName("tormented demon phases are synthetic style-immune variants of one sheet")
+	void tormentedDemonPhases() {
+		MonsterGroups.MonsterGroup tds = byName("Tormented Demons");
+		assertEquals(3, tds.getMobs().size());
+		java.util.Set<Integer> ids = new java.util.HashSet<>();
+		for (Monster phase : tds.getMobs()) {
+			assertTrue(ids.add(phase.getId()), "synthetic ids must be distinct");
+			assertEquals("Tormented Demon", phase.getName(),
+				"the NAME survives - name-keyed TD rules keep applying");
+			assertEquals(600, phase.getHitpoints());
+			assertTrue(phase.hasAttribute("demon"));
+		}
+		// Each phase is immune to exactly its shielded style.
+		com.ll.engine.Style[] styles = {
+			com.ll.engine.Style.MELEE,
+			com.ll.engine.Style.RANGED,
+			com.ll.engine.Style.MAGIC};
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				assertEquals(i == j, com.ll.engine.Immunity
+						.styleImmune(tds.getMobs().get(i), styles[j]),
+					tds.getMobs().get(i).getVersion() + " vs " + styles[j]);
+			}
+		}
+		// Search reaches it by player vocabulary.
+		assertEquals("Tormented Demons",
+			MonsterGroups.search(groups, "td", 5).get(0).getName());
+		// The gorillas rotate protection prayers the same way - three
+		// synthetic style-immune phases of one sheet, demon attribute kept.
+		MonsterGroups.MonsterGroup gorillas = byName("Demonic gorillas");
+		assertEquals(3, gorillas.getMobs().size());
+		for (Monster phase : gorillas.getMobs()) {
+			assertEquals("Demonic gorilla", phase.getName());
+			assertTrue(phase.hasAttribute("demon"));
+		}
+		assertEquals("Demonic gorillas",
+			MonsterGroups.search(groups, "demonics", 5).get(0).getName());
+		// A synthetic phase's profile id maps back to its real monster,
+		// so pins/exclusions/notes set on the plain mob follow it into
+		// the group (transitive exclusions).
+		for (Monster phase : tds.getMobs()) {
+			assertTrue(phase.getId() >= Monster.SYNTHETIC_ID_BASE);
+			assertTrue(phase.profileId() < Monster.SYNTHETIC_ID_BASE);
+			assertEquals(MonsterGroups.resolve(data, "Tormented Demon", null).getId(),
+				phase.profileId());
+		}
+	}
+
+	@Test
+	@DisplayName("the raid groups resolve and answer to player vocabulary")
+	void raidGroups() {
+		assertTrue(MonsterGroups.search(groups, "tob", 5).get(0).getName()
+			.startsWith("Theatre of Blood"));
+		assertEquals("Tombs of Amascut",
+			MonsterGroups.search(groups, "toa", 5).get(0).getName());
+		assertEquals("Chambers of Xeric",
+			MonsterGroups.search(groups, "cox", 5).get(0).getName());
+		// Verzik's three phases and Vasilias's three forms ride each mode.
+		for (String mode : new String[]{"Theatre of Blood (Entry)", "Theatre of Blood (Hard)"}) {
+			assertEquals(3, byName(mode).getMobs().stream()
+				.filter(m -> m.getName().equals("Verzik Vitur")).count());
+			assertEquals(3, byName(mode).getMobs().stream()
+				.filter(m -> m.getName().equals("Nylocas Vasilias")).count());
+		}
+		// A Vasilias form takes damage ONLY from its own style.
+		Monster meleeForm = byName("Theatre of Blood (Hard)").getMobs().stream()
+			.filter(m -> m.getVersion().contains("Melee form")).findFirst().orElseThrow(AssertionError::new);
+		assertFalse(com.ll.engine.Immunity.styleImmune(
+			meleeForm, com.ll.engine.Style.MELEE));
+		assertTrue(com.ll.engine.Immunity.styleImmune(
+			meleeForm, com.ll.engine.Style.RANGED));
+		assertTrue(com.ll.engine.Immunity.styleImmune(
+			meleeForm, com.ll.engine.Style.MAGIC));
+		// The P2 Wardens are single-style; KQ crawling is melee-only.
+		Monster elidinis = byName("Tombs of Amascut").getMobs().stream()
+			.filter(m -> m.getVersion().contains("magic only")).findFirst().orElseThrow(AssertionError::new);
+		assertTrue(com.ll.engine.Immunity.styleImmune(
+			elidinis, com.ll.engine.Style.MELEE));
+		assertFalse(com.ll.engine.Immunity.styleImmune(
+			elidinis, com.ll.engine.Style.MAGIC));
+		Monster crawling = byName("Kalphite Queen").getMobs().stream()
+			.filter(m -> m.getVersion().contains("melee only")).findFirst().orElseThrow(AssertionError::new);
+		assertFalse(com.ll.engine.Immunity.styleImmune(
+			crawling, com.ll.engine.Style.MELEE));
+		assertTrue(com.ll.engine.Immunity.styleImmune(
+			crawling, com.ll.engine.Style.RANGED));
+		assertEquals("Kalphite Queen",
+			MonsterGroups.search(groups, "kq", 5).get(0).getName());
+		// Akkha cycles prayers leaving exactly ONE style live per phase.
+		java.util.List<Monster> akkha = byName("Tombs of Amascut").getMobs().stream()
+			.filter(m -> m.getName().equals("Akkha"))
+			.collect(java.util.stream.Collectors.toList());
+		// ...and makes his final stand melee-only at 20% hp with Protect from
+		// Magic and Missiles both up (wiki; Andrew 2026-09-02: "missing the
+		// final phase of akkha").
+		assertEquals(4, akkha.size());
+		assertEquals("Final stand (melee only)", akkha.get(3).getVersion());
+		assertFalse(com.ll.engine.Immunity.styleImmune(
+			akkha.get(3), com.ll.engine.Style.MELEE));
+		for (Monster phase : akkha) {
+			int immune = 0;
+			for (com.ll.engine.Style style : com.ll.engine.Style.concreteValues()) {
+				if (com.ll.engine.Immunity.styleImmune(phase, style)) {
+					immune++;
+				}
+			}
+			assertEquals(2, immune, phase.getVersion() + " must leave exactly one style live");
+		}
+		assertEquals("Abyssal Sire",
+			MonsterGroups.search(groups, "sire", 5).get(0).getName());
+		assertEquals("Fortis Colosseum",
+			MonsterGroups.search(groups, "colosseum", 5).get(0).getName());
+		assertEquals("Corrupted Gauntlet",
+			MonsterGroups.search(groups, "cg", 5).get(0).getName());
+		// Olm is head plus both claws.
+		assertEquals(3, byName("Chambers of Xeric").getMobs().stream()
+			.filter(m -> m.getName().equals("Great Olm")).count());
+		// Raids preset a bigger Inventory default; other groups do not.
+		assertEquals(12, byName("Theatre of Blood (Entry)").getInventory());
+		assertEquals(12, byName("Theatre of Blood (Hard)").getInventory());
+		assertEquals(12, byName("Tombs of Amascut").getInventory());
+		assertEquals(12, byName("Chambers of Xeric").getInventory());
+		assertEquals(0, byName("Fight Caves").getInventory());
+	}
+
+	private static MonsterGroups.MonsterGroup byName(String name) {
+		return groups.stream().filter(g -> g.getName().equals(name))
+			.findFirst().orElseThrow(() -> new AssertionError("missing group " + name));
+	}
+
+
+	@Test
+	@DisplayName("Tombs of Amascut carries its stipulations: the P2 Wardens weigh 3x in the kit and the Wardens' spec is the dragon dagger")
+	void toaStipulations() {
+		int weighted = 0;
+		int dagger = 0;
+		for (Monster mob : byName("Tombs of Amascut").getMobs()) {
+			if ("3".equals(mob.attributeValue("weight:"))) {
+				weighted++;
+				assertTrue(mob.getVersion().startsWith("P2"), mob.label());
+				assertEquals(3 * mob.getHitpoints(), (int) com.ll.engine.MonsterMechanics.kitWeight(mob));
+			}
+			if ("dragon dagger".equals(com.ll.engine.MonsterMechanics.specStipulation(mob))) {
+				dagger++;
+			}
+		}
+		assertEquals(2, weighted, "both P2 Wardens");
+		assertEquals(2, dagger, "the core and the enraged Warden");
+	}
+}

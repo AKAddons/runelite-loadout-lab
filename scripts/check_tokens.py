@@ -13,10 +13,14 @@ re-printed source (a parser strips the comments and prints the tree back).
 Model: every line's leading whitespace dropped, comments out (a small lexer:
 strings kept whole), tiktoken o200k_base, times a factor. Readings: 0.7.1
 202k / 181,122 = 1.115; 0.8.0 204k / 184,711 = 1.104; 0.8.1 201,885 /
-183,520 = 1.100. The gate uses the worst, 1.115, and compares THAT to the
-bot's 200,000. Formatting tricks (dedent, joined lines) cannot move this
-model much; identifiers, keywords and punctuation can. Without tiktoken a
-char/token estimate stands in, high.
+183,520 = 1.100. 0.7.1 still had joined one-line blocks that a re-print
+expands, which is why its factor runs high; 0.8.0 and 0.8.1 have today's
+formatting, so the gate uses 1.105 (between their 1.104 and 1.100) and
+compares THAT to the bot's 200,000. A second check that reproduced 0.8.1
+within 66 tokens: IntelliJ's formatter over the tree, comments out, o200k
+(scratch script fmt_now.sh); slim 18 read 197,782 there. Formatting tricks
+(dedent, joined lines) cannot move this model much; identifiers, keywords
+and punctuation can. Without tiktoken a char/token estimate stands in, high.
 
 Run directly, or via `./gradlew checkTokens` (and it's part of `preSubmit`).
 """
@@ -25,7 +29,7 @@ import os
 import sys
 
 CAP = 200_000          # the bot's line, in the BOT's tokens
-BOT_OVER_LEXED = 1.115 # the bot's count over our lexed, de-indented o200k count (see above)
+BOT_OVER_LEXED = 1.105 # the bot's count over our lexed, de-indented o200k count (see above)
 WARN_AT = 195_000      # plan the next externalisation above this (bot tokens)
 CHARS_PER_TOKEN = 3.6  # fallback only; low = conservative
 

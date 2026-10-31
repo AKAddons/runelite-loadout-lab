@@ -1,0 +1,87 @@
+package com.ll.engine;
+
+import com.ll.data.DataService;
+import com.ll.data.Gear;
+import com.ll.data.Slot;
+import com.ll.data.Tables;
+import com.ll.data.Monster;
+import com.ll.data.Spell;
+import java.util.EnumMap;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Twinflame staff (wiki, verified 2026-07-18): cast speed 6, +10%
+ * accuracy and damage on standard-book spells, and elemental
+ * Bolt/Blast/Wave spells fire a second hit at 40% - Strike and Surge
+ * do not double. Field question that found the gap: Barrows brothers
+ * are air-weak (severity 50), and the un-modeled staff lost to a
+ * powered staff it should beat.
+ */
+class TwinflameStaffTest {
+	private static Tables data;
+	private static Monster dharok;
+	private static final Calc calc = new Calc();
+
+	@BeforeAll
+	static void load() {
+		data = new DataService().load();
+		dharok = data.searchMonsters("dharok", 1).get(0);
+	}
+
+	private static Kit wielding(int weaponId) {
+		Gear weapon = data.getGear(weaponId);
+		assertNotNull(weapon, "corpus is missing item " + weaponId);
+		EnumMap<Slot, Gear> gear = new EnumMap<>(Slot.class);
+		gear.put(Slot.WEAPON, weapon);
+		return new Kit(gear);
+	}
+
+	private static Spell spell(String name) {
+		return data.getSpells().stream().filter(s -> s.getName().equalsIgnoreCase(name))
+			.findFirst().orElseThrow(() -> new AssertionError("no spell " + name));
+	}
+
+	private static Req request() {
+		return new Req(dharok, Style.MAGIC, Levels.MAXED,
+			PrayerBonuses.NONE, null, 0,
+			CandidateMode.ALL_STANDARD, true, false,
+			Owned.EMPTY, RequirementProfile.MAXED, 1);
+	}
+
+	@Test
+	@DisplayName("the twinflame casts at 6 ticks and doubles Wave but not Surge")
+	void doublesWaveNotSurge() {
+		Dps wave = calc.calculate(request().withSpell(spell("Wind Wave")), wielding(30634));
+		Dps surge = calc.calculate(request().withSpell(spell("Wind Surge")), wielding(30634));
+		assertNotNull(wave);
+		assertNotNull(surge);
+		assertEquals(6, wave.getAttackSpeed(), "wiki: attack and cast speed of 6");
+		// Surge's higher base max (23 vs 19) loses to the Wave's 40%
+		// second hit - the doubling excludes Surge by name.
+		assertTrue(wave.getDps() > surge.getDps(),
+			"Wind Wave " + wave.getDps() + " must beat Wind Surge " + surge.getDps());
+	}
+
+	@Test
+	@DisplayName("vs an air-weak brother the swamp trident legitimately wins")
+	void tridentBeatsTwinflameVsBarrows() {
+		// REFEREE'D 2026-08-21 (vectors twinflame-dharok 6.02 vs
+		// swamptrident-dharok 6.53, both engines agreeing to <0.1%):
+		// the July field pin ("twinflame must beat the trident") was an
+		// artifact of the old inflated twinflame model - a separate
+		// 1.10x damage multiplier instead of +100 into the magic-damage
+		// pool, and a smooth 1.4x second hit instead of the per-roll
+		// trunc(0.4 x roll). The honest ordering flips.
+		Dps twinflame = calc.calculate(request().withSpell(spell("Wind Wave")), wielding(30634));
+		Dps trident = calc.calculate(request(), wielding(12899));
+		assertNotNull(twinflame);
+		assertNotNull(trident);
+		assertTrue(trident.getDps() > twinflame.getDps(),
+			"swamp trident " + trident.getDps() + " over twinflame " + twinflame.getDps()
+				+ " vs the air-weak Dharok (official-calc referee'd)");
+	}
+}

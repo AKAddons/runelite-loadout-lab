@@ -1,5 +1,5 @@
 {
-  "$comment": "Central feature registry. One entry per user-facing feature. Every code change that adds/alters a feature updates its entry (and the README feature guide + CHANGELOG) in the same PR. `./gradlew checkDocs` audits this file against README.md, docs/img/, and the source tree, and prints the documentation-gap report. `code`/`tests` paths are relative to src/main/java/com/loadoutlab and src/test/java/com/loadoutlab respectively; `anchor` must equal the slugified '### ' heading of the feature's section in the README '# Feature guide'.",
+  "$comment": "Central feature registry. One entry per user-facing feature. Every code change that adds/alters a feature updates its entry (and the README feature guide + CHANGELOG) in the same PR. `./gradlew checkDocs` audits this file against README.md, docs/img/, and the source tree, and prints the documentation-gap report. `code`/`tests` paths are relative to src/main/java/com/ll and src/test/java/com/ll respectively; `anchor` must equal the slugified '### ' heading of the feature's section in the README '# Feature guide'.",
   "features": [
     {
       "id": "owned-bis",
