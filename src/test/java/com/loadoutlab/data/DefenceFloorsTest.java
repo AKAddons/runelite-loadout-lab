@@ -45,6 +45,18 @@ class DefenceFloorsTest {
 	}
 
 	@Test
+	@DisplayName("the Moons of Peril cannot be drained, every version, and Death Charge does nothing there; it works at Vardorvis")
+	void moonsOfPeril() {
+		for (MonsterStats moon : data.getMonsters()) {
+			if (!moon.getName().endsWith(" Moon")) continue;
+			assertEquals(moon.getDefence(), DefenceFloors.floorFor(moon), moon.getName() + " " + moon.getVersion());
+			assertFalse(DefenceFloors.deathChargeWorks(moon), moon.getName());
+		}
+		assertTrue(DefenceFloors.deathChargeWorks(data.searchMonsters("vardorvis", 1).get(0)));
+		assertTrue(DefenceFloors.deathChargeWorks(null));
+	}
+
+	@Test
 	@DisplayName("unfloored monsters drain freely")
 	void unfloored() {
 		assertEquals(0, DefenceFloors.floorFor(

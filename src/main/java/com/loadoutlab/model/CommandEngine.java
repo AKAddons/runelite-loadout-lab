@@ -1011,7 +1011,8 @@ public class CommandEngine {
                 }
             }
         }
-        if (arceuusBlocked(computed)) p.deathCharge = 0;
+        // No Death Charge where it does nothing (the Moons of Peril, ISS-01M67SZDHM3YPB3MTEAHJK5ASS).
+        if (arceuusBlocked(computed) || !computed.stream().allMatch(DefenceFloors::deathChargeWorks)) p.deathCharge = 0;
         if (mob != null) {
             compute.compute(atInvocation(mob), p, () -> {
             });
@@ -1990,7 +1991,7 @@ public class CommandEngine {
         }
         int dc = intParam("deathCharge");
         boolean f2pl = state.f2pLocked();
-        if (!f2pl && !lc && dc > 0) addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
+        if (!f2pl && !lc && dc > 0 && DefenceFloors.deathChargeWorks(stats)) addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
         // Ward of Arceuus where the drain is demonic (ISS-01M5VCXYGF51P5NJCDNC1QJZD1, Andrew 2026-10-25:
         // "ward of arceuss and the spectral spirit shield ... by default").
         if (!sm && !lc && arceuusReady.test(73) && ward(stats)) addUtilityRunes(out, "Ward of Arceuus", "Ward of Arceuus (per cast) - a third less prayer drain");

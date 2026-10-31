@@ -24,6 +24,7 @@
     {"floor": 117, "ids": [16667]},
     {"floor": 102, "ids": [16684]},
     {"floor": 129, "ids": [16673, 16674]},
-    {"floor": 150, "ids": [16677]}
+    {"floor": 150, "ids": [16677]},
+    {"_comment": "Moons of Peril (wiki Strategies): 'Defence-reducing special attacks and Death Charge have no effect on the Moons of Peril.' Blood 13011, Eclipse 13012, Blue 13013.", "floor": "base", "deathCharge": false, "ids": [13011, 13012, 13013]}
   ]
 }
