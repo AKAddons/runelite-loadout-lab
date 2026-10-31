@@ -168,6 +168,57 @@ assert not (set(STANDARD_OVERRIDES) & set(NONSTANDARD_OVERRIDES)), \
     "an id cannot be both standard and non-standard"
 
 
+# What a task's price rule (Budget Cutter: "If the item is untradeable, its
+# value will be used instead ... not the case for the Slayer helmet or imbued
+# items; the value of its components will be used instead") counts for an
+# untradeable the gear corpus cannot price. Keyed by GearItem.name lowercased
+# (no version); a value is a flat gp figure the game is documented to use, or
+# [[component item name, count], ...] summed at the live GE price (high, else
+# low, else wiki value). Slayer helmets and "X (i)" are derived in
+# DataService.priceComponents from the gear corpus; these are the ones whose
+# components are not equipment. Field report 2026-10-30: Ferocious gloves
+# "(8M cost)" - Hydra leather. Wiki, per item page: a faceguard reverts to its
+# helm and jaw; a crystal body/legs/helm to 3/2/1 armour seeds; a blood fury
+# to a fury; "The game values the defender at 600,000 GP".
+COMPONENT_VALUES = {
+    "ferocious gloves": [["Hydra leather", 1]],
+    "neitiznot faceguard": [["Helm of neitiznot", 1], ["Basilisk jaw", 1]],
+    "crystal body": [["Crystal armour seed", 3]],
+    "crystal legs": [["Crystal armour seed", 2]],
+    "crystal helm": [["Crystal armour seed", 1]],
+    "amulet of blood fury": [["Amulet of fury", 1]],
+    "avernic defender": 600000,
+}
+
+
+def component_prices(mapping, latest):
+    """COMPONENT_VALUES resolved to gp at today's prices."""
+    by_name = {m["name"].lower(): m for m in mapping}
+    out = {}
+    for name, value in COMPONENT_VALUES.items():
+        if isinstance(value, int):
+            out[name] = value
+            continue
+        total = 0
+        for component, count in value:
+            meta = by_name[component.lower()]
+            price = latest.get(str(meta["id"])) or {}
+            gp = price.get("high") or price.get("low") or meta.get("value") or 0
+            if not gp:
+                print("  WARNING: no price for %s (%s)" % (component, name))
+            total += gp * count
+        out[name] = total
+    return out
+
+
+def write_json(name, payload):
+    path = os.path.join(RES_DIR, name)
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(payload, f, indent=1, sort_keys=True)
+        f.write("\n")
+    print("wrote %s (%d records)" % (name, len(payload)))
+
+
 def fetch(url, cache_dir, cache_name):
     path = os.path.join(cache_dir, cache_name)
     if os.path.exists(path) and time.time() - os.path.getmtime(path) < 6 * 3600:
@@ -330,6 +381,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cache-dir", default="/tmp/loadout-lab-data-cache",
                         help="download cache (6h TTL)")
+    parser.add_argument("--components-only", action="store_true",
+                        help="rewrite component_prices.json alone (the corpus keeps its prices)")
     args = parser.parse_args()
     os.makedirs(args.cache_dir, exist_ok=True)
 
@@ -341,6 +394,9 @@ def main():
     wg_aliases = fetch(WG_BASE + "/equipment_aliases.json", args.cache_dir, "wg_aliases.json")
     mapping = fetch(WIKI_MAPPING, args.cache_dir, "wiki_mapping.json")
     latest = fetch(WIKI_LATEST, args.cache_dir, "wiki_latest.json")["data"]
+    write_json("component_prices.json", component_prices(mapping, latest))
+    if args.components_only:
+        return 0
 
     mapping_by_id = {m["id"]: m for m in mapping}
     old_by_id = load_old_gear()

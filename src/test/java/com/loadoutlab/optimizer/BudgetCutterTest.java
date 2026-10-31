@@ -105,7 +105,8 @@ class BudgetCutterTest {
     void everyShownSetKeepsTheRule() throws Exception {
         // Yours holds the ring and a spec weapon, so the swap has something to win.
         Map<Integer, Integer> bank = new HashMap<>();
-        for (String name : List.of("Lightbearer", "Dragon claws", "Abyssal whip", "Berserker ring (i)", "Seers ring (i)", "Amulet of glory")) {
+        // Ferocious gloves: the best melee gloves, worth their Hydra leather (field report 2026-10-30, "8M cost").
+        for (String name : List.of("Lightbearer", "Dragon claws", "Abyssal whip", "Berserker ring (i)", "Seers ring (i)", "Amulet of glory", "Ferocious gloves", "Barrows gloves")) {
             bank.put(item(name).id, 1);
         }
         OwnedItems owned = new OwnedItems(bank, true);
@@ -128,6 +129,8 @@ class BudgetCutterTest {
                     for (DpsResult yours : e.getValue().owned) {
                         mine++;
                         assertTrue(budget.holds(yours.getLoadout()), mode + " " + e.getKey() + " yours: " + describe(yours.getLoadout()));
+                        GearItem hands = yours.getLoadout().get(GearSlot.HANDS);
+                        assertFalse(hands != null && hands.name.equals("Ferocious gloves"), mode + " " + e.getKey() + " yours wears the 8m gloves: " + describe(yours.getLoadout()));
                     }
                 }
             }
@@ -199,6 +202,27 @@ class BudgetCutterTest {
         for (String name : List.of("Slayer helmet", "Slayer helmet (i)", "Hydra slayer helmet", "Hydra slayer helmet (i)", "Black mask (i)")) {
             for (GearItem row : rows(name)) assertEquals(mask, (int) SetRules.of(row, "price"), row.name + " " + row.version);
         }
+    }
+
+    @Test
+    @DisplayName("an untradeable made from tradeables counts them: Ferocious gloves their Hydra leather, a faceguard its helm and jaw, crystal armour its seeds, a blood fury its fury, the Avernic defender the 600k the game values it at")
+    void componentTableCounts() {
+        double gloves = SetRules.of(item("Ferocious gloves"), "price");
+        assertTrue(gloves > 2_000_000, "Hydra leather alone breaks Budget Cutter: " + gloves);
+        assertNull(item("Ferocious gloves").estimatedPrice, "the market price stays unknown");
+        assertFalse(budget.holds(wearing(item("Ferocious gloves"))), "the gloves alone break the rule");
+        double helm = SetRules.of(item("Crystal helm", "Active"), "price");
+        assertTrue(helm > 0);
+        assertEquals(3 * helm, SetRules.of(item("Crystal body", "Active"), "price"), 1, "a body is three seeds to a helm's one");
+        assertEquals(2 * helm, SetRules.of(item("Crystal legs", "Active"), "price"), 1);
+        // The table is priced at its own refresh; the corpus snapshot may be a few days apart.
+        Map<String, Integer> table = JsonResources.read("component_prices.json", new com.google.gson.reflect.TypeToken<Map<String, Integer>>() {}.getType());
+        assertEquals(table.get("amulet of blood fury"), (int) SetRules.of(item("Amulet of blood fury"), "price"));
+        int fury = item("Amulet of fury").getPriceOrZero();
+        assertTrue(Math.abs(fury - table.get("amulet of blood fury")) < fury * 0.1, "the table's fury is the corpus's fury, give or take a market week: " + fury + " vs " + table.get("amulet of blood fury"));
+        assertEquals(600_000, (int) SetRules.of(item("Avernic defender"), "price"));
+        double faceguard = SetRules.of(item("Neitiznot faceguard"), "price");
+        assertTrue(faceguard > item("Helm of Neitiznot").getPriceOrZero(), "the jaw counts on top of the helm: " + faceguard);
     }
 
     @Test
