@@ -45,3 +45,7 @@ is a little off").
 The flask, the sea sail and kraken moods, Zulrah (their generators
 were lost with a session scratchpad; the frames are the source of
 truth, colourise.py paints them).
+
+## Superseded 2026-10-31
+
+Everything above describes the retired glyph-rule moods (loader_frames.txt, now deleted), kept for history. The painted moods are built by hires.py; their bar is HIRES.md. Weakest of the new set, to revisit first: Zulrah (a smooth worm, no scales), Demonic Brutus (reads as a red bull more than a demon).

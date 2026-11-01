@@ -1,77 +1,83 @@
 package com.loadoutlab.render;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AsciiLoaderTest {
+	private static List<List<String>> parse(String text) {
+		InputStream in = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
+		return AsciiLoader.load(in);
+	}
+
 	@Test
-	@DisplayName("the frames resource parses into steady-sized moods")
-	void framesParseSteady() {
-		List<List<String>> land = new java.util.ArrayList<>();
-		java.util.Map<String, List<List<String>>> pools = new java.util.HashMap<>();
-		AsciiLoader.load(land, pools);
-		assertFalse(land.isEmpty());
-		List<List<String>> sea = pools.getOrDefault("sea", List.of());
-		assertFalse(sea.isEmpty(), "the sea pool ships with at least one mood");
-		// Raid pools (Andrew 2026-09-02: "hit raids first"): the Obelisk is
-		// hand-drawn; Verzik, Olm and Zulrah are Braille renders of the real
-		// wiki sprites ("make these look like the actual monster sprites").
-		for (String key : new String[]{"toa", "tob", "cox", "tfa", "zulrah", "cerberus", "brutus", "dbrutus", "madangel", "guardians", "kraken", "thermy", "vetion", "kbd", "kq", "muspah", "jad", "zuk", "dks", "barrows", "moons", "tormented", "gorilla", "sire", "sol", "hunllef", "huey", "nex", "titans", "maggot", "yama", "scurrius", "obor", "bryophyta", "crab", "duke", "vardorvis", "leviathan", "whisperer", "callisto", "artio", "venenatis", "spindel", "scorpia", "chaos", "drgreen", "drblue", "drred", "drblack", "drmetal", "vorkath", "hydra", "araxxor", "fanatic", "graardor", "kree", "kril", "zilyana", "corp", "archaeologist", "doom", "nightmare", "mimic", "shaman", "hespori", "sarachnis", "gryphon", "skotizo"}) {
-			assertFalse(pools.getOrDefault(key, List.of()).isEmpty(), key + " pool has a mood");
+	@DisplayName("a pool file parses into moods of frames, and a run of dashes in the art is not a separator")
+	void parsesMoodsAndFrames() {
+		List<List<String>> moods = parse("==a one\nxx\nyy\n--\n--- wave\nzz\n==a two\nqq\n--\nrr\n");
+		assertEquals(2, moods.size());
+		assertEquals(List.of("xx\nyy", "--- wave\nzz"), moods.get(0));
+		assertEquals(List.of("qq", "rr"), moods.get(1));
+	}
+
+	@Test
+	@DisplayName("an empty pool file is no moods, and the loader falls back to a plain line rather than crashing")
+	void emptyFileIsSoft() {
+		assertTrue(parse("").isEmpty());
+		assertEquals(List.of("Computing..."), AsciiLoader.PLAIN);
+	}
+
+	@Test
+	@DisplayName("every route and every lens or raid key has painted art, except the bosses the plugin does not simulate")
+	void everyKeyHasArt() throws Exception {
+		Set<String> keys = new HashSet<>(List.of("sea", "toa", "tob", "cox", "tfa", "flask", "halloween"));
+		for (String line : Files.readAllLines(new File("src/main/resources/com/loadoutlab/render/mood_routes.tsv").toPath())) {
+			if (!line.startsWith("#") && !line.isBlank()) keys.add(line.split("\t")[1]);
 		}
-		// Three sea moods (sail, cannon, kraken - Andrew 2026-09-02) at the
-		// land flask's 19x9, so the compute block keeps one shape.
-		assertEquals(3, sea.size(), "sail, cannon, kraken");
-		boolean wideMood = false;
-		for (List<String> frames : sea) {
-			String[] lines = frames.get(0).split("\n");
-			assertEquals(12, lines.length, "sea frames are 12 rows like every mood since pass eight");
-			assertTrue(lines[0].length() >= 19, "sea frames are at least the flask's width");
-			wideMood |= lines[0].length() > 19;
-		}
-		// The cannon mood spreads out so the shot has a real trajectory
-		// (Andrew 2026-09-02); moods may differ in width, one plays per compute.
-		assertTrue(wideMood, "the cannon mood is wider than the flask");
-		List<List<String>> moods = new java.util.ArrayList<>(land);
-		for (List<List<String>> pool : pools.values()) {
-			moods.addAll(pool);
-		}
-		for (List<String> frames : moods) {
-			assertTrue(frames.size() > 1, "a mood animates - two frames minimum");
-			String[] first = frames.get(0).split("\n");
-			for (String frame : frames) {
-				String[] lines = frame.split("\n");
-				// Same height and width every frame, or the centred
-				// block wobbles mid-animation.
-				assertEquals(first.length, lines.length, "frame height drifted");
-				for (String line : lines) {
-					line = line.replaceAll("<[^>]*>", "");
-					assertEquals(first[0].replaceAll("<[^>]*>", "").length(), line.length(), "frame width drifted");
-					for (char c : line.toCharArray()) {
-						// ASCII, or the Braille block: the sprite renders use
-						// U+2800 dots for detail. Braille is the ONE exception
-						// to the ASCII rule, pending Andrew's tofu check in the
-						// client (Swing on macOS Tahoe boxed symbol glyphs once).
-						boolean braille = c >= 0x2800 && c <= 0x28FF;
-						boolean block = c >= 0x2580 && c <= 0x259F;  // solid fills by brightness
-						// CP437 flavour (Andrew 2026-09-02): double box strokes and
-						// corners, the triple bar, and yen for scale texture.
-						boolean cp437 = (c >= 0x2550 && c <= 0x256C) || c == 0x2261 || c == 0xA5;
-						assertTrue((c >= 32 && c < 127) || braille || block || cp437,
-							"frame char outside the palette: " + (int) c);
-					}
-				}
-			}
+		keys.remove("hunllef");
+		for (String key : keys) {
+			assertNotNull(AsciiLoader.pool(key), key + " has no moods file");
 		}
 	}
 
 	@Test
-	@DisplayName("the loader is an HTML pane, so a frame's cells can carry their own colours")
-	void loaderDrawsHtml() {
-		javax.swing.text.JTextComponent pane = new AsciiLoader();
-		assertTrue(pane instanceof javax.swing.JEditorPane, "frames are HTML (Andrew 2026-09-03: colour per pixel at zero cost)");
+	@DisplayName("each holiday plays on its days, a moving one wins its week, and the table's every pool has art")
+	void holidays() throws Exception {
+		assertEquals("christmas", AsciiLoader.seasonal(LocalDate.of(2031, 12, 25)));
+		assertEquals("solstice", AsciiLoader.seasonal(LocalDate.of(2027, 6, 21)));
+		assertEquals("solstice", AsciiLoader.seasonal(LocalDate.of(2027, 12, 21)));
+		assertEquals("newyear", AsciiLoader.seasonal(LocalDate.of(2027, 12, 31)));
+		assertEquals("newyear", AsciiLoader.seasonal(LocalDate.of(2028, 1, 1)));
+		assertEquals("valentine", AsciiLoader.seasonal(LocalDate.of(2027, 2, 14)));
+		assertEquals("stpatrick", AsciiLoader.seasonal(LocalDate.of(2027, 3, 17)));
+		assertEquals("earth", AsciiLoader.seasonal(LocalDate.of(2027, 4, 22)));
+		assertEquals("lunar", AsciiLoader.seasonal(LocalDate.of(2027, 2, 6)));
+		assertEquals("holi", AsciiLoader.seasonal(LocalDate.of(2028, 3, 11)));
+		assertEquals("easter", AsciiLoader.seasonal(LocalDate.of(2027, 3, 28)));
+		assertEquals("eid", AsciiLoader.seasonal(LocalDate.of(2027, 3, 10)));
+		assertEquals("lunar", AsciiLoader.seasonal(LocalDate.of(2034, 2, 19)), "a moving row outranks a fixed window");
+		assertEquals("flask", AsciiLoader.seasonal(LocalDate.of(2027, 7, 4)));
+		assertEquals("flask", AsciiLoader.seasonal(LocalDate.of(2040, 3, 10)), "past the table only fixed rows play");
+		try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(AsciiLoader.class.getResourceAsStream("holidays.tsv")))) {
+			r.lines().map(l -> l.split("\t")[2]).distinct().forEach(k -> assertNotNull(AsciiLoader.pool(k), k));
+		}
+	}
+
+	@Test
+	@DisplayName("Halloween plays from Oct 15 to Oct 31 and the flask the rest of the year")
+	void season() {
+		assertEquals("flask", AsciiLoader.seasonal(LocalDate.of(2026, 10, 14)));
+		assertEquals("halloween", AsciiLoader.seasonal(LocalDate.of(2026, 10, 15)));
+		assertEquals("halloween", AsciiLoader.seasonal(LocalDate.of(2026, 10, 31)));
+		assertEquals("flask", AsciiLoader.seasonal(LocalDate.of(2026, 11, 1)));
 	}
 }

@@ -1,90 +1,95 @@
 package com.loadoutlab.render;
 
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.time.*;
 import java.util.*;
 import java.io.BufferedReader;
+import javax.swing.JComponent;
 import javax.swing.Timer;
-import javax.swing.JEditorPane;
-import java.util.regex.Pattern;
 import java.util.concurrent.ThreadLocalRandom;
 import java.nio.charset.StandardCharsets;
 import java.io.InputStreamReader;
 import java.io.InputStream;
-import java.awt.GraphicsEnvironment;
 
-// The compute animation, ASCII edition (the pixel mascots retired in
-// the merge-back; field ask 2026-08-20): frames live in
-// loader_frames.txt - a token-free resource - and this class only
-// cycles them. '--' separates frames, '==' separates moods, one
-// random mood per compute (the mascot-roster contract). The timer
-// runs ONLY while computing and dies on unmount (the mascot-era
-// lesson: a hidden component's timer still burns the EDT).
-class AsciiLoader extends JEditorPane {
-static final String RESOURCE = "/com/loadoutlab/render/loader_frames.txt";
-static final List<List<String>> MOODS = new ArrayList<>();
-// Keyed pools ("==sea ...", "==toa ...", "==tob", "==cox", "==zulrah"
-// sections): played only for the matching selection, so a kraken never
-// greets Graardor and the Obelisk charges only for a ToA trip. Land
-// computes use MOODS.
-static final Map<String, List<List<String>>> POOLS = new HashMap<>();
-static {
-    load(MOODS, POOLS);
-}
-String key;
-
-// The mood faces, bundled: Java's logical Monospaced draws ASCII in one
-// font and borrows Braille, blocks and shades from another at other
-// widths on Windows (Andrew 2026-10-15: the flask's rows slid sideways).
-// The ART draws in DejaVu Sans Mono, Menlo's parent, so the shades ink
-// the cells the frames were tuned on (Cascadia's medium shade inks 21%
-// against DejaVu's 48%: "the color tone is off in the potion"); it has no
-// Braille, so Braille runs draw in Cascadia Mono, same advance and line
-// height at 12 pt. A missing resource = the logical font as before.
-static final Font MOOD_FONT = loadFont("DejaVuSansMono.ttf");
-static final Font BRAILLE_FONT = loadFont("CascadiaMono.ttf");
-static final Pattern BRAILLE = Pattern.compile("[\u2800-\u28ff]+");
-
-static Font moodFont() { return MOOD_FONT; }
+// The compute animation: painted frames in render/moods/<key>.txt, one file per
+// pool, a token-free resource read when that boss computes (scripts/art/hires.py).
+// '--' separates frames, '==' moods. A search with no art of its own plays the
+// plugin's theme, Halloween in season. The timer runs ONLY while computing and
+// dies on unmount (the mascot-era lesson: a hidden component's timer still burns
+// the EDT).
+class AsciiLoader extends JComponent {
+static final String MOODS = "/com/loadoutlab/render/moods/";
+static final int COLS = 43, ROWS = 24, CELL_W = 5, CELL_H = 10, CELL_BASE = 8;
+// The bundled face, not Java's logical Monospaced: on Windows that draws ASCII in
+// one font and borrows blocks and shades from another at other widths (Andrew
+// 2026-10-15: the flask's rows slid sideways).
+static final Font CELL_FONT = loadFont("DejaVuSansMono.ttf").deriveFont(9f);
+// The last resort when a resource is missing: fail soft, never a crash.
+static final List<String> PLAIN = List.of("Computing...");
 
 static Font loadFont(String resource) {
     try (InputStream in = AsciiLoader.class.getResourceAsStream(resource)) {
-        Font font = Font.createFont(Font.TRUETYPE_FONT, in).deriveFont(12f);
-        // Registered so the HTML stylesheet can name it: Swing's own rule for
-        // pre (font-family: Monospaced) overrides the component font, which
-        // is why setFont alone changed nothing (Andrew 2026-10-15, still bad).
-        GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-        return font;
+        return Font.createFont(Font.TRUETYPE_FONT, in);
     } catch (Exception e) { return new Font(Font.MONOSPACED, Font.PLAIN, 12); }
 }
+
+String key;
 
 // The pool key for the pending selection, or null for land.
 void setKey(String key) { this.key = key; }
 
 final Timer timer = new Timer(140, e -> advance());
-List<String> frames = MOODS.get(0);
+List<String> frames = PLAIN;
 int tick;
+String cells = "";
 
 AsciiLoader() {
-    // Frames are HTML: a cell may carry its own <font color> run, so a
-    // mood can be coloured per glyph with no main-source cost (Andrew
-    // 2026-09-03). Plain frames draw in the accent as before.
-    setContentType("text/html");
-    putClientProperty(HONOR_DISPLAY_PROPERTIES, true);
-    setEditable(false);
-    setFocusable(false);
     setOpaque(false);
-    setFont(moodFont());
+    setFocusable(false);
     setForeground(ResultCards.ACCENT);
 }
 
-// One frame onto the pane: fixed pitch, no margins, markup honoured.
-void show(String frame) {
-    // The family goes on the pre itself, unquoted (Swing keeps quotes); Braille
-    // runs switch face inline (a tag never splits a run, so colour runs survive).
-    String runs = BRAILLE.matcher(frame).replaceAll("<font face=\"" + BRAILLE_FONT.getFamily() + "\">$0</font>");
-    setText("<html><body style='margin:0'><pre style='margin:0;font-family:" + MOOD_FONT.getFamily()
-        + "'>" + runs + "</pre></body></html>");
+// The boss's pool, or null when it has none.
+static List<List<String>> pool(String key) {
+    if (key == null) return null;
+    InputStream in = AsciiLoader.class.getResourceAsStream(MOODS + key + ".txt");
+    return in == null ? null : load(in);
+}
+
+// A frame's runs: <font color=#rrggbb> sets the ink, any other tag is skipped.
+static void paintCells(Graphics2D g, String frame) {
+    g.setFont(CELL_FONT);
+    g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    char[] text = frame.toCharArray();
+    int x = 0, y = CELL_BASE;
+    for (int i = 0; i < text.length; i++) {
+        char c = text[i];
+        if (c == '<') {
+            if (text[i + 1] == 'f') g.setColor(new Color(Integer.parseInt(frame.substring(i + 13, i + 19), 16)));
+            i = frame.indexOf('>', i);
+        } else if (c == '\n') {
+            x = 0;
+            y += CELL_H;
+        } else {
+            if (c != ' ') g.drawChars(text, i, 1, x, y);
+            x += CELL_W;
+        }
+    }
+}
+
+public Dimension getPreferredSize() {
+    // A pixel over: the face's right-edge bar draws past its cell, and clipped there the rim's right side nearly vanished.
+    return new Dimension(COLS * CELL_W + 1, ROWS * CELL_H + 1);
+}
+
+protected void paintComponent(Graphics g) {
+    g.setColor(getForeground());
+    paintCells((Graphics2D) g, cells);
 }
 
 // The key the current frames were picked for (a sentinel while idle).
@@ -96,9 +101,9 @@ void setRunning(boolean running) {
     // search kept the first search's animation).
     boolean repick = running && !Objects.equals(key, playingKey);
     if (running && (!timer.isRunning() || repick)) {
-        List<List<String>> keyed = key == null ? null : POOLS.get(key);
-        List<List<String>> pool = keyed != null && !keyed.isEmpty() ? keyed : seasonal(LocalDate.now());
-        frames = pool.get(ThreadLocalRandom.current() .nextInt(pool.size()));
+        List<List<String>> pool = pool(key);
+        if (pool == null) pool = pool(seasonal(LocalDate.now()));
+        frames = pool == null || pool.isEmpty() ? PLAIN : pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
         playingKey = key;
         tick = 0;
         advance();
@@ -114,52 +119,48 @@ public void removeNotify() {
     super.removeNotify();
 }
 
-// The land pool for a date: the Halloween moods from Oct 15 to Oct 31,
-// every year (ISS-01M5PR1FRK0XT2PHQ7HJD0D1FZ, Andrew 2026-10-24: "a
-// halloween themed loading screen that can override the main loadout lab
-// guy from 10/15-10/31 (yearly)"), the flask otherwise. A keyed
-// selection's own art outranks the season (setRunning).
-static List<List<String>> seasonal(LocalDate today) {
-    List<List<String>> halloween = POOLS.get("halloween");
-    boolean season = today.getMonth() == Month.OCTOBER && today.getDayOfMonth() >= 15;
-    return season && halloween != null && !halloween.isEmpty() ? halloween : MOODS;
+// The land pool for a date: Halloween from Oct 15 to Oct 31, every year
+// (ISS-01M5PR1FRK0XT2PHQ7HJD0D1FZ, Andrew 2026-10-24: "a halloween themed
+// loading screen that can override the main loadout lab guy from 10/15-10/31
+// (yearly)"), the other holidays by holidays.tsv (scripts/art/holidays.py), the
+// flask otherwise. A boss's own art outranks the season.
+static String seasonal(LocalDate today) {
+    String iso = today.toString();
+    try (BufferedReader r = new BufferedReader(new InputStreamReader(AsciiLoader.class.getResourceAsStream("holidays.tsv"), StandardCharsets.UTF_8))) {
+        String line;
+        while ((line = r.readLine()) != null) {
+            String[] row = line.split("\t");
+            // A short row has no year and repeats every year.
+            String day = row[0].length() == 5 ? iso.substring(5) : iso;
+            if (day.compareTo(row[0]) >= 0 && day.compareTo(row[1]) <= 0) return row[2];
+        }
+    } catch (Exception e) {
+        // no table: the flask
+    }
+    return "flask";
 }
 
-void advance() { show(frames.get(tick++ % frames.size())); }
-
-// Package for the parse test. Fail-soft: a missing or empty
-// resource degrades to the plain text line, never a crash. A mood
-// separator of "==<key> ..." routes that mood to the keyed pool.
-static List<List<String>> poolFor(List<List<String>> land, Map<String, List<List<String>>> pools, String key) {
-    return key == null ? land : pools.computeIfAbsent(key, k -> new ArrayList<>());
+void advance() {
+    cells = frames.get(tick++ % frames.size());
+    repaint();
 }
 
-static void load(List<List<String>> land, Map<String, List<List<String>>> pools) {
-    List<String> frames = new ArrayList<>();
+// Package for the parse test. Frame separators are EXACTLY "--": art may
+// legitimately start a line with dashes.
+static List<List<String>> load(InputStream in) {
+    List<List<String>> moods = new ArrayList<>();
+    List<String> mood = new ArrayList<>();
     var frame = new StringBuilder();
-    String moodKey = null;
-    try (BufferedReader reader = new BufferedReader( new InputStreamReader(
-            AsciiLoader.class.getResourceAsStream(RESOURCE), StandardCharsets.UTF_8))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
         String line;
         while ((line = reader.readLine()) != null) {
-            if (line.startsWith("#")) continue;
-            boolean mood = line.startsWith("==");
-            // Frame separators are EXACTLY "--": sea art legitimately
-            // starts lines with dashes (waves), and a prefix match ate
-            // them as separators.
-            if (mood || line.equals("--")) {
-                if (frame.length() > 0) {
-                    frames.add(frame.toString());
-                    frame.setLength(0);
-                }
-                if (mood && !frames.isEmpty()) {
-                    poolFor(land, pools, moodKey).add(frames);
-                    frames = new ArrayList<>();
-                }
-                if (mood) {
-                    String name = line.substring(2).trim();
-                    int space = name.indexOf(' ');
-                    moodKey = name.isEmpty() ? null : space > 0 ? name.substring(0, space) : name;
+            boolean next = line.startsWith("==");
+            if (next || line.equals("--")) {
+                if (frame.length() > 0) mood.add(frame.toString());
+                frame.setLength(0);
+                if (next && !mood.isEmpty()) {
+                    moods.add(mood);
+                    mood = new ArrayList<>();
                 }
                 continue;
             }
@@ -167,10 +168,10 @@ static void load(List<List<String>> land, Map<String, List<List<String>>> pools)
             frame.append(line);
         }
     } catch (Exception e) {
-        // fall through to the fail-soft default below
+        // keep what was read; an empty pool falls back to the plain line
     }
-    if (frame.length() > 0) frames.add(frame.toString());
-    if (!frames.isEmpty()) poolFor(land, pools, moodKey).add(frames);
-    if (land.isEmpty()) land.add(List.of("Computing..."));
+    if (frame.length() > 0) mood.add(frame.toString());
+    if (!mood.isEmpty()) moods.add(mood);
+    return moods;
 }
 }
