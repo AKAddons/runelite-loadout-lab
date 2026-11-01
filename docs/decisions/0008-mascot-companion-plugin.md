@@ -36,7 +36,7 @@ liking the dual addon approach"), and the numbers say the seam work
 pays either way: a model-driven renderer rebuilt against the page
 model is estimated at 20-30k where the organically-grown monolith is
 60k. DECIDED - Path C: the renderer lands IN CORE (package
-com.loadoutlab.render), consuming the same model and command engine,
+com.ll.render), consuming the same model and command engine,
 mounted in the same one-surface host as the DEFAULT renderer; the
 external Companion plugin (repo runelite-loadout-lab-ui) is PARKED
 as the future split vehicle - its surface-register message still

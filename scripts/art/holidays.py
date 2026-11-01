@@ -41,6 +41,6 @@ FIXED = [("01-01", "01-02", "newyear"), ("02-11", "02-14", "valentine"), ("03-15
          ("12-23", "12-27", "christmas"), ("12-30", "12-31", "newyear")]
 
 rows = [f"{a}\t{b}\t{k}" for a, b, k in moving] + [f"{a}\t{b}\t{k}" for a, b, k in FIXED]
-out = ROOT / "src/main/resources/com/loadoutlab/render/holidays.tsv"
+out = ROOT / "src/main/resources/com/ll/render/holidays.tsv"
 out.write_text("\n".join(rows) + "\n", encoding="utf-8", newline="\n")
 print(len(rows), "rows", out)

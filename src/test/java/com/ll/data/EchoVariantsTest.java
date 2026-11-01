@@ -1,0 +1,34 @@
+package com.ll.data;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/** Andrew, 2026-09-03: "should not be able to search 'echo' version in
+ * main mode" - the Leagues echo bosses are seasonal and never enter the
+ * corpus. */
+class EchoVariantsTest {
+	@Test
+	@DisplayName("no Echo boss enters the corpus, so none can be searched")
+	void noEchoBosses() {
+		Tables data = new DataService().load();
+		for (Monster m : data.getMonsters()) {
+			assertFalse(m.getName().contains("(Echo)"), m.getName());
+		}
+		assertFalse(data.searchMonsters("cerberus", 10).isEmpty(), "the main-game Cerberus still answers");
+		for (Monster m : data.searchMonsters("echo", 20)) {
+			assertFalse(m.getName().contains("(Echo)"), m.getName());
+		}
+	}
+
+	@Test
+	@DisplayName("no Nightmare Zone version enters the corpus - nobody theorycrafts the dream")
+	void noNightmareZone() {
+		Tables data = new DataService().load();
+		for (Monster m : data.getMonsters()) {
+			assertFalse(m.getName().contains("(Nightmare Zone)"), m.getName());
+		}
+		assertFalse(data.searchMonsters("nightmare", 10).isEmpty(), "The Nightmare still answers");
+	}
+}

@@ -1,0 +1,85 @@
+package com.ll.render;
+
+import com.ll.data.DataService;
+import com.ll.data.Tables;
+import com.ll.model.CommandEngine;
+import com.ll.model.CompanionLink;
+import com.ll.model.PageState;
+import java.util.Map;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Field report (Andrew, 2026-09-02, first run of the raid moods): "getting
+ * regular result for tob, toa, cox, and zulrah". The loader picks its pool
+ * by peeking the page when the COMPUTING status arrives - so the page the
+ * surface can see at that moment must already carry the new selection
+ * (and a roster's name), not the previous page.
+ */
+class RaidMoodRoutingTest {
+	private static Tables data;
+
+	@BeforeAll
+	static void load() {
+		data = new DataService().load();
+	}
+
+	/** Records the page visible at the moment the computing status lands. */
+	private static final class RecordingLink extends CompanionLink {
+		Map<String, Object> last;
+		Map<String, Object> atComputing;
+
+		@Override
+		public void publishPage(Map page) {
+			last = page;
+		}
+
+		@Override
+		public void publishStatus(boolean computing) {
+			if (computing) {
+				atComputing = last;
+			}
+		}
+	}
+
+	private static String keyFor(String query) throws Exception {
+		PageState state = new PageState();
+		RecordingLink link = new RecordingLink();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, p, onDone) -> {
+			},
+			link);
+		engine.setRosterCompute((mobs, p, onDone) -> {
+		});
+		// Commands arrive on the EDT in the client; the pending publish is
+		// synchronous there, which is the order this test pins.
+		javax.swing.SwingUtilities.invokeAndWait(() ->
+			assertTrue(engine.execute("select", Map.of("query", query)), query));
+		assertNotNull(link.atComputing, "a page is visible when computing starts: " + query);
+		return RenderSurface.moodKey(link.atComputing);
+	}
+
+	@Test
+	@DisplayName("the page seen when computing starts already routes the raid, Zulrah, sea or land")
+	void routesFromTheFreshSelection() throws Exception {
+		assertEquals("cox", keyFor("Chambers of Xeric"));
+		assertEquals("tob", keyFor("Theatre of Blood (Entry)"));
+		assertEquals("toa", keyFor("Tombs of Amascut"));
+		assertEquals("zulrah", keyFor("Zulrah"));
+		assertEquals("sea", keyFor("Hammerhead shark"));
+		assertNull(keyFor("Cow"));
+		// A single raid monster keys its raid: they live nowhere else
+		// (Andrew 2026-09-02: "searching zebak should give the obelisk").
+		assertEquals("toa", keyFor("Zebak"));
+		assertEquals("cox", keyFor("Tekton"));
+		assertEquals("tob", keyFor("Xarpus"));
+		// The Fractured Archive (Andrew 2026-10-20: "we need to also make
+		// an animation for TFA"): the group and any of its bosses.
+		assertEquals("tfa", keyFor("The Fractured Archive"));
+		assertEquals("tfa", keyFor("Ocellus"));
+		assertEquals("tfa", keyFor("Bork"));
+	}
+}

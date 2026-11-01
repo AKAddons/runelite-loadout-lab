@@ -1,0 +1,286 @@
+package com.ll.optimizer;
+
+import com.ll.data.DataService;
+import com.ll.data.Tables;
+import com.ll.data.Monster;
+import com.ll.engine.Style;
+import com.ll.engine.Req;
+import com.ll.engine.Owned;
+import com.ll.engine.Levels;
+import com.ll.engine.RequirementProfile;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Assert;
+import org.junit.Test;
+
+public class OptimizerServiceTest {
+	@Test
+	public void defenceDrainMakesTheWarhammerTheSpecPickOnTankyBosses() throws Exception {
+		Tables data = new DataService().load();
+		// Dagannoth Rex (255 defence, 255 hp; not a GWD boss, whose carried
+		// god protection would take the one Inventory slot): a drain pays off over the
+		// whole kill, so the warhammer wins. A fire giant (120 defence, 130
+		// hp) dies before a drain earns back its lost hits, so the dagger's
+		// burst wins. A goblin dies in one attack - no spec beats just
+		// attacking, so none is carried (value-over-replacement).
+		Monster rex = data.searchMonsters("dagannoth rex", 1).get(0);
+		Monster fireGiant = data.searchMonsters("fire giant", 1).get(0);
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // whip - main weapon
+		owned.put(1215, 1);   // dragon dagger - burst spec
+		owned.put(13576, 1);  // dragon warhammer - drain spec
+		// Super combat potion: this scenario's "a goblin dies in one attack"
+		// premise depends on the boosted max hit. Boosts now gate on ownership
+		// (2026-08-25), so the bank has to actually hold the potion the test
+		// assumes - otherwise the goblin survives and a spec DOES pay.
+		owned.put(12695, 1);
+		Service service = new Service(data);
+		try {
+			Assert.assertEquals("Dragon warhammer", specPick(service, rex, owned));
+			Assert.assertEquals("Dragon dagger", specPick(service, fireGiant, owned));
+			Assert.assertNull("a one-hit kill is not worth a spec slot",
+				specPick(service, goblin, owned));
+		} finally {
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void togglingAConditionMidLoadAbandonsTheStaleComputationAndDeliversTheNewOne() throws Exception {
+		Tables data = new DataService().load();
+		Monster graardor = data.searchMonsters("general graardor", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1); // abyssal whip
+		Service service = new Service(data);
+		try {
+			CountDownLatch fresh = new CountDownLatch(1);
+			java.util.concurrent.atomic.AtomicInteger staleDelivered = new java.util.concurrent.atomic.AtomicInteger();
+			// Stale request (off-task), immediately superseded by the toggle.
+			com.ll.optimizer.ServiceCalls.bestPerStyle(service, graardor, Levels.MAXED, Levels.MAXED,
+				com.ll.engine.Prayers.ALL, RequirementProfile.MAXED,
+				new Owned(owned, true), owned.hashCode(), false, false, "",
+				java.util.Collections.emptySet(), -1, Req.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> staleDelivered.incrementAndGet());
+			// The toggle: same monster, on-task, fired before the stale run ends.
+			com.ll.optimizer.ServiceCalls.bestPerStyle(service, graardor, Levels.MAXED, Levels.MAXED,
+				com.ll.engine.Prayers.ALL, RequirementProfile.MAXED,
+				new Owned(owned, true), owned.hashCode(), false, true, "",
+				java.util.Collections.emptySet(), -1, Req.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> fresh.countDown());
+			Assert.assertTrue(fresh.await(120, TimeUnit.SECONDS));
+			Assert.assertEquals("the superseded request must never deliver", 0, staleDelivered.get());
+		} finally {
+			service.shutdown();
+		}
+	}
+
+	private static String specPick(Service service, Monster monster,
+		Map<Integer, Integer> owned) throws Exception {
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<Map<Style, Service.Pick>> out = new AtomicReference<>();
+		com.ll.optimizer.ServiceCalls.bestPerStyle(service, monster, Levels.MAXED, Levels.MAXED, com.ll.engine.Prayers.ALL, RequirementProfile.MAXED,
+			new Owned(owned, true), owned.hashCode(), false, false, "", java.util.Collections.emptySet(), -1, Req.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> {
+				out.set(results);
+				done.countDown();
+			});
+		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
+		Service.Pick melee = out.get().get(Style.MELEE);
+		// A spec that adds nothing over just attacking is not carried (the
+		// value-over-replacement model): null means "no spec worth a slot".
+		return melee == null || melee.spec == null ? null : melee.spec.getDisplayName();
+	}
+
+	@Test
+	public void pinningOneStyleReusesTheOtherStylesCachedAnswers() throws Exception {
+		Tables data = new DataService().load();
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1); // abyssal whip
+		owned.put(1215, 1); // dragon dagger - a pinnable melee weapon
+		Service service = new Service(data);
+		try {
+			Map<Style, Service.Pick> first =
+				resultsFor(service, goblin, owned, java.util.Collections.emptyMap());
+			// Pin the dagger for MELEE only: the ranged and magic answers are
+			// unchanged queries and must come back as the SAME cached objects,
+			// not fresh recomputes.
+			Map<Style, Map<com.ll.data.Slot, Integer>> pins =
+				java.util.Map.of(Style.MELEE,
+					java.util.Map.of(com.ll.data.Slot.WEAPON, 1215));
+			Map<Style, Service.Pick> pinned =
+				resultsFor(service, goblin, owned, pins);
+			Assert.assertSame("ranged must be the cached result",
+				first.get(Style.RANGED), pinned.get(Style.RANGED));
+			Assert.assertSame("magic must be the cached result",
+				first.get(Style.MAGIC), pinned.get(Style.MAGIC));
+			Assert.assertNotSame("melee must be recomputed around the pin",
+				first.get(Style.MELEE), pinned.get(Style.MELEE));
+			Assert.assertEquals("the pin must be honored", 1215,
+				pinned.get(Style.MELEE).owned.get(0).getLoadout().getWeapon().getId());
+		} finally {
+			service.shutdown();
+		}
+	}
+
+	private static Map<Style, Service.Pick> resultsFor(
+		Service service, Monster monster, Map<Integer, Integer> owned,
+		Map<Style, Map<com.ll.data.Slot, Integer>> pins) throws Exception {
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<Map<Style, Service.Pick>> out = new AtomicReference<>();
+		com.ll.optimizer.ServiceCalls.bestPerStyle(service, monster, Levels.MAXED, Levels.MAXED,
+			com.ll.engine.Prayers.ALL, RequirementProfile.MAXED,
+			new Owned(owned, true), 1, false, false, "",
+			java.util.Collections.emptySet(), -1, Req.DEFAULT_RISK_BUDGET_GP,
+			false, java.util.Collections.emptySet(), 0, 			pins, null, results -> {
+				out.set(results);
+				done.countDown();
+			});
+		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
+		return out.get();
+	}
+
+	@Test
+	public void aStyleScopedExclusionRecomputesOnlyThatStyle() throws Exception {
+		Tables data = new DataService().load();
+		Monster goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1); // abyssal whip
+		owned.put(1333, 1); // rune scimitar - the fallback once the whip is excluded
+		Service service = new Service(data);
+		try {
+			Map<Style, Set<Integer>> none = uniformExclusions(java.util.Collections.emptySet());
+			Map<Style, Service.Pick> first =
+				resultsForExcluding(service, goblin, owned, none);
+			Assert.assertEquals("whip wins melee before the exclusion", 4151,
+				first.get(Style.MELEE).owned.get(0).getLoadout().getWeapon().getId());
+
+			// Exclude the whip for the MELEE card only: ranged and magic are
+			// unchanged queries and must come back as the same cached objects.
+			Map<Style, Set<Integer>> meleeOnly = uniformExclusions(java.util.Collections.emptySet());
+			meleeOnly.put(Style.MELEE, Set.of(4151));
+			Map<Style, Service.Pick> excluded =
+				resultsForExcluding(service, goblin, owned, meleeOnly);
+			Assert.assertNotEquals("the melee card must drop the excluded whip", 4151,
+				excluded.get(Style.MELEE).owned.get(0).getLoadout().getWeapon().getId());
+			Assert.assertSame("ranged must be the cached result",
+				first.get(Style.RANGED), excluded.get(Style.RANGED));
+			Assert.assertSame("magic must be the cached result",
+				first.get(Style.MAGIC), excluded.get(Style.MAGIC));
+		} finally {
+			service.shutdown();
+		}
+	}
+
+	private static Map<Style, Set<Integer>> uniformExclusions(Set<Integer> set) {
+		Map<Style, Set<Integer>> byStyle = new java.util.EnumMap<>(Style.class);
+		for (Style style : Style.concreteValues()) {
+			byStyle.put(style, set);
+		}
+		return byStyle;
+	}
+
+	private static Map<Style, Service.Pick> resultsForExcluding(
+		Service service, Monster monster, Map<Integer, Integer> owned,
+		Map<Style, Set<Integer>> excludedByStyle) throws Exception {
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<Map<Style, Service.Pick>> out = new AtomicReference<>();
+		com.ll.optimizer.ServiceCalls.bestPerStyle(service, monster, Levels.MAXED, Levels.MAXED,
+			com.ll.engine.Prayers.ALL, RequirementProfile.MAXED,
+			new Owned(owned, true), 1, false, false, "",
+			excludedByStyle, -1, Req.DEFAULT_RISK_BUDGET_GP,
+			false, false, java.util.Collections.emptySet(), 0, 			java.util.Collections.emptyMap(), null, java.util.Collections.emptySet(), results -> {
+				out.set(results);
+				done.countDown();
+			});
+		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
+		return out.get();
+	}
+
+	@Test
+	public void crossStyleSpecWeaponsCompeteOnEverySet() throws Exception {
+		// Field request 2026-07-17: "sometimes you want to use magic +
+		// chally" - the spec swap is its own weapon switch, so a MELEE
+		// spec weapon must surface on the MAGIC set when it is the best
+		// special owned. Owned: a trident (the magic set) + a dragon
+		// dagger (melee spec) and nothing else spec-worthy.
+		Tables data = new DataService().load();
+		Monster monster = data.searchMonsters("ankou", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(11907, 1);  // trident of the seas
+		owned.put(1215, 1);   // dragon dagger
+		Service service = new Service(data);
+		try {
+			CountDownLatch done = new CountDownLatch(1);
+			AtomicReference<Map<Style, Service.Pick>> out = new AtomicReference<>();
+			com.ll.optimizer.ServiceCalls.bestPerStyle(service, monster, Levels.MAXED, Levels.MAXED,
+				com.ll.engine.Prayers.ALL, RequirementProfile.MAXED,
+				new Owned(owned, true), 1, false, false, "",
+				java.util.Collections.emptySet(), -1,
+				Req.DEFAULT_RISK_BUDGET_GP,
+				false, java.util.Collections.emptySet(), 0,
+								java.util.Collections.emptyMap(), null, results -> {
+					out.set(results);
+					done.countDown();
+				});
+			Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
+			Service.Pick magic = out.get().get(Style.MAGIC);
+			Assert.assertNotNull(magic);
+			Assert.assertFalse("premise: the trident set exists", magic.owned.isEmpty());
+			Assert.assertNotNull("the melee dagger specs for the magic set", magic.spec);
+			Assert.assertEquals(1215, magic.specWeapon.getId());
+			Assert.assertTrue(magic.specExpectedDamage > 0);
+		} finally {
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void ownedSpecWeaponSurfacesOnTheStyleResult() throws Exception {
+		Tables data = new DataService().load();
+		// A fire giant, not a goblin: enough HP that a spec earns its slot
+		// (a goblin dies in one hit, so the value model carries no spec).
+		Monster monster = data.searchMonsters("fire giant", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip - the sustained-DPS weapon
+		owned.put(1215, 1);   // dragon dagger - the spec weapon
+		Service service = new Service(data);
+		try {
+			CountDownLatch done = new CountDownLatch(1);
+			AtomicReference<Map<Style, Service.Pick>> out = new AtomicReference<>();
+			com.ll.optimizer.ServiceCalls.bestPerStyle(service, monster, Levels.MAXED, Levels.MAXED, com.ll.engine.Prayers.ALL, RequirementProfile.MAXED,
+				new Owned(owned, true), 1, false, false, "", java.util.Collections.emptySet(), -1, Req.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> {
+					out.set(results);
+					done.countDown();
+				});
+			Assert.assertTrue(done.await(60, TimeUnit.SECONDS));
+
+			Service.Pick melee = out.get().get(Style.MELEE);
+			Assert.assertNotNull(melee);
+			Assert.assertFalse(melee.owned.isEmpty());
+			// The whip wins sustained DPS; the dagger is still surfaced as
+			// the spec weapon with a positive expected special-attack hit.
+			Assert.assertNotNull(melee.spec);
+			Assert.assertEquals("Dragon dagger", melee.spec.getDisplayName());
+			Assert.assertEquals(1215, melee.specWeapon.getId());
+			Assert.assertTrue(melee.specExpectedDamage > 0);
+			// The win-over-replacement value is surfaced and positive.
+			Assert.assertTrue("the spec must add positive dps to be carried",
+				melee.sda > 0);
+			// The game-best section carries its own spec - the strongest
+			// special attack that exists, regardless of ownership.
+			Assert.assertNotNull(melee.gameSpec);
+			Assert.assertNotNull(melee.gameSpecWeapon);
+			Assert.assertTrue(melee.gameSpecExpectedDamage >= melee.specExpectedDamage);
+			// Both sides of the Yours|BiS toggle carry their own defensive
+			// story - the BiS DTPS is computed vs the BiS armour, not yours.
+			Assert.assertNotNull(melee.incoming);
+			Assert.assertNotNull(melee.gameIncoming);
+			Assert.assertTrue(melee.gameIncoming.unprayedDps > 0);
+		} finally {
+			service.shutdown();
+		}
+	}
+}

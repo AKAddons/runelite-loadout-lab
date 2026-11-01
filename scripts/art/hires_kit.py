@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-RES = ROOT / "src/main/resources/com/loadoutlab/render"
+RES = ROOT / "src/main/resources/com/ll/render"
 OUT = RES / "moods"
 SPR = ROOT / "scripts/art/sprites"
 COLS, ROWS, CW, CH = 43, 24, 5, 10   # painted cells at 9 pt: DejaVu inks 5 x 10, so solid areas close up

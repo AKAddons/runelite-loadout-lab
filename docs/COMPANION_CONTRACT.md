@@ -4,7 +4,7 @@
 > must ship as ONE plugin, so the companion was merged back in and this
 > seam was deleted. Kept as the design record of what the split was;
 > nothing here describes shipping code. The in-process page store that
-> survived it is `com.loadoutlab.model.CompanionLink`.
+> survived it is `com.ll.model.CompanionLink`.
 
 Working draft of the seam decided in
 [ADR-0008](decisions/0008-mascot-companion-plugin.md). Generated from

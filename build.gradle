@@ -11,7 +11,7 @@ repositories {
 }
 
 def runeLiteVersion = 'latest.release'
-def pluginMainClass = 'com.loadoutlab.LoadoutLabPluginTest'
+def pluginMainClass = 'com.ll.LoadoutLabPluginTest'
 
 dependencies {
 	compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
@@ -47,8 +47,8 @@ tasks.named('test', Test) {
 	maxHeapSize = '2g'
 }
 
-group = 'com.loadoutlab'
-version = '0.8.1'
+group = 'com.ll'
+version = '0.8.2'
 
 // Stamp the build version into a readable resource: the panel's issue
 // report reads it at runtime. Replaces a hand-synced constant that went
@@ -59,7 +59,7 @@ processResources {
 	// VersionStampTest, 2026-08-20). Declaring it as an input forces
 	// the re-stamp.
 	inputs.property('pluginVersion', project.version)
-	filesMatching('com/loadoutlab/version.properties') {
+	filesMatching('com/ll/version.properties') {
 		expand(version: project.version)
 	}
 }
@@ -161,7 +161,7 @@ task benchmark(type: JavaExec) {
 	group = 'loadout lab'
 	description = 'Time OptimizerService.bestPerStyle across the benchmark matrix'
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = 'com.loadoutlab.profile.QueryBenchmark'
+	mainClass = 'com.ll.profile.QueryBenchmark'
 	args = (findProperty('args') ?: '').toString().split(' ').findAll { !it.isEmpty() }
 	// Optional flight-recorder capture: ./gradlew benchmark -Pjfr=/tmp/bench.jfr
 	if (findProperty('jfr')) {
@@ -175,7 +175,7 @@ task golden(type: JavaExec) {
 	group = 'loadout lab'
 	description = 'Print HeadlessQuery output for the benchmark matrix (golden diffing)'
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = 'com.loadoutlab.profile.QueryGolden'
+	mainClass = 'com.ll.profile.QueryGolden'
 }
 
 // Golden-output capture for the ROSTER path (see RosterGolden) - the
@@ -186,7 +186,7 @@ task rosterGolden(type: JavaExec) {
 	group = 'loadout lab'
 	description = 'Print roster/group results for the group matrix (golden diffing)'
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = 'com.loadoutlab.profile.RosterGolden'
+	mainClass = 'com.ll.profile.RosterGolden'
 }
 
 // Model-snapshot golden (see ModelGolden) - the serialized render-model
@@ -197,7 +197,7 @@ task modelGolden(type: JavaExec) {
 	group = 'loadout lab'
 	description = 'Print the canonical render-model JSON for the scenario matrix (golden diffing)'
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = 'com.loadoutlab.model.ModelGolden'
+	mainClass = 'com.ll.model.ModelGolden'
 }
 
 // Headless query runner - the mock environment (see HeadlessQuery):
@@ -206,6 +206,6 @@ task query(type: JavaExec) {
 	group = 'loadout lab'
 	description = 'Run a Loadout Lab query against a saved profile, no client needed'
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = 'com.loadoutlab.profile.HeadlessQuery'
+	mainClass = 'com.ll.profile.HeadlessQuery'
 	args = (findProperty('args') ?: '').toString().split(' ').findAll { !it.isEmpty() }
 }

@@ -246,7 +246,7 @@ Undo/redo + history shipped 2026-07-15/16 as unified back/forward.
   the assumed-potion philosophy). Pairs with the ironman-aware
   direction from the 2026-07 audit.
 - **Undo/redo for mutations** - DONE (2026-07-15, 0.2.4): goal planner's
-  command pattern ported as `com.loadoutlab.command` (Command.apply()/
+  command pattern ported as `com.ll.command` (Command.apply()/
   revert(), CommandHistory bounded at 50, CompositeCommand + ref-counted
   compounds; session-only, EDT-only, cleared on profile change).
   Header-inline undo/redo arrows with peek tooltips. Every deliberate

@@ -1,7 +1,7 @@
 # Loadout Lab — merciless player audit (2026-07-15)
 
 Auditor stance: veteran OSRS player (maxed main / iron / UIM / 1-def pure / F2P alts), adversarial.
-Evidence: full engine source read (`com.loadoutlab.engine`, `.data`, `.optimizer`), bundled data inspection,
+Evidence: full engine source read (`com.ll.engine`, `.data`, `.optimizer`), bundled data inspection,
 headless probes (`./gradlew query`) against four synthetic persona profiles + the saved real profile,
 the local weirdgloop official-calc clone (`~/Development/osrs-dps-calc`), the OSRS Wiki, and the
 BiS Gear competitor clone (`~/Development/bis-gear-plugin`).

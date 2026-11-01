@@ -1,0 +1,85 @@
+package com.ll.engine;
+
+import com.ll.data.DataService;
+import com.ll.data.Gear;
+import com.ll.data.Slot;
+import com.ll.data.Tables;
+import com.ll.data.Monster;
+import java.util.Map;
+import java.util.Set;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+/**
+ * Quest rewards join the candidate pool ONLY when the upgrade budget is on
+ * (OWNED_OR_BUDGET) - the budget is the "show me obtainable gear" switch -
+ * and they never charge the budget: they cost effort, not gp.
+ */
+public class QuestRewardPoolTest {
+	private static final int WHIP = 4151;
+	private static final int BARROWS_GLOVES = 7462;
+
+	private static Tables data;
+	private static Monster graardor;
+
+	@BeforeClass
+	public static void load() {
+		data = new DataService().load();
+		// A meleeable monster where barrows gloves' offensive bonuses matter.
+		graardor = data.searchMonsters("graardor", 1).get(0);
+	}
+
+	private static Req owned(Map<Integer, Integer> owned, int budgetGp) {
+		return TestRequests.of(graardor, Style.MELEE, Levels.MAXED,
+			PrayerBonuses.bestAvailable(Levels.MAXED, Prayers.ALL),
+			null, budgetGp,
+			budgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
+			true, false, new Owned(data.canonicalizeOwned(owned), true), 1);
+	}
+
+	private static String handsName(Dps result) {
+		Gear hands = result.getLoadout().get(Slot.HANDS);
+		return hands == null ? "" : hands.getName();
+	}
+
+	@Test
+	public void barrowsGlovesJoinTheBudgetSearchWithoutBeingOwned() {
+		// Owned: just a whip. With a budget on, the untradeable barrows
+		// gloves (Recipe for Disaster) are obtainable and dominate the
+		// hands slot for melee.
+		Dps best = new LoadoutOptimizer()
+			.optimize(data, owned(Map.of(WHIP, 1), 100_000)).get(0);
+		Assert.assertEquals("Barrows gloves", handsName(best));
+	}
+
+	@Test
+	public void withoutABudgetQuestRewardsStayOutOfAnOwnedOnlySearch() {
+		Dps best = new LoadoutOptimizer()
+			.optimize(data, owned(Map.of(WHIP, 1), 0)).get(0);
+		Assert.assertNotEquals("Barrows gloves", handsName(best));
+	}
+
+	@Test
+	public void questRewardsNeverChargeTheUpgradeBudget() {
+		// A 1 gp budget cannot BUY anything real, but quest rewards are
+		// free against it: the tradeable helm of neitiznot (The Fremennik
+		// Isles, ~50k on the GE) must still surface, and the total
+		// purchase cost must stay within the 1 gp budget - proof its
+		// price was never charged.
+		Dps best = new LoadoutOptimizer()
+			.optimize(data, owned(Map.of(WHIP, 1), 1)).get(0);
+		Gear head = best.getLoadout().get(Slot.HEAD);
+		Assert.assertNotNull(head);
+		Assert.assertEquals("Helm of Neitiznot", head.getName());
+		Assert.assertTrue("spent " + best.getPurchaseCost(), best.getPurchaseCost() <= 1);
+	}
+
+	@Test
+	public void anExcludedQuestRewardStaysOut() {
+		Req req = owned(Map.of(WHIP, 1), 100_000)
+			.withExcludedItems(Set.of(BARROWS_GLOVES));
+		Dps best = new LoadoutOptimizer().optimize(data, req).get(0);
+		Assert.assertNotEquals("Barrows gloves", handsName(best));
+	}
+}

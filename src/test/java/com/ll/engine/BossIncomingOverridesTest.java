@@ -1,0 +1,323 @@
+package com.ll.engine;
+
+import com.ll.data.Gear;
+import com.ll.data.Slot;
+import com.ll.data.MonsterDefences;
+import com.ll.data.MonsterOffence;
+import com.ll.data.Monster;
+import com.ll.data.Stats;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import com.ll.data.DataService;
+import com.ll.data.Tables;
+import org.junit.Assert;
+import org.junit.Test;
+
+public class BossIncomingOverridesTest {
+	/** Graardor-shaped stats: atk 280 (+120), str 350 (+43), rng 350, 6t.
+	 * The NPC formula derives a ranged max hit of 58 from these. */
+	private static MonsterOffence offence(List<String> styles) {
+		return new MonsterOffence(280, 350, 350, 80,
+			120, 43, 100, 40, 0, 0, 6, styles);
+	}
+
+	private static Monster named(String name, List<String> styles) {
+		return versioned(name, "", styles);
+	}
+
+	private static Monster versioned(String name, String version, List<String> styles) {
+		return new Monster(1, name, version, 600, 255, 4, 250, 80, 0,
+			MonsterDefences.ZERO, offence(styles),
+			java.util.Collections.emptyList(), false, "", 0);
+	}
+
+	private static Kit armour(int stab, int slash, int crush, int magic, int ranged) {
+		Gear body = new Gear(1, "Test platebody", "", Slot.BODY, "", 0,
+			false, true, true, true, 0,
+			Stats.ZERO,
+			new Stats(stab, slash, crush, magic, ranged, 0, 0, 0, 0),
+			Stats.ZERO, null);
+		return new Kit(Map.of(Slot.BODY, body));
+	}
+
+	private static Incoming.StyleThreat threat(
+		Incoming.Result result, String style) {
+		for (Incoming.StyleThreat t : result.threats) {
+			if (t.style.toLowerCase(Locale.ROOT).equals(style)) {
+				return t;
+			}
+		}
+		Assert.fail("no " + style + " threat in " + result.threats.size() + " threats");
+		return null;
+	}
+
+	@Test
+	public void overrideReplacesTheDerivedMaxHitWithGraardorsScripted35Ranged() {
+		Incoming.Result result = Incoming.calculate(
+			named("General Graardor", Arrays.asList("Crush", "Ranged")),
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
+		Assert.assertTrue(result.fullyModeled);
+		Assert.assertNotNull(result.overrideNote);
+		Assert.assertEquals(35, threat(result, "ranged").maxHit);
+		Assert.assertEquals(60, threat(result, "crush").maxHit);
+		// Crush owns 2/3 of the cadence, so it is the prayed style.
+		Assert.assertEquals("Protect from Melee", result.protectPrayer);
+		Assert.assertTrue(threat(result, "crush").blocked);
+	}
+
+	@Test
+	public void krakenRollsMagicAccuracyButPiercesPrayer() {
+		// Wiki: "uses typeless Magic, and as such Protect from Magic does
+		// not provide any degree of damage reduction", yet it "can hit very
+		// hard [28] but has very poor accuracy" - so the model is a normal
+		// magic ACCURACY roll (magic defence gear is the real mitigation)
+		// whose damage pierces prayer entirely (field report 2026-07-17).
+		Incoming.Result tanky = Incoming.calculate(
+			named("Kraken", Arrays.asList("Typeless Magic")),
+			armour(0, 0, 0, 400, 0), 99, 99, 0);
+		Assert.assertTrue(tanky.fullyModeled);
+		Assert.assertNull(tanky.protectPrayer);
+		Assert.assertTrue(tanky.unprayedDps > 0);
+		Assert.assertEquals(tanky.unprayedDps, tanky.tot, 1e-9);
+		Assert.assertEquals(28, threat(tanky, "magic").maxHit);
+		// The accuracy roll is real: magic defence lowers the number.
+		Incoming.Result naked = Incoming.calculate(
+			named("Kraken", Arrays.asList("Typeless Magic")),
+			armour(0, 0, 0, 0, 0), 99, 99, 0);
+		Assert.assertTrue(tanky.tot < naked.tot);
+	}
+
+	@Test
+	public void partialPierceAttacksAlwaysContributeSomething() {
+		// Corporeal Beast: magic carries TRUE max 65 with prayerFactor
+		// 0.667 - whichever prayer is chosen, the prayed total must equal
+		// the per-threat identity sum and stay strictly positive.
+		Incoming.Result result = Incoming.calculate(
+			named("Corporeal Beast", Arrays.asList("Crush", "Magic")),
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
+		Incoming.StyleThreat magic = threat(result, "magic");
+		Assert.assertEquals(65, magic.maxHit);
+		double identity = 0;
+		for (Incoming.StyleThreat threat : result.threats) {
+			identity += threat.dps * threat.share * (threat.blocked ? threat.prayerFactor : 1);
+		}
+		Assert.assertEquals(identity, result.tot, 1e-9);
+		Assert.assertTrue(result.tot > 0);
+		Assert.assertTrue(result.tot < result.unprayedDps);
+	}
+
+	@Test
+	public void rotationSharesWeightEachStylesContributionToTheTotal() {
+		Incoming.Result result = Incoming.calculate(
+			named("General Graardor", Arrays.asList("Crush", "Ranged")),
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
+		Incoming.StyleThreat crush = threat(result, "crush");
+		Incoming.StyleThreat ranged = threat(result, "ranged");
+		Assert.assertEquals(0.667, crush.share, 1e-9);
+		Assert.assertEquals(0.333, ranged.share, 1e-9);
+		Assert.assertEquals(crush.dps * 0.667 + ranged.dps * 0.333,
+			result.unprayedDps, 1e-9);
+		// Crush is blocked, so the total is the ranged share alone.
+		Assert.assertEquals(ranged.dps * 0.333, result.tot, 1e-9);
+	}
+
+	@Test
+	public void typelessChipDamageIsModeledAsAlwaysHittingAndNeverBlocked() {
+		// King Black Dragon: dragonfire (65 and 50) is typeless - accuracy 1
+		// against any armour, contributing at its share regardless of prayer.
+		Incoming.Result result = Incoming.calculate(
+			named("King Black Dragon", Arrays.asList("Stab", "Dragonfire")),
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
+		Assert.assertTrue(result.fullyModeled);
+		Assert.assertEquals("Protect from Melee", result.protectPrayer);
+		Incoming.StyleThreat fire = threat(result, "typeless");
+		Assert.assertEquals(65, fire.maxHit);
+		// Always hits: dps is maxHit/2 per 6t sheet speed with no accuracy term.
+		Assert.assertEquals((65 / 2.0) / (6 * 0.6), fire.dps, 1e-9);
+		Assert.assertTrue(result.tot > 0);
+	}
+
+	@Test
+	public void monstersWithoutAnOverrideKeepTheUniformV1Model() {
+		Incoming.Result result = Incoming.calculate(
+			named("Test Boss", Arrays.asList("Crush", "Ranged")),
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
+		Assert.assertNull(result.overrideNote);
+		// v1 derives the ranged max hit (58) from the stat sheet.
+		Assert.assertEquals(58, threat(result, "ranged").maxHit);
+		Assert.assertEquals(0.5, threat(result, "crush").share, 1e-9);
+	}
+
+	@Test
+	public void zulrahFormsCarryTheirOwnAttacksAndPrayers() {
+		// Field bug 2026-07-17: the name-keyed whole-fight entry told every
+		// form to pray mage. Version-keyed entries give each form ITS OWN
+		// protect prayer; the bare name stays as the whole-fight fallback.
+		Incoming.Result serp = Incoming.calculate(
+			versioned("Zulrah", "Serpentine", Arrays.asList("Ranged")),
+			armour(0, 0, 0, 0, 0), 99, 99, 0);
+		Assert.assertEquals("Protect from Missiles", serp.protectPrayer);
+		Assert.assertEquals(0.0, serp.tot, 1e-9);
+
+		// The blue form carries BOTH books - the prayer pick maximizes
+		// savings for YOUR gear: heavy ranged defence leaves magic as the
+		// bigger threat (pray mage), heavy magic defence flips it. A
+		// symmetric offence isolates the armour-driven flip.
+		Monster tanzanite = new Monster(1, "Zulrah", "Tanzanite",
+			600, 255, 4, 250, 80, 0, MonsterDefences.ZERO,
+			new MonsterOffence(1, 1, 300, 300, 0, 0, 50, 0, 50, 0, 4,
+				Arrays.asList("Magic", "Ranged")),
+			java.util.Collections.emptyList(), false, "", 0);
+		Incoming.Result tanzRangedTank = Incoming.calculate(
+			tanzanite, armour(0, 0, 0, 0, 400), 99, 99, 0);
+		Assert.assertEquals("Protect from Magic", tanzRangedTank.protectPrayer);
+		Assert.assertTrue("the unprayed half still lands", tanzRangedTank.tot > 0);
+		Incoming.Result tanzMageTank = Incoming.calculate(
+			tanzanite, armour(0, 0, 0, 400, 0), 99, 99, 0);
+		Assert.assertEquals("Protect from Missiles", tanzMageTank.protectPrayer);
+
+		Incoming.Result magma = Incoming.calculate(
+			versioned("Zulrah", "Magma", Arrays.asList("Typeless")),
+			armour(0, 0, 0, 0, 0), 99, 99, 0);
+		Assert.assertNull("no prayer helps the tail slam", magma.protectPrayer);
+		// Avoidable (field report: 'all of his attacks are dodgeable') -
+		// the standard play takes zero; the tooltip keeps the undodged
+		// value for context.
+		Assert.assertEquals(0.0, magma.tot, 1e-9);
+		Assert.assertEquals(0.0, magma.unprayedDps, 1e-9);
+		Incoming.StyleThreat slam =
+			threat(magma, "typeless (avoidable - assumed dodged)");
+		Assert.assertEquals(30, slam.maxHit);
+		Assert.assertTrue("the undodged dps stays visible", slam.dps > 0);
+
+		// The versionless fallback still answers (whole-fight mix).
+		Assert.assertNotNull(Incoming.calculate(
+			named("Zulrah", Arrays.asList("Ranged", "Magic")),
+			armour(0, 0, 0, 0, 0), 99, 99, 0).protectPrayer);
+	}
+
+	/** The style whitelist BossIncomingOverrides.parse() used to enforce at
+	 * load time. It moved here with the rest of the data validation: test
+	 * source is free of the plugin-hub token cap, and the sweep below is
+	 * coupled to a hardcoded boss list, so a newly added boss has to come
+	 * through this check. */
+	private static final java.util.Set<String> STYLES = java.util.Set.of(
+		"melee", "stab", "slash", "crush", "ranged", "magic", "typeless");
+
+	@Test
+	public void everySeededBossIsPresentAndItsSharesSumToAtMostOne() {
+		List<String> expected = Arrays.asList(
+			"general graardor", "k'ril tsutsaroth", "kree'arra",
+			"commander zilyana", "zulrah", "vorkath", "cerberus", "callisto",
+			"artio", "vet'ion", "calvar'ion", "venenatis", "spindel",
+			"chaos elemental", "king black dragon", "alchemical hydra",
+			"corporeal beast", "kraken",
+			"zulrah|serpentine", "zulrah|tanzanite", "zulrah|magma",
+			// The 2026-10-24 standard-play-plus-leak wave (ISS-01M5PBSZBBBAS9Y46X04MVMHZB).
+			"the whisperer", "the whisperer|awakened", "the whisperer|quest",
+			"the leviathan", "the leviathan|awakened", "the leviathan|quest",
+			"phantom muspah|teleporting", "sol heredit", "the hueycoatl", "the hueycoatl|shielded",
+			"tormented demon", "mysterious figure",
+			// The heal rule (ISS-01M6415DTE84ZZ45C4YD3MZRBJ): a chained stack.
+			"blood moon");
+		for (String name : expected) {
+			BossIncomingOverrides.BossOverride override = BossIncomingOverrides
+				.overridesFor(named(name, List.of("Melee")));
+			Assert.assertNotNull(name, override);
+			// An EMPTY attack list would sail through the shares check below,
+			// so demand attacks before looking at them.
+			Assert.assertFalse(name + ": no attacks", override.getAttacks().isEmpty());
+			double shares = 0;
+			for (BossIncomingOverrides.Attack attack : override.getAttacks()) {
+				// Dragonfire is a style only with its protection layers (Vorkath).
+				Assert.assertTrue(name + ": unknown style " + attack.getStyle(),
+					STYLES.contains(attack.getStyle())
+						|| "dragonfire".equals(attack.getStyle()) && attack.getLayers() != null);
+				Assert.assertTrue(name, attack.getMaxHit() > 0);
+				// An avoidable rider (tentacles after every volley) may carry no
+				// share of its own; every counted attack must.
+				// A chained hit rides its stack's share (Blood Moon's 2nd and 3rd).
+				Assert.assertTrue(name, attack.getShare() > 0 || attack.isAvoidable() || attack.isChain());
+				Assert.assertTrue(name, attack.getShare() <= 1.0);
+				Assert.assertTrue(name, attack.getSpeedTicks() >= 0);
+				Assert.assertTrue(name, attack.getHits() >= 1);
+				Assert.assertTrue(name + ": prayerFactor out of range",
+					attack.getPrayerFactor() >= 0 && attack.getPrayerFactor() <= 1);
+				Assert.assertTrue(name + ": leak out of range", attack.getLeak() >= 0 && attack.getLeak() <= 1);
+				if (attack.isFlicked()) {
+					Assert.assertTrue(name + ": a flicked attack is prayed, so it must be prayable", attack.isPrayable());
+				}
+				if ("typeless".equals(attack.getStyle())) {
+					Assert.assertFalse(name, attack.isPrayable());
+				}
+				shares += attack.getShare();
+			}
+			Assert.assertTrue(name + " shares " + shares, shares <= 1.0 + 1e-9);
+		}
+		// Hespori's entry is a downtime alone (ISS-01M672QT7BP4H2C04C0872H57N): no attacks, the corpus styles price it.
+		Assert.assertTrue(BossIncomingOverrides.of(named("hespori", List.of("Ranged"))).getAttacks().isEmpty());
+		Assert.assertEquals(expected.size() + 1, BossIncomingOverrides.names().size());
+	}
+
+	@Test
+	public void fullyPrayerPiercingBossesRecommendNoProtectionPrayer() {
+		// Vet'ion's lightning and shield bash are dodge-based, not prayable:
+		// no prayer recommendation, and praying changes nothing.
+		Incoming.Result result = Incoming.calculate(
+			named("Vet'ion", Arrays.asList("Slash", "Magic")),
+			armour(200, 200, 200, 0, 150), 99, 99, 0);
+		Assert.assertNull(result.protectPrayer);
+		Assert.assertEquals(result.unprayedDps, result.tot, 1e-9);
+		Assert.assertTrue(result.tot > 0);
+	}
+
+	@Test
+	public void partialPrayerPierceCountsTheThroughDamage() {
+		// Corp's magic: TRUE max 65, Protect from Magic blocks only 1/3
+		// (factor 0.667). Prayed total must include the pierce-through;
+		// unprayed must use the full 65-based dps.
+		Tables data = new DataService().load();
+		Monster corp = data.searchMonsters("corporeal beast", 1).get(0);
+		// Heavy melee armour + zero magic defence: the magic saving must
+		// dominate, so Protect from Magic gets prayed and the pierce shows.
+		Incoming.Result result = Incoming.calculate(
+			corp, tankMeleeArmour(), 99, 99, 0);
+		Assert.assertEquals("Protect from Magic", result.protectPrayer);
+		Assert.assertTrue(result.tot > 0);
+		Assert.assertTrue(result.tot < result.unprayedDps);
+		boolean sawPierce = false;
+		for (Incoming.StyleThreat threat : result.threats) {
+			if (threat.blocked && threat.prayerFactor > 0) {
+				sawPierce = true;
+				Assert.assertEquals(65, threat.maxHit);
+				Assert.assertEquals(0.667, threat.prayerFactor, 1e-9);
+			}
+		}
+		Assert.assertTrue("corp magic must be a partial pierce", sawPierce);
+	}
+
+	@Test
+	public void prayerChoiceMaximizesSavingsNotRawSize() {
+		// Callisto: melee 55 but only half-blocked; magic 50 fully
+		// blockable. Praying magic SAVES more than praying melee even
+		// though the melee hit is bigger - the chosen prayer must be the
+		// bigger saving.
+		Tables data = new DataService().load();
+		Monster callisto = data.searchMonsters("callisto", 1).get(0);
+		Incoming.Result result = Incoming.calculate(
+			callisto, new Kit(java.util.Map.of()), 99, 99, 0);
+		Assert.assertEquals("Protect from Magic", result.protectPrayer);
+	}
+
+	private static Kit tankMeleeArmour() {
+		com.ll.data.Gear body = new com.ll.data.Gear(
+			99, "Tank platebody", "", com.ll.data.Slot.BODY, "", 0,
+			false, true, true, true, 0,
+			com.ll.data.Stats.ZERO,
+			new com.ll.data.Stats(500, 500, 500, 0, 0, 0, 0, 0, 0),
+			com.ll.data.Stats.ZERO, null);
+		return new Kit(java.util.Map.of(com.ll.data.Slot.BODY, body));
+	}
+}
