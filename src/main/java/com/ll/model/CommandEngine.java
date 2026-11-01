@@ -863,6 +863,7 @@ public boolean execute(String name, Map args) {
                 Set<Integer> ii = new HashSet<>();
                 for (Object id : (List<?>) ids) if (id instanceof Number) ii.add(((Number) id).intValue());
                 ops.showInBank(ii);
+                bankTools = true;
             } else ops.showInBank(null);
             return true;
         }
@@ -877,6 +878,7 @@ public boolean execute(String name, Map args) {
                 int[] positions = new int[slots.size()];
                 for (int i = 0; i < slots.size(); i++) positions[i] = slots.get(i) instanceof Number ? ((Number) slots.get(i)).intValue() : -1;
                 ops.filterBank(ii, positions);
+                bankTools = true;
             } else ops.filterBank(null, null);
             return true;
         }
@@ -1410,10 +1412,23 @@ public void clearForIdentityChange() {
     clearResults();
 }
 
+// A card switched a bank tool on (Filter bank / Show in bank) and no
+// empty command has switched it off since.
+boolean bankTools;
+
 // Reverting the first select: no mob, no results - an empty page.
+// The bank tools go with the search (field report 2026-11-01: "clear
+// the bank selection when not in use"): the toggles live on the card,
+// so nothing else would send their empty form.
 void clearResults() {
     lmobs = null;
     lastPerMob = null;
+    StoreOps ops = storeOps;
+    if (bankTools && ops != null) {
+        bankTools = false;
+        ops.filterBank(null, null);
+        ops.showInBank(null);
+    }
     link.publishPage(withHistory(page(List.of())));
 }
 
