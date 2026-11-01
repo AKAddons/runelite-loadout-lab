@@ -27,8 +27,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
-SRC_MAIN = ROOT / "src/main/java/com/loadoutlab"
-SRC_TEST = ROOT / "src/test/java/com/loadoutlab"
+SRC_MAIN = ROOT / "src/main/java/com/ll"
+SRC_TEST = ROOT / "src/test/java/com/ll"
 
 
 def slugify(heading: str) -> str:
@@ -60,10 +60,10 @@ def main() -> int:
                 gaps.append(f"[{fid}] media not recorded yet: {f['media']}" + (f"  (capture: {cap})" if cap else ""))
         for rel in f.get("code", []):
             if not (SRC_MAIN / rel).exists():
-                structural.append(f"[{fid}] code path gone: src/main/java/com/loadoutlab/{rel}")
+                structural.append(f"[{fid}] code path gone: src/main/java/com/ll/{rel}")
         for rel in f.get("tests", []):
             if not (SRC_TEST / rel).exists():
-                structural.append(f"[{fid}] test path gone: src/test/java/com/loadoutlab/{rel}")
+                structural.append(f"[{fid}] test path gone: src/test/java/com/ll/{rel}")
         if not f.get("tests") and f.get("code"):
             gaps.append(f"[{fid}] no automated tests ({f.get('notes', 'no notes')})")
 

@@ -7,11 +7,11 @@
       "group": "Owned-gear optimizer",
       "anchor": "best-owned-set-per-style",
       "code": [
-        "optimizer/OptimizerService.java",
+        "optimizer/Service.java",
         "engine/LoadoutOptimizer.java",
-        "engine/DpsCalculator.java",
-        "engine/DpsResult.java",
-        "engine/Loadout.java"
+        "engine/Calc.java",
+        "engine/Dps.java",
+        "engine/Kit.java"
       ],
       "tests": [
         "engine/NearTieTest.java",
@@ -40,8 +40,8 @@
       "media": "docs/img/game-best.png",
       "code": [
         "engine/LoadoutOptimizer.java",
-        "optimizer/OptimizerService.java",
-        "engine/OwnedItems.java",
+        "optimizer/Service.java",
+        "engine/Owned.java",
         "model/RenderModel.java"
       ],
       "tests": [
@@ -61,10 +61,10 @@
       "anchor": "incoming-damage-and-protection-prayer",
       "media": "docs/img/incoming-damage.png",
       "code": [
-        "engine/IncomingDpsCalculator.java",
+        "engine/Incoming.java",
         "engine/BossIncomingOverrides.java",
-        "engine/KillTime.java",
-        "engine/HitDist.java",
+        "engine/Kill.java",
+        "engine/Dist.java",
         "data/MonsterOffence.java",
         "data/MaxHits.java",
         "model/RenderModel.java",
@@ -100,9 +100,9 @@
       "anchor": "spell-and-spellbook-recommendation",
       "media": "docs/img/spellbook.png",
       "code": [
-        "data/SpellStats.java",
-        "engine/DpsCalculator.java",
-        "optimizer/OptimizerService.java",
+        "data/Spell.java",
+        "engine/Calc.java",
+        "optimizer/Service.java",
         "model/RenderModel.java",
         "engine/LoadoutOptimizer.java"
       ],
@@ -127,7 +127,7 @@
       "media": "docs/img/dream-items.png",
       "code": [
         "collection/IdSetStore.java",
-        "engine/OptimizationRequest.java",
+        "engine/Req.java",
         "engine/LoadoutOptimizer.java",
         "model/RenderModel.java"
       ],
@@ -146,10 +146,10 @@
       "anchor": "upgrade-budget",
       "media": "docs/img/upgrade-budget.png",
       "code": [
-        "engine/OptimizationRequest.java",
+        "engine/Req.java",
         "engine/LoadoutOptimizer.java",
         "engine/QuestRewardItems.java",
-        "optimizer/OptimizerService.java"
+        "optimizer/Service.java"
       ],
       "tests": [
         "engine/DreamAndBudgetTest.java",
@@ -219,8 +219,8 @@
       "group": "Wilderness and risk",
       "anchor": "revenant-and-wilderness-gear-conditionals",
       "code": [
-        "engine/DpsCalculator.java",
-        "engine/IncomingDpsCalculator.java",
+        "engine/Calc.java",
+        "engine/Incoming.java",
         "engine/PvpRisk.java"
       ],
       "tests": [
@@ -238,7 +238,7 @@
       "anchor": "mob-profiles-pins-notes-and-bank-filter-items",
       "code": [
         "collection/MonsterProfileStore.java",
-        "engine/OptimizationRequest.java",
+        "engine/Req.java",
         "engine/LoadoutOptimizer.java"
       ],
       "tests": [
@@ -259,7 +259,7 @@
         "engine/PvpRisk.java",
         "engine/UntradeableDeathCosts.java",
         "data/WildernessMonsters.java",
-        "engine/OptimizationRequest.java"
+        "engine/Req.java"
       ],
       "tests": [
         "engine/PvpRiskTest.java",
@@ -280,8 +280,8 @@
       "media": "docs/img/slayer-toggle.png",
       "code": [
         "data/SlayerLockedMonsters.java",
-        "engine/OptimizationRequest.java",
-        "optimizer/OptimizerService.java",
+        "engine/Req.java",
+        "optimizer/Service.java",
         "data/DataService.java",
         "engine/TaskBracelet.java",
         "LoadoutLabConfig.java"
@@ -408,7 +408,7 @@
       "anchor": "trip-supplies",
       "media": "docs/img/trip-supplies.png",
       "code": [
-        "data/TripSupplies.java",
+        "data/Trip.java",
         "collection/SupplyDefaultsStore.java",
         "collection/AlwaysFilterStore.java",
         "collection/MonsterProfileStore.java",
@@ -439,8 +439,8 @@
       "media": "docs/img/thralls-veng.png",
       "code": [
         "engine/ExtraDps.java",
-        "engine/OptimizationRequest.java",
-        "optimizer/OptimizerService.java",
+        "engine/Req.java",
+        "optimizer/Service.java",
         "LoadoutLabPlugin.java",
         "model/RenderModel.java",
         "model/CommandEngine.java",
@@ -467,7 +467,7 @@
         "engine/MultiTool.java",
         "engine/RollMath.java",
         "engine/ComputeParams.java",
-        "optimizer/OptimizerService.java",
+        "optimizer/Service.java",
         "model/PageState.java",
         "model/CommandEngine.java",
         "model/RenderModel.java",
@@ -494,8 +494,8 @@
         "engine/PrayerBonuses.java",
         "engine/BoostProfile.java",
         "optimizer/BoostSelector.java",
-        "engine/OptimizationRequest.java",
-        "optimizer/OptimizerService.java",
+        "engine/Req.java",
+        "optimizer/Service.java",
         "model/RenderModel.java"
       ],
       "tests": [
@@ -530,7 +530,7 @@
       "anchor": "multi-mob-rosters-groups-and-raids",
       "media": "docs/img/multi-mob-roster.png",
       "code": [
-        "optimizer/OptimizerService.java",
+        "optimizer/Service.java",
         "data/MonsterGroups.java",
         "model/RenderModel.java"
       ],
@@ -553,7 +553,7 @@
       "anchor": "inventory-budget-swaps-vs-bag-space",
       "media": "docs/img/inventory-budget.png",
       "code": [
-        "optimizer/OptimizerService.java",
+        "optimizer/Service.java",
         "model/RenderModel.java"
       ],
       "tests": [
@@ -676,7 +676,6 @@
         "render/AsciiLoaderTest.java",
         "render/MoodKeyTest.java",
         "render/RaidMoodRoutingTest.java",
-        "render/LoaderHtmlTest.java",
         "render/LoaderRepickTest.java",
         "render/AsciiLoaderFontTest.java"
       ],
