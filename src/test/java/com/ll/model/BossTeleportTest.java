@@ -157,6 +157,18 @@ class BossTeleportTest {
 	}
 
 	@Test
+	@DisplayName("the Phantom Muspah gets the ring of shadows too - its lair opens off Ghorrock Dungeon - once the Ghorrock teleport is unlocked")
+	void muspahRidesTheGhorrockTeleport() {
+		// Andrew 2026-11-01: "as a teleport item for muspah you should suggest ring of shadows".
+		assertTrue(teleports("phantom muspah", false, id -> id == RING_OF_SHADOWS,
+			Map.of(CATEGORY, "DETECT_BEST"), v -> false).isEmpty(), "ring owned, Ghorrock still locked");
+		List<Map<?, ?>> nodes = teleports("phantom muspah", false, id -> id == RING_OF_SHADOWS,
+			Map.of(CATEGORY, "DETECT_BEST"), v -> v == 15142);
+		assertEquals(1, nodes.size(), "one boss teleport line");
+		assertEquals(RING_OF_SHADOWS, itemId(nodes.get(0)));
+	}
+
+	@Test
 	@DisplayName("scrolls stored in the master scroll book read as owned - Zul-andra, Key master and Ardeaglais; the ring's set unlocks read back")
 	void scrollBookCountsAsOwned() {
 		assertEquals(Set.of(ZUL_ANDRA, 13249, ARDEAGLAIS), com.ll.collection.PotionStorage.owned(
