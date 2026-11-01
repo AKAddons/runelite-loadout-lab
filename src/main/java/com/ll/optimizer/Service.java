@@ -1183,6 +1183,7 @@ Map<Slot, Ladder> groupLadderFor(ComputeContext ctx, SharedSide side, List<Monst
             Set<Integer> offered = new HashSet<>();
             for (Dps swap : optimizer.slotSwaps(ctx.dataset, side.rq.get(j), base[j], slot)) {
                 Gear item = swap.loadout.get(slot);
+                if (item == null) continue; // a swap with nothing in the slot is no step (never again a lost roster)
                 offered.add(item.id);
                 if (item.id == worn.id) continue; // the strip's worn item: a member wearing another reads its own card
                 items.putIfAbsent(item.id, item);
@@ -2871,6 +2872,7 @@ public void bestPerStyleAcross( List<Monster> mobs,
     List<Monster> roster = new ArrayList<>(mobs);
     submit(ticket -> {
         List<Map<Style, Pick>> pm = computeStyleAcross(roster, ctx, ticket);
+        if (pm == null) return null; // superseded mid-flight
         GroupBook book = groupBook(roster, pm, ctx);
         if (book.recompute) {
             // One book for the whole raid: every magic set recomputed

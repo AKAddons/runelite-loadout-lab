@@ -194,7 +194,7 @@ public List<Dps> slotSwaps(Tables data, Req request, Dps shown, Slot slot) {
             if (compatible(null, item)) ao.add(null);
             ao.addAll(candidates(data, request, AMMO, SLOT_LIMIT, item));
             if (ao.isEmpty()) continue;
-        } else ao.add(base.get(AMMO));
+        } else ao.add(slot == AMMO ? item : base.get(AMMO)); // the AMMO slot keeps ITS candidate: the worn arrow here emptied the quiver of a member wearing none (field report 2026-11-01, the Archive roster)
         // A one-hander competes as weapon + offhand against the
         // two-handers (Andrew 2026-10-22: "evaluate the weapon + shield as
         // one slot because it competes directly against the 2h options"):
