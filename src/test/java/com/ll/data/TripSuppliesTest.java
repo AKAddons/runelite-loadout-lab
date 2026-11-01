@@ -84,6 +84,25 @@ public class TripSuppliesTest {
 		Assert.assertNotNull(Trip.option(Trip.PRAYER_RESTORE, "PRAYER_REGENERATION"));
 	}
 
+	/** Field report 2026-10-31 (an ironman, Discord): "please give us moonlight
+	 * moth mixes as an option". Wiki: 22 prayer points a dose, two doses, no
+	 * Herblore - the prayer potion for irons, weaker per dose than one. */
+	@Test
+	public void moonlightMothMixIsAPrayerRestoreBelowThePrayerPotion() {
+		Trip.Option mix = Trip.option(Trip.PRAYER_RESTORE, "MOONLIGHT_MOTH_MIX");
+		Assert.assertNotNull("the mix is a prayer restore option", mix);
+		Assert.assertEquals("Moonlight moth mix", mix.name);
+		Assert.assertArrayEquals("two-dose leads the cell, one-dose rides the filter", new int[]{29195, 29213}, mix.ids);
+		Assert.assertTrue("a real restore, so Detect best may pick it", mix.detect);
+		List<String> keys = new java.util.ArrayList<>();
+		for (Trip.Option o : Trip.options(Trip.PRAYER_RESTORE)) keys.add(o.key);
+		Assert.assertTrue("after the prayer potion", keys.indexOf("PRAYER_POTION") < keys.indexOf("MOONLIGHT_MOTH_MIX"));
+		Assert.assertTrue("before prayer regeneration", keys.indexOf("MOONLIGHT_MOTH_MIX") < keys.indexOf("PRAYER_REGENERATION"));
+		// An iron with only mixes banked detects them; a prayer potion in the bank still wins.
+		Assert.assertEquals("MOONLIGHT_MOTH_MIX", Trip.detectBest(Trip.PRAYER_RESTORE, id -> id == 29213).key);
+		Assert.assertEquals("PRAYER_POTION", Trip.detectBest(Trip.PRAYER_RESTORE, id -> id == 29213 || id == 143).key);
+	}
+
 	@Test
 	public void spellbookCapeDetectPrefersTheMaxCape() {
 		Set<Integer> owned = new HashSet<>();

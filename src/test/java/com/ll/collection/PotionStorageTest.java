@@ -3,6 +3,7 @@ package com.ll.collection;
 import com.ll.data.Trip;
 import com.ll.engine.DragonfireRules;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -40,10 +41,14 @@ class PotionStorageTest {
 			DragonfireRules.REGULAR_ANTIFIRE_IDS[0], DragonfireRules.REGULAR_ANTIFIRE_IDS[4]}) {
 			assertTrue(items.contains(id), "antifire tier missing from potion_storage.json: " + id);
 		}
+		// The hunter moth mixes have no POTIONSTORE_VILE_SIZE_* varbit (gameval
+		// 1.13.4; the wiki's storable list has barbarian mixes, not these), so the
+		// bank cannot hold them and the table has nothing to map (ISS-01M6B5KTF023SV6ET6SM7CHAJC).
+		Set<Integer> unstorable = Set.of(29195);
 		for (String category : new String[]{Trip.PRAYER_RESTORE, Trip.ANTIVENOM,
 			Trip.ANTIPOISON, Trip.SURGE}) {
 			for (Trip.Option option : Trip.options(category)) {
-				if (option.detect && option.ids.length > 0 && !option.name.contains("Blighted")) {
+				if (option.detect && option.ids.length > 0 && !option.name.contains("Blighted") && !unstorable.contains(option.ids[0])) {
 					assertTrue(items.contains(option.ids[0]),
 						category + " option missing from potion_storage.json: " + option.name);
 				}

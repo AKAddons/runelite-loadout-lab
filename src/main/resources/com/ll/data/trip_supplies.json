@@ -137,6 +137,7 @@
 			]
 		}
 	],
+	"_prayerRestore_comment": "Prayer restores best first per dose: super restore and sanfew (8 + level/4 and more), the prayer potion (7 + level/4), then the moonlight moth mix (field report 2026-10-31, an ironman's ask; wiki: 22 prayer points a dose, two doses, a jarred moonlight moth and hunter meat, no Herblore) - the two-dose 29195 is the cell, the one-dose 29213 rides the filter (gameval HUNTER_MIX_MOONMOTH_*). Prayer regeneration is a choice only.",
 	"prayerRestore": [
 		{
 			"key": "SUPER_RESTORE",
@@ -177,6 +178,14 @@
 				139,
 				141,
 				143
+			]
+		},
+		{
+			"key": "MOONLIGHT_MOTH_MIX",
+			"name": "Moonlight moth mix",
+			"ids": [
+				29195,
+				29213
 			]
 		},
 		{
