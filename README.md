@@ -188,8 +188,7 @@ Loadout Lab builds on other people's work:
   Hannah-GBS - the swaps ladder's "how to get it" link opens the item there.
 - [RuneLite](https://runelite.net/) - the client and plugin platform.
 - [DejaVu Sans Mono](https://dejavu-fonts.github.io/) (Bitstream Vera licence)
-  and [Cascadia Mono](https://github.com/microsoft/cascadia-code) (SIL Open
-  Font Licence) draw the compute animations, the Braille cells from Cascadia.
+  draws the compute animations.
 
 ## License
 
