@@ -2875,9 +2875,11 @@ public void bestPerStyleAcross( List<Monster> mobs,
         if (book.recompute) {
             // One book for the whole raid: every magic set recomputed
             // under it, Death Charge off when that book is not Arceuus.
+            // A +Mob group is one kit per trip: its melee and ranged sets
+            // keep Arceuus and Death Charge (ISS-01M6B3RN6784EAJ1KXC3A72N6X).
             ComputeParams locked = p.copy();
             locked.spellbookLock = book.book;
-            if (!"arceuus".equals(book.book)) locked.deathCharge = 0;
+            if (!"arceuus".equals(book.book) && p.raid) locked.deathCharge = 0;
             ComputeContext again = buildContext(rl, boostedLevels, pu, requirements, owned,
                 collectionFingerprint, locked, ebs, di, pinsByMob, spellOf, specOf, poi);
             again.excludedByMob = ctx.excludedByMob;

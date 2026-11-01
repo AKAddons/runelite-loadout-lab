@@ -981,6 +981,14 @@ JLabel bookPlate(Map shownCard, Map mob) {
         required = str(spellbooks, spell);
         reason = "autocasts " + spell;
     }
+    // A +Mob group's demanded book rides the magic card itself
+    // (ISS-01M6B3RN6784EAJ1KXC3A72N6X): the melee and ranged cards
+    // of the same group keep their own book below.
+    String gb = str(shownCard, "groupBook");
+    if (gb != null) {
+        required = gb;
+        reason = str(shownCard, "groupBookReason");
+    }
     // The FIGHT's own book beats every gear consideration (wiki-
     // verified curation - the Sire wants Ancients for the Shadow
     // Barrage stun regardless of what the set casts).

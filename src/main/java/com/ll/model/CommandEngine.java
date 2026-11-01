@@ -1240,6 +1240,38 @@ static void groupStandDown(List<?> mobNodes, String book, String reason) {
     eachCard(mobNodes, (side, card) -> card.put("arceuusStandDown", reason));
 }
 
+// A +Mob group's demanded book rides its MAGIC cards: the plate names
+// it, the card's summons stand down; melee and ranged cards untouched.
+static void pinMagicCards(List<?> mobNodes, String book, String reason) {
+    for (Object m : mobNodes) {
+        Object styles = ((Map<?, ?>) m).get("styles");
+        Object magic = styles instanceof Map ? ((Map<?, ?>) styles).get("magic") : null;
+        if (!(magic instanceof Map)) continue;
+        for (String side : new String[]{"yours", "bis"}) {
+            Object card = ((Map<?, ?>) magic).get(side);
+            if (!(card instanceof Map)) continue;
+            ((Map) card).put("groupBook", book);
+            ((Map) card).put("groupBookReason", reason);
+            ((Map) card).put("arceuusStandDown", reason);
+        }
+    }
+}
+
+// The trip runs ONE book for every card: a raid, or the book is the
+// player's lock, Cure Me or a fight book (the Sire's Ancients).
+boolean oneTrip(List<Monster> mobs) {
+    String lock = String.valueOf(state.pn().get("spellbookLock"));
+    return flag("raidSelection") || !lock.isEmpty() && !"null".equals(lock) || cureMe(mobs)
+        || mobs.stream().anyMatch(m -> bookFor(m) != null && !bookFor(m).isEmpty());
+}
+
+// A raid on a book other than Arceuus casts no summons: its trip packs
+// none of their runes (the "runes for thralls" half of the report).
+boolean raidBookElsewhere() {
+    List<Monster> mobs = lmobs;
+    return flag("raidSelection") && mobs != null && mobs.size() > 1 && !groupBook.isEmpty() && !"arceuus".equals(groupBook);
+}
+
 // Every mob plate in the group names the group's book; a mob's own
 // fight book (the Sire's Ancients) keeps its own reason.
 static void groupBookPlates(List<?> mobNodes, String book, String reason) {
@@ -1435,12 +1467,18 @@ void republish() {
     Map entry = entry(mobs, pm, ks, ownedCheck, simmedIds(), itemLocation);
     // One book for a group: on every plate, and - off Arceuus - the
     // summons stand down on every card (ISS-01M5PB4R0MP149NXWNFSEEHVP8).
+    // Only where the trip is one (a raid, or the book is the player's
+    // lock, Cure Me or a fight book): a +Mob group is one kit per trip,
+    // so a demanded book pins its magic cards alone and the melee and
+    // ranged sets keep Arceuus (ISS-01M6B3RN6784EAJ1KXC3A72N6X, Andrew
+    // 2026-11-01: "it is okay to suggest arceuss for melee and standard
+    // for magic in this scenario").
     String book = mobs.size() > 1 ? groupBook : "";
-    if (!book.isEmpty()) {
+    String why = bookReason.isEmpty() ? "the group runs the " + book + " book" : bookReason;
+    if (!book.isEmpty() && (oneTrip(mobs) || "arceuus".equals(book))) {
         groupBookPlates((List<?>) entry.get("mobs"), book, bookReason);
-        groupStandDown((List<?>) entry.get("mobs"), book,
-            bookReason.isEmpty() ? "the group runs the " + book + " book" : bookReason);
-    }
+        groupStandDown((List<?>) entry.get("mobs"), book, why);
+    } else if (!book.isEmpty()) pinMagicCards((List<?>) entry.get("mobs"), book, why);
     if (flag("multiView")) multiView((List<?>) entry.get("mobs"), intParam("multiStack"));
     sunfireRunes((List<?>) entry.get("mobs"));
     arceuusStandDown((List<?>) entry.get("mobs"), spellbooks,
@@ -1469,7 +1507,7 @@ void republish() {
     // fold and the trip runes are permanently vetoed for a sea lens.
     // The param persists for the land half of a mixed roster.
     boolean seaLens = !mobs.isEmpty() && nav(lensOf(mobs).name);
-    if (!seaLens && membersFlag("thralls") && !arceuusBlocked(mobs) && (book.isEmpty() || "arceuus".equals(book))) {
+    if (!seaLens && membersFlag("thralls") && !arceuusBlocked(mobs) && (book.isEmpty() || "arceuus".equals(book) || !oneTrip(mobs))) {
         double dps = thrallDps(mag);
         String tier = thrallTier(mag);
         if (dps > 0 && tier != null) {
@@ -1976,7 +2014,7 @@ List<Map> utilityRunesFor(Map mob) {
     offering(out, stats, "ashes", "Ash sanctifier", "DEMONIC_OFFERING", 84, "Demonic Offering");
     offering(out, stats, "bones", "Bonecrusher", "SINISTER_OFFERING", 92, "Sinister Offering");
     boolean sm = stats != null && nav(stats.name);
-    boolean lc = arceuusBlocked(stats);
+    boolean lc = arceuusBlocked(stats) || raidBookElsewhere();
     if (!sm && membersFlag("thralls") && !lc) {
         String tier = thrallTier(mag);
         if (tier != null) {

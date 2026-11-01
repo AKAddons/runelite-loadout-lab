@@ -12,10 +12,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * A group's book that is not Arceuus stands thralls and Death Charge down on
+ * A raid's book that is not Arceuus stands thralls and Death Charge down on
  * EVERY card - melee and ranged too, since the whole raid runs that book
  * (ISS-01M5PB4R0MP149NXWNFSEEHVP8, Andrew 2026-10-24: "that's something you
- * can't swap mid-raid").
+ * can't swap mid-raid"). A +Mob group that is not a raid pins the magic
+ * cards only (ISS-01M6B3RN6784EAJ1KXC3A72N6X, Andrew 2026-11-01: "it should
+ * just be suggesting arceuss for the melee set").
  */
 class GroupStandDownTest {
 	private static Map<String, Object> card(String spell) {
@@ -60,6 +62,26 @@ class GroupStandDownTest {
 			assertEquals(reason, reason(mobs, mob, "melee", "yours"));
 			assertEquals(reason, reason(mobs, mob, "magic", "yours"));
 			assertEquals(reason, reason(mobs, mob, "magic", "bis"));
+		}
+	}
+
+	@Test
+	@DisplayName("a +Mob group's demanded book pins the magic cards only: their plate names it and their summons stand down, the melee card is untouched")
+	@SuppressWarnings("unchecked")
+	void nonRaidPinsMagicCardsOnly() {
+		List<Object> mobs = mobs();
+		String reason = "Ancient Wyvern wants Fire Surge - the group runs the standard book";
+		CommandEngine.pinMagicCards(mobs, "standard", reason);
+		for (int mob = 0; mob < 2; mob++) {
+			assertEquals(reason, reason(mobs, mob, "magic", "yours"));
+			assertEquals(reason, reason(mobs, mob, "magic", "bis"));
+			assertNull(reason(mobs, mob, "melee", "yours"));
+			Map<String, Object> styles = (Map<String, Object>) ((Map<?, ?>) mobs.get(mob)).get("styles");
+			Map<String, Object> magic = (Map<String, Object>) ((Map<?, ?>) styles.get("magic")).get("yours");
+			Map<String, Object> melee = (Map<String, Object>) ((Map<?, ?>) styles.get("melee")).get("yours");
+			assertEquals("standard", magic.get("groupBook"));
+			assertEquals(reason, magic.get("groupBookReason"));
+			assertNull(melee.get("groupBook"));
 		}
 	}
 
