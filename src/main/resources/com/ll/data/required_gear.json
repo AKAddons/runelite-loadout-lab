@@ -289,7 +289,7 @@
 		}
 	],
 	"ward": ["cerberus"],
-	"_carried_comment": "Carried slayer items the KILL needs (Andrew 2026-10-22): the finishing blow, best first - one rides as a trip supply even when unowned. The slayer unlocks (Gargoyle smasher, Shroom sprayer, Slug salter, Reptile freezer) automate the blow but still need the item carried. Ids from runelite-api 1.13.3 gameval ItemID.",
+	"_carried_comment": "Carried slayer items the KILL needs (Andrew 2026-10-22): the finishing blow, best first - one rides as a trip supply even when unowned. The slayer unlocks (Gargoyle smasher, Shroom sprayer, Slug salter, Reptile freezer) automate the blow but still need the item carried. The Kraken's fishing explosive (Andrew 2026-11-02: 'kraken needs fishing explosives') STARTS the fight instead - one per awakening. Ids from runelite-api 1.13.3 gameval ItemID.",
 	"carried": [
 		{
 			"monsters": ["gargoyle", "marble gargoyle"],
@@ -334,6 +334,13 @@
 				{"name": "Ice cooler", "ids": [6696]}
 			],
 			"note": "Lizards: finish them with an ice cooler"
+		},
+		{
+			"monsters": ["kraken"],
+			"items": [
+				{"name": "Fishing explosive", "ids": [6664]}
+			],
+			"note": "Kraken: use a fishing explosive on the large whirlpool to wake it - one per kill, so bring a stack (60 coins each from any Slayer master; wiki 2026-11-02)"
 		}
 	]
 }
