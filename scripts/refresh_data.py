@@ -332,9 +332,12 @@ def build_gear(wg_equipment, mapping_by_id, latest_by_id, old_by_id):
 
 
 def supplement_aliases(aliases, wg_equipment):
-    """Weirdgloop treats corrupted '(c)' rows as their own base; for
-    OWNERSHIP crediting they equal the Charged base (identical stats,
-    e.g. Bow of faerdhinen (c) -> Charged). Add those links, then
+    """Weirdgloop treats corrupted '(c)' rows as their own base, and
+    misses an ornamented '(o)' row whose version text differs from the
+    base's (Trident of the Seas (o) "Fully charged" vs "Charged", Andrew
+    2026-11-02); for OWNERSHIP crediting both equal the live base
+    (identical stats, e.g. Bow of faerdhinen (c) -> Charged). Add those
+    links, then
     flatten chains so one-hop canonicalization lands on the final base
     (hue variants -> (c) -> Charged must become hue -> Charged)."""
     def stats(row):
@@ -348,10 +351,10 @@ def supplement_aliases(aliases, wg_equipment):
         by_name.setdefault(row.get("name"), []).append(row)
     for row in wg_equipment:
         name = row.get("name") or ""
-        if not name.endswith(" (c)") or str(row["id"]) in aliases:
+        if not (name.endswith(" (c)") or name.endswith(" (o)")) or str(row["id"]) in aliases:
             continue
         for base in by_name.get(name[:-4], []):
-            if base.get("version") in ("Charged", "", "Active", "New") \
+            if base.get("version") in ("Charged", "Fully charged", "", "Active", "New", "Regular") \
                     and stats(base) == stats(row):
                 aliases[str(row["id"])] = base["id"]
                 break

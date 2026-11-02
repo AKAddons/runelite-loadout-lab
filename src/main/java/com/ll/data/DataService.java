@@ -59,6 +59,9 @@ Map<Integer, Integer> loadAliases(List<Gear> gear) {
     Map<Integer, Integer> aliases = read(ALIAS_RESOURCE, new TypeToken<Map<Integer, Integer>>() { }.getType());
     aliases.entrySet().removeIf(e -> e.getKey().intValue() == e.getValue());
     for (var twin : chargedTwins(gear).entrySet()) if (!aliases.containsKey(twin.getKey().id)) aliases.put(twin.getKey().id, aliases.getOrDefault(twin.getValue().id, twin.getValue().id));
+    // An alias onto a dead version (weirdgloop: trident (o) partially charged -> 11907,
+    // Andrew 2026-11-02) walks on to the charged twin, so owning it is owning the trident.
+    aliases.replaceAll((id, base) -> aliases.getOrDefault(base, base));
     return aliases;
 }
 

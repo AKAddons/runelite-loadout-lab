@@ -205,6 +205,20 @@ public class DataServiceTest {
 	}
 
 	@Test
+	public void ornamentTridentIsTheTrident() {
+		// Andrew 2026-11-02: "trident of the seas (o) which is a cosmetic variant come up as an
+		// improvement to my current bis; i own trident of the seas". 33323 (Fully charged (o))
+		// and 33322 (Partially charged (o)) are the charged trident 11905: weirdgloop aliases
+		// the first to nothing and the second to the dead 11907.
+		Tables data = new DataService().load();
+		Assert.assertTrue(data.isVariant(33323));
+		Assert.assertTrue(data.isVariant(33322));
+		Assert.assertFalse(data.isVariant(11905));
+		Assert.assertEquals(1, data.canonicalizeOwned(java.util.Map.of(33323, 1)).get(11905).intValue());
+		Assert.assertEquals(1, data.canonicalizeOwned(java.util.Map.of(33322, 1)).get(11905).intValue());
+	}
+
+	@Test
 	public void equivalentIdsSpanTheWholeVariantFamily() {
 		Tables data = new DataService().load();
 		// Base whip expands to its ornament variants and back.
