@@ -30,6 +30,7 @@ class BossTeleportTest {
 	private static final int RING_OF_SHADOWS = 28327;
 	private static final int ARDEAGLAIS = 34033;
 	private static final int PASSAGE_5 = 21146;
+	private static final int DRAKANS_MEDALLION = 22400;
 	private static Tables data;
 
 	@BeforeAll
@@ -166,6 +167,24 @@ class BossTeleportTest {
 			Map.of(CATEGORY, "DETECT_BEST"), v -> v == 15142);
 		assertEquals(1, nodes.size(), "one boss teleport line");
 		assertEquals(RING_OF_SHADOWS, itemId(nodes.get(0)));
+	}
+
+	@Test
+	@DisplayName("vyres and venators get Drakan's medallion - Ver Sinhaza and Darkmeyer for the Vyrewatch, the Castle Drakan portal for Vampyrium once its shrine is prayed at")
+	void vyresAndVenatorsRideDrakansMedallion() {
+		// Andrew 2026-11-02: "vyres/venators should have drakan teleport included".
+		List<Map<?, ?>> sentinel = teleports("vyrewatch sentinel", id -> id == DRAKANS_MEDALLION);
+		assertEquals(1, sentinel.size(), "the sentinels: one boss teleport line (Darkmeyer)");
+		assertEquals(DRAKANS_MEDALLION, itemId(sentinel.get(0)));
+		assertEquals(1, teleports("vyrewatch", id -> id == DRAKANS_MEDALLION).size(), "the Meiyerditch vyrewatch too (Ver Sinhaza)");
+		assertTrue(teleports("venator", false, id -> id == DRAKANS_MEDALLION,
+			Map.of(CATEGORY, "DETECT_BEST"), v -> false).isEmpty(), "medallion owned, the castle shrine not yet prayed at");
+		for (String mob : List.of("venator", "ancient feral vyre", "blood-starved venator")) {
+			List<Map<?, ?>> nodes = teleports(mob, false, id -> id == DRAKANS_MEDALLION,
+				Map.of(CATEGORY, "DETECT_BEST"), v -> v == 15470);
+			assertEquals(1, nodes.size(), mob + ": one boss teleport line (Castle Drakan)");
+			assertEquals(DRAKANS_MEDALLION, itemId(nodes.get(0)));
+		}
 	}
 
 	@Test
