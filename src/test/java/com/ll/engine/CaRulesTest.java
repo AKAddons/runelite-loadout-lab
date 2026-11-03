@@ -102,6 +102,19 @@ class CaRulesTest {
     }
 
     @Test
+    @DisplayName("Rapid Reload: the Tormented Demon on a crossbow or ballista, no melee or magic set")
+    void rapidReload() {
+        // Andrew 2026-11-02: "add the 'rapid reload' as a restriction achievemnt for tormented demons".
+        // Wiki #555 (Elite): "Hit three Tormented Demons within 3 seconds using a ballista or a crossbow" -
+        // the gear data files every ballista under the Crossbow category, so one category covers both.
+        Monster demon = mob("Tormented Demon");
+        assertTrue(CombatAchievements.tasksFor(demon).stream().anyMatch(t -> t.getId() == 555), "Rapid Reload is the demon's task");
+        assertEquals("crossbow", set(demon, Style.RANGED, 555).getWeapon().getCategoryLower());
+        assertTrue(best(demon, Style.MELEE, 555).isEmpty());
+        assertTrue(best(demon, Style.MAGIC, 555).isEmpty());
+    }
+
+    @Test
     @DisplayName("no weapon: fists on Vorkath")
     void unarmed() {
         List<Dps> results = best(mob("Vorkath"), Style.MELEE, 275);
