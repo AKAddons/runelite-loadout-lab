@@ -5,7 +5,7 @@ weirdgloop's cdn (refresh_data.py's source) updates weeks after a release;
 the wiki's Infobox Monster / Infobox Bonuses carry the same stats on day
 one. This script fetches the listed pages, maps the infobox fields onto
 the corpus row schema refresh_data.py writes, and MERGES the rows into
-src/main/resources/com/loadoutlab/data/{monsters,gear_prices}.json.gz by
+src/main/resources/com/ll/data/{monsters,gear_prices}.json.gz by
 id (replacing a row with the same id, keeping every other row). Ids are
 cross-checked against the table below, which carries the gameval
 constants (runelite-api ItemID/NpcID) - never a wiki number alone.
@@ -16,7 +16,9 @@ Obligator's first latest-high was 5,999,999,999). With no guide price
 they fall back to the wiki's real-time latest high, then low. A price is
 what lets a reward into the game-best pool (ALL_STANDARD needs one).
 
-Usage: python3 scripts/wiki_intake.py [--dry-run]
+Usage: python3 scripts/wiki_intake.py [--dry-run] [--only PAGE]...
+  --only intakes the named page(s) alone - a release-day item without
+  re-fetching every earlier row (the amulet of sight, 2026-11-03).
 """
 import argparse
 import gzip
@@ -30,7 +32,7 @@ import urllib.parse
 import urllib.request
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RES_DIR = os.path.join(REPO, "src/main/resources/com/loadoutlab/data")
+RES_DIR = os.path.join(REPO, "src/main/resources/com/ll/data")
 UA = {"User-Agent": "loadout-lab wiki intake (github.com/AKAddons; RuneLite plugin)"}
 
 # The Fractured Archive (released 2026-10-20). (page, {version: gameval npc id
@@ -86,6 +88,9 @@ GEAR = [
     ("Diamond ascension bolts (e)", "ammo", "", False, {"": (34696, True)}, {}),
     ("Onyx ascension bolts", "ammo", "", False, {"": (34702, True)}, {}),
     ("Onyx ascension bolts (e)", "ammo", "", False, {"": (34708, True)}, {}),
+    # The Writing's on the Wall (released 2026-11-03): a +10 ranged attack neck with no
+    # requirements (Andrew 2026-11-03: "make sure we are ingesting it").
+    ("Amulet of sight", "neck", "", False, {"": (34762, True)}, {}),  # ItemID.AMULET_OF_SIGHT
 ]
 
 
@@ -298,7 +303,10 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--patch-only", action="store_true",
                         help="apply PATCHES to the current corpus without fetching anything")
+    parser.add_argument("--only", action="append", metavar="PAGE",
+                        help="intake this page alone (repeatable); the other table rows are left as they are")
     args = parser.parse_args()
+    only = set(args.only or [])
     if args.patch_only:
         m = read_gz("monsters.json.gz")
         apply_patches(m)
@@ -307,6 +315,8 @@ def main():
         return 0
     monsters, gear, reqs = [], [], []
     for page, ids in MONSTERS:
+        if only and page not in only:
+            continue
         rows = monster_rows(page, ids)
         print("monster %s: %d row(s)" % (page, len(rows)))
         for r in rows:
@@ -314,6 +324,8 @@ def main():
         monsters.extend(rows)
         time.sleep(0.3)
     for page, slot, category, two_handed, ids, requirements in GEAR:
+        if only and page not in only:
+            continue
         rows, rq = gear_rows(page, slot, category, two_handed, ids, requirements)
         print("gear %s: %d row(s)" % (page, len(rows)))
         for r in rows:

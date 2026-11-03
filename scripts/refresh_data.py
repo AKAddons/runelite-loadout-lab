@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Refresh the vendored gear/monster/spell data from live sources.
 
-Rebuilds src/main/resources/com/loadoutlab/data/*.json.gz from:
+Rebuilds src/main/resources/com/ll/data/*.json.gz from:
   - weirdgloop/osrs-dps-calc cdn JSON (equipment, monsters, spells) - the
     wiki team's auto-updated stat data. DATA ONLY: never copy weirdgloop
     CODE into this repo (their code is GPL-3; see CLAUDE.md).
@@ -85,7 +85,7 @@ def apply_monster_overrides(monsters):
 
 RES_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "src", "main", "resources", "com", "loadoutlab", "data")
+    "src", "main", "resources", "com", "ll", "data")
 
 NONSTANDARD_VERSIONS = {"inactive", "broken", "locked"}
 NONSTANDARD_NAME_MARKS = ("(deadman)", "(beta)", "(bh)", "(dmm)")
